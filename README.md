@@ -1,7 +1,7 @@
 # Ubuntu 26.10 Post-Install Script
 
 > **Menu-driven post-installation script with verified packages, error handling, installation checks, and automatic GNOME Shell app-folder creation**
-
+![screenshot](screenshot.png)
 ---
 
 ## 📋 Table of Contents
