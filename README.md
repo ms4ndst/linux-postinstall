@@ -36,6 +36,7 @@
   - [GUI Tweaks](#gui-tweaks)
   - [Windows Software Support](#windows-software-support)
   - [Android Tools](#android-tools)
+  - [Security Tools](#security-tools)
 - [🔀 Bulk Options (A / B / C)](#-bulk-options-a--b--c)
 - [🔧 Error Handling &amp; Installation Checks](#-error-handling--installation-checks)
 - [📊 Installation Summary &amp; Logging](#-installation-summary--logging)
@@ -87,7 +88,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 | **Version Detection**         | Detects the running release at startup, supports **Ubuntu 26.04 LTS and 26.10**, warns/prompts on anything else |
 | **Nala Front-End**            | Installs and uses [Nala](https://github.com/volitank/nala) for installs/updates (parallel downloads, cleaner output); transparently falls back to apt-get if unavailable |
 | **Catppuccin-Themed Output**  | Menus, logs, and summary use the Catppuccin Mocha palette (truecolor), auto-disabled for non-TTY / `NO_COLOR` |
-| **Interactive Menu**          | Text-based menu with 24 categories (plus a Ubuntu Studio sub-menu)                             |
+| **Interactive Menu**          | Text-based menu with 25 categories (plus a Ubuntu Studio sub-menu)                             |
 | **GNOME App-Folder Creation** | After each category, optionally groups the apps you just installed into a Super-key app folder |
 | **Terminal Font Setup**       | In GUI Tweaks, optionally sets the terminal / system monospace font to an installed Nerd Font (works on Ptyxis, GNOME Console, and gnome-terminal) |
 | **Error Handling**             | Skips unavailable packages, continues installation                                              |
@@ -100,7 +101,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 
 ### Statistics
 
-- **Main Menu Categories:** 24 (plus a 6-option Ubuntu Studio sub-menu)
+- **Main Menu Categories:** 25 (plus a 6-option Ubuntu Studio sub-menu)
 - **Package Front-End:** Nala (auto-installed, with transparent apt-get fallback)
 - **Verified APT Packages:** 200+
 - **Snap-Only Tools:** 3 (LXD, IntelliJ IDEA Community, DBeaver CE)
@@ -143,8 +144,8 @@ sudo ./post-install.sh
 
 ### Menu Navigation
 
-1. **Main Menu**: Shows all 24 categories (`0`–`24`)
-2. **Sub-Menu**: Ubuntu Studio has its own sub-menu (options `1`–`6`)
+1. **Main Menu**: Shows all 25 categories (`0`–`25`)
+2. **Sub-Menus**: Ubuntu Studio (option `1`) has a sub-menu (`1`–`6`); Security Tools (option `25`) has a sub-menu to choose Full or Defensive-only
 3. **Bulk Options**: `A`, `B`, `C` (see [Bulk Options](#-bulk-options-a--b--c) below)
 4. **`S`** — Show Installation Summary
 5. **`0`** — Exit
@@ -548,13 +549,46 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Ner
 
 ---
 
+### Security Tools
+
+Standard security / pentest / defensive tooling, **all from Ubuntu's own repositories** (main/universe) — intended for authorized security testing, CTFs, education, and hardening/defensive work on systems you own or are permitted to test.
+
+Option 25 opens a **sub-menu** with two variants:
+
+| # | Variant | Installs |
+|---|---------|----------|
+| 1 | **Full (pentest + defensive)** | The complete set below — scanning, web-attack, cracking, wireless, forensics/RE, hardening, firewall/VPN |
+| 2 | **Defensive only** | Blue-team subset only: hardening, integrity, auditing, anti-malware, IDS/IPS, firewall, VPN, credentials — **no** offensive/dual-use tools |
+
+**Full** — installed in themed sub-batches:
+
+- **Network:** `nmap`, `masscan`, `netcat-openbsd`, `hping3`, `dnsutils` *(wireshark/tcpdump intentionally not repeated — [System Utilities](#system-utilities) owns them)*
+- **Web app testing:** `nikto`, `sqlmap`, `dirb`, `gobuster`, `whatweb`, `wapiti`, `wfuzz`
+- **Cracking & wireless:** `john`, `hashcat`, `hydra`, `aircrack-ng`, `macchanger`
+- **Forensics & reverse engineering:** `radare2`, `binwalk`, `foremost`, `sleuthkit`, `steghide`, `yara`, `exiftool`
+- **Hardening & anti-malware (defensive):** `lynis`, `chkrootkit`, `rkhunter`, `clamav`, `clamav-daemon`, `fail2ban`, `aide`
+- **Firewall / VPN / privacy / credentials:** `gufw`, `openvpn`, `wireguard`, `proxychains4`, `torsocks`, `keepassxc`, `ettercap-graphical`
+
+Most of these are CLI-only (no `.desktop` launcher), so they won't get folder icons — expected, same as `nmap`/`adb`. The GUI tools (`gufw`, `keepassxc`, `ettercap-graphical`) do get grouped into the Security Tools folder. Every package name is guarded by `package_exists`, so any not present on a given release is logged "Not in repos" rather than failing the batch.
+
+**Defensive only** — a blue-team subset that deliberately **excludes** the offensive/dual-use tools above (scanners, web-attack, crackers, wireless, MITM) and adds a few defense-specific packages the full set doesn't carry:
+
+- **Hardening & integrity:** `lynis`, `chkrootkit`, `rkhunter`, `aide`, `debsums`, `auditd`
+- **Anti-malware:** `clamav`, `clamav-daemon`
+- **IDS/IPS:** `fail2ban`, `suricata`
+- **Firewall / VPN / credentials:** `ufw`, `gufw`, `openvpn`, `wireguard`, `keepassxc`
+
+> The **C (Install EVERYTHING)** bulk run uses the **Full** security set.
+
+---
+
 ## 🔀 Bulk Options (A / B / C)
 
 | Option | Runs                                                                                                                                                                                            | Notes                                    |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
 | **A**  | Code Editors, Python, Web Development, Java, C/C++, Go, Rust, Node.js, PHP, Ruby, General Development Tools, AI Tools                                                                          | "ALL Development Tools"                  |
 | **B**  | Ubuntu Studio (Full), Graphics, Video, Audio                                                                                                                                                    | "ALL Media Tools"                        |
-| **C**  | Everything in A and B, plus Database Tools, Container & Virtualization, Gaming, Office & Productivity, System Utilities, GUI Tweaks, Windows Software Support, and Android Tools                | "EVERYTHING"                             |
+| **C**  | Everything in A and B, plus Database Tools, Container & Virtualization, Gaming, Office & Productivity, System Utilities, GUI Tweaks, Windows Software Support, Android Tools, and Security Tools | "EVERYTHING"                             |
 
 **App folders:** A/B/C **auto-create** a GNOME app folder for each category they install (no prompts). The individual numbered categories (1–24) and the Ubuntu Studio sub-menu instead *ask* before creating each folder. Either way, folder creation needs an active GNOME session (see [GNOME App Folders](#️-gnome-app-folders-super-key-groups)); without one, each is skipped with a warning and packages still install.
 

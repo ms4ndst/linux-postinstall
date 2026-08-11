@@ -1593,6 +1593,65 @@ install_android_tools() {
     batch_install "Android Tools" adb fastboot scrcpy
 }
 
+# ========== SECURITY TOOLS ==========
+# Standard security / pentest / defensive tooling, all from Ubuntu's own repos
+# (main/universe). Intended for authorized security testing, CTFs, education, and
+# defensive/hardening work on your own systems. As everywhere else, package_exists
+# guards each name, so anything not in the archive is logged "Not in repos" rather
+# than failing the batch. Most of these are CLI-only (no .desktop launcher), so
+# they won't get folder icons - expected, same as nmap/adb; the few GUI tools
+# (gufw, keepassxc, ettercap-graphical, wireshark if present) do get grouped.
+install_security_tools() {
+    # Network scanning / analysis. NOTE: wireshark and tcpdump are intentionally
+    # NOT re-listed here - "System Utilities" already owns them.
+    batch_install "Security - Network" \
+        nmap masscan netcat-openbsd hping3 dnsutils
+
+    # Web application testing
+    batch_install "Security - Web" \
+        nikto sqlmap dirb gobuster whatweb wapiti wfuzz
+
+    # Password / hash cracking and wireless
+    batch_install "Security - Cracking & Wireless" \
+        john hashcat hydra aircrack-ng macchanger
+
+    # Reverse engineering / forensics / stego
+    batch_install "Security - Forensics & RE" \
+        radare2 binwalk foremost sleuthkit steghide yara exiftool
+
+    # Auditing / hardening / anti-malware (defensive)
+    batch_install "Security - Hardening" \
+        lynis chkrootkit rkhunter clamav clamav-daemon fail2ban aide
+
+    # Firewall / VPN / privacy / credentials (GUI tools here get folder icons)
+    batch_install "Security - Firewall & Privacy" \
+        gufw openvpn wireguard proxychains4 torsocks keepassxc ettercap-graphical
+}
+
+# Defensive-only subset: hardening, integrity, auditing, anti-malware, intrusion
+# detection, firewall, VPN and credential management - deliberately EXCLUDES the
+# offensive/dual-use tooling (port/vuln scanners, web-attack tools, password
+# crackers, wireless attack, MITM) from the full set. For blue-team / hardening
+# use on systems you own or operate. Adds a few defense-specific packages the
+# full set doesn't carry (auditd, aide, debsums, suricata, ufw).
+install_security_defensive() {
+    # System hardening, auditing, and file integrity
+    batch_install "Defensive - Hardening & Integrity" \
+        lynis chkrootkit rkhunter aide debsums auditd
+
+    # Anti-malware
+    batch_install "Defensive - Anti-Malware" \
+        clamav clamav-daemon
+
+    # Intrusion detection / prevention
+    batch_install "Defensive - IDS/IPS" \
+        fail2ban suricata
+
+    # Firewall, VPN, and credential management (GUI tools here get folder icons)
+    batch_install "Defensive - Firewall, VPN & Credentials" \
+        ufw gufw openvpn wireguard keepassxc
+}
+
 # ========== MENU SYSTEM ==========
 show_main_menu() {
     clear
@@ -1622,6 +1681,7 @@ show_main_menu() {
     ui_item 22 "GUI Tweaks"
     ui_item 23 "Windows Software Support"
     ui_item 24 "Android Tools (adb, fastboot, scrcpy)"
+    ui_item 25 "Security Tools"
     echo
     ui_item_alt A "Install ALL Development Tools"
     ui_item_alt B "Install ALL Media Tools"
@@ -1631,7 +1691,7 @@ show_main_menu() {
     ui_item 0 "Exit"
     echo
     ui_rule
-    printf "  ${LAVENDER}Enter your choice ${DIM}[0-24, A-C, S]${NC}${LAVENDER}: ${NC}"
+    printf "  ${LAVENDER}Enter your choice ${DIM}[0-25, A-C, S]${NC}${LAVENDER}: ${NC}"
 }
 
 show_ubuntu_studio_menu() {
@@ -1649,6 +1709,19 @@ show_ubuntu_studio_menu() {
     echo
     ui_rule
     printf "  ${LAVENDER}Enter your choice ${DIM}[0-6]${NC}${LAVENDER}: ${NC}"
+}
+
+show_security_menu() {
+    clear
+    ui_header "SECURITY TOOLS"
+    echo
+    ui_item 1 "Full (pentest + defensive)"
+    ui_item 2 "Defensive only (hardening, AV, IDS, firewall)"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${LAVENDER}Enter your choice ${DIM}[0-2]${NC}${LAVENDER}: ${NC}"
 }
 
 # Reset tracking for each new installation
@@ -1772,6 +1845,16 @@ main() {
             22) reset_tracking; install_gui_tweaks; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             23) reset_tracking; install_windows_support; display_summary; prompt_menu_category "Windows Software Support" "wine" "Windows Software Support (Wine)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             24) reset_tracking; install_android_tools; display_summary; prompt_menu_category "Android Tools" "phone" "Android Tools (adb, fastboot, scrcpy)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            25)
+                show_security_menu
+                read -r sec_choice
+                case "$sec_choice" in
+                    0) continue ;;
+                    1) reset_tracking; install_security_tools; display_summary; prompt_menu_category "Security Tools" "security" "Security & Pentest Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    2) reset_tracking; install_security_defensive; display_summary; prompt_menu_category "Security (Defensive)" "security" "Defensive Security Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    *) log ERROR "Invalid choice"; sleep 2 ;;
+                esac
+                ;;
             A|a)
                 reset_tracking
                 log INFO "Installing ALL Development Tools (with app folders)..."
@@ -1825,6 +1908,7 @@ main() {
                 auto_category "GUI Tweaks" install_gui_tweaks
                 auto_category "Windows Software Support" install_windows_support
                 auto_category "Android Tools" install_android_tools
+                auto_category "Security Tools" install_security_tools
                 display_summary
                 ;;
             *)
