@@ -1,6 +1,6 @@
-# Ubuntu 26.10 Post-Install Script
+# Ubuntu 26.04 LTS / 26.10 Post-Install Script
 
-> **Menu-driven post-installation script with verified packages, error handling, installation checks, and automatic GNOME Shell app-folder creation**
+> **Menu-driven post-installation script with verified packages, error handling, installation checks, and automatic GNOME Shell app-folder creation — supports both Ubuntu 26.04 LTS and 26.10**
 ![screenshot](screenshot.png)
 ---
 
@@ -48,12 +48,15 @@
 
 ## 🚀 Overview
 
-This script automates the post-installation setup of **Ubuntu 26.10** by providing a menu-driven interface for installing software packages grouped by category. It is designed for developers, creatives, and power users who want to quickly set up a fully-featured development, media production, or virtualization environment.
+This script automates the post-installation setup of **Ubuntu 26.04 LTS and 26.10** by providing a menu-driven interface for installing software packages grouped by category. It is designed for developers, creatives, and power users who want to quickly set up a fully-featured development, media production, or virtualization environment.
+
+On startup the script **detects the running release** (via `lsb_release`, falling back to `/etc/os-release`) and captures both the version and codename. Both supported releases share the same package names and codename-resolved repositories, so a single code path serves both; the few genuinely release-specific spots (e.g. PPAs that may have no build for a brand-new interim release) are handled through a small `is_lts()` / codename dispatch rather than a forked script. Running on any other version isn't blocked — the script warns and asks whether to continue.
 
 Beyond just installing packages, after each category finishes it can also **create a real GNOME Shell app folder** for the apps it just installed, so they show up grouped together when you press the **Super key** and open the app grid — see [GNOME App Folders](#️-gnome-app-folders-super-key-groups) below.
 
 **Key Design Principles:**
 
+- ✅ **Dual-Release Support (26.04 LTS & 26.10)**: A startup version check accepts both supported releases and stores the detected version/codename; release-specific behavior is dispatched via `is_lts()` and the resolved codename instead of maintaining two scripts. Add another release to the `SUPPORTED_VERSIONS` array to have the check accept it without prompting.
 - ✅ **Verified Packages Only**: Every apt package name has been checked against the live Ubuntu 26.10 archive (`apt-cache policy`) before being added — several package names from earlier drafts (`ubuntu-studio-*`, `qemu-kvm`, `android-tools-adb`) turned out not to exist under those names and were corrected
 - ✅ **Direct Downloads for Third-Party**: Non-repo tools (VS Code, Sublime Text, Ollama, Cursor, Mistral AI Vibe) use their official installers/repositories
 - ✅ **Snap for Archive Gaps**: Tools with no real apt package at all (LXD, IntelliJ IDEA Community, DBeaver CE) are installed via `snap` instead of silently failing
@@ -68,8 +71,10 @@ Beyond just installing packages, after each category finishes it can also **crea
 
 | Feature                       | Description                                                                                    |
 | ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| **Version Detection**         | Detects the running release at startup, supports **Ubuntu 26.04 LTS and 26.10**, warns/prompts on anything else |
 | **Interactive Menu**          | Text-based menu with 24 categories (plus a Ubuntu Studio sub-menu)                             |
 | **GNOME App-Folder Creation** | After each category, optionally groups the apps you just installed into a Super-key app folder |
+| **Terminal Font Setup**       | In GUI Tweaks, optionally sets the terminal / system monospace font to an installed Nerd Font (works on Ptyxis, GNOME Console, and gnome-terminal) |
 | **Error Handling**             | Skips unavailable packages, continues installation                                              |
 | **Pre-Install Checks**        | Verifies if packages are already installed                                                      |
 | **Package Verification**      | Checks if packages exist in repositories before attempting                                      |
@@ -93,7 +98,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 
 ### Prerequisites
 
-- **Ubuntu 26.10** (recommended — the script warns and asks to continue on other versions)
+- **Ubuntu 26.04 LTS or 26.10** (the script detects the release at startup; on any other version it warns and asks whether to continue)
 - **Root access** (script must be run with `sudo`)
 - **Internet connection** (for downloading packages, third-party installers, and Nerd Fonts)
 - **An active GNOME desktop session** if you want app folders created (see below) — running the script over plain SSH with no desktop session will still install packages fine, it just can't create the Super-key groups
@@ -453,6 +458,8 @@ See [Known Limitations](#️-known-limitations) — none of these four currently
 
 **Icon Sets** (via the Papirus Team PPA): `papirus-icon-theme`, `numix-icon-theme`, `breeze-icon-theme`, `adwaita-icon-theme`
 
+> The Papirus PPA is added through a codename-aware helper (`add_ppa`). PPAs are keyed by codename: the 26.04 LTS almost always has a build, while a brand-new interim release (26.10) frequently has none yet — if the PPA has no build for the running codename the helper warns and continues with the distro icon packages instead of leaving a broken apt source behind.
+
 **GTK Theme:** `arc-theme`
 
 **Cursor Themes:** `dmz-cursor-theme`, `breeze-cursor-theme`
@@ -462,6 +469,23 @@ See [Known Limitations](#️-known-limitations) — none of these four currently
 - APT packages: `fonts-firacode`, `fonts-jetbrains-mono`
 - Individually downloaded from GitHub releases: FiraCode, JetBrainsMono, Hack, SourceCodePro, CascadiaCode, UbuntuMono, DejaVuSansMono
 - Installed to `/usr/share/fonts/truetype/nerd-fonts/`, font cache refreshed automatically
+
+**Terminal / System Monospace Font (optional prompt):**
+
+After Nerd Fonts install, the script offers to set the terminal font to **JetBrainsMono Nerd Font**. This is what Chris Titus mybash's `setup.sh` also attempts, but that write targets GNOME Terminal's own keys and runs as root with no D-Bus session — so on GNOME's newer default terminal (**Ptyxis**, shipped on Ubuntu 26.04+) and under `sudo` it silently does nothing (the `dbus-launch: No such file or directory` warning). The in-script option fixes that by:
+
+- Running as the **logged-in desktop user against their live D-Bus session** (reusing the same session/bus detection the app-folder feature uses) — never as root via `dbus-launch`.
+- Setting `org.gnome.desktop.interface monospace-font-name`, the authoritative lever that **GNOME Console and a default Ptyxis both follow**, as do GNOME apps and gnome-tweaks.
+- Additionally pinning **Ptyxis** to "use system font" and setting **gnome-terminal**'s per-profile font when those are present — every write is guarded, so it's a safe no-op on whichever terminal/keys aren't installed.
+- Skipping cleanly (with a reason) when the font isn't actually installed or there's no active desktop session (e.g. over SSH).
+
+Takes effect immediately in open terminals — no logout. To set it manually instead, as your user (not `sudo`):
+
+```bash
+gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 12'
+```
+
+> `dbus-x11` (which provides `dbus-launch`) is installed as part of the base utilities, so the noisy `dbus-launch: No such file or directory` warning from mybash's own font step is quieted on both releases.
 
 **Chris Titus mybash:**
 
@@ -541,6 +565,10 @@ Snap-only tools (`lxd`, `intellij-idea-community`, `dbeaver-ce`) go through the 
 | `batch_install(category, pkgs...)`  | Installs a batch of packages with a per-category summary line   |
 | `create_menu_category(...)`         | Resolves installed packages to real `.desktop` files and creates/updates the GNOME app folder |
 | `prompt_menu_category(...)`         | Asks (via `whiptail` or plain `read`) whether to create the app folder for a category |
+| `check_version` / `detect_version` / `is_lts` | Detects the running release into `UBUNTU_VERSION`/`UBUNTU_CODENAME`, gates on `SUPPORTED_VERSIONS`, and exposes an LTS dispatch flag |
+| `add_ppa(ppa, tag)`                 | Codename-aware PPA add that degrades gracefully when a release has no PPA build |
+| `resolve_desktop_session`           | Resolves the desktop user + uid and confirms a live D-Bus session bus exists |
+| `set_terminal_font` / `configure_terminal_font` | Sets (after a prompt) the terminal / system monospace font as the logged-in user |
 | `log(level, message)`               | Color-coded logging (ERROR, WARNING, INFO, SUCCESS)              |
 
 ### Error Recovery
@@ -582,6 +610,7 @@ Contains a timestamp, the running user, summary statistics, and the full install
 - **Bulk options skip app folders**: `A`/`B`/`C` never call `prompt_menu_category`, so app folders are only offered when installing a single category at a time.
 - **DVD decryption legality**: `libdvd-pkg` (in the Video category) builds `libdvdcss2` from source, which is legal in some jurisdictions and legally gray in others (this is why it's in `multiverse` rather than `main`). It's on by default; remove the `install_libdvdcss` call if you'd rather it not run.
 - **`ttf-mscorefonts-installer` is deliberately excluded** from the Video category's codec stack (it's fonts, not a codec, and has its own EULA gate) — add it back yourself if you want Microsoft's core fonts.
+- **26.10 package parity is not exhaustively verified**: package names were checked against the 26.04-era archive; 26.10 shares the same names in practice, but any package renamed or dropped in the interim release simply lands in the `FAILED` list (via the existing `package_exists` guard) rather than being pre-corrected. The version dispatch (`is_lts`/codename) is in place for such cases as they surface.
 
 ---
 
@@ -636,6 +665,8 @@ Comment out or remove the menu `echo` line, the `case` branch, and the function 
 | **Permission denied**               | Ensure the script is executable: `chmod +x post-install.sh`                           |
 | **App folder not created**          | You need an active GNOME desktop session as the target user — check for the "No active GNOME session found" warning; running over plain SSH with nobody logged into the desktop won't work |
 | **An installed app's icon is missing from its folder** | Check the summary for "Desktop file not found: `<pkg>`" — for CLI-only tools (docker, adb, cockpit, etc.) this is expected; for a real GUI app, it may need a resolver fix (see `create_menu_category` in the script) |
+| **"Designed for Ubuntu 26.04/26.10, detected: …"** | You're on a release the script isn't validated against — answer `y` to continue anyway, or add your version to `SUPPORTED_VERSIONS` at the top of the script |
+| **Terminal font didn't change**     | Set it as your user (not `sudo`): `gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 12'`. Confirm the font is present with `fc-list \| grep -i jetbrains`. On Ptyxis, ensure "use system font" is on (the script sets it) |
 
 ### Manual Installation
 
@@ -683,4 +714,4 @@ This script is provided **as-is** without warranty. You are free to:
 
 ---
 
-*Last updated: August 10, 2026*
+*Last updated: August 11, 2026*

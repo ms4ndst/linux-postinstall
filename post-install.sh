@@ -1,9 +1,19 @@
 #!/bin/bash
-# Ubuntu 26.10 Post-Install Script v2
+# Ubuntu 26.04 LTS / 26.10 Post-Install Script v2
 # Menu-driven installer with error handling and VERIFIED packages only
 # Run as: chmod +x post-install.sh && sudo ./post-install.sh
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
+
+# Releases this script is validated against. Both share the same package names
+# and codename-resolved repositories, so one code path serves both; version-
+# specific behavior is dispatched through is_lts()/UBUNTU_CODENAME below rather
+# than by forking the whole script. Add a release here to make check_version
+# accept it without prompting.
+declare -a SUPPORTED_VERSIONS=("26.04" "26.10")
+# Populated by detect_version() at startup; read everywhere else.
+UBUNTU_VERSION=""
+UBUNTU_CODENAME=""
 
 declare -a INSTALLED_PACKAGES FAILED_PACKAGES SKIPPED_PACKAGES
 TOTAL_INSTALLED=0; TOTAL_FAILED=0; TOTAL_SKIPPED=0
@@ -23,10 +33,33 @@ check_root() {
     [ "$(id -u)" -ne 0 ] && { log ERROR "This script must be run as root. Use sudo."; exit 1; }
 }
 
+# Detect the running release once, into globals the rest of the script reads.
+# Prefers lsb_release (present after install_base pulls lsb-release, and shipped
+# by default on desktop) and falls back to /etc/os-release, which always exists.
+detect_version() {
+    UBUNTU_VERSION=$(lsb_release -rs 2>/dev/null || grep -oP '(?<=^VERSION_ID=).+' /etc/os-release 2>/dev/null | tr -d '"')
+    UBUNTU_CODENAME=$(lsb_release -cs 2>/dev/null || grep -oP '(?<=^VERSION_CODENAME=).+' /etc/os-release 2>/dev/null | tr -d '"')
+}
+
+# True only on the 26.04 LTS release. Use this to guard behavior that should
+# differ between the LTS and the 26.10 interim release (e.g. third-party PPAs
+# that ship a build for the LTS codename but not yet for the newer interim one).
+is_lts() { [[ "$UBUNTU_VERSION" == "26.04" ]]; }
+
 check_version() {
-    local v="26.10"
-    local uv=$(lsb_release -rs 2>/dev/null || grep -oP '(?<=^VERSION_ID=).+' /etc/os-release | tr -d '"')
-    [[ ! "$uv" == "$v" ]] && { log WARNING "Designed for Ubuntu $v, detected: $uv"; read -p "Continue? [y/N] " -n 1 -r; echo; [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1; }
+    detect_version
+    local supported=false v
+    for v in "${SUPPORTED_VERSIONS[@]}"; do
+        [[ "$UBUNTU_VERSION" == "$v" ]] && { supported=true; break; }
+    done
+    if $supported; then
+        log INFO "Detected supported Ubuntu $UBUNTU_VERSION (${UBUNTU_CODENAME:-unknown codename})"
+    else
+        local joined; joined=$(IFS=/; echo "${SUPPORTED_VERSIONS[*]}")
+        log WARNING "Designed for Ubuntu ${joined}, detected: ${UBUNTU_VERSION:-unknown}"
+        read -p "Continue anyway? [y/N] " -n 1 -r; echo
+        [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
+    fi
 }
 
 is_installed() { dpkg -l "$1" 2>/dev/null | grep -q "^ii"; }
@@ -75,7 +108,12 @@ update_packages() {
 
 install_base() {
     log INFO "Installing base utilities..."
-    batch_install "base" software-properties-common apt-transport-https ca-certificates curl wget git gnupg lsb-release ubuntu-keyring whiptail debconf-utils dialog alacarte dconf-cli
+    # dbus-x11 provides dbus-launch: without it, any dconf write made without an
+    # active D-Bus session (e.g. Chris Titus mybash's setup.sh applying a
+    # terminal-font setting under sudo) fails with a "dbus-launch: No such file
+    # or directory" warning. Harmless but noisy; installing it quiets that path
+    # on both 26.04 and 26.10.
+    batch_install "base" software-properties-common apt-transport-https ca-certificates curl wget git gnupg lsb-release ubuntu-keyring whiptail debconf-utils dialog alacarte dconf-cli dbus-x11
     
     # Create menu directory for custom categories
     mkdir -p /usr/share/desktop-directories
@@ -95,6 +133,42 @@ gsettings_as_user() {
         XDG_RUNTIME_DIR="/run/user/${uid}" \
         DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${uid}/bus" \
         gsettings "$@"
+}
+
+# Resolve the logged-in desktop user + uid and confirm a live D-Bus session bus
+# exists for them. Any gsettings/dconf write needs that session bus; a root/SSH/
+# TTY invocation doesn't have one. Echoes "user uid" on success; on failure logs
+# a specific reason and returns non-zero so callers can skip gracefully.
+# Usage: read -r user uid < <(resolve_desktop_session) || return 1
+resolve_desktop_session() {
+    local user="$SUDO_USER"
+    [ -z "$user" ] && user=$(logname 2>/dev/null)
+    if [ -z "$user" ] || [ "$user" = "root" ]; then
+        log WARNING "Could not determine the desktop user (run via sudo from a desktop session)" >&2
+        return 1
+    fi
+    local uid
+    if ! uid=$(id -u "$user" 2>/dev/null); then
+        log WARNING "User '$user' not found" >&2
+        return 1
+    fi
+    if [ ! -S "/run/user/${uid}/bus" ]; then
+        log WARNING "No active GNOME session for $user (/run/user/${uid}/bus missing) - run from a logged-in desktop" >&2
+        return 1
+    fi
+    echo "$user $uid"
+}
+
+# Set a gsettings key ONLY if the schema is installed and the key exists, so the
+# same call is a safe no-op across releases/terminals that lack it (e.g. Ptyxis
+# keys absent on a box that only has gnome-terminal, or vice-versa). Works for
+# non-relocatable schemas; relocatable per-profile schemas are handled inline by
+# their callers. Returns non-zero (quietly) when the schema/key isn't present.
+gset_if_exists() {
+    local user="$1" uid="$2" schema="$3" key="$4" value="$5"
+    gsettings_as_user "$user" "$uid" list-schemas 2>/dev/null | grep -qx "$schema" || return 1
+    gsettings_as_user "$user" "$uid" list-keys "$schema" 2>/dev/null | grep -qx "$key" || return 1
+    gsettings_as_user "$user" "$uid" set "$schema" "$key" "$value" 2>/dev/null
 }
 
 # Create/append a GNOME app folder (verified schema, GNOME 3.12 through 51)
@@ -327,7 +401,7 @@ display_summary() {
 save_log() {
     local f="/var/log/ubuntu_post_install_$(date +%Y%m%d_%H%M%S).log"
     {
-        echo "=== Log: $(date) ==="; echo "User: $(whoami)"
+        echo "=== Log: $(date) ==="; echo "User: $(whoami)"; echo "Ubuntu: ${UBUNTU_VERSION:-unknown} (${UBUNTU_CODENAME:-unknown})"
         echo "Installed: ${TOTAL_INSTALLED}"; echo "Skipped: ${TOTAL_SKIPPED}"; echo "Failed: ${TOTAL_FAILED}"
         echo; echo "Installed packages:"; printf "  %s\n" "${INSTALLED_PACKAGES[@]}"
         echo; echo "Failed packages:"; printf "  %s\n" "${FAILED_PACKAGES[@]}"
@@ -953,22 +1027,133 @@ install_cursor() {
 }
 
 # ========== GUI TWEAKS ==========
+# Point the terminal (and the desktop's monospace font generally) at an installed
+# Nerd Font, run as the logged-in user against their live D-Bus session.
+#
+# This is what Chris Titus mybash's setup.sh tries to do, but that write targets
+# GNOME Terminal's own keys and runs as root with no session bus - so on GNOME's
+# newer default terminal (Ptyxis, shipped on Ubuntu 26.04+) and under sudo it
+# silently no-ops (this is the "dbus-launch: No such file or directory" path).
+#
+# org.gnome.desktop.interface monospace-font-name is the authoritative lever:
+# GNOME Console and a default Ptyxis both follow it, as do GNOME apps and
+# gnome-tweaks. Ptyxis is additionally pinned to "use system font" so it honors
+# it even if that was toggled off, avoiding a guess at Ptyxis's per-profile font
+# key. gnome-terminal (only if the user installed it) uses its own per-profile
+# 'font' key and is handled explicitly. Every write is guarded, so this is a safe
+# no-op on whichever terminals/keys aren't present.
+# Usage: set_terminal_font ["Font Family"] [size]
+set_terminal_font() {
+    local font_family="${1:-JetBrainsMono Nerd Font}" size="${2:-12}"
+    local font_spec="${font_family} ${size}"
+
+    # Don't point the desktop at a font that isn't actually installed.
+    if command -v fc-list &>/dev/null && ! fc-list | grep -qi "$font_family"; then
+        log WARNING "Font '$font_family' not found (fc-list) - skipping terminal font setup"
+        return 1
+    fi
+
+    local user uid
+    read -r user uid < <(resolve_desktop_session) || return 1
+
+    local ok=1
+    # 1) System monospace font - covers GNOME Console, a default Ptyxis, and apps.
+    if gset_if_exists "$user" "$uid" org.gnome.desktop.interface monospace-font-name "$font_spec"; then
+        log SUCCESS "System monospace font set to '$font_spec'"
+        ok=0
+    else
+        log WARNING "Could not set system monospace font (org.gnome.desktop.interface)"
+    fi
+
+    # 2) Ptyxis: ensure it follows the system font we just set (no-op if absent).
+    if gset_if_exists "$user" "$uid" org.gnome.Ptyxis use-system-font true; then
+        log INFO "Ptyxis set to use the system monospace font"
+        ok=0
+    fi
+
+    # 3) gnome-terminal (only if installed): per-profile 'font' key + opt out of
+    #    its system-font default so the custom font applies.
+    local profile
+    profile=$(gsettings_as_user "$user" "$uid" get org.gnome.Terminal.ProfilesList default 2>/dev/null | tr -d "'")
+    if [ -n "$profile" ]; then
+        local path="org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:${profile}/"
+        if gsettings_as_user "$user" "$uid" set "$path" use-system-font false 2>/dev/null \
+           && gsettings_as_user "$user" "$uid" set "$path" font "$font_spec" 2>/dev/null; then
+            log INFO "gnome-terminal default profile font set to '$font_spec'"
+            ok=0
+        fi
+    fi
+
+    if [ $ok -eq 0 ]; then
+        log SUCCESS "Terminal font configured - takes effect immediately in open terminals"
+        return 0
+    fi
+    log WARNING "Terminal font not set on any known terminal"
+    return 1
+}
+
+# Prompt (whiptail, or plain read as fallback) before changing the user's font,
+# mirroring prompt_menu_category's style. Skipped cleanly with no prompt when
+# there's no desktop session to write to.
+configure_terminal_font() {
+    local font_family="JetBrainsMono Nerd Font"
+    # No live session -> nothing we could set; say why once and move on.
+    if ! resolve_desktop_session >/dev/null 2>&1; then
+        log INFO "Skipping terminal font (no active desktop session detected)"
+        return 0
+    fi
+    if command -v fc-list &>/dev/null && ! fc-list | grep -qi "$font_family"; then
+        log INFO "Skipping terminal font ('$font_family' not installed)"
+        return 0
+    fi
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "Set the terminal / system monospace font to '$font_family'?" --yes-button "Yes" --no-button "No" 10 60 && do_it=true
+    else
+        echo "Set the terminal / system monospace font to '$font_family'? [y/N]:"
+        read -r REPLY
+        [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ] && do_it=true
+    fi
+    if $do_it; then
+        set_terminal_font "$font_family" 12
+    else
+        echo "  Skipped terminal font."
+    fi
+}
+
 install_gui_tweaks() {
     log INFO "Installing GUI Tweaks..."
     install_icon_sets
     install_themes
     install_cursor_themes
     install_nerd_fonts
+    configure_terminal_font
     install_chris_titus_mybash
     install_gui_tools
 }
 
-install_icon_sets() {
-    # Add Papirus Team PPA for additional icon themes
-    if ! grep -q papirus /etc/apt/sources.list.d/* 2>/dev/null; then
-        add-apt-repository -y ppa:papirus/papirus 2>/dev/null || log WARNING "Papirus PPA not available"
+# Add a PPA in a way that works cleanly across both supported releases. PPAs
+# are keyed by codename: the 26.04 LTS (a stable, released codename) almost
+# always has a build, while a brand-new interim release like 26.10 frequently
+# has none yet. add-apt-repository already resolves $UBUNTU_CODENAME itself; this
+# wrapper just skips if already added and emits a codename-specific warning
+# instead of a broken repo, so the 26.10 path degrades to distro packages
+# gracefully rather than being pinned to a codename that has no PPA build.
+# Usage: add_ppa ppa:owner/name  grep-tag-identifying-the-source
+add_ppa() {
+    local ppa="$1" tag="$2"
+    grep -rq "$tag" /etc/apt/sources.list.d/ 2>/dev/null && return 0
+    if add-apt-repository -y "$ppa" 2>/dev/null; then
         apt-get update -qq 2>/dev/null || true
+        return 0
     fi
+    log WARNING "$ppa not available for ${UBUNTU_CODENAME:-this release} - continuing with distro packages"
+    return 1
+}
+
+install_icon_sets() {
+    # Add Papirus Team PPA for additional icon themes (codename-aware; see add_ppa)
+    add_ppa ppa:papirus/papirus papirus
     batch_install "Icon Sets" \
         papirus-icon-theme \
         numix-icon-theme \
@@ -1109,7 +1294,7 @@ install_android_tools() {
 # ========== MENU SYSTEM ==========
 show_main_menu() {
     clear
-    echo "=== UBUNTU 26.10 POST-INSTALL ==="
+    echo "=== UBUNTU ${UBUNTU_VERSION:-26.04/26.10} POST-INSTALL ==="
     echo "  with Error Handling & Verified Packages"
     echo "======================================"
     echo ""
