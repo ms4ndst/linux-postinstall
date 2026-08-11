@@ -3,7 +3,47 @@
 # Menu-driven installer with error handling and VERIFIED packages only
 # Run as: chmod +x post-install.sh && sudo ./post-install.sh
 
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
+# ── Catppuccin Mocha palette (24-bit truecolor ANSI) ─────────────────────────
+# Colors are assigned by SEMANTIC ROLE, not by hex-at-random: Red=errors,
+# Green=success, Yellow=warnings, Blue=info, Mauve=accent/headings, Lavender=
+# active/prompts/"you are here", Peach=bulk actions, Teal=secondary. Hex values
+# are from the Catppuccin Mocha palette (the default dark flavor). Everything
+# auto-disables when stdout isn't a terminal or NO_COLOR is set, so piped or
+# redirected output (and the plain-text log file) stays clean.
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+    _cat() { printf '\033[38;2;%sm' "$1"; }
+    RED=$(_cat '243;139;168')       # #f38ba8  errors
+    GREEN=$(_cat '166;227;161')     # #a6e3a1  success
+    YELLOW=$(_cat '249;226;175')    # #f9e2af  warnings
+    BLUE=$(_cat '137;180;250')      # #89b4fa  info
+    MAUVE=$(_cat '203;166;247')     # #cba6f7  accent / headings
+    LAVENDER=$(_cat '180;190;254')  # #b4befe  active / prompts
+    PEACH=$(_cat '250;179;135')     # #fab387  bulk / emphasis
+    TEAL=$(_cat '148;226;213')      # #94e2d5  secondary info
+    ROSEWATER=$(_cat '245;224;220') # #f5e0dc  warm highlight
+    TEXT=$(_cat '205;214;244')      # #cdd6f4  body text
+    SUBTEXT=$(_cat '166;173;200')   # #a6adc8  labels / secondary
+    OVERLAY=$(_cat '108;112;134')   # #6c7086  rules / hints
+    BOLD=$'\033[1m'; DIM=$'\033[2m'; NC=$'\033[0m'
+    unset -f _cat
+else
+    RED='' GREEN='' YELLOW='' BLUE='' MAUVE='' LAVENDER='' PEACH='' TEAL=''
+    ROSEWATER='' TEXT='' SUBTEXT='' OVERLAY='' BOLD='' DIM='' NC=''
+fi
+
+# ── UI helpers (Catppuccin-themed terminal chrome) ───────────────────────────
+UI_RULE="────────────────────────────────────────────"
+ui_rule() { printf "${OVERLAY}%s${NC}\n" "$UI_RULE"; }
+# Accent-ruled header with a bold title and optional dim subtitle.
+ui_header() {
+    printf "${MAUVE}${BOLD}%s${NC}\n" "$UI_RULE"
+    printf "  ${LAVENDER}${BOLD}%s${NC}\n" "$1"
+    [ -n "${2:-}" ] && printf "  ${DIM}${SUBTEXT}%s${NC}\n" "$2"
+    printf "${MAUVE}${BOLD}%s${NC}\n" "$UI_RULE"
+}
+# Menu rows: key in accent, label in body text. ui_item_alt for bulk actions.
+ui_item()     { printf "  ${MAUVE}%3s${NC}  ${TEXT}%s${NC}\n" "$1" "$2"; }
+ui_item_alt() { printf "  ${PEACH}%3s${NC}  ${TEXT}%s${NC}\n" "$1" "$2"; }
 
 # Releases this script is validated against. Both share the same package names
 # and codename-resolved repositories, so one code path serves both; version-
@@ -20,12 +60,14 @@ TOTAL_INSTALLED=0; TOTAL_FAILED=0; TOTAL_SKIPPED=0
 
 log() {
     local l="$1" m="$2"
+    # Message goes through %s (never the format string) so a stray % or
+    # backslash in $m can't be misinterpreted by printf.
     case "$l" in
-        ERROR) echo -e "${RED}[ERROR]${NC} $m" >&2;;
-        WARNING) echo -e "${YELLOW}[WARNING]${NC} $m";;
-        INFO) echo -e "${BLUE}[INFO]${NC} $m";;
-        SUCCESS) echo -e "${GREEN}[SUCCESS]${NC} $m";;
-        *) echo -e "$m";;
+        ERROR)   printf "${RED}${BOLD} ✗${NC} ${RED}%s${NC}\n" "$m" >&2;;
+        WARNING) printf "${YELLOW}${BOLD} ▲${NC} ${YELLOW}%s${NC}\n" "$m";;
+        INFO)    printf "${BLUE}${BOLD} •${NC} ${TEXT}%s${NC}\n" "$m";;
+        SUCCESS) printf "${GREEN}${BOLD} ✓${NC} ${GREEN}%s${NC}\n" "$m";;
+        *)       printf "${TEXT}%s${NC}\n" "$m";;
     esac
 }
 
@@ -65,6 +107,71 @@ check_version() {
 is_installed() { dpkg -l "$1" 2>/dev/null | grep -q "^ii"; }
 package_exists() { apt-cache search "^${1}$" 2>/dev/null | grep -q "${1}"; }
 
+# ── Package-manager front-end ────────────────────────────────────────────────
+# Nala (https://github.com/volitank/nala) is a friendlier apt front-end with
+# parallel downloads and cleaner output. install_nala() sets PM=nala once it's
+# installed; until then (and if it's ever unavailable) PM stays apt-get, so the
+# script works either way. Only install/update are routed through the front-end
+# - queries stay on apt-cache/dpkg because nala has no equivalent for e.g.
+# `apt-cache depends --recurse`. Both wrappers swallow stderr to match the
+# script's existing "ignore install-info noise" behavior; callers still rely on
+# the exit code (and an is_installed re-check) to decide success.
+PM="apt-get"
+pm_update() {
+    if [ "$PM" = "nala" ]; then nala update 2>/dev/null; else apt-get update -qq 2>/dev/null; fi
+}
+pm_install() {
+    if [ "$PM" = "nala" ]; then nala install -y "$@" 2>/dev/null; else apt-get install -y "$@" 2>/dev/null; fi
+}
+
+# Bootstrap Nala. Must run AFTER the first apt-get update (needs package lists)
+# and is installed with apt-get since nala isn't present yet. On success PM
+# flips to nala for every later install/update; on failure the script simply
+# keeps using apt-get. Not fatal either way.
+install_nala() {
+    if command -v nala &>/dev/null; then
+        PM="nala"; log INFO "Nala already present - using it as the apt front-end"; return 0
+    fi
+    if ! package_exists nala; then
+        log WARNING "Nala not in repos for ${UBUNTU_CODENAME:-this release} - using apt-get"; return 1
+    fi
+    log INFO "Installing Nala (nicer apt front-end: parallel downloads, cleaner output)..."
+    if apt-get install -y nala 2>/dev/null && command -v nala &>/dev/null; then
+        PM="nala"; log SUCCESS "Nala installed - routing package operations through it"
+    else
+        log WARNING "Nala install failed - continuing with apt-get"; return 1
+    fi
+}
+
+# Recover from a previous run's `nala fetch` mirror selection. That command wrote
+# the chosen mirrors to /etc/apt/sources.list.d/fetch.sources; on a fresh interim
+# release those mirrors are frequently incomplete or unsigned, producing 404 /
+# "is not signed" errors on every apt/nala operation. This script no longer runs
+# `nala fetch`, but a leftover file from an older version persists and keeps
+# breaking updates. Detect it up front (before the first update, which the bad
+# file would otherwise fail) and offer to remove it so the system falls back to
+# Ubuntu's default mirrors in ubuntu.sources. Prompted, default-yes, non-fatal.
+check_stale_fetch_sources() {
+    local f="/etc/apt/sources.list.d/fetch.sources"
+    [ -f "$f" ] || return 0
+    log WARNING "Found a leftover Nala mirror list ($f) from a previous 'nala fetch'."
+    log WARNING "Such mirrors often cause 404 / 'is not signed' errors on updates."
+    local do_it=false
+    local msg="A leftover 'nala fetch' mirror list was found:\n  $f\n\nIt can cause 404 / signature errors on every update. Remove it and\nfall back to Ubuntu's default mirrors?"
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Remove" --no-button "Keep" 13 72 && do_it=true
+    else
+        echo -e "$msg [Y/n]:"
+        read -r REPLY
+        case "$REPLY" in ""|y|Y) do_it=true;; esac
+    fi
+    if $do_it; then
+        rm -f "$f" && log SUCCESS "Removed $f - using Ubuntu's default mirrors"
+    else
+        log INFO "Keeping $f - mirror errors may persist"
+    fi
+}
+
 safe_install() {
     for pkg in "$@"; do
         [[ -z "$pkg" ]] && continue
@@ -77,8 +184,9 @@ safe_install() {
             log WARNING "Not in repos: $pkg"; continue
         fi
         log INFO "Installing: $pkg"
-        # Install package, ignore install-info errors (common in Ubuntu 26.10)
-        if apt-get install -y "$pkg" 2>/dev/null || is_installed "$pkg"; then
+        # Install via the active front-end (Nala when available, else apt-get);
+        # ignore install-info errors (common on these releases).
+        if pm_install "$pkg" || is_installed "$pkg"; then
             INSTALLED_PACKAGES+=("$pkg"); ((TOTAL_INSTALLED++))
             log SUCCESS "Installed: $pkg"
         else
@@ -88,17 +196,30 @@ safe_install() {
     done
 }
 
+# systemd prints a "unit files changed on disk, run daemon-reload" notice when a
+# package install drops or updates a unit file or binfmt registration (e.g. a
+# clang/binfmt file in C/C++). It's informational, not an error - but left
+# unaddressed, systemd keeps the "changed on disk" flag set and Nala re-prints
+# the notice on every subsequent per-package transaction. A quiet daemon-reload
+# reconciles systemd's view and stops the notice from recurring. It only reparses
+# units (starts/stops nothing), and is a no-op where systemd isn't the init
+# (containers/WSL), so it's always safe to call.
+reload_systemd() {
+    { [ -d /run/systemd/system ] && command -v systemctl &>/dev/null && systemctl daemon-reload 2>/dev/null; } || true
+}
+
 batch_install() {
     local cat="$1"; shift; local pkgs=("$@")
     local s=$TOTAL_INSTALLED f=$TOTAL_FAILED k=$TOTAL_SKIPPED
     log INFO "Installing $cat..."
     safe_install "${pkgs[@]}"
+    reload_systemd
     log INFO "$cat: $((TOTAL_INSTALLED-s)) installed, $((TOTAL_FAILED-f)) failed, $((TOTAL_SKIPPED-k)) skipped"
 }
 
 update_packages() {
     log INFO "Updating package lists..."
-    if ! apt-get update -qq 2>/dev/null; then
+    if ! pm_update; then
         log ERROR "Failed to update. Check internet."
         read -p "Retry? [y/N] " -n 1 -r; echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then update_packages; else log ERROR "Cannot proceed."; exit 1; fi
@@ -391,10 +512,26 @@ create_menu_category() {
 
 # Display installation summary
 display_summary() {
-    clear; echo "=== INSTALLATION SUMMARY ==="; echo "Total: $((TOTAL_INSTALLED+TOTAL_FAILED+TOTAL_SKIPPED))"; echo "Installed: $TOTAL_INSTALLED"; echo "Skipped: $TOTAL_SKIPPED"; echo "Failed: $TOTAL_FAILED"; echo
-    [ ${#FAILED_PACKAGES[@]} -gt 0 ] && { echo -e "${RED}Failed:${NC}"; for p in "${FAILED_PACKAGES[@]}"; do echo "  - $p"; done; echo; }
-    [ ${#SKIPPED_PACKAGES[@]} -gt 0 ] && { echo -e "${YELLOW}Skipped:${NC}"; printf "  - %s\n" "${SKIPPED_PACKAGES[@]}" | head -n 10; [ ${#SKIPPED_PACKAGES[@]} -gt 10 ] && echo "  ...and more"; echo; }
-    echo "==================================="
+    clear
+    ui_header "INSTALLATION SUMMARY"
+    echo
+    printf "  ${SUBTEXT}%-11s${NC}${TEXT}${BOLD}%s${NC}\n" "Total"     "$((TOTAL_INSTALLED+TOTAL_FAILED+TOTAL_SKIPPED))"
+    printf "  ${GREEN} ✓ %-8s${NC}${TEXT}%s${NC}\n"        "Installed" "$TOTAL_INSTALLED"
+    printf "  ${YELLOW} ↷ %-8s${NC}${TEXT}%s${NC}\n"       "Skipped"   "$TOTAL_SKIPPED"
+    printf "  ${RED} ✗ %-8s${NC}${TEXT}%s${NC}\n"          "Failed"    "$TOTAL_FAILED"
+    echo
+    if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
+        printf "  ${RED}${BOLD}Failed${NC}\n"
+        for p in "${FAILED_PACKAGES[@]}"; do printf "    ${RED}✗${NC} ${TEXT}%s${NC}\n" "$p"; done
+        echo
+    fi
+    if [ ${#SKIPPED_PACKAGES[@]} -gt 0 ]; then
+        printf "  ${YELLOW}${BOLD}Skipped${NC}\n"
+        printf "    ${YELLOW}↷${NC} ${TEXT}%s${NC}\n" "${SKIPPED_PACKAGES[@]:0:10}"
+        [ ${#SKIPPED_PACKAGES[@]} -gt 10 ] && printf "    ${DIM}${SUBTEXT}…and %s more${NC}\n" "$(( ${#SKIPPED_PACKAGES[@]} - 10 ))"
+        echo
+    fi
+    ui_rule
 }
 
 # Save installation log
@@ -458,17 +595,63 @@ install_video() {
     # libraries, not just VLC) and unrar (many downloaded media bundles are
     # RAR archives). gstreamer1.0-vaapi adds hardware-accelerated decode
     # where the GPU supports it - harmless no-op otherwise.
-    # NOT included: ttf-mscorefonts-installer (pulled in by the
-    # "ubuntu-restricted-extras" meta-package some guides recommend) - it's
-    # fonts, not a media codec, and it gates on an interactive EULA
-    # (msttcorefonts/accepted-mscorefonts-eula, defaults to declined) that
-    # would either silently no-op or need its own preseed decision. Say the
-    # word if you want that added too.
+    # ubuntu-restricted-extras (which pulls ttf-mscorefonts-installer) is NOT in
+    # the batch above because it gates on an interactive Microsoft core-fonts
+    # EULA (msttcorefonts/accepted-mscorefonts-eula, defaults to declined) that
+    # would hang an unattended "apt-get install -y". It's offered instead as an
+    # explicit opt-in below (install_restricted_extras), which surfaces the EULA
+    # in a prompt and preseeds the answer so the install then runs unattended.
     batch_install "Media Codecs & Plugins" \
         gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
         gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-vaapi \
         libavcodec-extra unrar
     install_libdvdcss
+    install_restricted_extras
+}
+
+# Optional Ubuntu "restricted extras": extra patent-encumbered codecs (MP3/H.264
+# helpers) plus Microsoft core fonts. Kept out of the default codec batch because
+# its ttf-mscorefonts-installer dependency requires accepting the Microsoft
+# core-fonts EULA - so this is a deliberate opt-in with the EULA shown in the
+# prompt, then preseeded (same debconf-set-selections technique as libdvd-pkg)
+# so the install is non-interactive. Declining is tracked as SKIPPED, not FAILED.
+install_restricted_extras() {
+    if is_installed ubuntu-restricted-extras; then
+        SKIPPED_PACKAGES+=("ubuntu-restricted-extras"); ((TOTAL_SKIPPED++))
+        log INFO "Already installed: ubuntu-restricted-extras"
+        return 0
+    fi
+    if ! package_exists ubuntu-restricted-extras; then
+        FAILED_PACKAGES+=("ubuntu-restricted-extras"); ((TOTAL_FAILED++))
+        log WARNING "Not in repos: ubuntu-restricted-extras"
+        return 1
+    fi
+
+    local msg="Install ubuntu-restricted-extras (extra MP3/H.264 codecs + Microsoft core fonts)?\n\nChoosing Yes ACCEPTS the Microsoft core-fonts EULA on your behalf."
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Accept & Install" --no-button "Skip" 12 72 && do_it=true
+    else
+        echo -e "$msg [y/N]:"
+        read -r REPLY
+        { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
+    fi
+    if ! $do_it; then
+        SKIPPED_PACKAGES+=("ubuntu-restricted-extras"); ((TOTAL_SKIPPED++))
+        log INFO "Skipped ubuntu-restricted-extras (Microsoft fonts EULA not accepted)"
+        return 0
+    fi
+
+    # Preseed the EULA acceptance so ttf-mscorefonts-installer doesn't block.
+    echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
+    log INFO "Installing ubuntu-restricted-extras (non-interactive, EULA preseeded)..."
+    if DEBIAN_FRONTEND=noninteractive pm_install ubuntu-restricted-extras || is_installed ubuntu-restricted-extras; then
+        INSTALLED_PACKAGES+=("ubuntu-restricted-extras"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: ubuntu-restricted-extras"
+    else
+        FAILED_PACKAGES+=("ubuntu-restricted-extras"); ((TOTAL_FAILED++))
+        log ERROR "Failed: ubuntu-restricted-extras"
+    fi
 }
 
 # DVD decryption support (libdvdcss2). Not a normal .deb - this multiverse
@@ -494,7 +677,7 @@ install_libdvdcss() {
     fi
     echo "libdvd-pkg libdvd-pkg/build boolean true" | debconf-set-selections
     log INFO "Installing libdvd-pkg (builds libdvdcss2 from source - needs network access to videolan.org, may take a moment)..."
-    if apt-get install -y libdvd-pkg 2>/dev/null; then
+    if pm_install libdvd-pkg; then
         INSTALLED_PACKAGES+=("libdvd-pkg"); ((TOTAL_INSTALLED++))
         log SUCCESS "Installed: libdvd-pkg (encrypted DVD playback support)"
     else
@@ -505,9 +688,17 @@ install_libdvdcss() {
 
 # ========== AUDIO ==========
 install_audio() {
+    # zynaddsubfx (a software synth) and xjadeo (a JACK video monitor) are
+    # Ubuntu Studio audio staples that also get pulled in by the ubuntustudio-
+    # audio metapackage. Listing them here explicitly means this standalone Audio
+    # Production category installs them too - and, more to the point, that their
+    # launchers get grouped into the Audio app folder. zynaddsubfx ships FOUR
+    # real, displayable launchers (Alsa/Jack/Jack-multi/Oss), all of which the
+    # resolver picks up. If they were already installed by a prior Ubuntu Studio
+    # run they register as SKIPPED, which is still fed to the folder resolver.
     batch_install "Audio" \
-        audacity ardour lmms musescore hydrogen \
-        qjackctl jackd2 pulseaudio-module-jack ladspa-sdk calf-plugins \
+        audacity ardour lmms musescore hydrogen zynaddsubfx \
+        qjackctl jackd2 pulseaudio-module-jack ladspa-sdk calf-plugins xjadeo \
         soundconverter easytag flac lame oggenc opus-tools vorbis-tools wavpack sox libsox-fmt-all \
         pavucontrol
 }
@@ -559,30 +750,58 @@ install_python() {
 }
 
 # ========== WEB DEVELOPMENT ==========
+# Stop dpkg maintainer scripts from (re)starting apache2 during the web-server
+# installs. Both apache2's own postinst and libapache2-mod-php's postinst try to
+# (re)start apache2, which fails hard when nginx already holds :80 and dumps a
+# systemd error mid-install. A policy-rc.d that returns 101 is the standard
+# Debian mechanism to make invoke-rc.d a no-op; this one targets ONLY apache2 so
+# other services (php-fpm) still start normally. It's removed again afterward,
+# and only if we were the ones who created it (never clobbers a pre-existing one).
+_block_apache_autostart() {
+    if [ ! -e /usr/sbin/policy-rc.d ]; then
+        printf '#!/bin/sh\ncase "$1" in apache2) exit 101 ;; esac\nexit 0\n' > /usr/sbin/policy-rc.d
+        chmod +x /usr/sbin/policy-rc.d
+        _POLICY_RC_ADDED=1
+    fi
+}
+_unblock_apache_autostart() {
+    [ -n "${_POLICY_RC_ADDED:-}" ] && rm -f /usr/sbin/policy-rc.d
+    unset _POLICY_RC_ADDED
+}
+
 install_web_dev() {
     install_nodejs_full
-    
-    # Install nginx first
+
+    # nginx is the primary web server here - install it first and let it start
+    # normally (it takes :80).
     batch_install "Web Server - Nginx" nginx
-    
-    # Install Apache2 but prevent it from starting (port 80 conflict with nginx)
-    # Apache2 will be installed but not started - user must manually configure
-    log INFO "Installing Apache2 (will not start automatically due to port 80 conflict with nginx)..."
+
+    # From here on, keep apache2 from being auto-started by any postinst.
+    _block_apache_autostart
+
+    # Apache2 is installed for availability but intentionally NOT run (nginx owns
+    # :80). With autostart blocked it simply never starts, so - unlike before -
+    # there's no failed apache2 unit left behind and no systemd error mid-install.
+    log INFO "Installing Apache2 (kept available but not started - port 80 is nginx's)..."
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 2>/dev/null
     if is_installed apache2; then
         INSTALLED_PACKAGES+=("apache2"); ((TOTAL_INSTALLED++))
         log SUCCESS "Installed: apache2 (not started - port 80 used by nginx)"
-        # Stop apache2 if it somehow started
         systemctl stop apache2 2>/dev/null || true
     else
         FAILED_PACKAGES+=("apache2"); ((TOTAL_FAILED++))
         log ERROR "Failed: apache2"
     fi
-    
-    # PHP baseline kept here on purpose: without a language runtime, "Web
-    # Development" would just be a bare nginx/apache/DB stack with nothing to
-    # serve. "PHP Development" layers on deeper PHP-specific tooling on top.
-    batch_install "Web Dev" php php-cli php-fpm composer
+
+    # PHP baseline for an nginx stack: php-fpm (the SAPI nginx talks to) + php-cli
+    # (needed by composer) + composer. The bare "php" metapackage is deliberately
+    # NOT listed: with apache2 present, its OR-dependency resolves to
+    # libapache2-mod-php, whose postinst switches Apache's MPM and restarts it -
+    # the exact :80 collision that was failing this step. php-fpm provides the
+    # same language runtime without ever touching Apache.
+    batch_install "Web Dev" php-cli php-fpm composer
+
+    _unblock_apache_autostart
     # memcached/redis-server/sqlite3/sqlitebrowser intentionally NOT installed
     # here - none is required for a web server to function, and "Database
     # Tools" already owns them as its own category (per your call).
@@ -693,7 +912,25 @@ install_java() {
     # Only verified packages - hamcrest and mockito not in Ubuntu 26.10 repos
     batch_install "Java" default-jdk default-jre gradle maven ant junit4 testng
     local jh=$(update-alternatives --list java 2>/dev/null | head -n 1 | xargs dirname | xargs dirname)
-    [ -n "$jh" ] && echo "export JAVA_HOME=$jh" >> /etc/environment && echo 'export PATH="$PATH:$JAVA_HOME/bin"' >> /etc/environment
+    if [ -n "$jh" ]; then
+        # /etc/environment is a plain NAME=value file (pam_env) - NOT a shell
+        # script. Writing "export JAVA_HOME=..." here is invalid: anything that
+        # reads the file (some dpkg maintainer scripts do, e.g. install-info's)
+        # trips over the "export " prefix with "bad variable name", which then
+        # fails EVERY later package that configures install-info. And $PATH /
+        # $JAVA_HOME aren't expanded in this file, so the old PATH line was
+        # broken too. Correct approach: a bare JAVA_HOME=... line here (system-
+        # wide, idempotently rewritten), and a /etc/profile.d script - which IS
+        # sourced as a shell and can expand - for the PATH addition. The sed
+        # also cleans up any malformed lines a previous run left behind.
+        sed -i -E '/^(export[[:space:]]+)?JAVA_HOME=/d; /^export[[:space:]]+PATH=.*JAVA_HOME/d' /etc/environment 2>/dev/null
+        echo "JAVA_HOME=$jh" >> /etc/environment
+        cat > /etc/profile.d/java-home.sh <<EOF
+export JAVA_HOME="$jh"
+export PATH="\$PATH:\$JAVA_HOME/bin"
+EOF
+        chmod 0644 /etc/profile.d/java-home.sh
+    fi
     # No Java IDE exists in the Ubuntu archive at all (verified: eclipse,
     # intellij-idea-community, netbeans all return nothing from apt-cache
     # policy) - snap is the only real distribution channel for one.
@@ -747,11 +984,19 @@ install_nodejs_dev() { install_nodejs_full; }
 
 # ========== PHP ==========
 install_php() {
-    # Using default Ubuntu PHP packages only (Ondrej PPA not available for 26.10 yet)
+    # Using default Ubuntu PHP packages only (Ondrej PPA not available for 26.10 yet).
+    # Note: the bare "php" metapackage is intentionally omitted - if apache2 is
+    # already installed (e.g. from a prior Web Development / "EVERYTHING" run) its
+    # OR-dependency pulls libapache2-mod-php, whose postinst restarts apache2 and
+    # collides with nginx on :80. php-cli + php-fpm provide the runtime without
+    # that. The apache-autostart block is also applied as a safety net in case a
+    # transitive dependency still drags the module in.
+    _block_apache_autostart
     batch_install "PHP" \
-        php php-cli php-fpm php-dev php-pear \
+        php-cli php-fpm php-dev php-pear \
         php-mysql php-pgsql php-sqlite3 php-gd php-curl php-mbstring \
         php-xml php-zip composer
+    _unblock_apache_autostart
 }
 
 # ========== RUBY ==========
@@ -887,10 +1132,38 @@ install_windows_support() {
     # lutris intentionally NOT installed here - it's not an apt dependency of
     # wine/winetricks (checked: apt-cache depends lutris lists neither), and
     # "Gaming" already owns it as its own category.
+    # zenity is included so winetricks' GUI works (it needs zenity/kdialog to
+    # draw its dialogs when launched with no arguments).
     batch_install "Wine Environment" \
         wine \
-        winetricks
-    
+        winetricks \
+        zenity
+
+    # The Ubuntu winetricks package ships as a CLI script with NO .desktop
+    # launcher, so it never gets a menu icon and never lands in the app folder
+    # (the resolver can only place apps that have a launcher - same reason
+    # adb/docker don't). But winetricks DOES have a GUI when run with no args, so
+    # give it a launcher if one doesn't already exist. Written to the standard
+    # path (winetricks.desktop) with NoDisplay unset, so create_menu_category's
+    # resolver finds it (its empty-prefix fallback matches this exact filename)
+    # and includes it in the Windows Software Support folder.
+    if is_installed winetricks && ! compgen -G "/usr/share/applications/*winetricks*.desktop" >/dev/null 2>&1; then
+        cat > /usr/share/applications/winetricks.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Winetricks
+GenericName=Wine Helper
+Comment=Install and configure Windows components and apps under Wine
+Exec=winetricks
+Icon=wine
+Terminal=false
+Categories=Utility;System;Wine;
+Keywords=wine;windows;dll;
+EOF
+        chmod 644 /usr/share/applications/winetricks.desktop
+        log SUCCESS "Created menu launcher for winetricks (package ships none)"
+    fi
+
     # Install core dependencies for Wine (verified to exist)
     # Note: libgl1-mesa-glx not in Ubuntu 26.10, let wine pull its own deps
     batch_install "Wine Dependencies" \
@@ -1294,65 +1567,59 @@ install_android_tools() {
 # ========== MENU SYSTEM ==========
 show_main_menu() {
     clear
-    echo "=== UBUNTU ${UBUNTU_VERSION:-26.04/26.10} POST-INSTALL ==="
-    echo "  with Error Handling & Verified Packages"
-    echo "======================================"
-    echo ""
-    echo "  MAIN MENU"
-    echo ""
-    echo "  1.  Ubuntu Studio (All Media)"
-    echo "  2.  Graphics & Image Manipulation"
-    echo "  3.  Video Creation & Editing"
-    echo "  4.  Audio Production"
-    echo "  5.  Code Editors"
-    echo "  6.  Python Development"
-    echo "  7.  Web Development"
-    echo "  8.  Java Development"
-    echo "  9.  C/C++ Development"
-    echo " 10.  Go Development"
-    echo " 11.  Rust Development"
-    echo " 12.  Node.js Development"
-    echo " 13.  PHP Development"
-    echo " 14.  Ruby Development"
-    echo " 15.  Database Tools"
-    echo " 16.  Container & Virtualization"
-    echo " 17.  Gaming"
-    echo "  18.  Office & Productivity"
-    echo " 19.  System Utilities"
-    echo " 20.  General Development Tools"
-    echo " 21.  AI Tools"
-    echo " 22.  GUI Tweaks"
-    echo ""
-    echo "  23.  Windows Software Support"
-    echo "  24.  Android Tools (adb, fastboot, scrcpy)"
-    echo ""
-    echo "  A.  Install ALL Development Tools"
-    echo "  B.  Install ALL Media Tools"
-    echo "  C.  Install EVERYTHING"
-    echo ""
-    echo "  S.  Show Installation Summary"
-    echo "  0.  Exit"
-    echo ""
-    echo "======================================"
-    echo -n "  Enter your choice [0-24, A-C, S]: "
+    ui_header "UBUNTU ${UBUNTU_VERSION:-26.04/26.10}  ·  POST-INSTALL" "verified packages · error handling · GNOME app folders"
+    echo
+    ui_item  1 "Ubuntu Studio (All Media)"
+    ui_item  2 "Graphics & Image Manipulation"
+    ui_item  3 "Video Creation & Editing"
+    ui_item  4 "Audio Production"
+    ui_item  5 "Code Editors"
+    ui_item  6 "Python Development"
+    ui_item  7 "Web Development"
+    ui_item  8 "Java Development"
+    ui_item  9 "C/C++ Development"
+    ui_item 10 "Go Development"
+    ui_item 11 "Rust Development"
+    ui_item 12 "Node.js Development"
+    ui_item 13 "PHP Development"
+    ui_item 14 "Ruby Development"
+    ui_item 15 "Database Tools"
+    ui_item 16 "Container & Virtualization"
+    ui_item 17 "Gaming"
+    ui_item 18 "Office & Productivity"
+    ui_item 19 "System Utilities"
+    ui_item 20 "General Development Tools"
+    ui_item 21 "AI Tools"
+    ui_item 22 "GUI Tweaks"
+    ui_item 23 "Windows Software Support"
+    ui_item 24 "Android Tools (adb, fastboot, scrcpy)"
+    echo
+    ui_item_alt A "Install ALL Development Tools"
+    ui_item_alt B "Install ALL Media Tools"
+    ui_item_alt C "Install EVERYTHING"
+    echo
+    ui_item S "Show Installation Summary"
+    ui_item 0 "Exit"
+    echo
+    ui_rule
+    printf "  ${LAVENDER}Enter your choice ${DIM}[0-24, A-C, S]${NC}${LAVENDER}: ${NC}"
 }
 
 show_ubuntu_studio_menu() {
     clear
-    echo "=== UBUNTU STUDIO PACKAGES ==="
-    echo "================================"
-    echo ""
-    echo "  1.  Ubuntu Studio (Full)"
-    echo "  2.  Graphics"
-    echo "  3.  Video"
-    echo "  4.  Audio"
-    echo "  5.  Photography"
-    echo "  6.  Publishing"
-    echo ""
-    echo "  0.  Back to Main Menu"
-    echo ""
-    echo "================================"
-    echo -n "  Enter your choice [0-6]: "
+    ui_header "UBUNTU STUDIO PACKAGES"
+    echo
+    ui_item 1 "Ubuntu Studio (Full)"
+    ui_item 2 "Graphics"
+    ui_item 3 "Video"
+    ui_item 4 "Audio"
+    ui_item 5 "Photography"
+    ui_item 6 "Publishing"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${LAVENDER}Enter your choice ${DIM}[0-6]${NC}${LAVENDER}: ${NC}"
 }
 
 # Reset tracking for each new installation
@@ -1403,7 +1670,9 @@ prompt_menu_category() {
 main() {
     check_root
     check_version
+    check_stale_fetch_sources
     update_packages
+    install_nala
     install_base
     while true; do
         show_main_menu
@@ -1417,7 +1686,7 @@ main() {
                 ;;
             S|s)
                 display_summary
-                read -p "Press [Enter] to continue..."
+                read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _
                 ;;
             1)
                 show_ubuntu_studio_menu
@@ -1516,7 +1785,7 @@ main() {
                 sleep 2
                 ;;
         esac
-        read -p "Press [Enter] to continue..."
+        read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _
     done
 }
 

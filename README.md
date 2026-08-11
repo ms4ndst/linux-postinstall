@@ -52,11 +52,24 @@ This script automates the post-installation setup of **Ubuntu 26.04 LTS and 26.1
 
 On startup the script **detects the running release** (via `lsb_release`, falling back to `/etc/os-release`) and captures both the version and codename. Both supported releases share the same package names and codename-resolved repositories, so a single code path serves both; the few genuinely release-specific spots (e.g. PPAs that may have no build for a brand-new interim release) are handled through a small `is_lts()` / codename dispatch rather than a forked script. Running on any other version isn't blocked — the script warns and asks whether to continue.
 
+It then **bootstraps [Nala](https://github.com/volitank/nala)** (installed with apt-get right after the first package-list update) and routes subsequent installs/updates through it for parallel downloads and cleaner output on Ubuntu's default mirrors, transparently falling back to apt-get if Nala can't be installed.
+
+**Startup sequence** (before the menu appears), in order:
+
+1. **Root check** — must be run with `sudo`.
+2. **Version detection** — supports 26.04 LTS / 26.10; warns and asks to continue on anything else.
+3. **Stale-mirror recovery** — if a previous `nala fetch` left `/etc/apt/sources.list.d/fetch.sources` behind (a common source of 404 / "is not signed" errors), offers to remove it and fall back to Ubuntu's default mirrors (prompted, default-yes, non-fatal).
+4. **First package-list update** (apt-get — Nala isn't installed yet).
+5. **Nala bootstrap** — installs Nala; on success all later installs/updates route through it, else apt-get.
+6. **Base utilities** — `curl`, `git`, `whiptail`, `dbus-x11`, etc.
+7. **Interactive menu.**
+
 Beyond just installing packages, after each category finishes it can also **create a real GNOME Shell app folder** for the apps it just installed, so they show up grouped together when you press the **Super key** and open the app grid — see [GNOME App Folders](#️-gnome-app-folders-super-key-groups) below.
 
 **Key Design Principles:**
 
 - ✅ **Dual-Release Support (26.04 LTS & 26.10)**: A startup version check accepts both supported releases and stores the detected version/codename; release-specific behavior is dispatched via `is_lts()` and the resolved codename instead of maintaining two scripts. Add another release to the `SUPPORTED_VERSIONS` array to have the check accept it without prompting.
+- ✅ **Nala front-end (with apt-get fallback)**: [Nala](https://github.com/volitank/nala) is installed early and used for package installs/updates (parallel downloads, cleaner output). It's a thin layer over the same libapt/dpkg, so package behavior is identical. A `pm_install`/`pm_update` abstraction routes operations through Nala when present and **falls back to apt-get** if Nala isn't available — the script works either way. Queries (`apt-cache`, `dpkg`) intentionally stay on apt, which Nala doesn't replace.
 - ✅ **Verified Packages Only**: Every apt package name has been checked against the live Ubuntu 26.10 archive (`apt-cache policy`) before being added — several package names from earlier drafts (`ubuntu-studio-*`, `qemu-kvm`, `android-tools-adb`) turned out not to exist under those names and were corrected
 - ✅ **Direct Downloads for Third-Party**: Non-repo tools (VS Code, Sublime Text, Ollama, Cursor, Mistral AI Vibe) use their official installers/repositories
 - ✅ **Snap for Archive Gaps**: Tools with no real apt package at all (LXD, IntelliJ IDEA Community, DBeaver CE) are installed via `snap` instead of silently failing
@@ -72,6 +85,8 @@ Beyond just installing packages, after each category finishes it can also **crea
 | Feature                       | Description                                                                                    |
 | ------------------------------ | ------------------------------------------------------------------------------------------------ |
 | **Version Detection**         | Detects the running release at startup, supports **Ubuntu 26.04 LTS and 26.10**, warns/prompts on anything else |
+| **Nala Front-End**            | Installs and uses [Nala](https://github.com/volitank/nala) for installs/updates (parallel downloads, cleaner output); transparently falls back to apt-get if unavailable |
+| **Catppuccin-Themed Output**  | Menus, logs, and summary use the Catppuccin Mocha palette (truecolor), auto-disabled for non-TTY / `NO_COLOR` |
 | **Interactive Menu**          | Text-based menu with 24 categories (plus a Ubuntu Studio sub-menu)                             |
 | **GNOME App-Folder Creation** | After each category, optionally groups the apps you just installed into a Super-key app folder |
 | **Terminal Font Setup**       | In GUI Tweaks, optionally sets the terminal / system monospace font to an installed Nerd Font (works on Ptyxis, GNOME Console, and gnome-terminal) |
@@ -86,6 +101,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 ### Statistics
 
 - **Main Menu Categories:** 24 (plus a 6-option Ubuntu Studio sub-menu)
+- **Package Front-End:** Nala (auto-installed, with transparent apt-get fallback)
 - **Verified APT Packages:** 200+
 - **Snap-Only Tools:** 3 (LXD, IntelliJ IDEA Community, DBeaver CE)
 - **Third-Party Direct-Install Tools:** ~8 (VS Code, Sublime Text, Ollama, Cursor, Mistral AI Vibe, Go, Rust/rustup, Chris Titus mybash)
@@ -242,7 +258,7 @@ Official Ubuntu Studio meta-packages (note: **no hyphen** between "ubuntu" and "
 - `libavcodec-extra` (codec support for anything decoding through ffmpeg's libraries)
 - `unrar` (many downloaded media bundles are RAR archives)
 - `libdvd-pkg` — builds `libdvdcss2` (DVD decryption) from source on first install via a preseeded debconf answer, since this isn't a normal `.deb`. **Note:** whether building/using this is permitted varies by jurisdiction; it's the standard, widely-documented way Ubuntu desktops get encrypted-DVD playback working, not something forced silently — you can remove this line from `install_libdvdcss` if you don't want it.
-- **Not included:** `ttf-mscorefonts-installer` (sometimes bundled via `ubuntu-restricted-extras`) — it's fonts, not a codec, and gates on an interactive EULA that defaults to declined if unattended.
+- **`ubuntu-restricted-extras` (opt-in prompt):** extra patent-encumbered codecs (MP3/H.264 helpers) plus Microsoft core fonts. It's kept out of the default codec batch because its `ttf-mscorefonts-installer` dependency gates on an interactive **Microsoft core-fonts EULA** that would hang an unattended install. `install_restricted_extras` therefore **asks first** — the prompt states that choosing Yes accepts that EULA — and only then preseeds the answer (`debconf-set-selections`) so the install runs non-interactively. Declining is recorded as **skipped**, not failed. This prompt appears at the end of the Video category, including within the `B`/`C` bulk runs.
 
 ---
 
@@ -250,7 +266,9 @@ Official Ubuntu Studio meta-packages (note: **no hyphen** between "ubuntu" and "
 
 **DAWs & Editors:** `audacity`, `ardour`, `lmms`, `musescore`, `hydrogen`
 
-**JACK Audio:** `qjackctl`, `jackd2`, `pulseaudio-module-jack`
+**Synth:** `zynaddsubfx` — ships four separate launchers (Alsa / Jack / Jack multi-channel / Oss), all added to the app folder
+
+**JACK Audio:** `qjackctl`, `jackd2`, `pulseaudio-module-jack`, `xjadeo` (JACK video monitor)
 
 **Plugins & Effects:** `ladspa-sdk`, `calf-plugins`
 
@@ -283,10 +301,12 @@ Both already-installed checks correctly mark the app as "skipped" (not silently 
 
 **Web Servers:**
 
-- `nginx` — started normally
-- `apache2` — installed with `--no-install-recommends` but deliberately **not started** (port 80 conflict with nginx); stopped if it auto-starts
+- `nginx` — started normally (owns port 80)
+- `apache2` — installed with `--no-install-recommends` but deliberately **not started**. During the apache2 and PHP installs the script drops a temporary `policy-rc.d` (returning 101 for `apache2` only) so no maintainer script can auto-(re)start Apache into a port-80 collision with nginx. Without this, `apache2`/`libapache2-mod-php` postinsts fail mid-install with a systemd error.
 
-**PHP baseline** (kept intentionally minimal here — just enough to serve something; deeper PHP tooling lives in [PHP Development](#php-development)): `php`, `php-cli`, `php-fpm`, `composer`
+**PHP baseline** (kept intentionally minimal here — just enough to serve something; deeper PHP tooling lives in [PHP Development](#php-development)): `php-cli`, `php-fpm`, `composer`
+
+> The bare `php` metapackage is intentionally **not** installed. With apache2 present, `php`'s OR-dependency resolves to `libapache2-mod-php`, whose postinst restarts Apache and collides with nginx on port 80. `php-fpm` (the SAPI nginx talks to) plus `php-cli` (for composer) provide the runtime without ever pulling the Apache module.
 
 **Node.js** (shared installer with [Node.js Development](#nodejs-development) — intentionally installed from either category since it's foundational to web dev but also useful standalone):
 
@@ -303,7 +323,7 @@ Both already-installed checks correctly mark the app as "skipped" (not silently 
 
 **Testing:** `junit4`, `testng`
 
-**Environment:** `JAVA_HOME` is detected and written to `/etc/environment` automatically
+**Environment:** `JAVA_HOME` is detected and set two ways — a bare `JAVA_HOME=…` line in `/etc/environment` (system-wide, idempotently rewritten) and a `/etc/profile.d/java-home.sh` that exports it and adds `$JAVA_HOME/bin` to `PATH` at login. **Note:** `/etc/environment` is a plain `NAME=value` file, **not** a shell script — earlier versions wrote `export JAVA_HOME=…` there, which breaks any dpkg maintainer script that reads the file (e.g. `install-info`) with `export: … bad variable name` and then fails every later package. The current code writes the correct format and the detection step also strips any malformed `export` lines a previous run left behind.
 
 **IDE:** `intellij-idea-community` via **snap** (`--classic`) — no Java IDE exists as a normal apt package in the Ubuntu 26.10 archive at all (checked: Eclipse, IntelliJ, NetBeans all return nothing from `apt-cache policy`), so snap is the only real distribution channel.
 
@@ -349,7 +369,9 @@ Calls the same Node.js installer used by [Web Development](#web-development) —
 
 **Note:** the Ondrej PHP PPA is **not yet available for Ubuntu 26.10** — this category uses the **default Ubuntu repository PHP packages only**.
 
-`php`, `php-cli`, `php-fpm`, `php-dev`, `php-pear`, `php-mysql`, `php-pgsql`, `php-sqlite3`, `php-gd`, `php-curl`, `php-mbstring`, `php-xml`, `php-zip`, `composer`
+`php-cli`, `php-fpm`, `php-dev`, `php-pear`, `php-mysql`, `php-pgsql`, `php-sqlite3`, `php-gd`, `php-curl`, `php-mbstring`, `php-xml`, `php-zip`, `composer`
+
+> As in Web Development, the bare `php` metapackage is omitted so it can't pull `libapache2-mod-php` and restart Apache into a port-80 conflict (relevant when apache2 is already installed, e.g. during an "EVERYTHING" run). The same apache-autostart guard is applied here as a safety net.
 
 *(The `php`/`php-cli`/`php-fpm`/`composer` baseline intentionally overlaps with Web Development — see that section's note.)*
 
@@ -502,7 +524,9 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Ner
 
 ### Windows Software Support
 
-**Wine Environment:** `wine`, `winetricks`
+**Wine Environment:** `wine`, `winetricks`, `zenity`
+
+> The Ubuntu `winetricks` package ships as a CLI script with **no `.desktop` launcher**, so it never got a menu icon or landed in the app folder (same reason `adb`/`docker` don't). Since winetricks has a GUI when launched with no arguments, the script now **creates a `winetricks.desktop` launcher** (if the package doesn't provide one) so it appears in menus and is grouped into the Windows Software Support folder. `zenity` is installed so that GUI can draw its dialogs.
 
 **Wine Dependencies:** `libasound2-plugins`, `libsdl2-2.0-0`, `libfreetype6`, `libx11-6`, `libxext6`
 
@@ -552,6 +576,8 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Ner
    ↓ Fail → Add to FAILED_PACKAGES
 ```
 
+The install/update step itself runs through the `pm_install`/`pm_update` front-end abstraction — **Nala** when available, **apt-get** otherwise — so the checks above are identical regardless of back-end. Queries (`apt-cache`, `dpkg`) always use apt directly.
+
 Snap-only tools (`lxd`, `intellij-idea-community`, `dbeaver-ce`) go through the equivalent `safe_snap_install` flow instead, checking `command -v`/`snap list` before falling back to `snap install`.
 
 ### Key Functions
@@ -560,7 +586,10 @@ Snap-only tools (`lxd`, `intellij-idea-community`, `dbeaver-ce`) go through the 
 | ------------------------------------ | ----------------------------------------------------------------- |
 | `is_installed(pkg)`                 | Checks if a package is installed via `dpkg`                     |
 | `package_exists(pkg)`               | Verifies a package exists in the apt cache                      |
-| `safe_install(pkgs...)`             | Safely installs packages with the checks above                  |
+| `install_nala`                      | Bootstraps Nala after the first update; flips `PM` to `nala` on success |
+| `check_stale_fetch_sources`         | Detects a leftover `nala fetch` mirror file and offers to remove it (prompted, default-yes) |
+| `pm_install(pkgs...)` / `pm_update` | Package-manager front-end — routes to Nala when available, else apt-get |
+| `safe_install(pkgs...)`             | Safely installs packages with the checks above (via `pm_install`) |
 | `safe_snap_install(name, [args])`   | Same tracking/checks, for snap-only tools                       |
 | `batch_install(category, pkgs...)`  | Installs a batch of packages with a per-category summary line   |
 | `create_menu_category(...)`         | Resolves installed packages to real `.desktop` files and creates/updates the GNOME app folder |
@@ -585,10 +614,15 @@ Snap-only tools (`lxd`, `intellij-idea-community`, `dbeaver-ce`) go through the 
 
 ### Real-Time Feedback
 
-- 🟢 **GREEN**: Success
-- 🔵 **BLUE**: Info
-- 🟡 **YELLOW**: Warnings (including "Desktop file not found" for CLI-only tools — see individual category notes above for when this is expected)
-- 🔴 **RED**: Errors
+Output is themed with the **[Catppuccin](https://github.com/catppuccin/catppuccin) Mocha** palette (24-bit truecolor), assigned by semantic role. Colors **auto-disable** when output isn't a terminal or `NO_COLOR` is set, so piped/redirected output and the log file stay plain.
+
+- 🟢 **Green** `✓`: Success
+- 🔵 **Blue** `•`: Info
+- 🟡 **Yellow** `▲`: Warnings (including "Desktop file not found" for CLI-only tools — see individual category notes above for when this is expected)
+- 🔴 **Red** `✗`: Errors
+- 🟣 **Mauve**: headings / menu keys · **Lavender**: prompts · **Peach**: bulk actions (A/B/C)
+
+> Best viewed in a truecolor terminal (Ptyxis, GNOME Console, most modern terminals). On a legacy 8/16-color terminal the escapes degrade to the nearest supported color.
 
 ### Summary Screen
 
@@ -609,7 +643,7 @@ Contains a timestamp, the running user, summary statistics, and the full install
 - **AI Tools tracking gap**: `install_ollama`, `install_mistral_vibe`, `install_claude_code`, and `install_cursor` never write to the installed/skipped/failed tracking arrays, even on a successful install. This means the "AI Tools" app-folder prompt currently always reports 0 apps regardless of what actually got installed (Cursor, in particular, is a real GUI app that should get an icon). Fixing this needs bookkeeping added to all four custom installers, plus the correct desktop-file name for Cursor.
 - **Bulk options skip app folders**: `A`/`B`/`C` never call `prompt_menu_category`, so app folders are only offered when installing a single category at a time.
 - **DVD decryption legality**: `libdvd-pkg` (in the Video category) builds `libdvdcss2` from source, which is legal in some jurisdictions and legally gray in others (this is why it's in `multiverse` rather than `main`). It's on by default; remove the `install_libdvdcss` call if you'd rather it not run.
-- **`ttf-mscorefonts-installer` is deliberately excluded** from the Video category's codec stack (it's fonts, not a codec, and has its own EULA gate) — add it back yourself if you want Microsoft's core fonts.
+- **`ubuntu-restricted-extras` is opt-in** in the Video category (MP3/H.264 codec helpers + Microsoft core fonts). It prompts before installing because saying yes accepts the Microsoft core-fonts EULA; decline and it's recorded as skipped. Note the prompt also appears during the `B`/`C` bulk runs (the one interactive point in an otherwise hands-off bulk install).
 - **26.10 package parity is not exhaustively verified**: package names were checked against the 26.04-era archive; 26.10 shares the same names in practice, but any package renamed or dropped in the interim release simply lands in the `FAILED` list (via the existing `package_exists` guard) rather than being pre-corrected. The version dispatch (`is_lts`/codename) is in place for such cases as they surface.
 
 ---
@@ -667,6 +701,9 @@ Comment out or remove the menu `echo` line, the `case` branch, and the function 
 | **An installed app's icon is missing from its folder** | Check the summary for "Desktop file not found: `<pkg>`" — for CLI-only tools (docker, adb, cockpit, etc.) this is expected; for a real GUI app, it may need a resolver fix (see `create_menu_category` in the script) |
 | **"Designed for Ubuntu 26.04/26.10, detected: …"** | You're on a release the script isn't validated against — answer `y` to continue anyway, or add your version to `SUPPORTED_VERSIONS` at the top of the script |
 | **Terminal font didn't change**     | Set it as your user (not `sudo`): `gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 12'`. Confirm the font is present with `fc-list \| grep -i jetbrains`. On Ptyxis, ensure "use system font" is on (the script sets it) |
+| **"unit files changed on disk, run daemon-reload"** | Benign systemd notice when a package drops a unit/binfmt file (e.g. clang). Not an error — the script runs `systemctl daemon-reload` after each batch to reconcile it. Safe to ignore if it still appears once mid-batch |
+| **`install-info` fails: `export: … JAVA_HOME: bad variable name`** | A previous Java install wrote `export` lines into `/etc/environment` (invalid there). Clean them and finish configuring: `sudo sed -i '/^export /d' /etc/environment && sudo dpkg --configure -a`. Current script versions no longer write those lines and auto-strip old ones on the next Java install |
+| **`404 Not Found` / `is not signed` on package downloads** | A `nala fetch`-selected mirror is incomplete/stale (the script no longer selects mirrors, but a prior run leaves the chosen mirrors in `/etc/apt/sources.list.d/fetch.sources`). Restore Ubuntu's defaults: `sudo rm -f /etc/apt/sources.list.d/fetch.sources && sudo nala update` |
 
 ### Manual Installation
 
