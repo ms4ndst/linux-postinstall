@@ -1230,73 +1230,102 @@ install_ai_tools() {
     install_cursor
 }
 
+# NOTE on tracking: these four tools install outside apt (curl script, AppImage,
+# npm, direct .deb), so they must update the tracking arrays THEMSELVES - nothing
+# else does it for them. Without this they never appeared in the summary and,
+# more visibly, never got fed to the AI Tools app-folder resolver, so the folder
+# came up empty even when Cursor (a real GUI app) had installed fine. Each now
+# records installed/skipped/failed. ollama and claude are CLI-only (no launcher,
+# so no folder icon - expected, like docker/adb); Cursor ships its own
+# cursor.desktop; Mistral Vibe is a bare AppImage, so we create a launcher for it.
 install_ollama() {
-    if command -v ollama &>/dev/null; then log INFO "Ollama already installed"; return 0; fi
+    if command -v ollama &>/dev/null; then
+        SKIPPED_PACKAGES+=("ollama"); ((TOTAL_SKIPPED++)); log INFO "Already installed: ollama"; return 0
+    fi
     log INFO "Installing Ollama..."
-    if curl -fsSL https://ollama.com/install.sh | sh 2>/dev/null; then
-        log SUCCESS "Ollama installed"
-        return 0
+    if curl -fsSL https://ollama.com/install.sh | sh 2>/dev/null && command -v ollama &>/dev/null; then
+        INSTALLED_PACKAGES+=("ollama"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: ollama"; return 0
     else
-        log ERROR "Ollama install failed"
-        return 1
+        FAILED_PACKAGES+=("ollama"); ((TOTAL_FAILED++)); log ERROR "Failed: ollama"; return 1
     fi
 }
 
 install_mistral_vibe() {
     if command -v mistral-vibe &>/dev/null; then
-        log INFO "Mistral Vibe already installed"
-        return 0
+        SKIPPED_PACKAGES+=("mistral-vibe"); ((TOTAL_SKIPPED++)); log INFO "Already installed: mistral-vibe"; return 0
     fi
-    
     log INFO "Installing Mistral AI Vibe..."
-    
-    # Mistral Vibe is distributed as AppImage, not .deb
-    # Official download: https://vibe.mistral.ai/
+    # Mistral Vibe is distributed as an AppImage (https://vibe.mistral.ai/), not a .deb.
     local temp_dir=$(mktemp -d)
     local arch=$(uname -m)
     local vibe_url="https://github.com/mistralai/vibe/releases/latest/download/vibe-${arch}.AppImage"
-    
-    # Try to download AppImage
-    if curl -L -f --retry 2 -o "$temp_dir/vibe.AppImage" "$vibe_url" 2>/dev/null; then
+    if curl -L -f --retry 2 -o "$temp_dir/vibe.AppImage" "$vibe_url" 2>/dev/null \
+       || wget -q --tries=2 -O "$temp_dir/vibe.AppImage" "$vibe_url" 2>/dev/null; then
         chmod +x "$temp_dir/vibe.AppImage"
         mv "$temp_dir/vibe.AppImage" /usr/local/bin/mistral-vibe
         rm -rf "$temp_dir"
-        log SUCCESS "Mistral Vibe installed to /usr/local/bin/mistral-vibe"
-        return 0
-    elif wget -q --tries=2 -O "$temp_dir/vibe.AppImage" "$vibe_url" 2>/dev/null; then
-        chmod +x "$temp_dir/vibe.AppImage"
-        mv "$temp_dir/vibe.AppImage" /usr/local/bin/mistral-vibe
-        rm -rf "$temp_dir"
-        log SUCCESS "Mistral Vibe installed to /usr/local/bin/mistral-vibe"
+        # A bare AppImage ships no .desktop - create one so it gets a menu icon
+        # and lands in the AI Tools folder (resolver's empty-prefix fallback
+        # matches /usr/share/applications/mistral-vibe.desktop).
+        cat > /usr/share/applications/mistral-vibe.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Mistral Vibe
+GenericName=AI Assistant
+Comment=Mistral AI desktop assistant
+Exec=mistral-vibe
+Icon=applications-science
+Terminal=false
+Categories=Development;Utility;
+EOF
+        chmod 644 /usr/share/applications/mistral-vibe.desktop
+        INSTALLED_PACKAGES+=("mistral-vibe"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: mistral-vibe (/usr/local/bin/mistral-vibe)"
         return 0
     fi
-    
     rm -rf "$temp_dir"
-    log WARNING "Could not download Mistral Vibe AppImage"
-    log INFO "Download manually from: https://vibe.mistral.ai/"
+    FAILED_PACKAGES+=("mistral-vibe"); ((TOTAL_FAILED++))
+    log WARNING "Could not download Mistral Vibe AppImage - get it from https://vibe.mistral.ai/"
     return 0
 }
 
 install_claude_code() {
-    if command -v claude &>/dev/null; then log INFO "Claude CLI already installed"; return 0; fi
-    log INFO "Installing Claude CLI..."
-    if command -v npm &>/dev/null && npm install -g claude 2>/dev/null; then
-        log SUCCESS "Claude CLI installed"; return 0
+    # The official Claude Code CLI npm package is @anthropic-ai/claude-code (it
+    # installs a `claude` binary) - NOT the bare `claude` package, which is a
+    # different, unofficial package. Tracking name stays "claude" since that's
+    # the command it provides and what command -v checks for.
+    if command -v claude &>/dev/null; then
+        SKIPPED_PACKAGES+=("claude"); ((TOTAL_SKIPPED++)); log INFO "Already installed: claude"; return 0
     fi
-    log WARNING "Install: npm install -g claude"; return 0
+    log INFO "Installing Claude Code CLI (@anthropic-ai/claude-code)..."
+    if command -v npm &>/dev/null && npm install -g @anthropic-ai/claude-code 2>/dev/null && command -v claude &>/dev/null; then
+        INSTALLED_PACKAGES+=("claude"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: claude"; return 0
+    fi
+    FAILED_PACKAGES+=("claude"); ((TOTAL_FAILED++))
+    log WARNING "Claude Code install failed - try: npm install -g @anthropic-ai/claude-code"; return 0
 }
 
 install_cursor() {
-    if command -v cursor &>/dev/null; then log INFO "Cursor already installed"; return 0; fi
+    if command -v cursor &>/dev/null || is_installed cursor; then
+        SKIPPED_PACKAGES+=("cursor"); ((TOTAL_SKIPPED++)); log INFO "Already installed: cursor"; return 0
+    fi
     log INFO "Installing Cursor..."
     local t=$(mktemp -d) a=$(dpkg --print-architecture)
     for u in "https://download.cursor.com/linux/deb/${a}/cursor_${a}.deb" "https://download.cursor.com/linux/deb/cursor.deb"; do
         if curl -L -f --retry 2 -o "$t/cursor.deb" "$u" 2>/dev/null || wget -q --tries=2 -O "$t/cursor.deb" "$u" 2>/dev/null; then
             dpkg -i "$t/cursor.deb" 2>/dev/null || { apt-get install -f -y 2>/dev/null; dpkg -i "$t/cursor.deb" 2>/dev/null; }
-            rm -rf "$t"; log SUCCESS "Cursor installed"; return 0
+            rm -rf "$t"
+            if command -v cursor &>/dev/null || is_installed cursor; then
+                INSTALLED_PACKAGES+=("cursor"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: cursor"
+            else
+                FAILED_PACKAGES+=("cursor"); ((TOTAL_FAILED++)); log ERROR "Failed: cursor"
+            fi
+            return 0
         fi
     done
-    rm -rf "$t"; log WARNING "Download from: https://www.cursor.com/"; return 0
+    rm -rf "$t"
+    FAILED_PACKAGES+=("cursor"); ((TOTAL_FAILED++))
+    log WARNING "Cursor download failed - get it from https://www.cursor.com/"; return 0
 }
 
 # ========== GUI TWEAKS ==========
@@ -1666,6 +1695,24 @@ prompt_menu_category() {
     fi
 }
 
+# Install one category and auto-create its GNOME app folder from just that
+# category's packages, WITHOUT prompting. Used by the bulk options (A/B/C) so a
+# full run still produces the per-category app folders the individual menu
+# entries create interactively. Instead of resetting tracking per category
+# (which would break the whole-run summary the bulk block prints at the end), it
+# snapshots the tracking-array lengths before the install and slices out only
+# the newly-added installed+skipped packages afterward - so the global arrays
+# keep accumulating for display_summary while each folder still gets exactly its
+# own category's apps. create_menu_category's icon/comment args are unused ("").
+# Folder names match the individual menu entries for consistency.
+auto_category() {
+    local name="$1" fn="$2"
+    local pre_i=${#INSTALLED_PACKAGES[@]} pre_s=${#SKIPPED_PACKAGES[@]}
+    "$fn"
+    local apps=("${INSTALLED_PACKAGES[@]:$pre_i}" "${SKIPPED_PACKAGES[@]:$pre_s}")
+    [ ${#apps[@]} -gt 0 ] && create_menu_category "$name" "" "" "${apps[@]}"
+}
+
 # ========== MAIN EXECUTION ==========
 main() {
     check_root
@@ -1727,57 +1774,57 @@ main() {
             24) reset_tracking; install_android_tools; display_summary; prompt_menu_category "Android Tools" "phone" "Android Tools (adb, fastboot, scrcpy)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             A|a)
                 reset_tracking
-                log INFO "Installing ALL Development Tools..."
-                install_code_editors
-                install_python
-                install_web_dev
-                install_java
-                install_c_cpp
-                install_go
-                install_rust
-                install_nodejs_dev
-                install_php
-                install_ruby
-                install_dev_tools
-                install_ai_tools
+                log INFO "Installing ALL Development Tools (with app folders)..."
+                auto_category "Code Editors" install_code_editors
+                auto_category "Python Development" install_python
+                auto_category "Web Development" install_web_dev
+                auto_category "Java Development" install_java
+                auto_category "C/C++ Development" install_c_cpp
+                auto_category "Go Development" install_go
+                auto_category "Rust Development" install_rust
+                auto_category "Node.js Development" install_nodejs_dev
+                auto_category "PHP Development" install_php
+                auto_category "Ruby Development" install_ruby
+                auto_category "General Development Tools" install_dev_tools
+                auto_category "AI Tools" install_ai_tools
                 display_summary
                 ;;
             B|b)
                 reset_tracking
-                log INFO "Installing ALL Media Tools..."
-                install_ubuntu_studio_full
-                install_graphics
-                install_video
-                install_audio
+                log INFO "Installing ALL Media Tools (with app folders)..."
+                auto_category "Ubuntu Studio" install_ubuntu_studio_full
+                auto_category "Graphics" install_graphics
+                auto_category "Video" install_video
+                auto_category "Audio Production" install_audio
                 display_summary
                 ;;
             C|c)
                 reset_tracking
-                log INFO "Installing EVERYTHING..."
-                install_ubuntu_studio_full
-                install_graphics
-                install_video
-                install_audio
-                install_code_editors
-                install_python
-                install_web_dev
-                install_java
-                install_c_cpp
-                install_go
-                install_rust
-                install_nodejs_dev
-                install_php
-                install_ruby
-                install_databases
-                install_containers
-                install_gaming
-                install_office
-                install_system_utils
-                install_dev_tools
-                install_ai_tools
-                install_gui_tweaks
-                install_windows_support
-                install_android_tools
+                log INFO "Installing EVERYTHING (with app folders)..."
+                auto_category "Ubuntu Studio" install_ubuntu_studio_full
+                auto_category "Graphics" install_graphics
+                auto_category "Video" install_video
+                auto_category "Audio Production" install_audio
+                auto_category "Code Editors" install_code_editors
+                auto_category "Python Development" install_python
+                auto_category "Web Development" install_web_dev
+                auto_category "Java Development" install_java
+                auto_category "C/C++ Development" install_c_cpp
+                auto_category "Go Development" install_go
+                auto_category "Rust Development" install_rust
+                auto_category "Node.js Development" install_nodejs_dev
+                auto_category "PHP Development" install_php
+                auto_category "Ruby Development" install_ruby
+                auto_category "Database Tools" install_databases
+                auto_category "Containers" install_containers
+                auto_category "Gaming" install_gaming
+                auto_category "Office & Productivity" install_office
+                auto_category "System Utilities" install_system_utils
+                auto_category "General Development Tools" install_dev_tools
+                auto_category "AI Tools" install_ai_tools
+                auto_category "GUI Tweaks" install_gui_tweaks
+                auto_category "Windows Software Support" install_windows_support
+                auto_category "Android Tools" install_android_tools
                 display_summary
                 ;;
             *)

@@ -149,7 +149,7 @@ sudo ./post-install.sh
 4. **`S`** — Show Installation Summary
 5. **`0`** — Exit
 
-After a single category finishes installing, you'll be asked whether to group its apps into a GNOME app folder. Bulk options (`A`/`B`/`C`) install everything in the chain but **do not** prompt for app-folder creation.
+After a single category finishes installing, you'll be asked whether to group its apps into a GNOME app folder. Bulk options (`A`/`B`/`C`) **auto-create** a folder per category as they go — no prompts (fitting their hands-off nature).
 
 ### Example Workflows
 
@@ -469,10 +469,10 @@ Note: `libreoffice` is a meta-package that resolves to **seven separate real app
 | -------------------- | --------------------- | ----------------------------------------------------------- |
 | **Ollama**          | Official install script | Local LLM runner, auto-detects GPU/CPU                  |
 | **Mistral AI Vibe**  | AppImage download    | Desktop AI assistant from Mistral AI                     |
-| **Claude CLI**      | `npm install -g claude` | Anthropic's CLI code assistant                           |
+| **Claude Code**     | `npm install -g @anthropic-ai/claude-code` | Anthropic's CLI code assistant (provides the `claude` command) |
 | **Cursor**           | `.deb` download       | AI-powered code editor                                    |
 
-See [Known Limitations](#️-known-limitations) — none of these four currently register in the installed/skipped tracking, so the "AI Tools" app folder prompt will currently always report zero apps even on a successful install.
+All four now register in the installed/skipped/failed tracking, so they appear in the summary and are fed to the app-folder resolver. **Cursor** ships its own `cursor.desktop` and **Mistral Vibe** gets a generated launcher, so both are grouped into the AI Tools folder. **Ollama** and **Claude CLI** are command-line only (no launcher), so they're tracked but don't get a folder icon — expected, same as `docker`/`adb`.
 
 ---
 
@@ -556,7 +556,7 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Ner
 | **B**  | Ubuntu Studio (Full), Graphics, Video, Audio                                                                                                                                                    | "ALL Media Tools"                        |
 | **C**  | Everything in A and B, plus Database Tools, Container & Virtualization, Gaming, Office & Productivity, System Utilities, GUI Tweaks, Windows Software Support, and Android Tools                | "EVERYTHING"                             |
 
-**Important:** none of A/B/C prompt for GNOME app-folder creation — that prompt only appears after installing a single numbered category (1–24) or a Ubuntu Studio sub-menu option.
+**App folders:** A/B/C **auto-create** a GNOME app folder for each category they install (no prompts). The individual numbered categories (1–24) and the Ubuntu Studio sub-menu instead *ask* before creating each folder. Either way, folder creation needs an active GNOME session (see [GNOME App Folders](#️-gnome-app-folders-super-key-groups)); without one, each is skipped with a warning and packages still install.
 
 ---
 
@@ -593,7 +593,8 @@ Snap-only tools (`lxd`, `intellij-idea-community`, `dbeaver-ce`) go through the 
 | `safe_snap_install(name, [args])`   | Same tracking/checks, for snap-only tools                       |
 | `batch_install(category, pkgs...)`  | Installs a batch of packages with a per-category summary line   |
 | `create_menu_category(...)`         | Resolves installed packages to real `.desktop` files and creates/updates the GNOME app folder |
-| `prompt_menu_category(...)`         | Asks (via `whiptail` or plain `read`) whether to create the app folder for a category |
+| `prompt_menu_category(...)`         | Asks (via `whiptail` or plain `read`) whether to create the app folder for a category (individual menu entries) |
+| `auto_category(name, fn)`           | Installs a category and auto-creates its folder from that category's package delta — no prompt (bulk A/B/C) |
 | `check_version` / `detect_version` / `is_lts` | Detects the running release into `UBUNTU_VERSION`/`UBUNTU_CODENAME`, gates on `SUPPORTED_VERSIONS`, and exposes an LTS dispatch flag |
 | `add_ppa(ppa, tag)`                 | Codename-aware PPA add that degrades gracefully when a release has no PPA build |
 | `resolve_desktop_session`           | Resolves the desktop user + uid and confirms a live D-Bus session bus exists |
@@ -640,8 +641,7 @@ Contains a timestamp, the running user, summary statistics, and the full install
 
 ## ⚠️ Known Limitations
 
-- **AI Tools tracking gap**: `install_ollama`, `install_mistral_vibe`, `install_claude_code`, and `install_cursor` never write to the installed/skipped/failed tracking arrays, even on a successful install. This means the "AI Tools" app-folder prompt currently always reports 0 apps regardless of what actually got installed (Cursor, in particular, is a real GUI app that should get an icon). Fixing this needs bookkeeping added to all four custom installers, plus the correct desktop-file name for Cursor.
-- **Bulk options skip app folders**: `A`/`B`/`C` never call `prompt_menu_category`, so app folders are only offered when installing a single category at a time.
+- **Bulk options auto-create app folders**: `A`/`B`/`C` create a folder per category automatically via `auto_category` (no prompt). Categories whose packages have no GUI launcher (e.g. System Utilities, Android Tools) are skipped with a "no GUI apps" notice rather than producing an empty folder.
 - **DVD decryption legality**: `libdvd-pkg` (in the Video category) builds `libdvdcss2` from source, which is legal in some jurisdictions and legally gray in others (this is why it's in `multiverse` rather than `main`). It's on by default; remove the `install_libdvdcss` call if you'd rather it not run.
 - **`ubuntu-restricted-extras` is opt-in** in the Video category (MP3/H.264 codec helpers + Microsoft core fonts). It prompts before installing because saying yes accepts the Microsoft core-fonts EULA; decline and it's recorded as skipped. Note the prompt also appears during the `B`/`C` bulk runs (the one interactive point in an otherwise hands-off bulk install).
 - **26.10 package parity is not exhaustively verified**: package names were checked against the 26.04-era archive; 26.10 shares the same names in practice, but any package renamed or dropped in the interim release simply lands in the `FAILED` list (via the existing `package_exists` guard) rather than being pre-corrected. The version dispatch (`is_lts`/codename) is in place for such cases as they surface.
