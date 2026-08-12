@@ -37,9 +37,13 @@
   - [Windows Software Support](#windows-software-support)
   - [Android Tools](#android-tools)
   - [Security Tools](#security-tools)
+  - [.NET Development](#net-development)
+  - [DevOps &amp; Cloud](#devops--cloud)
+  - [Desktop Apps](#desktop-apps)
 - [🔀 Bulk Options (A / B / C)](#-bulk-options-a--b--c)
 - [🔧 Error Handling &amp; Installation Checks](#-error-handling--installation-checks)
 - [📊 Installation Summary &amp; Logging](#-installation-summary--logging)
+- [🔒 Security Notes](#-security-notes)
 - [⚠️ Known Limitations](#️-known-limitations)
 - [⚙️ Customization](#-customization)
 - [🐛 Troubleshooting](#-troubleshooting)
@@ -88,7 +92,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 | **Version Detection**         | Detects the running release at startup, supports **Ubuntu 26.04 LTS and 26.10**, warns/prompts on anything else |
 | **Nala Front-End**            | Installs and uses [Nala](https://github.com/volitank/nala) for installs/updates (parallel downloads, cleaner output); transparently falls back to apt-get if unavailable |
 | **Catppuccin-Themed Output**  | Menus, logs, and summary use the Catppuccin Mocha palette (truecolor), auto-disabled for non-TTY / `NO_COLOR` |
-| **Interactive Menu**          | Text-based menu with 25 categories (plus a Ubuntu Studio sub-menu)                             |
+| **Interactive Menu**          | Text-based menu with 28 categories (plus Ubuntu Studio and Security sub-menus)                 |
 | **GNOME App-Folder Creation** | After each category, optionally groups the apps you just installed into a Super-key app folder |
 | **Terminal Font Setup**       | In GUI Tweaks, optionally sets the terminal / system monospace font to an installed Nerd Font (works on Ptyxis, GNOME Console, and gnome-terminal) |
 | **Error Handling**             | Skips unavailable packages, continues installation                                              |
@@ -101,11 +105,11 @@ Beyond just installing packages, after each category finishes it can also **crea
 
 ### Statistics
 
-- **Main Menu Categories:** 25 (plus a 6-option Ubuntu Studio sub-menu)
+- **Main Menu Categories:** 28 (plus Ubuntu Studio and Security sub-menus)
 - **Package Front-End:** Nala (auto-installed, with transparent apt-get fallback)
 - **Verified APT Packages:** 200+
 - **Snap-Only Tools:** 3 (LXD, IntelliJ IDEA Community, DBeaver CE)
-- **Third-Party Direct-Install Tools:** ~8 (VS Code, Sublime Text, Ollama, Cursor, Mistral AI Vibe, Go, Rust/rustup, Chris Titus mybash)
+- **Third-Party Direct-Install Tools:** VS Code, Sublime Text, Ollama, Cursor, Mistral AI Vibe, Claude Code, Go, Rust/rustup, Chris Titus mybash, Azure CLI, lazygit (via Go), LazyVim + Nordic (Neovim config)
 - **Estimated Install Time:** 15 minutes – several hours (depending on selections; "Install EVERYTHING" is a long run)
 - **Estimated Disk Space:** 5–30GB+ (depending on selections)
 
@@ -144,7 +148,7 @@ sudo ./post-install.sh
 
 ### Menu Navigation
 
-1. **Main Menu**: Shows all 25 categories (`0`–`25`)
+1. **Main Menu**: Shows all 28 categories (`0`–`28`)
 2. **Sub-Menus**: Ubuntu Studio (option `1`) has a sub-menu (`1`–`6`); Security Tools (option `25`) has a sub-menu to choose Full or Defensive-only
 3. **Bulk Options**: `A`, `B`, `C` (see [Bulk Options](#-bulk-options-a--b--c) below)
 4. **`S`** — Show Installation Summary
@@ -290,6 +294,8 @@ Official Ubuntu Studio meta-packages (note: **no hyphen** between "ubuntu" and "
 
 Both already-installed checks correctly mark the app as "skipped" (not silently ignored) so its icon still gets picked up for the Code Editors app folder.
 
+**LazyVim + Nordic (optional prompt):** after the editors install, you're asked whether to set up [LazyVim](https://github.com/LazyVim/starter) as your Neovim config with the [Nordic](https://github.com/AlexvZyl/nordic.nvim) theme. It's a **prompted opt-in** because it **replaces `~/.config/nvim`** — any existing config is backed up to `~/.config/nvim.bak.<timestamp>` first. The clone runs as your user; plugins sync on the first `nvim` launch. The prompt also appears in the `A`/`C` bulk runs.
+
 ---
 
 ### Python Development
@@ -348,7 +354,7 @@ Both already-installed checks correctly mark the app as "skipped" (not silently 
 
 **APT Package:** `golang`
 
-**Direct Install (if `go` isn't already on `PATH`):** downloads and installs **Go 1.22.5** from the official source to `/usr/local/go`, adds it to `PATH` via `/etc/environment`
+**Direct Install (if `go` isn't already on `PATH`):** downloads and installs **Go 1.22.5** from the official source to `/usr/local/go`, and adds it to `PATH` via **`/etc/profile.d/go.sh`** (a real shell script that expands `$PATH` at login — *not* `/etc/environment`, which is a `NAME=value` pam_env file where an `export` line would break `install-info`; the step also strips any such broken line an older version left behind)
 
 ---
 
@@ -356,7 +362,7 @@ Both already-installed checks correctly mark the app as "skipped" (not silently 
 
 **APT Packages:** `rustc`, `cargo`
 
-**Direct Install (if `rustup` isn't already present):** installs **rustup** from the official source, sets `stable` as default, adds the `rust-src` component
+**Direct Install (if `rustup` isn't already present):** installs **rustup** from the official source **as the desktop user** (so the toolchain lands in *their* `~/.cargo`, not root's), sets `stable` as default, and adds the `rust-src` component. Skipped when there's no sudo-invoking user (script run as root directly).
 
 ---
 
@@ -519,6 +525,10 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Ner
 
 **GUI Tools:** `gnome-tweaks`, `gnome-shell-extensions`, `gnome-themes-extra`, `nautilus`, `eog`, `file-roller`, `simple-scan`, `gnome-screenshot`, `gnome-system-monitor`, `dconf-editor`
 
+**GNOME Shell extensions:** installed via [`gext`](https://github.com/essembeh/gnome-extensions-cli) (set up per-user with `pipx`), as the logged-in user (needs an active GNOME session — skipped cleanly otherwise). Curated set: GSConnect, PaperWM, Net Speed, Window State Manager, Bluetooth Battery Meter, Wiggle, Auto Move Windows. Best-effort — a failed extension is logged and skipped; some need a log-out/in to activate.
+
+**Logiops (Logitech HID++ driver) — optional prompt:** builds [PixlOne/logiops](https://github.com/PixlOne/logiops) from source and enables the `logid` service. **Prompted opt-in** because it only matters for configurable Logitech mice/keyboards and pulls a build toolchain. Writes a working `/etc/logid.cfg` (MX Master 3 / MX Master — gestures, smartshift, hi-res scroll, DPI) **embedded in the script** so it works standalone; any existing config is backed up to `/etc/logid.cfg.bak.<timestamp>` first. Edit the config in `write_logid_config()` to change mappings.
+
 *(`evince`/`gedit` intentionally not re-listed here — [Office & Productivity](#office--productivity) and [Code Editors](#code-editors) already own them.)*
 
 ---
@@ -582,13 +592,43 @@ Most of these are CLI-only (no `.desktop` launcher), so they won't get folder ic
 
 ---
 
+### .NET Development
+
+Installs the **.NET SDK** from Ubuntu's own repositories. Because the exact SDK versions available drift by release, the script installs the **newest `dotnet-sdk-*` actually present** (checks for `dotnet-sdk-10.0`, then `9.0`, then `8.0`) rather than hardcoding one that may have aged out, and adds the matching `aspnetcore-runtime-*` when packaged. EF Core and other `dotnet tool` installs are per-user (`dotnet tool install -g …`) and left to you.
+
+> If no `dotnet-sdk-*` package is found on your release, it's logged as failed with a pointer to [Microsoft's Linux install docs](https://learn.microsoft.com/dotnet/core/install/linux-ubuntu).
+
+---
+
+### DevOps &amp; Cloud
+
+Developer/cloud tooling installed together:
+
+- **Docker + docker-compose** (`docker.io`, `docker-compose`) — a lightweight, dedicated Docker install; adds the invoking user to the `docker` group and enables the service. *(The [Container & Virtualization](#container--virtualization) category also installs these, alongside podman/LXC/KVM/Cockpit — this is just Docker for a dev box.)*
+- **Azure CLI** — via Microsoft's official install script (`curl -sL https://aka.ms/InstallAzureCLIDeb | bash`); provides the `az` command.
+- **lazygit** — installed with `go install github.com/jesseduffield/lazygit@latest`. Go is installed first if missing; the build runs **as your user** (lands in `~/go/bin`) and is symlinked into `/usr/local/bin` so it's on everyone's `PATH`.
+
+> `docker`/`az`/`lazygit` are CLI tools with no `.desktop` launcher, so this category produces no app-folder icons (expected).
+
+---
+
+### Desktop Apps
+
+Common desktop applications:
+
+- **Spotify** (snap) — installed as-is, with **no X11 Ozone override**; it runs under the session's native backend (Wayland where available) for a cleaner environment.
+- **Slack** (snap) — strict-confinement snap (no `--classic`).
+- **Remmina** (remote-desktop client) — installed from the upstream `remmina-next` PPA when available (codename-aware via `add_ppa`, falls back to the distro package), with the RDP (`remmina-plugin-rdp`) and secret-storage (`remmina-plugin-secret`) plugins.
+
+---
+
 ## 🔀 Bulk Options (A / B / C)
 
 | Option | Runs                                                                                                                                                                                            | Notes                                    |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| **A**  | Code Editors, Python, Web Development, Java, C/C++, Go, Rust, Node.js, PHP, Ruby, General Development Tools, AI Tools                                                                          | "ALL Development Tools"                  |
+| **A**  | Code Editors, Python, Web Development, Java, C/C++, Go, Rust, Node.js, PHP, Ruby, .NET, General Development Tools, AI Tools                                                                    | "ALL Development Tools" (languages; DevOps & Cloud is C only) |
 | **B**  | Ubuntu Studio (Full), Graphics, Video, Audio                                                                                                                                                    | "ALL Media Tools"                        |
-| **C**  | Everything in A and B, plus Database Tools, Container & Virtualization, Gaming, Office & Productivity, System Utilities, GUI Tweaks, Windows Software Support, Android Tools, and Security Tools | "EVERYTHING"                             |
+| **C**  | Everything in A and B, plus Database Tools, Container & Virtualization, Gaming, Office & Productivity, System Utilities, GUI Tweaks, Windows Software Support, Android Tools, Security Tools, .NET, DevOps & Cloud, and Desktop Apps | "EVERYTHING"                             |
 
 **App folders:** A/B/C **auto-create** a GNOME app folder for each category they install (no prompts). The individual numbered categories (1–24) and the Ubuntu Studio sub-menu instead *ask* before creating each folder. Either way, folder creation needs an active GNOME session (see [GNOME App Folders](#️-gnome-app-folders-super-key-groups)); without one, each is skipped with a warning and packages still install.
 
@@ -673,6 +713,19 @@ Contains a timestamp, the running user, summary statistics, and the full install
 
 ---
 
+## 🔒 Security Notes
+
+The script runs as **root** and installs software from a mix of Ubuntu repos and third-party sources. What that means for trust:
+
+- **Package integrity:** apt/Nala packages are signed by Ubuntu's archive keys. Third-party **apt repos** (VS Code, Sublime) pin their GPG key with `signed-by=` and import it directly into `/usr/share/keyrings/` (no `/tmp` intermediate). **PPAs** (Papirus, Remmina) trust the Launchpad PPA owner, whose packages run maintainer scripts as root.
+- **Remote install scripts run as root, trusted over HTTPS only:** NodeSource (`setup_20.x`), Ollama (`install.sh`), and Azure CLI (`InstallAzureCLIDeb`) are piped to `bash`/`sh`. These are the vendors' official install methods; integrity rests on TLS + the vendor, with no independent checksum. The **Cursor `.deb`** (`dpkg -i`) and **Mistral Vibe AppImage** are likewise TLS-trust only. rustup is installed **as your user**, not root.
+- **Docker group = root-equivalent:** installing Docker adds your user to the `docker` group, which grants full control of the Docker socket — effectively root. This is standard and expected; know that it's a privilege boundary. (Prefer rootless Docker if you want to avoid it.)
+- **Third-party desktop code:** GNOME Shell extensions (from extensions.gnome.org) run in your shell as your user; `--classic` snaps (IntelliJ, DBeaver CE) run unconfined. Both execute third-party code by design.
+- **Source builds:** Logiops is compiled and `make install`ed from source in a **private `mktemp -d`** (not a predictable, reusable `/tmp` path).
+- **No secrets handled:** the script never asks for or stores passwords/tokens, and menu input (a single character) can't reach a shell.
+
+---
+
 ## ⚠️ Known Limitations
 
 - **Bulk options auto-create app folders**: `A`/`B`/`C` create a folder per category automatically via `auto_category` (no prompt). Categories whose packages have no GUI launcher (e.g. System Utilities, Android Tools) are skipped with a "no GUI apps" notice rather than producing an empty folder.
@@ -736,7 +789,7 @@ Comment out or remove the menu `echo` line, the `case` branch, and the function 
 | **"Designed for Ubuntu 26.04/26.10, detected: …"** | You're on a release the script isn't validated against — answer `y` to continue anyway, or add your version to `SUPPORTED_VERSIONS` at the top of the script |
 | **Terminal font didn't change**     | Set it as your user (not `sudo`): `gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 12'`. Confirm the font is present with `fc-list \| grep -i jetbrains`. On Ptyxis, ensure "use system font" is on (the script sets it) |
 | **"unit files changed on disk, run daemon-reload"** | Benign systemd notice when a package drops a unit/binfmt file (e.g. clang). Not an error — the script runs `systemctl daemon-reload` after each batch to reconcile it. Safe to ignore if it still appears once mid-batch |
-| **`install-info` fails: `export: … JAVA_HOME: bad variable name`** | A previous Java install wrote `export` lines into `/etc/environment` (invalid there). Clean them and finish configuring: `sudo sed -i '/^export /d' /etc/environment && sudo dpkg --configure -a`. Current script versions no longer write those lines and auto-strip old ones on the next Java install |
+| **`install-info` fails: `export: … bad variable name`** | A previous Java **or Go** install wrote `export` lines into `/etc/environment` (invalid there). Clean them and finish configuring: `sudo sed -i '/^export /d' /etc/environment && sudo dpkg --configure -a`. Current script versions no longer write those lines (Java → `/etc/profile.d/java-home.sh`, Go → `/etc/profile.d/go.sh`) and auto-strip old ones on the next run |
 | **`404 Not Found` / `is not signed` on package downloads** | A `nala fetch`-selected mirror is incomplete/stale (the script no longer selects mirrors, but a prior run leaves the chosen mirrors in `/etc/apt/sources.list.d/fetch.sources`). Restore Ubuntu's defaults: `sudo rm -f /etc/apt/sources.list.d/fetch.sources && sudo nala update` |
 
 ### Manual Installation

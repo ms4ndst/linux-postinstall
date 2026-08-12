@@ -32,18 +32,28 @@ else
 fi
 
 # ── UI helpers (Catppuccin-themed terminal chrome) ───────────────────────────
-UI_RULE="────────────────────────────────────────────"
+# A 58-wide horizontal rule (built at load so the width is never miscounted).
+# Header box = ╭ + rule + ╮ = 60 cols, matching the two-column menu (2 cells of
+# 30 cols each). ui_rule (dim) is the plain divider used mid-page.
+printf -v UI_RULE '─%.0s' {1..58}
 ui_rule() { printf "${OVERLAY}%s${NC}\n" "$UI_RULE"; }
-# Accent-ruled header with a bold title and optional dim subtitle.
+# Framed header: rounded-corner top/bottom in the Mauve accent, bold Lavender
+# title, optional dim subtitle. Open sides (no vertical bars) so there's no
+# right-edge padding math to get wrong.
 ui_header() {
-    printf "${MAUVE}${BOLD}%s${NC}\n" "$UI_RULE"
+    printf "${MAUVE}${BOLD}╭%s╮${NC}\n" "$UI_RULE"
     printf "  ${LAVENDER}${BOLD}%s${NC}\n" "$1"
     [ -n "${2:-}" ] && printf "  ${DIM}${SUBTEXT}%s${NC}\n" "$2"
-    printf "${MAUVE}${BOLD}%s${NC}\n" "$UI_RULE"
+    printf "${MAUVE}${BOLD}╰%s╯${NC}\n" "$UI_RULE"
 }
-# Menu rows: key in accent, label in body text. ui_item_alt for bulk actions.
+# Single-column menu row (used by the short sub-menus): key in accent, label body.
 ui_item()     { printf "  ${MAUVE}%3s${NC}  ${TEXT}%s${NC}\n" "$1" "$2"; }
 ui_item_alt() { printf "  ${PEACH}%3s${NC}  ${TEXT}%s${NC}\n" "$1" "$2"; }
+# Two-column menu cell (no newline): fixed 30-col visible width so two align.
+# Padding is applied to the %-24s ARGUMENT, so the zero-width color codes in the
+# format string don't disturb alignment. ui_cell_alt = Peach key (bulk actions).
+ui_cell()     { printf "  ${MAUVE}%2s${NC}  ${TEXT}%-24s${NC}" "$1" "$2"; }
+ui_cell_alt() { printf "  ${PEACH}%2s${NC}  ${TEXT}%-24s${NC}" "$1" "$2"; }
 
 # Releases this script is validated against. Both share the same package names
 # and codename-resolved repositories, so one code path serves both; version-
@@ -105,7 +115,18 @@ check_version() {
 }
 
 is_installed() { dpkg -l "$1" 2>/dev/null | grep -q "^ii"; }
-package_exists() { apt-cache search "^${1}$" 2>/dev/null | grep -q "${1}"; }
+# Does an installable candidate exist for this exact package? Uses `apt-cache
+# policy` (literal package name) rather than `apt-cache search "^name$"`, whose
+# ARGUMENT IS A REGEX - names with regex metacharacters like libconfig++-dev
+# (invalid `++`) or an arch qualifier like libgl1-mesa-glx:i386 never matched and
+# were wrongly reported "Not in repos". policy takes a literal name (arch
+# qualifier included) and reports the candidate version, or "(none)" when there's
+# no installable candidate.
+package_exists() {
+    local cand
+    cand=$(apt-cache policy "$1" 2>/dev/null | awk -F': ' '/Candidate:/{print $2; exit}')
+    [ -n "$cand" ] && [ "$cand" != "(none)" ]
+}
 
 # ── Package-manager front-end ────────────────────────────────────────────────
 # Nala (https://github.com/volitank/nala) is a friendlier apt front-end with
@@ -707,6 +728,66 @@ install_audio() {
 install_code_editors() {
     batch_install "Code Editors" vim neovim emacs nano geany gedit kate
     install_vscode; install_sublime_text
+    configure_lazyvim
+}
+
+# Prompt to set up LazyVim (Neovim starter config) with the Nordic theme. It
+# REPLACES ~/.config/nvim, so it's a prompted opt-in and backs up any existing
+# config first. Prompted rather than automatic so a bulk (A/C) run can't silently
+# clobber a user's Neovim setup.
+configure_lazyvim() {
+    local msg="Set up LazyVim (Neovim config) with the Nordic theme?\n\nThis REPLACES ~/.config/nvim (any existing config is backed up first)."
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Set up" --no-button "Skip" 12 72 && do_it=true
+    else
+        echo -e "$msg [y/N]:"
+        read -r REPLY
+        { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
+    fi
+    if $do_it; then install_lazyvim; else log INFO "Skipped LazyVim setup"; fi
+}
+
+# Install LazyVim (https://github.com/LazyVim/starter) as the Neovim config plus
+# the Nordic theme (https://github.com/AlexvZyl/nordic.nvim). Runs as the target
+# user; existing ~/.config/nvim is backed up. Plugins sync on first `nvim` launch.
+install_lazyvim() {
+    # Needs a real sudo-invoking user - without one, `eval echo ~` resolves to
+    # /root and the later chown "$SUDO_USER:$SUDO_USER" becomes chown ":" (error).
+    if [ -z "$SUDO_USER" ] || [ "$SUDO_USER" = "root" ]; then
+        log WARNING "No target user (run via sudo from a user session) - skipping LazyVim"; return 1
+    fi
+    local uh; uh=$(eval echo ~"$SUDO_USER" 2>/dev/null)
+    [ -z "$uh" ] && { log WARNING "Could not determine home dir - skipping LazyVim"; return 1; }
+    if ! command -v nvim &>/dev/null && ! is_installed neovim; then
+        log INFO "Neovim not installed - installing it for LazyVim..."; safe_install neovim
+    fi
+    local nvdir="$uh/.config/nvim"
+    if [ -e "$nvdir" ]; then
+        local bak="${nvdir}.bak.$(date +%Y%m%d_%H%M%S)"
+        mv "$nvdir" "$bak" && log INFO "Backed up existing Neovim config to $bak"
+    fi
+    if ! su - "$SUDO_USER" -c "git clone --depth 1 https://github.com/LazyVim/starter '$nvdir'" 2>/dev/null; then
+        log WARNING "LazyVim clone failed (needs network access to github.com)"; return 1
+    fi
+    rm -rf "$nvdir/.git"
+    mkdir -p "$nvdir/lua/plugins"
+    cat > "$nvdir/lua/plugins/nordic.lua" <<'EOF'
+-- Nordic theme (https://github.com/AlexvZyl/nordic.nvim) for LazyVim
+return {
+  {
+    "AlexvZyl/nordic.nvim",
+    lazy = false,
+    priority = 1000,
+    config = function()
+      require("nordic").load()
+    end,
+  },
+  { "LazyVim/LazyVim", opts = { colorscheme = "nordic" } },
+}
+EOF
+    chown -R "$SUDO_USER:$SUDO_USER" "$nvdir"
+    log SUCCESS "LazyVim + Nordic theme installed to $nvdir (launch 'nvim' to sync plugins)"
 }
 
 install_vscode() {
@@ -721,12 +802,16 @@ install_vscode() {
         return 0
     fi
     log INFO "Installing VS Code..."
-    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/microsoft.gpg 2>/dev/null
-    install -D -m 644 /tmp/microsoft.gpg /usr/share/keyrings/microsoft.gpg 2>/dev/null
+    # Dearmor the key STRAIGHT into the keyring - no predictable /tmp intermediate
+    # (as root, `> /tmp/microsoft.gpg` follows a symlink and can overwrite an
+    # arbitrary file). install -D creates the dir and sets mode 644; the key is
+    # public, so 644 is correct. Same safe pattern as install_sublime_text.
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/microsoft.gpg 2>/dev/null
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list
     apt-get update -qq 2>/dev/null
     safe_install code
-    rm -f /tmp/microsoft.gpg /etc/apt/sources.list.d/vscode.list
+    rm -f /etc/apt/sources.list.d/vscode.list
 }
 
 install_sublime_text() {
@@ -953,7 +1038,18 @@ install_go() {
         local t=$(mktemp -d)
         if curl -L -o "$t/go.tar.gz" https://go.dev/dl/go1.22.5.linux-amd64.tar.gz 2>/dev/null; then
             rm -rf /usr/local/go && tar -C /usr/local -xzf "$t/go.tar.gz" 2>/dev/null
-            echo 'export PATH="$PATH:/usr/local/go/bin"' >> /etc/environment
+            # Put Go on PATH via /etc/profile.d (a real shell script that IS
+            # sourced and expands $PATH) - NOT via an "export ..." line in
+            # /etc/environment, which is a pam_env NAME=value file, not a shell
+            # script: an export line there breaks install-info's postinst with
+            # "bad variable name" and then fails every later package (same bug the
+            # Java path documents). Also strip any such broken line a previous
+            # version of this script left behind, and update PATH for this run so
+            # later steps (e.g. lazygit) find `go` immediately.
+            sed -i '\|^export PATH=.*/usr/local/go/bin|d' /etc/environment 2>/dev/null
+            echo 'export PATH="$PATH:/usr/local/go/bin"' > /etc/profile.d/go.sh
+            chmod 0644 /etc/profile.d/go.sh
+            export PATH="$PATH:/usr/local/go/bin"
             log SUCCESS "Go installed"
         else
             log WARNING "Go download failed"
@@ -965,17 +1061,24 @@ install_go() {
 # ========== RUST ==========
 install_rust() {
     batch_install "Rust" rustc cargo
-    if ! command -v rustup &>/dev/null; then
-        log INFO "Installing rustup..."
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 2>/dev/null
-        if [ -f "$HOME/.cargo/env" ]; then
-            source "$HOME/.cargo/env"
-            rustup default stable 2>/dev/null
-            rustup component add rust-src 2>/dev/null
-            log SUCCESS "Rust installed"
-        else
-            log WARNING "rustup installation may have failed"
-        fi
+    # rustup must be installed AS THE DESKTOP USER, not root - otherwise it lands
+    # in /root/.cargo and the actual user gets nothing from this step. (The apt
+    # rustc/cargo above are already system-wide.) Skip cleanly if there's no
+    # sudo-invoking user (e.g. run as root directly).
+    if [ -z "$SUDO_USER" ] || [ "$SUDO_USER" = "root" ]; then
+        log INFO "No target user for rustup (run via sudo from a user session) - skipping rustup"
+        return 0
+    fi
+    if su - "$SUDO_USER" -c 'command -v rustup' &>/dev/null; then
+        log INFO "rustup already installed for $SUDO_USER"
+        return 0
+    fi
+    log INFO "Installing rustup for $SUDO_USER..."
+    if su - "$SUDO_USER" -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y" 2>/dev/null; then
+        su - "$SUDO_USER" -c '. "$HOME/.cargo/env" 2>/dev/null; rustup default stable; rustup component add rust-src' 2>/dev/null
+        log SUCCESS "Rust (rustup) installed for $SUDO_USER"
+    else
+        log WARNING "rustup installation may have failed"
     fi
 }
 
@@ -1001,6 +1104,28 @@ install_php() {
 
 # ========== RUBY ==========
 install_ruby() { batch_install "Ruby" ruby ruby-dev ruby-bundler; }
+
+# ========== .NET ==========
+# Ubuntu ships the .NET SDK as dotnet-sdk-<major>.0 in its own repos, but which
+# versions exist drifts by release. Install the newest one actually present
+# rather than hardcoding a version that may have aged out. aspnetcore-runtime is
+# added when available for web/API development. EF Core and other dotnet tools
+# are per-user (`dotnet tool install -g`), left to the developer.
+install_dotnet() {
+    local v picked=""
+    for v in dotnet-sdk-10.0 dotnet-sdk-9.0 dotnet-sdk-8.0; do
+        if package_exists "$v"; then picked="$v"; break; fi
+    done
+    if [ -n "$picked" ]; then
+        batch_install ".NET SDK" "$picked"
+        # Matching ASP.NET Core runtime (same major as the SDK), if packaged.
+        local major="${picked#dotnet-sdk-}"
+        package_exists "aspnetcore-runtime-${major}" && batch_install ".NET ASP.NET Core" "aspnetcore-runtime-${major}"
+    else
+        FAILED_PACKAGES+=("dotnet-sdk"); ((TOTAL_FAILED++))
+        log WARNING "No dotnet-sdk-* package found in repos - see https://learn.microsoft.com/dotnet/core/install/linux-ubuntu"
+    fi
+}
 
 # ========== DATABASES ==========
 install_databases() {
@@ -1432,6 +1557,325 @@ install_gui_tweaks() {
     configure_terminal_font
     install_chris_titus_mybash
     install_gui_tools
+    install_gnome_extensions
+    configure_logiops
+}
+
+# Install a curated set of GNOME Shell extensions via gext (the gnome-extensions-cli
+# tool), set up per-user with pipx. Runs entirely as the logged-in desktop user
+# (extensions are per-user and enabling them needs their session), and needs an
+# active GNOME session - skipped cleanly otherwise. Best-effort: a failed
+# extension is logged and skipped, not fatal. Some need a session reload (log
+# out/in) to actually activate.
+install_gnome_extensions() {
+    local user uid
+    if ! read -r user uid < <(resolve_desktop_session); then
+        log INFO "No active desktop session - skipping GNOME extensions"; return 0
+    fi
+    command -v pipx &>/dev/null || safe_install pipx
+    log INFO "Setting up gext (GNOME Extension Manager CLI) via pipx..."
+    su - "$user" -c 'command -v gext >/dev/null 2>&1 || pipx install gnome-extensions-cli --system-site-packages' 2>/dev/null
+    local exts=(
+        "gsconnect@andyholmes.github.io"                               # GSConnect
+        "paperwm@paperwm.github.com"                                   # PaperWM
+        "netspeed@alynx.one"                                           # Net speed
+        "window-state-manager@kishorv06.github.io"                     # Window State Manager
+        "Bluetooth-Battery-Meter@maniacx.github.com"                   # Bluetooth Battery Meter
+        "wiggle@mechtifs"                                              # Wiggle
+        "auto-move-windows@gnome-shell-extensions.gcampax.github.com"  # Auto Move Windows
+    )
+    local e ok=0
+    for e in "${exts[@]}"; do
+        if su - "$user" -c "PATH=\"\$HOME/.local/bin:\$PATH\" gext install '$e'" 2>/dev/null; then
+            log INFO "Installed extension: $e"; ((ok++))
+        else
+            log WARNING "Failed extension (skipped): $e"
+        fi
+    done
+    log INFO "GNOME extensions: $ok/${#exts[@]} installed - log out/in to activate"
+}
+
+# Prompt to build + install Logiops (the Logitech HID++ driver, https://github.com/
+# PixlOne/logiops) from source. Prompted opt-in because it only matters for
+# Logitech input devices and it compiles from source (pulls a build toolchain).
+configure_logiops() {
+    local msg="Build and install Logiops (Logitech HID++ driver) from source?\n\nOnly needed for configurable Logitech mice/keyboards. It pulls a build toolchain, compiles from source, and enables the 'logid' service."
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Build & install" --no-button "Skip" 12 72 && do_it=true
+    else
+        echo -e "$msg [y/N]:"
+        read -r REPLY
+        { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
+    fi
+    if $do_it; then install_logiops; else log INFO "Skipped Logiops"; fi
+}
+
+install_logiops() {
+    batch_install "Logiops Build Deps" \
+        cmake pkg-config libevdev-dev libudev-dev libconfig++-dev libglib2.0-dev
+    # Build in a FRESH private temp dir (mktemp -d is mode 700, root-owned), not a
+    # predictable, reused /tmp/logiops. A fixed path that's cloned only "if it
+    # doesn't already exist" lets a local attacker pre-plant a malicious source
+    # tree that then gets built and `make install`ed AS ROOT. Always clone fresh;
+    # remove the tree afterward.
+    local d; d=$(mktemp -d) || { log WARNING "logiops: mktemp failed"; return 1; }
+    if ! git clone --depth 1 https://github.com/PixlOne/logiops.git "$d/src" 2>/dev/null; then
+        log WARNING "logiops clone failed"; rm -rf "$d"; return 1
+    fi
+    local rc=0
+    if ( cd "$d/src" && mkdir -p build && cd build && cmake .. 2>/dev/null && make 2>/dev/null && make install 2>/dev/null ); then
+        write_logid_config
+        systemctl enable --now logid 2>/dev/null || true
+        systemctl restart logid 2>/dev/null || true
+        log SUCCESS "Logiops installed and logid service enabled"
+    else
+        log WARNING "logiops build/install failed"; rc=1
+    fi
+    rm -rf "$d"
+    return $rc
+}
+
+# Write a working /etc/logid.cfg (Logitech MX Master 3 / MX Master: gestures,
+# smartshift, hi-res scroll, DPI). Embedded here - via a single-quoted heredoc so
+# nothing is shell-expanded - so the script stays self-contained (no dependency
+# on a sibling files/ directory when run standalone). Any existing config is
+# backed up first. Edit the mappings below to taste; keys reference:
+# https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h
+write_logid_config() {
+    [ -f /etc/logid.cfg ] && cp /etc/logid.cfg "/etc/logid.cfg.bak.$(date +%Y%m%d_%H%M%S)" 2>/dev/null \
+        && log INFO "Backed up existing /etc/logid.cfg"
+    cat > /etc/logid.cfg <<'LOGID_EOF'
+// Logiops (Linux driver) configuration for Logitech MX Master 3.
+// Includes gestures, smartshift, DPI.
+// Tested on logid v0.2.3 - GNOME 3.38.4 on Zorin OS 16 Pro
+// What's working:
+//   1. Window snapping using Gesture button (Thumb)
+//   2. Forward Back Buttons
+//   3. Top button (Ratchet-Free wheel)
+// What's not working:
+//   1. Thumb scroll (H-scroll)
+//   2. Scroll button
+
+// File location: /etc/logid.cfg
+//
+// https://github.com/PixlOne/logiops
+// Keys: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h
+
+devices: (
+{
+    name: "Wireless Mouse MX Master 3";
+    smartshift:
+    {
+        on: true;
+        threshold: 20;
+    };
+    hiresscroll:
+    {
+        hires: true;
+        invert: false;
+        target: false;
+        up: {
+            mode: "Axis";
+            axis: "REL_WHEEL_HI_RES";
+            axis_multiplier: 3;
+        },
+        down: {
+            mode: "Axis";
+            axis: "REL_WHEEL_HI_RES";
+            axis_multiplier: -3;
+        },
+    };
+    dpi: 1100;
+
+    buttons: (
+        {
+            cid: 0xc3;
+            action =
+            {
+                type: "Gestures";
+                gestures: (
+                    {
+                        direction: "Up";
+                        mode: "OnRelease";
+                        action =
+                        {
+                            type: "Keypress";
+                            keys: ["KEY_LEFTCTRL", "KEY_LEFTMETA", "KEY_UP"];
+                        };
+                    },
+                    {
+                        direction: "Down";
+                        mode: "OnRelease";
+                        action =
+                        {
+                            type: "Keypress";
+                            keys: ["KEY_LEFTCTRL", "KEY_LEFTMETA", "KEY_DOWN"];
+                        };
+                    },
+                    {
+                        direction: "Left";
+                        mode: "OnRelease";
+                        action =
+                        {
+                            type: "Keypress";
+                            keys: ["KEY_PREVIOUSSONG"]
+                        };
+                    },
+                    {
+                        direction: "Right";
+                        mode: "OnRelease";
+                        action =
+                        {
+                            type: "Keypress";
+                            keys: ["KEY_NEXTSONG"]
+                        }
+                    },
+                    {
+                        direction: "None";
+                        mode: "OnRelease";
+                        action =
+                        {
+                            type: "Keypress";
+                            keys: ["KEY_PLAYPAUSE"]
+                        }
+                    }
+                );
+            };
+        },
+        {
+            cid: 0x53;
+            action =
+            {
+              type: "Keypress";
+              keys: ["KEY_LEFTALT", "KEY_LEFT"]
+            };
+        },
+        {
+            cid: 0x56;
+            action =
+            {
+              type: "Keypress";
+              keys: ["KEY_LEFTALT", "KEY_RIGHT"]
+            };
+        },
+        {
+            cid: 0xc4;
+            action =
+            {
+                type = "ToggleSmartshift";
+            };
+        }
+    );
+},
+{
+    name: "Wireless Mouse MX Master";
+    smartshift:
+    {
+        on: true;
+        threshold: 20;
+    };
+    hiresscroll:
+    {
+        hires: true;
+        invert: false;
+        target: false;
+        up: {
+            mode: "Axis";
+            axis: "REL_WHEEL_HI_RES";
+            axis_multiplier: 3;
+        },
+        down: {
+            mode: "Axis";
+            axis: "REL_WHEEL_HI_RES";
+            axis_multiplier: -3;
+        },
+    };
+    dpi: 1000;
+
+    buttons: (
+        {
+            cid: 0xc3;
+            action =
+            {
+                type: "Gestures";
+                gestures: (
+                    {
+                        direction: "Up";
+                        mode: "OnRelease";
+                        action =
+                        {
+                            type: "Keypress";
+                            keys: ["KEY_LEFTCTRL", "KEY_LEFTMETA", "KEY_UP"];
+                        };
+                    },
+                    {
+                        direction: "Down";
+                        mode: "OnRelease";
+                        action =
+                        {
+                            type: "Keypress";
+                            keys: ["KEY_LEFTCTRL", "KEY_LEFTMETA", "KEY_DOWN"];
+                        };
+                    },
+                    {
+                        direction: "Left";
+                        mode: "OnRelease";
+                        action =
+                        {
+                            type: "Keypress";
+                            keys: ["KEY_PREVIOUSSONG"]
+                        };
+                    },
+                    {
+                        direction: "Right";
+                        mode: "OnRelease";
+                        action =
+                        {
+                            type: "Keypress";
+                            keys: ["KEY_NEXTSONG"]
+                        }
+                    },
+                    {
+                        direction: "None";
+                        mode: "OnRelease";
+                        action =
+                        {
+                            type: "Keypress";
+                            keys: ["KEY_PLAYPAUSE"]
+                        }
+                    }
+                );
+            };
+        },
+        {
+            cid: 0x53;
+            action =
+            {
+              type: "Keypress";
+              keys: ["KEY_LEFTALT", "KEY_LEFT"]
+            };
+        },
+        {
+            cid: 0x56;
+            action =
+            {
+              type: "Keypress";
+              keys: ["KEY_LEFTALT", "KEY_RIGHT"]
+            };
+        },
+        {
+            cid: 0xc4;
+            action =
+            {
+                type = "ToggleSmartshift";
+            };
+        }
+    );
+}
+);
+LOGID_EOF
+    log INFO "Wrote /etc/logid.cfg (MX Master 3 / MX Master mappings)"
 }
 
 # Add a PPA in a way that works cleanly across both supported releases. PPAs
@@ -1477,9 +1921,12 @@ install_nerd_fonts() {
     batch_install "Nerd Fonts (APT)" fonts-firacode fonts-jetbrains-mono
     local t=$(mktemp -d) c=0 f=0
     local fonts=(FiraCode JetBrainsMono Hack SourceCodePro CascadiaCode UbuntuMono DejaVuSansMono)
-    local ext="tar.xz" ecmd="tar -xf"
+    # destflag differs by tool: tar uses -C for the output dir, unzip uses -d.
+    # (An earlier version hardcoded -C for both, so the unzip fallback extracted
+    # into the CWD and every font came up empty.)
+    local ext="tar.xz" ecmd="tar -xf" destflag="-C"
     if ! command -v tar &>/dev/null || ! tar --help 2>/dev/null | grep -q xz; then
-        command -v unzip &>/dev/null && { ext="zip"; ecmd="unzip -qq -o"; } || safe_install tar xz-utils 2>/dev/null || true
+        command -v unzip &>/dev/null && { ext="zip"; ecmd="unzip -qq -o"; destflag="-d"; } || safe_install tar xz-utils 2>/dev/null || true
     fi
     log INFO "Downloading popular Nerd Fonts (format: ${ext})..."
     for font in "${fonts[@]}"; do
@@ -1489,7 +1936,7 @@ install_nerd_fonts() {
         command -v curl &>/dev/null && curl -L -f --retry 3 -o "$af" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.${ext}" 2>/dev/null && d=1
         [ $d -eq 0 ] && command -v wget &>/dev/null && wget -q --tries=3 -O "$af" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.${ext}" 2>/dev/null && d=1
         [ $d -eq 0 ] && { log WARNING "Failed: $font"; ((f++)); continue; }
-        if ! $ecmd "$af" -C "$ed" 2>/dev/null; then log WARNING "Extract failed: $font"; ((f++)); continue; fi
+        if ! $ecmd "$af" $destflag "$ed" 2>/dev/null; then log WARNING "Extract failed: $font"; ((f++)); continue; fi
         local cp=0
         while IFS= read -r -d '' ff; do cp "$ff" /usr/share/fonts/truetype/nerd-fonts/ 2>/dev/null; ((cp++)); done < <(find "$ed" -type f \( -iname "*.ttf" -o -iname "*.otf" \) -print0 2>/dev/null)
         [ $cp -gt 0 ] && { ((c++)); log INFO "Installed: $font"; } || { log WARNING "No files: $font"; ((f++)); }
@@ -1652,46 +2099,125 @@ install_security_defensive() {
         ufw gufw openvpn wireguard keepassxc
 }
 
+# ========== DEVOPS & CLOUD ==========
+install_devops() {
+    install_docker_standalone
+    install_azure_cli
+    install_lazygit
+}
+
+# Docker + docker-compose as a lightweight, dedicated install (the full
+# "Container & Virtualization" category also installs these, alongside
+# podman/lxc/KVM/Cockpit - this is just Docker for a dev box). Adds the invoking
+# user to the docker group and enables the service, same as the Containers path.
+install_docker_standalone() {
+    batch_install "Docker" docker.io docker-compose
+    if command -v docker &>/dev/null; then
+        usermod -aG docker "$SUDO_USER" 2>/dev/null || true
+        systemctl enable --now docker 2>/dev/null || true
+        log INFO "Docker configured - log out/in for the 'docker' group to take effect"
+    fi
+}
+
+# Azure CLI via Microsoft's official install script (the exact command from
+# Microsoft's docs). The script itself uses sudo internally; we're already root,
+# so pipe to bash directly. Non-fatal on failure.
+install_azure_cli() {
+    if command -v az &>/dev/null; then
+        SKIPPED_PACKAGES+=("azure-cli"); ((TOTAL_SKIPPED++)); log INFO "Already installed: azure-cli"; return 0
+    fi
+    log INFO "Installing Azure CLI (Microsoft install script)..."
+    if curl -sL https://aka.ms/InstallAzureCLIDeb | bash 2>/dev/null && command -v az &>/dev/null; then
+        INSTALLED_PACKAGES+=("azure-cli"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: azure-cli"
+    else
+        FAILED_PACKAGES+=("azure-cli"); ((TOTAL_FAILED++)); log WARNING "Azure CLI install failed - see https://aka.ms/InstallAzureCLIDeb"
+    fi
+}
+
+# lazygit via `go install` (per request). Needs Go; install it first if missing
+# (reuses install_go, which sets up /usr/local/go). `go install` is run AS the
+# target user so the module cache and binary land in their home (~/go/bin), then
+# the binary is symlinked into /usr/local/bin so it's on everyone's PATH.
+install_lazygit() {
+    if command -v lazygit &>/dev/null; then
+        SKIPPED_PACKAGES+=("lazygit"); ((TOTAL_SKIPPED++)); log INFO "Already installed: lazygit"; return 0
+    fi
+    command -v go &>/dev/null || [ -x /usr/local/go/bin/go ] || { log INFO "Go not found - installing it first for lazygit..."; install_go; }
+    local go_bin="/usr/local/go/bin"
+    if ! command -v go &>/dev/null && [ ! -x "$go_bin/go" ]; then
+        FAILED_PACKAGES+=("lazygit"); ((TOTAL_FAILED++)); log WARNING "Go unavailable - cannot install lazygit"; return 1
+    fi
+    local uh; uh=$(eval echo ~"$SUDO_USER" 2>/dev/null)
+    log INFO "Installing lazygit via 'go install' (as $SUDO_USER)..."
+    if su - "$SUDO_USER" -c "PATH=\$PATH:${go_bin} GOBIN='${uh}/go/bin' go install github.com/jesseduffield/lazygit@latest" 2>/dev/null \
+       && [ -x "${uh}/go/bin/lazygit" ]; then
+        ln -sf "${uh}/go/bin/lazygit" /usr/local/bin/lazygit 2>/dev/null || true
+        INSTALLED_PACKAGES+=("lazygit"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: lazygit (${uh}/go/bin/lazygit)"
+    else
+        FAILED_PACKAGES+=("lazygit"); ((TOTAL_FAILED++)); log WARNING "lazygit install failed (needs Go + network access to github.com)"
+    fi
+}
+
+# ========== DESKTOP APPS ==========
+install_desktop_apps() {
+    install_spotify
+    install_slack
+    install_remmina
+}
+
+# Spotify via snap. No X11 Ozone override is applied - Spotify runs under the
+# session's native backend (Wayland where available) for a cleaner environment.
+install_spotify() { safe_snap_install spotify; }
+
+# Slack via snap (strict confinement - no --classic needed on current releases).
+install_slack() { safe_snap_install slack; }
+
+# Remmina remote-desktop client. Tries the upstream remmina-next PPA for the
+# latest build (codename-aware via add_ppa - degrades to the distro package if
+# the PPA has no build for this release), then installs Remmina + the RDP and
+# secret-storage plugins.
+install_remmina() {
+    add_ppa ppa:remmina-ppa-team/remmina-next remmina
+    batch_install "Remmina" remmina remmina-plugin-rdp remmina-plugin-secret
+}
+
 # ========== MENU SYSTEM ==========
+# Dim section label spanning the two-column menu.
+ui_section() { printf "  ${LAVENDER}${BOLD}%s${NC}\n" "$1"; }
+
 show_main_menu() {
     clear
-    ui_header "UBUNTU ${UBUNTU_VERSION:-26.04/26.10}  ·  POST-INSTALL" "verified packages · error handling · GNOME app folders"
+    ui_header "UBUNTU ${UBUNTU_VERSION:-26.04/26.10}  ·  POST-INSTALL" "verified packages · nala · GNOME app folders"
     echo
-    ui_item  1 "Ubuntu Studio (All Media)"
-    ui_item  2 "Graphics & Image Manipulation"
-    ui_item  3 "Video Creation & Editing"
-    ui_item  4 "Audio Production"
-    ui_item  5 "Code Editors"
-    ui_item  6 "Python Development"
-    ui_item  7 "Web Development"
-    ui_item  8 "Java Development"
-    ui_item  9 "C/C++ Development"
-    ui_item 10 "Go Development"
-    ui_item 11 "Rust Development"
-    ui_item 12 "Node.js Development"
-    ui_item 13 "PHP Development"
-    ui_item 14 "Ruby Development"
-    ui_item 15 "Database Tools"
-    ui_item 16 "Container & Virtualization"
-    ui_item 17 "Gaming"
-    ui_item 18 "Office & Productivity"
-    ui_item 19 "System Utilities"
-    ui_item 20 "General Development Tools"
-    ui_item 21 "AI Tools"
-    ui_item 22 "GUI Tweaks"
-    ui_item 23 "Windows Software Support"
-    ui_item 24 "Android Tools (adb, fastboot, scrcpy)"
-    ui_item 25 "Security Tools"
+    ui_section "Media & Creative"
+    ui_cell  1 "Ubuntu Studio";      ui_cell  2 "Graphics & Images";    echo
+    ui_cell  3 "Video Editing";      ui_cell  4 "Audio Production";      echo
+    ui_cell 17 "Gaming";             ui_cell 28 "Desktop Apps";          echo
     echo
-    ui_item_alt A "Install ALL Development Tools"
-    ui_item_alt B "Install ALL Media Tools"
-    ui_item_alt C "Install EVERYTHING"
+    ui_section "Development"
+    ui_cell  5 "Code Editors";       ui_cell  6 "Python";               echo
+    ui_cell  7 "Web Development";    ui_cell  8 "Java";                 echo
+    ui_cell  9 "C/C++";              ui_cell 10 "Go";                   echo
+    ui_cell 11 "Rust";               ui_cell 12 "Node.js";              echo
+    ui_cell 13 "PHP";                ui_cell 14 "Ruby";                 echo
+    ui_cell 26 ".NET";               ui_cell 27 "DevOps & Cloud";       echo
+    ui_cell 20 "General Dev Tools";  ui_cell 21 "AI Tools";             echo
     echo
-    ui_item S "Show Installation Summary"
-    ui_item 0 "Exit"
+    ui_section "Data, System & Desktop"
+    ui_cell 15 "Databases";          ui_cell 16 "Containers & VMs";     echo
+    ui_cell 19 "System Utilities";   ui_cell 22 "GUI Tweaks";           echo
+    ui_cell 18 "Office & Docs";      ui_cell 25 "Security Tools";       echo
+    echo
+    ui_section "Compatibility & Devices"
+    ui_cell 23 "Windows (Wine)";     ui_cell 24 "Android Tools";        echo
+    echo
+    ui_section "Bulk"
+    ui_cell_alt A "All Dev Tools";   ui_cell_alt B "All Media";         echo
+    ui_cell_alt C "EVERYTHING";                                         echo
     echo
     ui_rule
-    printf "  ${LAVENDER}Enter your choice ${DIM}[0-25, A-C, S]${NC}${LAVENDER}: ${NC}"
+    ui_cell  S "Summary";            ui_cell  0 "Exit";                 echo
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-28 · A-C · S]${NC}${LAVENDER}: ${NC}"
 }
 
 show_ubuntu_studio_menu() {
@@ -1708,7 +2234,7 @@ show_ubuntu_studio_menu() {
     ui_item 0 "Back to Main Menu"
     echo
     ui_rule
-    printf "  ${LAVENDER}Enter your choice ${DIM}[0-6]${NC}${LAVENDER}: ${NC}"
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-6]${NC}${LAVENDER}: ${NC}"
 }
 
 show_security_menu() {
@@ -1721,7 +2247,7 @@ show_security_menu() {
     ui_item 0 "Back to Main Menu"
     echo
     ui_rule
-    printf "  ${LAVENDER}Enter your choice ${DIM}[0-2]${NC}${LAVENDER}: ${NC}"
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-2]${NC}${LAVENDER}: ${NC}"
 }
 
 # Reset tracking for each new installation
@@ -1789,6 +2315,11 @@ auto_category() {
 # ========== MAIN EXECUTION ==========
 main() {
     check_root
+    # Safety net: if the run is interrupted between _block_apache_autostart and
+    # _unblock_apache_autostart, make sure our temporary /usr/sbin/policy-rc.d
+    # (which makes invoke-rc.d a no-op for apache2) doesn't get left behind and
+    # silently break service starts on the system afterward.
+    trap '[ -n "${_POLICY_RC_ADDED:-}" ] && rm -f /usr/sbin/policy-rc.d 2>/dev/null || true' EXIT
     check_version
     check_stale_fetch_sources
     update_packages
@@ -1855,6 +2386,9 @@ main() {
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
+            26) reset_tracking; install_dotnet; display_summary; prompt_menu_category ".NET Development" "dotnet" ".NET Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            27) reset_tracking; install_devops; display_summary; prompt_menu_category "DevOps & Cloud" "cloud" "DevOps & Cloud Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            28) reset_tracking; install_desktop_apps; display_summary; prompt_menu_category "Desktop Apps" "applications-other" "Desktop Applications" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             A|a)
                 reset_tracking
                 log INFO "Installing ALL Development Tools (with app folders)..."
@@ -1868,6 +2402,7 @@ main() {
                 auto_category "Node.js Development" install_nodejs_dev
                 auto_category "PHP Development" install_php
                 auto_category "Ruby Development" install_ruby
+                auto_category ".NET Development" install_dotnet
                 auto_category "General Development Tools" install_dev_tools
                 auto_category "AI Tools" install_ai_tools
                 display_summary
@@ -1898,6 +2433,8 @@ main() {
                 auto_category "Node.js Development" install_nodejs_dev
                 auto_category "PHP Development" install_php
                 auto_category "Ruby Development" install_ruby
+                auto_category ".NET Development" install_dotnet
+                auto_category "DevOps & Cloud" install_devops
                 auto_category "Database Tools" install_databases
                 auto_category "Containers" install_containers
                 auto_category "Gaming" install_gaming
@@ -1909,6 +2446,7 @@ main() {
                 auto_category "Windows Software Support" install_windows_support
                 auto_category "Android Tools" install_android_tools
                 auto_category "Security Tools" install_security_tools
+                auto_category "Desktop Apps" install_desktop_apps
                 display_summary
                 ;;
             *)
