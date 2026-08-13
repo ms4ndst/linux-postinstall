@@ -829,6 +829,27 @@ install_sublime_text() {
     rm -f /usr/share/keyrings/sublime-text.gpg /etc/apt/sources.list.d/sublime-text.list
 }
 
+install_bruno() {
+    # Bruno - open-source API client (Postman/Insomnia alternative), https://www.usebruno.com
+    # Same tracking fix as install_vscode above - see the comment there.
+    if command -v bruno &>/dev/null; then
+        SKIPPED_PACKAGES+=("bruno"); ((TOTAL_SKIPPED++))
+        log INFO "Bruno already installed"
+        return 0
+    fi
+    log INFO "Installing Bruno..."
+    # Official apt repo. The signing key lives on Ubuntu's keyserver (key id
+    # 0x9FA6017ECABE0266), so fetch+dearmor it straight into the keyring - same
+    # symlink-safe pattern as install_vscode. Keep the .gpg keyring in place so
+    # future `apt upgrade` still trusts the repo (only the .list is removed).
+    curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9FA6017ECABE0266" | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/bruno.gpg 2>/dev/null
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/bruno.gpg] http://debian.usebruno.com/ bruno stable" > /etc/apt/sources.list.d/bruno.list
+    apt-get update -qq 2>/dev/null
+    safe_install bruno
+    rm -f /etc/apt/sources.list.d/bruno.list
+}
+
 # ========== PYTHON ==========
 install_python() {
     batch_install "Python" python3 python3-dev python3-venv python3-pip python-is-python3 ipython3 pipx
@@ -1344,13 +1365,18 @@ install_dev_tools() {
     batch_install "Dev Tools" \
         jq tig subversion make cmake \
         autoconf automake bison flex gettext pkg-config manpages less
+    # Bruno API client - installed from its own apt repo, so it can't ride the
+    # batch_install list above; call its dedicated installer like install_ai_tools does.
+    install_bruno
 }
 
 # ========== AI TOOLS ==========
 install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
+    install_alpaca
     install_claude_code
+    install_gemini_cli
     install_cursor
 }
 
@@ -1372,6 +1398,42 @@ install_ollama() {
     else
         FAILED_PACKAGES+=("ollama"); ((TOTAL_FAILED++)); log ERROR "Failed: ollama"; return 1
     fi
+}
+
+# Alpaca (com.jeffser.Alpaca) - a native GTK4/libadwaita graphical CLIENT for
+# Ollama, replacing the buggy JHubi1 Flutter app. Ollama ships NO official desktop
+# app on Linux (its GUI is macOS/Windows only); Alpaca is the standout GNOME-native
+# client, actively maintained and distributed on Flathub. It talks to the Ollama
+# server install_ollama sets up (and can manage its own). Installed system-wide as
+# a Flatpak, same tooling the Windows App installer uses. Tracking name "Alpaca".
+#
+# NOTE: Flatpak apps export their launcher under /var/lib/flatpak/exports, which
+# create_menu_category's resolver does not scan, so Alpaca won't land in the AI
+# Tools app-folder (it still shows normally in the app grid) - acceptable, and the
+# same limitation any Flatpak here would have.
+install_alpaca() {
+    local app_id="com.jeffser.Alpaca"
+    # Flatpak isn't installed by default on these releases - pull it (plus a GTK
+    # portal so the sandboxed app can reach the desktop) before installing.
+    if ! command -v flatpak &>/dev/null; then
+        batch_install "Flatpak" flatpak xdg-desktop-portal-gtk
+    fi
+    if ! command -v flatpak &>/dev/null; then
+        FAILED_PACKAGES+=("Alpaca"); ((TOTAL_FAILED++))
+        log WARNING "flatpak unavailable - install manually: flatpak install flathub $app_id"; return 0
+    fi
+    if flatpak info "$app_id" &>/dev/null; then
+        SKIPPED_PACKAGES+=("Alpaca"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Alpaca (flatpak)"; return 0
+    fi
+    log INFO "Installing Alpaca (Ollama GUI client) from Flathub..."
+    # Ensure the Flathub remote exists (system scope), then install.
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+    if flatpak install -y --noninteractive flathub "$app_id" 2>/dev/null || flatpak info "$app_id" &>/dev/null; then
+        INSTALLED_PACKAGES+=("Alpaca"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Alpaca (flatpak) - launch with: flatpak run $app_id"; return 0
+    fi
+    FAILED_PACKAGES+=("Alpaca"); ((TOTAL_FAILED++))
+    log WARNING "Alpaca install failed - try: flatpak install flathub $app_id"; return 0
 }
 
 install_claude_code() {
@@ -1407,6 +1469,36 @@ install_claude_code() {
     fi
     FAILED_PACKAGES+=("claude"); ((TOTAL_FAILED++))
     log WARNING "Claude Code install failed - try: curl -fsSL https://claude.ai/install.sh | bash"; return 0
+}
+
+install_gemini_cli() {
+    # Google's official Gemini CLI (https://github.com/google-gemini/gemini-cli),
+    # the closest thing to an official Gemini app on Linux. Distributed via npm as
+    # @google/gemini-cli; needs Node 18+. CLI-only (no launcher/folder icon, like
+    # ollama/claude). Tracking name stays "gemini" (the command it adds).
+    if command -v gemini &>/dev/null; then
+        SKIPPED_PACKAGES+=("gemini"); ((TOTAL_SKIPPED++)); log INFO "Already installed: gemini"; return 0
+    fi
+    # npm is required for the global install. Unlike Claude Code, Gemini CLI has no
+    # standalone native installer, so if npm is absent we can't proceed. On Ubuntu
+    # the apt `nodejs` package ships WITHOUT npm (npm is a separate package), so a
+    # machine can easily have `node` but no `npm` - self-heal by pulling npm through
+    # the active front-end before giving up. apt's npm depends on the matching
+    # node-* packages, so it's conflict-free with an apt-provided nodejs.
+    if ! command -v npm &>/dev/null; then
+        log INFO "npm not found - installing it (required by Gemini CLI)..."
+        pm_install npm >/dev/null 2>&1 || true
+    fi
+    if ! command -v npm &>/dev/null; then
+        FAILED_PACKAGES+=("gemini"); ((TOTAL_FAILED++))
+        log WARNING "Gemini CLI needs npm (Node 18+) and npm could not be installed - install it, then: npm install -g @google/gemini-cli"; return 0
+    fi
+    log INFO "Installing Gemini CLI..."
+    if npm install -g @google/gemini-cli 2>/dev/null && command -v gemini &>/dev/null; then
+        INSTALLED_PACKAGES+=("gemini"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: gemini (run 'gemini' to sign in)"; return 0
+    fi
+    FAILED_PACKAGES+=("gemini"); ((TOTAL_FAILED++))
+    log WARNING "Gemini CLI install failed - try: npm install -g @google/gemini-cli"; return 0
 }
 
 install_cursor() {
@@ -1582,12 +1674,11 @@ install_gnome_extensions() {
     su - "$user" -c 'command -v gext >/dev/null 2>&1 || pipx install gnome-extensions-cli --system-site-packages' 2>/dev/null
     local exts=(
         "gsconnect@andyholmes.github.io"                               # GSConnect
-        "paperwm@paperwm.github.com"                                   # PaperWM
-        "netspeed@alynx.one"                                           # Net speed
         "window-state-manager@kishorv06.github.io"                     # Window State Manager
         "Bluetooth-Battery-Meter@maniacx.github.com"                   # Bluetooth Battery Meter
-        "wiggle@mechtifs"                                              # Wiggle
         "auto-move-windows@gnome-shell-extensions.gcampax.github.com"  # Auto Move Windows
+        "user-theme@gnome-shell-extensions.gcampax.github.com"         # User Themes (ego 19)
+        "clipboard-history@alexsaveau.dev"                             # Clipboard History (ego 4839)
     )
     local e ok=0
     for e in "${exts[@]}"; do
@@ -2190,6 +2281,7 @@ install_lazygit() {
 install_desktop_apps() {
     install_spotify
     install_slack
+    install_teams
     install_remmina
     install_windows_app
     install_teamviewer
@@ -2201,6 +2293,34 @@ install_spotify() { safe_snap_install spotify; }
 
 # Slack via snap (strict confinement - no --classic needed on current releases).
 install_slack() { safe_snap_install slack; }
+
+# Microsoft Teams. Microsoft discontinued the official native Linux client in
+# Dec 2022, so this installs teams-for-linux (https://github.com/IsmaelMartinez/
+# teams-for-linux) - the maintained open-source Electron wrapper around the Teams
+# web app, and the de-facto Teams client on Linux. Installed from its official
+# apt repo (https://teamsforlinux.de), which builds for amd64 + arm64; the
+# package ships teams-for-linux.desktop so it lands an icon in the Desktop Apps
+# folder automatically via safe_install.
+install_teams() {
+    if command -v teams-for-linux &>/dev/null; then
+        SKIPPED_PACKAGES+=("teams-for-linux"); ((TOTAL_SKIPPED++)); log INFO "Already installed: teams-for-linux"; return 0
+    fi
+    log INFO "Installing Microsoft Teams (teams-for-linux)..."
+    # Key is served pre-armored (.asc), so install it as-is - no gpg --dearmor.
+    # The .list is removed after install (same convention as install_vscode); the
+    # public key is left in keyrings (harmless). arch is resolved from dpkg so the
+    # repo line is correct on both amd64 and arm64.
+    install -d -m 755 /etc/apt/keyrings 2>/dev/null
+    if ! { curl -fsSL https://repo.teamsforlinux.de/teams-for-linux.asc -o /etc/apt/keyrings/teams-for-linux.asc 2>/dev/null \
+           || wget -qO /etc/apt/keyrings/teams-for-linux.asc https://repo.teamsforlinux.de/teams-for-linux.asc 2>/dev/null; }; then
+        FAILED_PACKAGES+=("teams-for-linux"); ((TOTAL_FAILED++)); log WARNING "Could not fetch Teams signing key - skipping"; return 0
+    fi
+    chmod 644 /etc/apt/keyrings/teams-for-linux.asc 2>/dev/null
+    echo "deb [signed-by=/etc/apt/keyrings/teams-for-linux.asc arch=$(dpkg --print-architecture)] https://repo.teamsforlinux.de/debian/ stable main" > /etc/apt/sources.list.d/teams-for-linux-packages.list
+    apt-get update -qq 2>/dev/null
+    safe_install teams-for-linux
+    rm -f /etc/apt/sources.list.d/teams-for-linux-packages.list
+}
 
 # Remmina remote-desktop client. Tries the upstream remmina-next PPA for the
 # latest build (codename-aware via add_ppa - degrades to the distro package if
