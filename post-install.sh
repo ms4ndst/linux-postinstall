@@ -2386,10 +2386,8 @@ install_lazygit() {
 
 # ========== DESKTOP APPS ==========
 install_desktop_apps() {
-    install_vivaldi
     install_spotify
     install_slack
-    install_teams
     install_remmina
     install_windows_app
     install_teamviewer
@@ -2633,10 +2631,47 @@ install_teamviewer() {
 }
 
 # ========== BROWSERS ==========
+# "All browsers" aggregator, in the order shown in the submenu. apt-repo browsers
+# (Brave/Vivaldi/Edge/Chrome) install natively; the newer Firefox forks
+# (LibreWolf/Zen/Floorp) have no apt repo and ship on Flathub, so they go via
+# flatpak_install_flathub. Each installer does its own tracking + skip.
 install_browsers() {
-    install_chrome
     install_brave
+    install_vivaldi
+    install_edge
+    install_chrome
+    install_librewolf
+    install_zen
+    install_floorp
 }
+
+# Microsoft Edge from Microsoft's official apt repo. amd64-only. Package
+# microsoft-edge-stable (ships microsoft-edge.desktop). Same key as VS Code
+# (packages.microsoft.com); Edge's postinst re-registers its repo, so the temp
+# .list is removed after install (the kept key still verifies Edge's re-added source).
+install_edge() {
+    if is_installed microsoft-edge-stable; then
+        SKIPPED_PACKAGES+=("microsoft-edge-stable"); ((TOTAL_SKIPPED++)); log INFO "Already installed: microsoft-edge-stable"; return 0
+    fi
+    local a; a=$(dpkg --print-architecture 2>/dev/null)
+    if [ "$a" != "amd64" ]; then
+        FAILED_PACKAGES+=("microsoft-edge-stable"); ((TOTAL_FAILED++))
+        log WARNING "Edge ships an amd64 .deb only - not available for '$a'"; return 0
+    fi
+    log INFO "Installing Microsoft Edge (official apt repo via $PM)..."
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/microsoft-edge.gpg 2>/dev/null
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-edge.gpg] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge-setup.list
+    pm_update
+    safe_install microsoft-edge-stable
+    rm -f /etc/apt/sources.list.d/microsoft-edge-setup.list
+}
+
+# LibreWolf, Zen, and Floorp are Firefox forks with no apt repo; all ship on
+# Flathub. Tracked by display name so the Browsers app-folder picks them up.
+install_librewolf() { flatpak_install_flathub io.gitlab.librewolf-community "LibreWolf"; }
+install_zen()       { flatpak_install_flathub app.zen_browser.zen "Zen"; }
+install_floorp()    { flatpak_install_flathub one.ablaze.floorp "Floorp"; }
 
 # Google Chrome from Google's official apt repo. amd64-only. Package
 # google-chrome-stable (ships google-chrome.desktop). Same keyring convention as
@@ -2677,11 +2712,15 @@ install_brave() {
 }
 
 # ========== COMMUNICATION ==========
+# "All communication apps" aggregator. Signal/Telegram install as apt .debs (real
+# update paths); Discord/Zoom as Flatpaks (no apt repo, so Flathub keeps them
+# current); Teams (teams-for-linux) from its apt repo - moved here from Desktop Apps.
 install_communication() {
     install_signal
     install_discord
     install_zoom
     install_telegram
+    install_teams
 }
 
 # Signal Desktop from Signal's official apt repo. amd64-only. Package signal-desktop
@@ -2814,6 +2853,42 @@ show_security_menu() {
     echo
     ui_rule
     printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-2]${NC}${LAVENDER}: ${NC}"
+}
+
+show_browsers_menu() {
+    clear
+    ui_header "WEB BROWSERS"
+    echo
+    ui_item 1 "All Browsers"
+    ui_item 2 "Brave"
+    ui_item 3 "Vivaldi"
+    ui_item 4 "Edge"
+    ui_item 5 "Chrome"
+    ui_item 6 "LibreWolf"
+    ui_item 7 "Zen"
+    ui_item 8 "Floorp"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-8]${NC}${LAVENDER}: ${NC}"
+}
+
+show_communication_menu() {
+    clear
+    ui_header "COMMUNICATION"
+    echo
+    ui_item 1 "All Communication Apps"
+    ui_item 2 "Signal"
+    ui_item 3 "Discord"
+    ui_item 4 "Zoom"
+    ui_item 5 "Telegram"
+    ui_item 6 "Teams"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-6]${NC}${LAVENDER}: ${NC}"
 }
 
 # Reset tracking for each new installation
@@ -2955,8 +3030,36 @@ main() {
             26) reset_tracking; install_dotnet; display_summary; prompt_menu_category ".NET Development" "dotnet" ".NET Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             27) reset_tracking; install_devops; display_summary; prompt_menu_category "DevOps & Cloud" "cloud" "DevOps & Cloud Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             28) reset_tracking; install_desktop_apps; display_summary; prompt_menu_category "Desktop Apps" "applications-other" "Desktop Applications" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            29) reset_tracking; install_browsers; display_summary; prompt_menu_category "Browsers" "web-browser" "Web Browsers" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            30) reset_tracking; install_communication; display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            29)
+                show_browsers_menu
+                read -r br_choice
+                case "$br_choice" in
+                    0) continue ;;
+                    1) reset_tracking; install_browsers;  display_summary; prompt_menu_category "Browsers" "web-browser" "Web Browsers" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    2) reset_tracking; install_brave;     display_summary; prompt_menu_category "Browsers" "web-browser" "Web Browsers" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    3) reset_tracking; install_vivaldi;   display_summary; prompt_menu_category "Browsers" "web-browser" "Web Browsers" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    4) reset_tracking; install_edge;      display_summary; prompt_menu_category "Browsers" "web-browser" "Web Browsers" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    5) reset_tracking; install_chrome;    display_summary; prompt_menu_category "Browsers" "web-browser" "Web Browsers" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    6) reset_tracking; install_librewolf; display_summary; prompt_menu_category "Browsers" "web-browser" "Web Browsers" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    7) reset_tracking; install_zen;       display_summary; prompt_menu_category "Browsers" "web-browser" "Web Browsers" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    8) reset_tracking; install_floorp;    display_summary; prompt_menu_category "Browsers" "web-browser" "Web Browsers" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    *) log ERROR "Invalid choice"; sleep 2 ;;
+                esac
+                ;;
+            30)
+                show_communication_menu
+                read -r comm_choice
+                case "$comm_choice" in
+                    0) continue ;;
+                    1) reset_tracking; install_communication; display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    2) reset_tracking; install_signal;    display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    3) reset_tracking; install_discord;   display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    4) reset_tracking; install_zoom;      display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    5) reset_tracking; install_telegram;  display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    6) reset_tracking; install_teams;     display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    *) log ERROR "Invalid choice"; sleep 2 ;;
+                esac
+                ;;
             A|a)
                 reset_tracking
                 log INFO "Installing ALL Development Tools (with app folders)..."
