@@ -48,7 +48,6 @@ ui_header() {
 }
 # Single-column menu row (used by the short sub-menus): key in accent, label body.
 ui_item()     { printf "  ${MAUVE}%3s${NC}  ${TEXT}%s${NC}\n" "$1" "$2"; }
-ui_item_alt() { printf "  ${PEACH}%3s${NC}  ${TEXT}%s${NC}\n" "$1" "$2"; }
 # Two-column menu cell (no newline): fixed 30-col visible width so two align.
 # Padding is applied to the %-24s ARGUMENT, so the zero-width color codes in the
 # format string don't disturb alignment. ui_cell_alt = Peach key (bulk actions).
@@ -92,11 +91,6 @@ detect_version() {
     UBUNTU_VERSION=$(lsb_release -rs 2>/dev/null || grep -oP '(?<=^VERSION_ID=).+' /etc/os-release 2>/dev/null | tr -d '"')
     UBUNTU_CODENAME=$(lsb_release -cs 2>/dev/null || grep -oP '(?<=^VERSION_CODENAME=).+' /etc/os-release 2>/dev/null | tr -d '"')
 }
-
-# True only on the 26.04 LTS release. Use this to guard behavior that should
-# differ between the LTS and the 26.10 interim release (e.g. third-party PPAs
-# that ship a build for the LTS codename but not yet for the newer interim one).
-is_lts() { [[ "$UBUNTU_VERSION" == "26.04" ]]; }
 
 check_version() {
     detect_version
@@ -623,7 +617,7 @@ install_graphics() {
     batch_install "Graphics" \
         gimp inkscape krita darktable rawtherapee shotwell nomacs pinta blender \
         flameshot \
-        imagemagick graphicsmagick optipng jpegoptim pngquant webp-tools
+        imagemagick graphicsmagick optipng jpegoptim pngquant webp
     set_flameshot_hotkey
 }
 
@@ -807,7 +801,7 @@ install_audio() {
     batch_install "Audio" \
         audacity ardour lmms musescore hydrogen zynaddsubfx \
         qjackctl jackd2 pulseaudio-module-jack ladspa-sdk calf-plugins xjadeo \
-        soundconverter easytag flac lame oggenc opus-tools vorbis-tools wavpack sox libsox-fmt-all \
+        soundconverter easytag flac lame opus-tools vorbis-tools wavpack sox libsox-fmt-all \
         pavucontrol
 }
 
@@ -913,7 +907,9 @@ install_sublime_text() {
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/sublime-text.gpg] https://download.sublimetext.com/ apt/stable/" > /etc/apt/sources.list.d/sublime-text.list
     apt-get update -qq 2>/dev/null
     safe_install sublime-text
-    rm -f /usr/share/keyrings/sublime-text.gpg /etc/apt/sources.list.d/sublime-text.list
+    # Keep BOTH the keyring and the .list (like install_spotify/install_dbeaver):
+    # unlike VS Code, Sublime's package does NOT re-register its repo, so removing
+    # either the key or the source would block future `apt upgrade` updates.
 }
 
 install_bruno() {
@@ -1143,8 +1139,13 @@ install_go() {
     batch_install "Go" golang
     if ! command -v go &>/dev/null; then
         log INFO "Installing Go from source..."
-        local t=$(mktemp -d)
-        if curl -L -o "$t/go.tar.gz" https://go.dev/dl/go1.22.5.linux-amd64.tar.gz 2>/dev/null; then
+        local t=$(mktemp -d) goarch
+        # Map dpkg arch -> Go's release naming so this fallback isn't amd64-only.
+        case "$(dpkg --print-architecture 2>/dev/null)" in
+            amd64) goarch=amd64;; arm64) goarch=arm64;;
+            armhf) goarch=armv6l;; i386) goarch=386;; *) goarch=amd64;;
+        esac
+        if curl -L -o "$t/go.tar.gz" "https://go.dev/dl/go1.22.5.linux-${goarch}.tar.gz" 2>/dev/null; then
             rm -rf /usr/local/go && tar -C /usr/local -xzf "$t/go.tar.gz" 2>/dev/null
             # Put Go on PATH via /etc/profile.d (a real shell script that IS
             # sourced and expands $PATH) - NOT via an "export ..." line in
@@ -1386,7 +1387,9 @@ install_gaming() {
     # dependency of steam or lutris (checked: apt-cache depends lists neither),
     # and "Video Creation & Editing" already owns them as its own category.
     batch_install "Gaming" steam lutris gamemode mangohud
-    safe_install libgl1-mesa-glx:i386
+    # 32-bit GL for Steam/Wine titles. The old libgl1-mesa-glx name was dropped on
+    # current Ubuntu; libgl1 is the maintained replacement.
+    safe_install libgl1:i386
 }
 
 install_windows_support() {
@@ -1446,8 +1449,11 @@ EOF
     # Configure Wine
     if command -v wine &>/dev/null; then
         log INFO "Configuring Wine..."
-        # Set up Wine prefix
-        if [ ! -d "$HOME/.wine" ]; then
+        # Set up Wine prefix. The prefix is created in the DESKTOP USER's home (the
+        # wineboot runs via `su - $SUDO_USER`), so the guard must test THAT home -
+        # not root's $HOME, which would always be missing and defeat the check.
+        local uwine; uwine="$(getent passwd "$SUDO_USER" 2>/dev/null | cut -d: -f6)/.wine"
+        if [ ! -d "$uwine" ]; then
             su - "$SUDO_USER" -c "wine wineboot --init" 2>/dev/null || true
             log INFO "Wine prefix initialized"
         fi
@@ -1531,34 +1537,11 @@ install_ollama() {
 # server install_ollama sets up (and can manage its own). Installed system-wide as
 # a Flatpak, same tooling the Windows App installer uses. Tracking name "Alpaca".
 #
-# NOTE: Flatpak apps export their launcher under /var/lib/flatpak/exports, which
-# create_menu_category's resolver does not scan, so Alpaca won't land in the AI
-# Tools app-folder (it still shows normally in the app grid) - acceptable, and the
-# same limitation any Flatpak here would have.
-install_alpaca() {
-    local app_id="com.jeffser.Alpaca"
-    # Flatpak isn't installed by default on these releases - pull it (plus a GTK
-    # portal so the sandboxed app can reach the desktop) before installing.
-    if ! command -v flatpak &>/dev/null; then
-        batch_install "Flatpak" flatpak xdg-desktop-portal-gtk
-    fi
-    if ! command -v flatpak &>/dev/null; then
-        FAILED_PACKAGES+=("Alpaca"); ((TOTAL_FAILED++))
-        log WARNING "flatpak unavailable - install manually: flatpak install flathub $app_id"; return 0
-    fi
-    if flatpak info "$app_id" &>/dev/null; then
-        SKIPPED_PACKAGES+=("Alpaca"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Alpaca (flatpak)"; return 0
-    fi
-    log INFO "Installing Alpaca (Ollama GUI client) from Flathub..."
-    # Ensure the Flathub remote exists (system scope), then install.
-    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-    if flatpak install -y --noninteractive flathub "$app_id" 2>/dev/null || flatpak info "$app_id" &>/dev/null; then
-        INSTALLED_PACKAGES+=("Alpaca"); ((TOTAL_INSTALLED++))
-        log SUCCESS "Installed: Alpaca (flatpak) - launch with: flatpak run $app_id"; return 0
-    fi
-    FAILED_PACKAGES+=("Alpaca"); ((TOTAL_FAILED++))
-    log WARNING "Alpaca install failed - try: flatpak install flathub $app_id"; return 0
-}
+# NOTE: Flatpak apps export their launcher under /var/lib/flatpak/exports (per-user
+# ones under ~/.local/share/flatpak/exports). create_menu_category's resolver now
+# scans both and matches on the launcher's Name=, so Alpaca (installed system-wide
+# here) DOES get grouped into the AI Tools app-folder.
+install_alpaca() { flatpak_install_flathub com.jeffser.Alpaca "Alpaca"; }
 
 install_claude_code() {
     # Claude Code CLI. The primary path is Anthropic's official native installer
@@ -1638,8 +1621,8 @@ install_cursor() {
     case "$a" in amd64) plat="linux-x64";; arm64) plat="linux-arm64";; *) plat="linux-x64";; esac
     local json deb_url app_url
     json=$(curl -fsSL "https://www.cursor.com/api/download?platform=${plat}&releaseTrack=stable" 2>/dev/null)
-    deb_url=$(printf '%s' "$json" | grep -oP '"debUrl":"\K[^"]+')
-    app_url=$(printf '%s' "$json" | grep -oP '"downloadUrl":"\K[^"]+')
+    deb_url=$(printf '%s' "$json" | grep -oP '"debUrl":\s*"\K[^"]+')
+    app_url=$(printf '%s' "$json" | grep -oP '"downloadUrl":\s*"\K[^"]+')
 
     # 1) .deb - gives a proper package and a .desktop launcher via dpkg.
     if [ -n "$deb_url" ] && { curl -L -f --retry 2 -o "$t/cursor.deb" "$deb_url" 2>/dev/null || wget -q --tries=2 -O "$t/cursor.deb" "$deb_url" 2>/dev/null; }; then
@@ -2649,6 +2632,118 @@ install_teamviewer() {
     log WARNING "TeamViewer download failed - get it from https://www.teamviewer.com/"; return 0
 }
 
+# ========== BROWSERS ==========
+install_browsers() {
+    install_chrome
+    install_brave
+}
+
+# Google Chrome from Google's official apt repo. amd64-only. Package
+# google-chrome-stable (ships google-chrome.desktop). Same keyring convention as
+# install_vscode: Chrome's postinst re-registers its own repo, so the temp .list is
+# removed after install (the kept key still verifies Chrome's re-added source).
+install_chrome() {
+    if is_installed google-chrome-stable; then
+        SKIPPED_PACKAGES+=("google-chrome-stable"); ((TOTAL_SKIPPED++)); log INFO "Already installed: google-chrome-stable"; return 0
+    fi
+    local a; a=$(dpkg --print-architecture 2>/dev/null)
+    if [ "$a" != "amd64" ]; then
+        FAILED_PACKAGES+=("google-chrome-stable"); ((TOTAL_FAILED++))
+        log WARNING "Chrome ships an amd64 .deb only - not available for '$a'"; return 0
+    fi
+    log INFO "Installing Google Chrome (official apt repo via $PM)..."
+    wget -qO- https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/google-chrome.gpg 2>/dev/null
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome-setup.list
+    pm_update
+    safe_install google-chrome-stable
+    rm -f /etc/apt/sources.list.d/google-chrome-setup.list
+}
+
+# Brave from Brave's official apt repo. Package brave-browser (ships
+# brave-browser.desktop). Brave publishes a ready-made keyring .gpg (already
+# dearmored), so install it as-is. Keeps key + .list (repo isn't self-registered).
+install_brave() {
+    if is_installed brave-browser; then
+        SKIPPED_PACKAGES+=("brave-browser"); ((TOTAL_SKIPPED++)); log INFO "Already installed: brave-browser"; return 0
+    fi
+    log INFO "Installing Brave (official apt repo via $PM)..."
+    curl -fsSL https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg \
+        -o /usr/share/keyrings/brave-browser-archive-keyring.gpg 2>/dev/null
+    chmod 644 /usr/share/keyrings/brave-browser-archive-keyring.gpg 2>/dev/null
+    echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" > /etc/apt/sources.list.d/brave-browser-release.list
+    pm_update
+    safe_install brave-browser
+}
+
+# ========== COMMUNICATION ==========
+install_communication() {
+    install_signal
+    install_discord
+    install_zoom
+    install_telegram
+}
+
+# Signal Desktop from Signal's official apt repo. amd64-only. Package signal-desktop
+# (ships signal-desktop.desktop). Keeps key + .list (repo isn't self-registered).
+install_signal() {
+    if is_installed signal-desktop; then
+        SKIPPED_PACKAGES+=("signal-desktop"); ((TOTAL_SKIPPED++)); log INFO "Already installed: signal-desktop"; return 0
+    fi
+    local a; a=$(dpkg --print-architecture 2>/dev/null)
+    if [ "$a" != "amd64" ]; then
+        FAILED_PACKAGES+=("signal-desktop"); ((TOTAL_FAILED++))
+        log WARNING "Signal ships an amd64 .deb only - not available for '$a'"; return 0
+    fi
+    log INFO "Installing Signal (official apt repo via $PM)..."
+    wget -qO- https://updates.signal.org/desktop/apt/keys.asc | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/signal-desktop-keyring.gpg 2>/dev/null
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main" > /etc/apt/sources.list.d/signal-xenial.list
+    pm_update
+    safe_install signal-desktop
+}
+
+# Discord and Zoom are installed as Flatpaks from Flathub rather than direct .debs:
+# neither has an apt repo, so a .deb would never auto-update (Discord in particular
+# refuses to launch until manually updated). Flathub keeps them current. Installed
+# system-wide via flatpak_install_flathub, which tracks by display name so the
+# Communication app-folder picks them up through create_menu_category's Flatpak
+# stage. Contrast with install_signal/install_telegram, which stay as apt .debs
+# because those DO have an update path.
+install_discord() { flatpak_install_flathub com.discordapp.Discord "Discord"; }
+install_zoom()    { flatpak_install_flathub us.zoom.Zoom "Zoom"; }
+
+# Shared helper: install a Flathub app system-wide, tracking it under a friendly
+# display name (matched by the app-folder resolver's Flatpak stage). Pulls flatpak +
+# a GTK portal first if absent, adds the Flathub remote, then installs. Best-effort
+# and self-skipping, same shape as install_alpaca.
+flatpak_install_flathub() {
+    local app_id="$1" label="$2"
+    if ! command -v flatpak &>/dev/null; then
+        batch_install "Flatpak" flatpak xdg-desktop-portal-gtk
+    fi
+    if ! command -v flatpak &>/dev/null; then
+        FAILED_PACKAGES+=("$label"); ((TOTAL_FAILED++))
+        log WARNING "flatpak unavailable - install manually: flatpak install flathub $app_id"; return 0
+    fi
+    if flatpak info "$app_id" &>/dev/null; then
+        SKIPPED_PACKAGES+=("$label"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label (flatpak)"; return 0
+    fi
+    log INFO "Installing $label (Flatpak from Flathub)..."
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+    if flatpak install -y --noninteractive flathub "$app_id" 2>/dev/null || flatpak info "$app_id" &>/dev/null; then
+        INSTALLED_PACKAGES+=("$label"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: $label (flatpak) - launch with: flatpak run $app_id"; return 0
+    fi
+    FAILED_PACKAGES+=("$label"); ((TOTAL_FAILED++))
+    log WARNING "$label install failed - try: flatpak install flathub $app_id"; return 0
+}
+
+# Telegram Desktop from Ubuntu's own universe repo: package telegram-desktop, a real
+# .deb (ships org.telegram.desktop.desktop). safe_install tracks it and skips
+# cleanly if the package isn't available on this release.
+install_telegram() { batch_install "Telegram" telegram-desktop; }
+
 # ========== MENU SYSTEM ==========
 # Dim section label spanning the two-column menu.
 ui_section() { printf "  ${LAVENDER}${BOLD}%s${NC}\n" "$1"; }
@@ -2679,13 +2774,16 @@ show_main_menu() {
     ui_section "Compatibility & Devices"
     ui_cell 23 "Windows (Wine)";     ui_cell 24 "Android Tools";        echo
     echo
+    ui_section "Internet & Communication"
+    ui_cell 29 "Browsers";           ui_cell 30 "Communication";        echo
+    echo
     ui_section "Bulk"
     ui_cell_alt A "All Dev Tools";   ui_cell_alt B "All Media";         echo
     ui_cell_alt C "EVERYTHING";                                         echo
     echo
     ui_rule
     ui_cell  S "Summary";            ui_cell  0 "Exit";                 echo
-    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-28 · A-C · S]${NC}${LAVENDER}: ${NC}"
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-30 · A-C · S]${NC}${LAVENDER}: ${NC}"
 }
 
 show_ubuntu_studio_menu() {
@@ -2857,6 +2955,8 @@ main() {
             26) reset_tracking; install_dotnet; display_summary; prompt_menu_category ".NET Development" "dotnet" ".NET Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             27) reset_tracking; install_devops; display_summary; prompt_menu_category "DevOps & Cloud" "cloud" "DevOps & Cloud Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             28) reset_tracking; install_desktop_apps; display_summary; prompt_menu_category "Desktop Apps" "applications-other" "Desktop Applications" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            29) reset_tracking; install_browsers; display_summary; prompt_menu_category "Browsers" "web-browser" "Web Browsers" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            30) reset_tracking; install_communication; display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             A|a)
                 reset_tracking
                 log INFO "Installing ALL Development Tools (with app folders)..."
@@ -2915,6 +3015,8 @@ main() {
                 auto_category "Android Tools" install_android_tools
                 auto_category "Security Tools" install_security_tools
                 auto_category "Desktop Apps" install_desktop_apps
+                auto_category "Browsers" install_browsers
+                auto_category "Communication" install_communication
                 display_summary
                 ;;
             *)
@@ -2926,4 +3028,10 @@ main() {
     done
 }
 
-main
+# Only auto-run the installer when executed directly (sudo ./post-install.sh). When
+# the script is sourced - e.g. `source post-install.sh; install_vivaldi` to run one
+# installer, or for testing - this guard stops main() (and its check_root / apt
+# update / interactive menu) from firing, so individual functions can be called.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
