@@ -2778,10 +2778,20 @@ flatpak_install_flathub() {
     log WARNING "$label install failed - try: flatpak install flathub $app_id"; return 0
 }
 
-# Telegram Desktop from Ubuntu's own universe repo: package telegram-desktop, a real
-# .deb (ships org.telegram.desktop.desktop). safe_install tracks it and skips
-# cleanly if the package isn't available on this release.
-install_telegram() { batch_install "Telegram" telegram-desktop; }
+# Telegram Desktop. Prefer Ubuntu's own telegram-desktop .deb (universe); on
+# releases where it isn't in the repos, fall back to Flathub (org.telegram.desktop)
+# so this never just fails. Each path handles its own tracking + skip.
+install_telegram() {
+    if is_installed telegram-desktop; then
+        SKIPPED_PACKAGES+=("telegram-desktop"); ((TOTAL_SKIPPED++)); log INFO "Already installed: telegram-desktop"; return 0
+    fi
+    if package_exists telegram-desktop; then
+        batch_install "Telegram" telegram-desktop
+    else
+        log INFO "telegram-desktop not in apt repos - installing from Flathub instead"
+        flatpak_install_flathub org.telegram.desktop "Telegram"
+    fi
+}
 
 # ========== MENU SYSTEM ==========
 # Dim section label spanning the two-column menu.
