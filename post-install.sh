@@ -465,6 +465,32 @@ create_menu_category() {
             [ -z "$snap_match" ] && snap_match=$(compgen -G "/var/lib/snapd/desktop/applications/${app}.desktop" 2>/dev/null | head -1)
             [ -n "$snap_match" ] && found+=("$(basename "$snap_match")")
         fi
+        # Flatpak-exported apps (Alpaca, Windows App, ...) live in export dirs that
+        # dpkg/snap/prefix guessing never see - system-wide under /var/lib/flatpak
+        # and per-user under ~/.local/share/flatpak. Their .desktop filename is a
+        # reverse-DNS app-id (com.jeffser.Alpaca.desktop) with no relation to the
+        # display name callers track them by ("Alpaca", "Windows App"), so match on
+        # the launcher's own [Desktop Entry] Name= (the first Name= in the file),
+        # falling back to a filename match. Honor NoDisplay/Hidden like every stage.
+        if [ ${#found[@]} -eq 0 ]; then
+            local fp_dirs=("/var/lib/flatpak/exports/share/applications")
+            local uhome; uhome=$(getent passwd "$user" 2>/dev/null | cut -d: -f6)
+            [ -n "$uhome" ] && fp_dirs+=("$uhome/.local/share/flatpak/exports/share/applications")
+            local fpd fpf nm base
+            for fpd in "${fp_dirs[@]}"; do
+                [ -d "$fpd" ] || continue
+                for fpf in "$fpd"/*.desktop; do
+                    [ -e "$fpf" ] || continue
+                    grep -qE '^(NoDisplay|Hidden)[[:space:]]*=[[:space:]]*true' "$fpf" 2>/dev/null && continue
+                    nm=$(awk -F= '/^Name=/{print $2; exit}' "$fpf")
+                    base=$(basename "$fpf" .desktop)
+                    if [ "${nm,,}" = "${app,,}" ] || [ "${base,,}" = "${app,,}" ]; then
+                        found+=("$(basename "$fpf")"); break
+                    fi
+                done
+                [ ${#found[@]} -gt 0 ] && break
+            done
+        fi
         if [ ${#found[@]} -gt 0 ]; then
             desktop_ids+=("${found[@]}")
         else
@@ -596,7 +622,68 @@ install_ubuntu_studio_full() {
 install_graphics() {
     batch_install "Graphics" \
         gimp inkscape krita darktable rawtherapee shotwell nomacs pinta blender \
+        flameshot \
         imagemagick graphicsmagick optipng jpegoptim pngquant webp-tools
+    set_flameshot_hotkey
+}
+
+# Bind the Print Screen key to Flameshot instead of GNOME's built-in screenshot
+# UI. Two steps: (1) release 'Print' from GNOME's own screenshot keybindings so it
+# stops grabbing the key, then (2) add a media-keys custom keybinding that runs
+# 'flameshot gui' on Print, MERGING into any existing custom-keybindings array
+# (same non-clobbering approach as create_menu_category's folder-children). Runs as
+# the desktop user; self-skips with a clear log when Flameshot isn't installed or
+# there's no live GNOME session. Idempotent - re-running just re-asserts the values.
+set_flameshot_hotkey() {
+    if ! command -v flameshot &>/dev/null; then
+        log INFO "Flameshot not installed - skipping Print Screen keybinding"; return 0
+    fi
+    local user uid
+    if ! read -r user uid < <(resolve_desktop_session); then
+        log INFO "No desktop session - skipping Flameshot keybinding (bind Print to 'flameshot gui' later)"; return 0
+    fi
+
+    # 1) Free the Print key from GNOME's own screenshot bindings so it doesn't
+    #    swallow the keypress before our custom binding sees it. Both the modern
+    #    shell binding (GNOME 42+) and the legacy media-keys one are cleared; each
+    #    is a quiet no-op where the schema/key is absent on this release.
+    gset_if_exists "$user" "$uid" org.gnome.shell.keybindings show-screenshot-ui "[]" || true
+    gset_if_exists "$user" "$uid" org.gnome.settings-daemon.plugins.media-keys screenshot "[]" || true
+
+    # 2) Merge a custom keybinding entry for Flameshot into the existing list.
+    local schema="org.gnome.settings-daemon.plugins.media-keys"
+    local kb_path="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/flameshot/"
+    local current
+    current=$(gsettings_as_user "$user" "$uid" get "$schema" custom-keybindings 2>/dev/null)
+    local paths=()
+    if [[ "$current" =~ \[(.*)\] ]]; then
+        local inner="${BASH_REMATCH[1]}" raw part
+        IFS=',' read -ra raw <<< "$inner"
+        for part in "${raw[@]}"; do
+            part="${part//\'/}"; part="${part// /}"
+            [ -n "$part" ] && paths+=("$part")
+        done
+    fi
+    local exists=false p
+    for p in "${paths[@]}"; do [ "$p" = "$kb_path" ] && exists=true; done
+    $exists || paths+=("$kb_path")
+    local gv="[" first=true
+    for p in "${paths[@]}"; do
+        $first && first=false || gv+=", "
+        gv+="'${p}'"
+    done
+    gv+="]"
+
+    gsettings_as_user "$user" "$uid" set "$schema" custom-keybindings "$gv" 2>/dev/null
+    local rel="${schema}.custom-keybinding:${kb_path}"
+    gsettings_as_user "$user" "$uid" set "$rel" name 'Flameshot' 2>/dev/null
+    gsettings_as_user "$user" "$uid" set "$rel" command 'flameshot gui' 2>/dev/null
+    if gsettings_as_user "$user" "$uid" set "$rel" binding 'Print' 2>/dev/null; then
+        log SUCCESS "Print Screen bound to Flameshot ('flameshot gui') - takes effect immediately"
+        return 0
+    fi
+    log WARNING "Could not set Flameshot keybinding on Print"
+    return 1
 }
 
 # ========== VIDEO ==========
@@ -2279,12 +2366,36 @@ install_lazygit() {
 
 # ========== DESKTOP APPS ==========
 install_desktop_apps() {
+    install_vivaldi
     install_spotify
     install_slack
     install_teams
     install_remmina
     install_windows_app
     install_teamviewer
+}
+
+# Vivaldi web browser - Chromium-based, feature-rich. Installed from Vivaldi's
+# official apt repo (https://repo.vivaldi.com/archive/deb) so future updates flow
+# through apt. amd64-only upstream. The repo publishes a detached Release.gpg (no
+# inline InRelease), which signed-by handles fine. Package vivaldi-stable ships
+# vivaldi-stable.desktop, so it lands a Desktop Apps folder icon via safe_install's
+# tracking. Same keyring/.list convention as install_vscode: the keyring stays; the
+# temp .list is removed after install (Vivaldi's own postinst re-registers the repo
+# for updates, exactly as the VS Code package re-adds Microsoft's).
+install_vivaldi() {
+    if command -v vivaldi &>/dev/null || is_installed vivaldi-stable; then
+        SKIPPED_PACKAGES+=("vivaldi-stable"); ((TOTAL_SKIPPED++)); log INFO "Already installed: vivaldi-stable"; return 0
+    fi
+    log INFO "Installing Vivaldi..."
+    # Dearmor the signing key straight into the keyring (public key, mode 644),
+    # same safe pattern as install_vscode.
+    wget -qO- https://repo.vivaldi.com/archive/linux_signing_key.pub | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/vivaldi-browser.gpg 2>/dev/null
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/vivaldi-browser.gpg] https://repo.vivaldi.com/archive/deb/ stable main" > /etc/apt/sources.list.d/vivaldi.list
+    apt-get update -qq 2>/dev/null
+    safe_install vivaldi-stable
+    rm -f /etc/apt/sources.list.d/vivaldi.list
 }
 
 # Spotify via snap. No X11 Ozone override is applied - Spotify runs under the
@@ -2331,15 +2442,17 @@ install_remmina() {
     batch_install "Remmina" remmina remmina-plugin-rdp remmina-plugin-secret
 }
 
-# Microsoft "Windows App" (remote-desktop client for Windows 365 / Azure Virtual
-# Desktop / RDP), shipped here as a LOCAL Flatpak bundle rather than from apt or
-# snap - so the "Windows App-*.flatpak" file must sit next to this script. It is
-# installed into the desktop user's per-user Flatpak scope (flatpak --user), not
-# root's and not system-wide, so it lands in that user's app grid. Deliberately
-# NOT launched during install (the upstream `flatpak run ...` line would pop a
-# GUI mid-run); the run command is echoed in the success message instead.
+# "Windows App" (mariuszkopowski/windows-app-for-linux) - a Linux remote-desktop
+# client for Windows 365 / Azure Virtual Desktop / RDP. It is NOT on Flathub, so it
+# ships as a standalone Flatpak bundle from its GitHub releases. This installer
+# fetches the latest x86_64 .flatpak automatically (like install_cursor pulls
+# vendor binaries), and still honours a local bundle dropped next to this script
+# for offline/pinned use. Installed into the desktop user's per-user Flatpak scope
+# (flatpak --user), so it lands in that user's app grid. Deliberately NOT launched
+# during install; the run command is echoed in the success message instead.
 install_windows_app() {
     local app_id="io.github.mariuszkopowski.WindowsAppForLinux"
+    local repo="mariuszkopowski/windows-app-for-linux"
 
     # A --user install needs a real desktop user to own it; bail cleanly if the
     # script was run as root without sudo (SUDO_USER unset or literally root).
@@ -2354,7 +2467,7 @@ install_windows_app() {
         batch_install "Flatpak" flatpak xdg-desktop-portal-gtk
     fi
     if ! command -v flatpak &>/dev/null; then
-        log WARNING "flatpak unavailable - install manually: flatpak install --user \"Windows App-*.flatpak\""
+        log WARNING "flatpak unavailable - install manually: flatpak install --user \"Windows*.flatpak\""
         FAILED_PACKAGES+=("Windows App"); ((TOTAL_FAILED++)); return 1
     fi
 
@@ -2364,12 +2477,32 @@ install_windows_app() {
         log INFO "Already installed: Windows App (flatpak)"; return 0
     fi
 
-    # Locate the bundle next to this script (glob; newest match wins).
-    local dir bundle
+    # Prefer a local bundle next to the script if present (glob matches both
+    # "Windows App-*.flatpak" and the real release name "Windows.App-*.flatpak");
+    # otherwise download the latest x86_64 .flatpak from the project's releases.
+    local dir bundle tmp=""
     dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-    bundle=$(ls -1t "$dir"/Windows\ App-*.flatpak 2>/dev/null | head -n1)
+    bundle=$(ls -1t "$dir"/Windows*.flatpak 2>/dev/null | head -n1)
     if [ -z "$bundle" ]; then
-        log WARNING "No 'Windows App-*.flatpak' bundle found in $dir - skipping"
+        log INFO "No local Windows App bundle - downloading latest from github.com/$repo ..."
+        local url
+        url=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null \
+            | grep -oP '"browser_download_url":\s*"\K[^"]*x86_64[^"]*\.flatpak')
+        if [ -n "$url" ]; then
+            tmp=$(mktemp -d)
+            if curl -L -f --retry 2 -o "$tmp/windows-app.flatpak" "$url" 2>/dev/null \
+                || wget -q --tries=2 -O "$tmp/windows-app.flatpak" "$url" 2>/dev/null; then
+                bundle="$tmp/windows-app.flatpak"
+                # The bundle lives in a root-owned tempdir; make it reachable and
+                # readable by SUDO_USER, who runs the --user install below.
+                chmod 755 "$tmp" 2>/dev/null; chmod 644 "$bundle" 2>/dev/null
+                chown "$SUDO_USER" "$tmp" "$bundle" 2>/dev/null || true
+            fi
+        fi
+    fi
+    if [ -z "$bundle" ]; then
+        [ -n "$tmp" ] && rm -rf "$tmp"
+        log WARNING "Windows App bundle not found locally and download failed - skipping"
         SKIPPED_PACKAGES+=("Windows App"); ((TOTAL_SKIPPED++)); return 1
     fi
 
@@ -2379,14 +2512,15 @@ install_windows_app() {
     su - "$SUDO_USER" -c "flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo" 2>/dev/null || true
     if su - "$SUDO_USER" -c "flatpak install --user -y '$bundle'" 2>/dev/null \
         || su - "$SUDO_USER" -c "flatpak info --user '$app_id'" &>/dev/null; then
+        [ -n "$tmp" ] && rm -rf "$tmp"
         INSTALLED_PACKAGES+=("Windows App"); ((TOTAL_INSTALLED++))
         log SUCCESS "Installed: Windows App (flatpak) - launch with: flatpak run $app_id"
         return 0
-    else
-        FAILED_PACKAGES+=("Windows App"); ((TOTAL_FAILED++))
-        log ERROR "Failed: Windows App (flatpak)"
-        return 1
     fi
+    [ -n "$tmp" ] && rm -rf "$tmp"
+    FAILED_PACKAGES+=("Windows App"); ((TOTAL_FAILED++))
+    log ERROR "Failed: Windows App (flatpak)"
+    return 1
 }
 
 # TeamViewer remote-desktop/support client. Distributed only as a vendor .deb
