@@ -1350,19 +1350,18 @@ install_dev_tools() {
 install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
-    install_mistral_vibe
     install_claude_code
     install_cursor
 }
 
-# NOTE on tracking: these four tools install outside apt (curl script, AppImage,
-# npm, direct .deb), so they must update the tracking arrays THEMSELVES - nothing
-# else does it for them. Without this they never appeared in the summary and,
-# more visibly, never got fed to the AI Tools app-folder resolver, so the folder
-# came up empty even when Cursor (a real GUI app) had installed fine. Each now
-# records installed/skipped/failed. ollama and claude are CLI-only (no launcher,
-# so no folder icon - expected, like docker/adb); Cursor ships its own
-# cursor.desktop; Mistral Vibe is a bare AppImage, so we create a launcher for it.
+# NOTE on tracking: these tools install outside apt (curl script, npm/native
+# installer, direct .deb/AppImage), so they must update the tracking arrays
+# THEMSELVES - nothing else does it for them. Without this they never appeared in
+# the summary and, more visibly, never got fed to the AI Tools app-folder
+# resolver, so the folder came up empty even when Cursor (a real GUI app) had
+# installed fine. Each now records installed/skipped/failed. ollama and claude
+# are CLI-only (no launcher, so no folder icon - expected, like docker/adb);
+# Cursor ships its own cursor.desktop (or a hand-written one for the AppImage).
 install_ollama() {
     if command -v ollama &>/dev/null; then
         SKIPPED_PACKAGES+=("ollama"); ((TOTAL_SKIPPED++)); log INFO "Already installed: ollama"; return 0
@@ -1375,59 +1374,39 @@ install_ollama() {
     fi
 }
 
-install_mistral_vibe() {
-    if command -v mistral-vibe &>/dev/null; then
-        SKIPPED_PACKAGES+=("mistral-vibe"); ((TOTAL_SKIPPED++)); log INFO "Already installed: mistral-vibe"; return 0
-    fi
-    log INFO "Installing Mistral AI Vibe..."
-    # Mistral Vibe is distributed as an AppImage (https://vibe.mistral.ai/), not a .deb.
-    local temp_dir=$(mktemp -d)
-    local arch=$(uname -m)
-    local vibe_url="https://github.com/mistralai/vibe/releases/latest/download/vibe-${arch}.AppImage"
-    if curl -L -f --retry 2 -o "$temp_dir/vibe.AppImage" "$vibe_url" 2>/dev/null \
-       || wget -q --tries=2 -O "$temp_dir/vibe.AppImage" "$vibe_url" 2>/dev/null; then
-        chmod +x "$temp_dir/vibe.AppImage"
-        mv "$temp_dir/vibe.AppImage" /usr/local/bin/mistral-vibe
-        rm -rf "$temp_dir"
-        # A bare AppImage ships no .desktop - create one so it gets a menu icon
-        # and lands in the AI Tools folder (resolver's empty-prefix fallback
-        # matches /usr/share/applications/mistral-vibe.desktop).
-        cat > /usr/share/applications/mistral-vibe.desktop <<'EOF'
-[Desktop Entry]
-Type=Application
-Name=Mistral Vibe
-GenericName=AI Assistant
-Comment=Mistral AI desktop assistant
-Exec=mistral-vibe
-Icon=applications-science
-Terminal=false
-Categories=Development;Utility;
-EOF
-        chmod 644 /usr/share/applications/mistral-vibe.desktop
-        INSTALLED_PACKAGES+=("mistral-vibe"); ((TOTAL_INSTALLED++))
-        log SUCCESS "Installed: mistral-vibe (/usr/local/bin/mistral-vibe)"
-        return 0
-    fi
-    rm -rf "$temp_dir"
-    FAILED_PACKAGES+=("mistral-vibe"); ((TOTAL_FAILED++))
-    log WARNING "Could not download Mistral Vibe AppImage - get it from https://vibe.mistral.ai/"
-    return 0
-}
-
 install_claude_code() {
-    # The official Claude Code CLI npm package is @anthropic-ai/claude-code (it
-    # installs a `claude` binary) - NOT the bare `claude` package, which is a
-    # different, unofficial package. Tracking name stays "claude" since that's
-    # the command it provides and what command -v checks for.
-    if command -v claude &>/dev/null; then
+    # Claude Code CLI. The primary path is Anthropic's official native installer
+    # (https://claude.ai/install.sh), which needs NO Node/npm - important because
+    # this machine can have `node` without `npm`, which is exactly what made the
+    # old npm-only install fail. Run it as the desktop user so `claude` lands in
+    # their ~/.local/bin (not root's). The npm global package stays as a fallback
+    # for when npm is present. Tracking name stays "claude" (the command it adds).
+    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+
+    # Build user-scoped vs root-scoped check/install commands once.
+    local check_cmd install_cmd
+    if [ -n "$u" ]; then
+        check_cmd="su - $u -c 'command -v claude'"
+        install_cmd="su - $u -c 'curl -fsSL https://claude.ai/install.sh | bash'"
+    else
+        check_cmd="command -v claude"
+        install_cmd="curl -fsSL https://claude.ai/install.sh | bash"
+    fi
+
+    if eval "$check_cmd" &>/dev/null || command -v claude &>/dev/null; then
         SKIPPED_PACKAGES+=("claude"); ((TOTAL_SKIPPED++)); log INFO "Already installed: claude"; return 0
     fi
-    log INFO "Installing Claude Code CLI (@anthropic-ai/claude-code)..."
+    log INFO "Installing Claude Code CLI (native installer)..."
+    if eval "$install_cmd" 2>/dev/null && { eval "$check_cmd" &>/dev/null || command -v claude &>/dev/null; }; then
+        INSTALLED_PACKAGES+=("claude"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: claude (~/.local/bin - ensure it's on your PATH)"; return 0
+    fi
+    # Fallback: official npm global package (only works if npm is on PATH).
     if command -v npm &>/dev/null && npm install -g @anthropic-ai/claude-code 2>/dev/null && command -v claude &>/dev/null; then
-        INSTALLED_PACKAGES+=("claude"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: claude"; return 0
+        INSTALLED_PACKAGES+=("claude"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: claude (npm)"; return 0
     fi
     FAILED_PACKAGES+=("claude"); ((TOTAL_FAILED++))
-    log WARNING "Claude Code install failed - try: npm install -g @anthropic-ai/claude-code"; return 0
+    log WARNING "Claude Code install failed - try: curl -fsSL https://claude.ai/install.sh | bash"; return 0
 }
 
 install_cursor() {
@@ -1435,19 +1414,45 @@ install_cursor() {
         SKIPPED_PACKAGES+=("cursor"); ((TOTAL_SKIPPED++)); log INFO "Already installed: cursor"; return 0
     fi
     log INFO "Installing Cursor..."
-    local t=$(mktemp -d) a=$(dpkg --print-architecture)
-    for u in "https://download.cursor.com/linux/deb/${a}/cursor_${a}.deb" "https://download.cursor.com/linux/deb/cursor.deb"; do
-        if curl -L -f --retry 2 -o "$t/cursor.deb" "$u" 2>/dev/null || wget -q --tries=2 -O "$t/cursor.deb" "$u" 2>/dev/null; then
-            dpkg -i "$t/cursor.deb" 2>/dev/null || { apt-get install -f -y 2>/dev/null; dpkg -i "$t/cursor.deb" 2>/dev/null; }
-            rm -rf "$t"
-            if command -v cursor &>/dev/null || is_installed cursor; then
-                INSTALLED_PACKAGES+=("cursor"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: cursor"
-            else
-                FAILED_PACKAGES+=("cursor"); ((TOTAL_FAILED++)); log ERROR "Failed: cursor"
-            fi
-            return 0
+    # Cursor no longer serves the old download.cursor.com/linux/deb/* paths (they
+    # are now unreachable). The current build URLs come from its download API,
+    # which returns per-arch .deb + AppImage links at downloads.cursor.com. Query
+    # it, prefer the .deb (real package + menu entry), fall back to the AppImage.
+    local t=$(mktemp -d) a=$(dpkg --print-architecture) plat
+    case "$a" in amd64) plat="linux-x64";; arm64) plat="linux-arm64";; *) plat="linux-x64";; esac
+    local json deb_url app_url
+    json=$(curl -fsSL "https://www.cursor.com/api/download?platform=${plat}&releaseTrack=stable" 2>/dev/null)
+    deb_url=$(printf '%s' "$json" | grep -oP '"debUrl":"\K[^"]+')
+    app_url=$(printf '%s' "$json" | grep -oP '"downloadUrl":"\K[^"]+')
+
+    # 1) .deb - gives a proper package and a .desktop launcher via dpkg.
+    if [ -n "$deb_url" ] && { curl -L -f --retry 2 -o "$t/cursor.deb" "$deb_url" 2>/dev/null || wget -q --tries=2 -O "$t/cursor.deb" "$deb_url" 2>/dev/null; }; then
+        dpkg -i "$t/cursor.deb" 2>/dev/null || { apt-get install -f -y 2>/dev/null; dpkg -i "$t/cursor.deb" 2>/dev/null; }
+        if command -v cursor &>/dev/null || is_installed cursor; then
+            rm -rf "$t"; INSTALLED_PACKAGES+=("cursor"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: cursor (.deb)"; return 0
         fi
-    done
+    fi
+
+    # 2) AppImage fallback - drop it in /usr/local/bin and hand-write a launcher
+    #    (a bare AppImage ships no .desktop of its own).
+    if [ -n "$app_url" ] && { curl -L -f --retry 2 -o "$t/cursor.AppImage" "$app_url" 2>/dev/null || wget -q --tries=2 -O "$t/cursor.AppImage" "$app_url" 2>/dev/null; }; then
+        chmod +x "$t/cursor.AppImage"; mv "$t/cursor.AppImage" /usr/local/bin/cursor
+        cat > /usr/share/applications/cursor.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Cursor
+GenericName=AI Code Editor
+Comment=The AI-first code editor
+Exec=cursor %F
+Icon=text-editor
+Terminal=false
+Categories=Development;IDE;TextEditor;
+EOF
+        chmod 644 /usr/share/applications/cursor.desktop
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("cursor"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: cursor (AppImage, /usr/local/bin/cursor)"; return 0
+    fi
+
     rm -rf "$t"
     FAILED_PACKAGES+=("cursor"); ((TOTAL_FAILED++))
     log WARNING "Cursor download failed - get it from https://www.cursor.com/"; return 0
@@ -1880,14 +1885,37 @@ LOGID_EOF
 
 # Add a PPA in a way that works cleanly across both supported releases. PPAs
 # are keyed by codename: the 26.04 LTS (a stable, released codename) almost
-# always has a build, while a brand-new interim release like 26.10 frequently
-# has none yet. add-apt-repository already resolves $UBUNTU_CODENAME itself; this
-# wrapper just skips if already added and emits a codename-specific warning
-# instead of a broken repo, so the 26.10 path degrades to distro packages
-# gracefully rather than being pinned to a codename that has no PPA build.
+# always has a build, while a brand-new interim release frequently has none yet.
+#
+# Crucial gotcha: on current Ubuntu `add-apt-repository -y` SUCCEEDS (exit 0) and
+# writes the .sources file even when the PPA has no build for this codename - the
+# failure only surfaces later as a 404 at `apt-get update` ("does not have a
+# Release file"), and the broken source then breaks EVERY subsequent apt run.
+# So for a ppa:owner/name we HEAD the Release file for this exact codename up
+# front and, if it's missing, remove any stale source a prior run left behind and
+# degrade to distro packages instead of committing a repo that only 404s.
 # Usage: add_ppa ppa:owner/name  grep-tag-identifying-the-source
 add_ppa() {
     local ppa="$1" tag="$2"
+
+    # Pre-flight probe for ppa: specs (the only form used here). Launchpad serves
+    # PPAs at ppa.launchpadcontent.net/<owner>/<name>/ubuntu, so the per-codename
+    # Release lives at dists/<codename>/Release - exactly the URL apt would 404 on.
+    if [[ "$ppa" == ppa:* && -n "$UBUNTU_CODENAME" ]] && command -v curl &>/dev/null; then
+        local spec="${ppa#ppa:}"
+        local url="https://ppa.launchpadcontent.net/${spec}/ubuntu/dists/${UBUNTU_CODENAME}/Release"
+        if ! curl -fsSL -o /dev/null "$url" 2>/dev/null; then
+            # No build for this codename. Remove any stale source/list a previous
+            # run wrote for this PPA so it stops breaking apt, then degrade.
+            local owner="${spec%%/*}" name="${spec#*/}"
+            rm -f /etc/apt/sources.list.d/*"${owner}"*"${name}"*.sources \
+                  /etc/apt/sources.list.d/*"${owner}"*"${name}"*.list 2>/dev/null
+            apt-get update -qq 2>/dev/null || true
+            log WARNING "$ppa has no build for ${UBUNTU_CODENAME} - continuing with distro packages"
+            return 1
+        fi
+    fi
+
     grep -rq "$tag" /etc/apt/sources.list.d/ 2>/dev/null && return 0
     if add-apt-repository -y "$ppa" 2>/dev/null; then
         apt-get update -qq 2>/dev/null || true
@@ -2163,6 +2191,8 @@ install_desktop_apps() {
     install_spotify
     install_slack
     install_remmina
+    install_windows_app
+    install_teamviewer
 }
 
 # Spotify via snap. No X11 Ozone override is applied - Spotify runs under the
@@ -2179,6 +2209,95 @@ install_slack() { safe_snap_install slack; }
 install_remmina() {
     add_ppa ppa:remmina-ppa-team/remmina-next remmina
     batch_install "Remmina" remmina remmina-plugin-rdp remmina-plugin-secret
+}
+
+# Microsoft "Windows App" (remote-desktop client for Windows 365 / Azure Virtual
+# Desktop / RDP), shipped here as a LOCAL Flatpak bundle rather than from apt or
+# snap - so the "Windows App-*.flatpak" file must sit next to this script. It is
+# installed into the desktop user's per-user Flatpak scope (flatpak --user), not
+# root's and not system-wide, so it lands in that user's app grid. Deliberately
+# NOT launched during install (the upstream `flatpak run ...` line would pop a
+# GUI mid-run); the run command is echoed in the success message instead.
+install_windows_app() {
+    local app_id="io.github.mariuszkopowski.WindowsAppForLinux"
+
+    # A --user install needs a real desktop user to own it; bail cleanly if the
+    # script was run as root without sudo (SUDO_USER unset or literally root).
+    if [ -z "$SUDO_USER" ] || [ "$SUDO_USER" = "root" ]; then
+        log WARNING "No desktop user (SUDO_USER) - skipping Windows App"
+        SKIPPED_PACKAGES+=("Windows App"); ((TOTAL_SKIPPED++)); return 1
+    fi
+
+    # Flatpak isn't installed by default on these releases - pull it (plus a
+    # portal so the sandboxed app can reach the desktop) before installing.
+    if ! command -v flatpak &>/dev/null; then
+        batch_install "Flatpak" flatpak xdg-desktop-portal-gtk
+    fi
+    if ! command -v flatpak &>/dev/null; then
+        log WARNING "flatpak unavailable - install manually: flatpak install --user \"Windows App-*.flatpak\""
+        FAILED_PACKAGES+=("Windows App"); ((TOTAL_FAILED++)); return 1
+    fi
+
+    # Already present in the user's Flatpak scope? Skip.
+    if su - "$SUDO_USER" -c "flatpak info --user '$app_id'" &>/dev/null; then
+        SKIPPED_PACKAGES+=("Windows App"); ((TOTAL_SKIPPED++))
+        log INFO "Already installed: Windows App (flatpak)"; return 0
+    fi
+
+    # Locate the bundle next to this script (glob; newest match wins).
+    local dir bundle
+    dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+    bundle=$(ls -1t "$dir"/Windows\ App-*.flatpak 2>/dev/null | head -n1)
+    if [ -z "$bundle" ]; then
+        log WARNING "No 'Windows App-*.flatpak' bundle found in $dir - skipping"
+        SKIPPED_PACKAGES+=("Windows App"); ((TOTAL_SKIPPED++)); return 1
+    fi
+
+    log INFO "Installing Windows App from $(basename "$bundle") (flatpak --user)..."
+    # Add Flathub (per-user) first so the bundle's runtime dependencies can be
+    # resolved; harmless if the bundle is self-contained or Flathub is already set.
+    su - "$SUDO_USER" -c "flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo" 2>/dev/null || true
+    if su - "$SUDO_USER" -c "flatpak install --user -y '$bundle'" 2>/dev/null \
+        || su - "$SUDO_USER" -c "flatpak info --user '$app_id'" &>/dev/null; then
+        INSTALLED_PACKAGES+=("Windows App"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Windows App (flatpak) - launch with: flatpak run $app_id"
+        return 0
+    else
+        FAILED_PACKAGES+=("Windows App"); ((TOTAL_FAILED++))
+        log ERROR "Failed: Windows App (flatpak)"
+        return 1
+    fi
+}
+
+# TeamViewer remote-desktop/support client. Distributed only as a vendor .deb
+# (not in Ubuntu's repos), so - like install_cursor - download it and let apt
+# resolve dependencies. The .deb itself registers TeamViewer's own apt repo +
+# signing key on install, so future updates flow through the normal apt path.
+install_teamviewer() {
+    if command -v teamviewer &>/dev/null || is_installed teamviewer; then
+        SKIPPED_PACKAGES+=("teamviewer"); ((TOTAL_SKIPPED++)); log INFO "Already installed: teamviewer"; return 0
+    fi
+    log INFO "Installing TeamViewer..."
+    local t=$(mktemp -d) a=$(dpkg --print-architecture)
+    # TeamViewer ships amd64 and arm64 builds; any other arch falls back to the
+    # amd64 package (it pulls its 32-bit deps via multiarch).
+    local deb="teamviewer_${a}.deb"
+    case "$a" in amd64|arm64) ;; *) deb="teamviewer_amd64.deb";; esac
+    for u in "https://download.teamviewer.com/download/linux/${deb}" "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb"; do
+        if curl -L -f --retry 2 -o "$t/teamviewer.deb" "$u" 2>/dev/null || wget -q --tries=2 -O "$t/teamviewer.deb" "$u" 2>/dev/null; then
+            dpkg -i "$t/teamviewer.deb" 2>/dev/null || { apt-get install -f -y 2>/dev/null; dpkg -i "$t/teamviewer.deb" 2>/dev/null; }
+            rm -rf "$t"
+            if command -v teamviewer &>/dev/null || is_installed teamviewer; then
+                INSTALLED_PACKAGES+=("teamviewer"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: teamviewer"
+            else
+                FAILED_PACKAGES+=("teamviewer"); ((TOTAL_FAILED++)); log ERROR "Failed: teamviewer"
+            fi
+            return 0
+        fi
+    done
+    rm -rf "$t"
+    FAILED_PACKAGES+=("teamviewer"); ((TOTAL_FAILED++))
+    log WARNING "TeamViewer download failed - get it from https://www.teamviewer.com/"; return 0
 }
 
 # ========== MENU SYSTEM ==========
