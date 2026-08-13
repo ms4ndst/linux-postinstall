@@ -451,7 +451,7 @@ create_menu_category() {
                 fi
             done
         fi
-        # Snap-installed apps (dbeaver-ce, intellij-idea-community) ship their
+        # Snap-installed apps (e.g. intellij-idea-community) ship their
         # desktop file in a completely different place with a different naming
         # scheme: /var/lib/snapd/desktop/applications/<snapname>_<appname>.desktop
         # - dpkg has never heard of them (is_installed above is always false for
@@ -1243,9 +1243,30 @@ install_databases() {
     # sqlitebrowser above is the only DB GUI in the Ubuntu archive - no
     # MySQL/Postgres GUI exists there at all (verified: dbeaver-ce,
     # mysql-workbench, pgadmin4 all return nothing from apt-cache policy).
-    # DBeaver covers MySQL/Postgres/SQLite in one tool - snap is the only real
-    # distribution channel for it.
-    safe_snap_install dbeaver-ce --classic
+    # DBeaver covers MySQL/Postgres/SQLite in one tool.
+    install_dbeaver
+}
+
+# DBeaver CE from its official apt repo (dbeaver.io/debs/dbeaver-ce) rather than
+# snap, so it installs through the active front-end (Nala/apt) and updates via apt.
+# It's a FLAT repo (note the trailing " /" in the deb line, no suite/component).
+# Package dbeaver-ce (binary `dbeaver`, ships dbeaver-ce.desktop). Same keyring/.list
+# convention as install_vscode; the .list is kept since the repo doesn't self-register.
+install_dbeaver() {
+    # Gate on the .deb specifically, not `command -v dbeaver` - a leftover DBeaver
+    # snap also puts `dbeaver` on PATH and would make us wrongly skip the migration.
+    if is_installed dbeaver-ce; then
+        SKIPPED_PACKAGES+=("dbeaver-ce"); ((TOTAL_SKIPPED++)); log INFO "Already installed: dbeaver-ce"
+        remove_snap_if_present dbeaver-ce; return 0
+    fi
+    log INFO "Installing DBeaver CE (official apt repo via $PM)..."
+    wget -qO- https://dbeaver.io/debs/dbeaver.gpg.key | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/dbeaver.gpg 2>/dev/null
+    echo "deb [signed-by=/usr/share/keyrings/dbeaver.gpg] https://dbeaver.io/debs/dbeaver-ce /" > /etc/apt/sources.list.d/dbeaver.list
+    pm_update
+    safe_install dbeaver-ce
+    # Drop a superseded snap once the .deb is actually in place.
+    is_installed dbeaver-ce && remove_snap_if_present dbeaver-ce
 }
 
 # ========== CONTAINERS ==========
@@ -1336,6 +1357,22 @@ safe_snap_install() {
 }
 
 install_lxd_snap() { safe_snap_install lxd; }
+
+# Remove a snap that a .deb has just superseded, so the user isn't left running two
+# copies of the same app (Slack/Spotify/DBeaver migrated from snap to .deb). No-op
+# when snap/snapd is absent or that snap was never installed. Called only once the
+# .deb is confirmed installed, so the app stays available throughout.
+remove_snap_if_present() {
+    local snap_name="$1"
+    command -v snap &>/dev/null || return 0
+    snap list "$snap_name" &>/dev/null 2>&1 || return 0
+    log INFO "Removing superseded snap '$snap_name' (replaced by .deb)..."
+    if snap remove "$snap_name" 2>/dev/null; then
+        log SUCCESS "Removed snap: $snap_name"
+    else
+        log WARNING "Could not remove snap '$snap_name' - remove manually: sudo snap remove $snap_name"
+    fi
+}
 
 # ========== GAMING ==========
 install_gaming() {
@@ -2398,12 +2435,70 @@ install_vivaldi() {
     rm -f /etc/apt/sources.list.d/vivaldi.list
 }
 
-# Spotify via snap. No X11 Ozone override is applied - Spotify runs under the
-# session's native backend (Wayland where available) for a cleaner environment.
-install_spotify() { safe_snap_install spotify; }
+# Spotify from its official apt repo (repository.spotify.com) rather than snap, so
+# it installs through the active front-end (Nala/apt) and updates via apt. Package
+# is spotify-client (binary `spotify`, ships spotify.desktop for its folder icon).
+# Same keyring/.list convention as install_vscode; unlike VS Code, Spotify's repo
+# does NOT re-register itself, so the .list is kept for future updates.
+install_spotify() {
+    # Gate on the .deb specifically, not `command -v spotify` - a leftover Spotify
+    # snap also puts `spotify` on PATH and would make us wrongly skip the migration.
+    if is_installed spotify-client; then
+        SKIPPED_PACKAGES+=("spotify-client"); ((TOTAL_SKIPPED++)); log INFO "Already installed: spotify-client"
+        remove_snap_if_present spotify; return 0
+    fi
+    log INFO "Installing Spotify (official apt repo via $PM)..."
+    # Dearmor Spotify's signing key straight into the keyring (public key, mode 644).
+    wget -qO- https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/spotify.gpg 2>/dev/null
+    echo "deb [signed-by=/usr/share/keyrings/spotify.gpg] https://repository.spotify.com stable non-free" > /etc/apt/sources.list.d/spotify.list
+    pm_update
+    safe_install spotify-client
+    # Drop a superseded snap once the .deb is actually in place.
+    is_installed spotify-client && remove_snap_if_present spotify
+}
 
-# Slack via snap (strict confinement - no --classic needed on current releases).
-install_slack() { safe_snap_install slack; }
+# Slack desktop. Not in Ubuntu's repos, and Slack shut down its old apt repo, so
+# the "from apt" path is: download Slack's official .deb and install it THROUGH the
+# active front-end (Nala when present, else apt-get) via pm_install, so runtime
+# dependencies resolve - i.e. `nala install /path/slack.deb`, not a bare `dpkg -i`.
+# Replaces the previous snap. Package is slack-desktop (binary `slack`, ships
+# slack.desktop so it lands a Desktop Apps folder icon). amd64-only upstream. The
+# current version is scraped from Slack's Linux release-notes page, with a pinned
+# fallback if that lookup fails (the page is JS-heavy and can change shape).
+install_slack() {
+    # Gate on the .deb specifically, not `command -v slack` - a leftover Slack snap
+    # also puts `slack` on PATH and would make us wrongly skip the .deb migration.
+    if is_installed slack-desktop; then
+        SKIPPED_PACKAGES+=("slack-desktop"); ((TOTAL_SKIPPED++)); log INFO "Already installed: slack-desktop"
+        remove_snap_if_present slack; return 0
+    fi
+    local a; a=$(dpkg --print-architecture 2>/dev/null)
+    if [ "$a" != "amd64" ]; then
+        FAILED_PACKAGES+=("slack-desktop"); ((TOTAL_FAILED++))
+        log WARNING "Slack ships an amd64 .deb only - not available for '$a'"; return 0
+    fi
+    log INFO "Installing Slack (official .deb via $PM)..."
+    local ver
+    ver=$(curl -fsSL "https://slack.com/release-notes/linux" 2>/dev/null \
+        | grep -oP 'slack-desktop-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    [ -z "$ver" ] && ver="4.51.180"
+    local url="https://downloads.slack-edge.com/desktop-releases/linux/x64/${ver}/slack-desktop-${ver}-amd64.deb"
+    local t; t=$(mktemp -d)
+    if curl -L -f --retry 2 -o "$t/slack.deb" "$url" 2>/dev/null || wget -q --tries=2 -O "$t/slack.deb" "$url" 2>/dev/null; then
+        # Install the local .deb through the package manager so dependencies
+        # resolve. An absolute path (has a '/') is treated as a file by both
+        # nala and apt-get; is_installed re-check covers a 0-exit-with-warnings run.
+        if pm_install "$t/slack.deb" || is_installed slack-desktop; then
+            rm -rf "$t"; INSTALLED_PACKAGES+=("slack-desktop"); ((TOTAL_INSTALLED++))
+            log SUCCESS "Installed: slack-desktop ${ver} (.deb via $PM)"
+            remove_snap_if_present slack; return 0
+        fi
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("slack-desktop"); ((TOTAL_FAILED++))
+    log WARNING "Slack install failed - download the .deb from slack.com/downloads/linux and: $PM install ./slack-desktop-*.deb"; return 0
+}
 
 # Microsoft Teams. Microsoft discontinued the official native Linux client in
 # Dec 2022, so this installs teams-for-linux (https://github.com/IsmaelMartinez/
