@@ -851,6 +851,10 @@ This script is provided **as-is** without warranty. You are free to:
 - **Ollama**: For making local LLMs accessible
 - **Mistral AI**: For Vibe and open-source AI models
 - **Genymobile**: For scrcpy
+- **[vinceliuice](https://github.com/vinceliuice)**: For the Graphite GTK theme
+- **[Fausto-Korpsvart](https://github.com/Fausto-Korpsvart)**: For the Catppuccin, Everforest, Gruvbox, Kanagawa, Material, Nightfox, Osaka, Rosé Pine, and Tokyonight GTK themes
+- **[JustDeax](https://github.com/JustDeax)**: For the Obsidian Flow shell theme
+- **[metro2222](https://github.com/metro2222)**: For the Oval and Rounded Rectangle Dark Blue shell themes
 - **All package maintainers**: For their hard work on the included software
 
 ---
