@@ -1537,6 +1537,7 @@ install_ai_tools() {
     install_claude_code
     install_gemini_cli
     install_vibe_cli
+    install_opencode
     install_cursor
 }
 
@@ -1667,6 +1668,46 @@ install_vibe_cli() {
     fi
     FAILED_PACKAGES+=("vibe"); ((TOTAL_FAILED++))
     log WARNING "Vibe CLI install failed (needs Python 3.12+) - try: curl -LsSf https://mistral.ai/vibe/install.sh | bash"; return 0
+}
+
+# OpenCode (https://opencode.ai/docs/#install) - a terminal-based, provider-
+# agnostic AI coding agent. Primary path is its official native installer
+# (curl | bash, no Node/npm needed), same user-scoped pattern as
+# install_claude_code/install_vibe_cli so the binary and config land in the
+# desktop user's home. Falls back to the official npm package (opencode-ai)
+# when npm is present, matching install_gemini_cli's self-heal (Ubuntu's apt
+# nodejs ships WITHOUT npm as a separate package, so pull it in if missing
+# rather than giving up). Tracking name stays "opencode" (the command it adds).
+install_opencode() {
+    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+
+    local check_cmd install_cmd
+    if [ -n "$u" ]; then
+        check_cmd="su - $u -c 'command -v opencode'"
+        install_cmd="su - $u -c 'curl -fsSL https://opencode.ai/install | bash'"
+    else
+        check_cmd="command -v opencode"
+        install_cmd="curl -fsSL https://opencode.ai/install | bash"
+    fi
+
+    if eval "$check_cmd" &>/dev/null || command -v opencode &>/dev/null; then
+        SKIPPED_PACKAGES+=("opencode"); ((TOTAL_SKIPPED++)); log INFO "Already installed: opencode"; return 0
+    fi
+    log INFO "Installing OpenCode (native installer)..."
+    if eval "$install_cmd" 2>/dev/null && { eval "$check_cmd" &>/dev/null || command -v opencode &>/dev/null; }; then
+        INSTALLED_PACKAGES+=("opencode"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: opencode (run 'opencode' then '/connect' to add a provider)"; return 0
+    fi
+    # Fallback: official npm global package.
+    if ! command -v npm &>/dev/null; then
+        log INFO "npm not found - installing it (fallback for OpenCode)..."
+        pm_install npm >/dev/null 2>&1 || true
+    fi
+    if command -v npm &>/dev/null && npm install -g opencode-ai 2>/dev/null && command -v opencode &>/dev/null; then
+        INSTALLED_PACKAGES+=("opencode"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: opencode (npm)"; return 0
+    fi
+    FAILED_PACKAGES+=("opencode"); ((TOTAL_FAILED++))
+    log WARNING "OpenCode install failed - try: curl -fsSL https://opencode.ai/install | bash"; return 0
 }
 
 install_cursor() {
@@ -2933,11 +2974,33 @@ install_edge() {
     rm -f /etc/apt/sources.list.d/microsoft-edge-setup.list
 }
 
-# LibreWolf, Zen, and Floorp are Firefox forks with no apt repo; all ship on
-# Flathub. Tracked by display name so the Browsers app-folder picks them up.
+# LibreWolf and Zen are Firefox forks with no apt repo; both ship on Flathub.
+# Tracked by display name so the Browsers app-folder picks them up.
 install_librewolf() { flatpak_install_flathub io.gitlab.librewolf-community "LibreWolf"; }
 install_zen()       { flatpak_install_flathub app.zen_browser.zen "Zen"; }
-install_floorp()    { flatpak_install_flathub one.ablaze.floorp "Floorp"; }
+
+# Floorp (also a Firefox fork) from its official apt repo (ppa.ablaze.one,
+# mirrored at ppa.floorp.app) rather than Flathub, so it installs through the
+# active front-end and updates via apt like the other apt-repo browsers below.
+# Package is floorp (ships floorp.desktop, so it lands a Browsers app-folder
+# icon via safe_install's tracking). The upstream Floorp.list already encodes
+# multi-arch support via apt's own "$(ARCH)" substitution variable, so it's
+# fetched as-is rather than hand-written into the .list file - re-typing that
+# literally in bash would risk it being read as a command substitution instead
+# of the literal string apt expects. The repo does NOT self-register, so - same
+# convention as install_signal/install_spotify - the .list is kept for future
+# `apt upgrade`.
+install_floorp() {
+    if is_installed floorp; then
+        SKIPPED_PACKAGES+=("floorp"); ((TOTAL_SKIPPED++)); log INFO "Already installed: floorp"; return 0
+    fi
+    log INFO "Installing Floorp (official apt repo via $PM)..."
+    curl -fsSL https://ppa.ablaze.one/KEY.gpg | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/Floorp.gpg 2>/dev/null
+    curl -fsSL https://ppa.ablaze.one/Floorp.list -o /etc/apt/sources.list.d/Floorp.list 2>/dev/null
+    pm_update
+    safe_install floorp
+}
 
 # Google Chrome from Google's official apt repo. amd64-only. Package
 # google-chrome-stable (ships google-chrome.desktop). Same keyring convention as
