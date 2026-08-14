@@ -1847,6 +1847,7 @@ install_gnome_extensions() {
         "auto-move-windows@gnome-shell-extensions.gcampax.github.com"  # Auto Move Windows
         "user-theme@gnome-shell-extensions.gcampax.github.com"         # User Themes (ego 19)
         "clipboard-history@alexsaveau.dev"                             # Clipboard History (ego 4839)
+        "dash-to-dock@micxgx.gmail.com"                                # Dash to Dock (ego 307)
     )
     local e ok=0
     for e in "${exts[@]}"; do
@@ -2194,8 +2195,166 @@ install_icon_sets() {
         adwaita-icon-theme
 }
 
+# Shared install mechanics for the vinceliuice/Fausto-Korpsvart family of GTK
+# theme generators (Graphite plus the nine palette forks below - Catppuccin,
+# Everforest, Gruvbox, Kanagawa, Material, Nightfox, Osaka, Rose Pine,
+# Tokyonight). Each ships a bash installer that compiles SASS with `sassc` and
+# writes theme variants to /usr/share/themes (root) or ~/.themes (per-user)
+# depending on $UID - but separately ALWAYS symlinks GTK4/Libadwaita assets
+# into $HOME/.config/gtk-4.0, with no $UID branching on that path. Running as
+# root would therefore write those Libadwaita links into /root's config
+# instead of the desktop user's, so - like install_lazyvim - this runs
+# entirely as the desktop user via `su -`, which also gives $UID=1000-ish and
+# a real $HOME for the ~/.themes destination to land in the right place.
+#
+# `sassc` is installed up front, as root, via safe_install: every one of these
+# installers self-elevates with an internal `sudo apt install sassc` when it's
+# missing, which hangs waiting for a terminal under `su - user -c` - the exact
+# same class of bug documented in detail on install_chris_titus_mybash.
+#
+# Idempotency: unlike an apt package, there's no single "is it installed"
+# command for a theme, and the generated variant folder names are an upstream
+# implementation detail not worth depending on - so a sentinel file under the
+# user's cache dir records a successful run and short-circuits future ones.
+install_gtk_theme_repo() {
+    local label="$1" repo="$2" script_rel="$3" slug="$4"; shift 4
+    local extra_args=("$@")
+
+    local user uid
+    if ! read -r user uid < <(resolve_desktop_session); then
+        log INFO "No active desktop session - skipping $label theme"
+        SKIPPED_PACKAGES+=("$label theme"); ((TOTAL_SKIPPED++)); return 0
+    fi
+    local uh; uh=$(getent passwd "$user" | cut -d: -f6)
+    local marker="$uh/.cache/ubuntu-postinstall-themes/$slug.done"
+    if [ -f "$marker" ]; then
+        SKIPPED_PACKAGES+=("$label theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label theme"; return 0
+    fi
+
+    command -v sassc &>/dev/null || safe_install sassc
+
+    local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
+    if ! su - "$user" -c "git clone --depth 1 '$repo' '$t/src'" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("$label theme"); ((TOTAL_FAILED++))
+        log WARNING "$label theme clone failed (needs network access to github.com)"; return 1
+    fi
+    log INFO "Installing $label theme..."
+    if su - "$user" -c "bash '$t/src/$script_rel' ${extra_args[*]}" 2>/dev/null; then
+        mkdir -p "$(dirname "$marker")" && touch "$marker"
+        chown -R "$user" "$uh/.cache/ubuntu-postinstall-themes" 2>/dev/null
+        INSTALLED_PACKAGES+=("$label theme"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $label theme (~/.themes - pick it in gnome-tweaks)"
+    else
+        FAILED_PACKAGES+=("$label theme"); ((TOTAL_FAILED++)); log WARNING "$label theme install failed"
+    fi
+    rm -rf "$t"
+}
+
+# Clone a theme repo as the desktop user and copy one ready-made GNOME Shell
+# theme folder (gnome-shell/ + index.theme, no build step) straight into
+# ~/.local/share/themes/<dest_name>. For repos whose folder is a plain design
+# asset drop rather than a generated theme - unlike the SASS-compiled family
+# above. src_subdir is quoted as a single token so names containing spaces
+# (upstream ships versioned folders like "Rounded-Rectangle-DarkBlue 1.3v")
+# survive the su -c round-trip intact.
+install_shell_theme_raw() {
+    local label="$1" repo="$2" src_subdir="$3" dest_name="$4"
+
+    local user uid
+    if ! read -r user uid < <(resolve_desktop_session); then
+        log INFO "No active desktop session - skipping $label theme"
+        SKIPPED_PACKAGES+=("$label theme"); ((TOTAL_SKIPPED++)); return 0
+    fi
+    local uh; uh=$(getent passwd "$user" | cut -d: -f6)
+    if [ -d "$uh/.local/share/themes/$dest_name" ]; then
+        SKIPPED_PACKAGES+=("$label theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label theme"; return 0
+    fi
+
+    local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
+    if ! su - "$user" -c "git clone --depth 1 '$repo' '$t/src'" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("$label theme"); ((TOTAL_FAILED++))
+        log WARNING "$label theme clone failed (needs network access to github.com)"; return 1
+    fi
+    log INFO "Installing $label theme..."
+    if su - "$user" -c "mkdir -p '$uh/.local/share/themes' && cp -r '$t/src/$src_subdir' '$uh/.local/share/themes/$dest_name'" 2>/dev/null \
+        && [ -d "$uh/.local/share/themes/$dest_name" ]; then
+        INSTALLED_PACKAGES+=("$label theme"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: $label theme (~/.local/share/themes - select via the User Themes extension)"
+    else
+        FAILED_PACKAGES+=("$label theme"); ((TOTAL_FAILED++)); log WARNING "$label theme install failed"
+    fi
+    rm -rf "$t"
+}
+
+# Obsidian Flow (https://github.com/JustDeax/Obsidian-flow-shell-theme) - a
+# Marble-style GNOME Shell theme, installed via its own Python installer
+# (needs Python 3.10+, which install_python/base already provides) rather than
+# a plain folder copy: install.py generates the accent-color variants into
+# ~/.themes itself. `-a` builds every accent color in both light and dark.
+# Runs as the desktop user for the same $HOME reasons as install_gtk_theme_repo.
+# The installer's own apply_gnome_theme() step (a `dconf write` selecting the
+# theme) is best-effort and silently no-ops without a live session bus - not
+# fatal, since the User Themes extension lets you pick it manually afterward.
+install_obsidian_flow_theme() {
+    local user uid
+    if ! read -r user uid < <(resolve_desktop_session); then
+        log INFO "No active desktop session - skipping Obsidian Flow theme"
+        SKIPPED_PACKAGES+=("Obsidian Flow theme"); ((TOTAL_SKIPPED++)); return 0
+    fi
+    local uh; uh=$(getent passwd "$user" | cut -d: -f6)
+    if su - "$user" -c "compgen -G '$uh/.themes/Obsidian flow*'" &>/dev/null; then
+        SKIPPED_PACKAGES+=("Obsidian Flow theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Obsidian Flow theme"; return 0
+    fi
+    command -v python3 &>/dev/null || safe_install python3
+
+    local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
+    if ! su - "$user" -c "git clone --depth 1 https://github.com/JustDeax/Obsidian-flow-shell-theme.git '$t/src'" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("Obsidian Flow theme"); ((TOTAL_FAILED++))
+        log WARNING "Obsidian Flow theme clone failed (needs network access to github.com)"; return 1
+    fi
+    log INFO "Installing Obsidian Flow theme..."
+    if su - "$user" \
+        -c "XDG_RUNTIME_DIR='/run/user/$uid' DBUS_SESSION_BUS_ADDRESS='unix:path=/run/user/$uid/bus' python3 '$t/src/install.py' -a" 2>/dev/null; then
+        INSTALLED_PACKAGES+=("Obsidian Flow theme"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Obsidian Flow theme (~/.themes - pick a color via the User Themes extension)"
+    else
+        FAILED_PACKAGES+=("Obsidian Flow theme"); ((TOTAL_FAILED++)); log WARNING "Obsidian Flow theme install failed"
+    fi
+    rm -rf "$t"
+}
+
+install_graphite_theme()   { install_gtk_theme_repo "Graphite"   "https://github.com/vinceliuice/Graphite-gtk-theme.git"        "install.sh"        "graphite"   --libadwaita; }
+install_catppuccin_theme() { install_gtk_theme_repo "Catppuccin" "https://github.com/Fausto-Korpsvart/Catppuccin-GTK-Theme.git" "themes/install.sh" "catppuccin" --libadwaita; }
+install_everforest_theme() { install_gtk_theme_repo "Everforest" "https://github.com/Fausto-Korpsvart/Everforest-GTK-Theme.git" "themes/install.sh" "everforest" --libadwaita; }
+install_gruvbox_theme()    { install_gtk_theme_repo "Gruvbox"    "https://github.com/Fausto-Korpsvart/Gruvbox-GTK-Theme.git"    "themes/install.sh" "gruvbox"    --libadwaita; }
+install_kanagawa_theme()   { install_gtk_theme_repo "Kanagawa"   "https://github.com/Fausto-Korpsvart/Kanagawa-GKT-Theme.git"   "themes/install.sh" "kanagawa"   --libadwaita; }
+install_material_theme()   { install_gtk_theme_repo "Material"   "https://github.com/Fausto-Korpsvart/Material-GTK-Themes.git"  "themes/install.sh" "material"   --libadwaita; }
+install_nightfox_theme()   { install_gtk_theme_repo "Nightfox"   "https://github.com/Fausto-Korpsvart/Nightfox-GTK-Theme.git"   "themes/install.sh" "nightfox"   --libadwaita; }
+install_osaka_theme()      { install_gtk_theme_repo "Osaka"      "https://github.com/Fausto-Korpsvart/Osaka-GTK-Theme.git"      "themes/install.sh" "osaka"      --libadwaita; }
+install_rose_pine_theme()  { install_gtk_theme_repo "Rose Pine"  "https://github.com/Fausto-Korpsvart/Rose-Pine-GTK-Theme.git"  "themes/install.sh" "rose-pine"  --libadwaita; }
+install_tokyonight_theme() { install_gtk_theme_repo "Tokyonight" "https://github.com/Fausto-Korpsvart/Tokyonight-GTK-Theme.git" "themes/install.sh" "tokyonight" --libadwaita; }
+
+install_oval_theme() { install_shell_theme_raw "Oval" "https://github.com/metro2222/ovel.git" "Oval" "Oval"; }
+install_rounded_rectangle_theme() {
+    install_shell_theme_raw "Rounded Rectangle Dark Blue" \
+        "https://github.com/metro2222/rounded-rectangle-dark-blue-theme.git" \
+        "Rounded-Rectangle-DarkBlue 1.3v" "Rounded-Rectangle-DarkBlue"
+}
+
 install_themes() {
     batch_install "Themes" arc-theme
+    install_graphite_theme
+    install_catppuccin_theme
+    install_everforest_theme
+    install_gruvbox_theme
+    install_kanagawa_theme
+    install_material_theme
+    install_nightfox_theme
+    install_osaka_theme
+    install_rose_pine_theme
+    install_tokyonight_theme
+    install_oval_theme
+    install_rounded_rectangle_theme
+    install_obsidian_flow_theme
 }
 
 install_cursor_themes() {
@@ -3008,6 +3167,25 @@ show_communication_menu() {
     printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-6]${NC}${LAVENDER}: ${NC}"
 }
 
+show_gui_tweaks_menu() {
+    clear
+    ui_header "GUI TWEAKS"
+    echo
+    ui_item 1 "All GUI Tweaks (everything below)"
+    ui_item 2 "Icon Sets"
+    ui_item 3 "Themes (GTK + GNOME Shell)"
+    ui_item 4 "Cursor Themes"
+    ui_item 5 "Nerd Fonts"
+    ui_item 6 "Chris Titus mybash"
+    ui_item 7 "GUI Tools"
+    ui_item 8 "GNOME Shell Extensions"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-8]${NC}${LAVENDER}: ${NC}"
+}
+
 # Reset tracking for each new installation
 reset_tracking() {
     INSTALLED_PACKAGES=()
@@ -3131,7 +3309,22 @@ main() {
             19) reset_tracking; install_system_utils; display_summary; prompt_menu_category "System Utilities" "utilities" "System Utilities" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             20) reset_tracking; install_dev_tools; display_summary; prompt_menu_category "General Development Tools" "development" "General Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             21) reset_tracking; install_ai_tools; display_summary; prompt_menu_category "AI Tools" "ai" "AI Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            22) reset_tracking; install_gui_tweaks; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            22)
+                show_gui_tweaks_menu
+                read -r gui_choice
+                case "$gui_choice" in
+                    0) continue ;;
+                    1) reset_tracking; install_gui_tweaks;        display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    2) reset_tracking; install_icon_sets;         display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    3) reset_tracking; install_themes;            display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    4) reset_tracking; install_cursor_themes;     display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    5) reset_tracking; install_nerd_fonts; configure_terminal_font; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    6) reset_tracking; install_chris_titus_mybash; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    7) reset_tracking; install_gui_tools;         display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    8) reset_tracking; install_gnome_extensions;  display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    *) log ERROR "Invalid choice"; sleep 2 ;;
+                esac
+                ;;
             23) reset_tracking; install_windows_support; display_summary; prompt_menu_category "Windows Software Support" "wine" "Windows Software Support (Wine)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             24) reset_tracking; install_android_tools; display_summary; prompt_menu_category "Android Tools" "phone" "Android Tools (adb, fastboot, scrcpy)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             25)
