@@ -128,12 +128,21 @@ package_exists() {
 # installed; until then (and if it's ever unavailable) PM stays apt-get, so the
 # script works either way. Only install/update are routed through the front-end
 # - queries stay on apt-cache/dpkg because nala has no equivalent for e.g.
-# `apt-cache depends --recurse`. Both wrappers swallow stderr to match the
+# `apt-cache depends --recurse`. pm_install swallows stderr to match the
 # script's existing "ignore install-info noise" behavior; callers still rely on
-# the exit code (and an is_installed re-check) to decide success.
+# the exit code (and an is_installed re-check) to decide success. pm_update
+# (below) only swallows stderr on success - see its own comment.
 PM="apt-get"
+# On success, stays as quiet as before (stderr discarded). On failure, prints
+# the actual apt/nala error to stderr instead of swallowing it - "Failed to
+# update. Check internet." was otherwise the only thing callers ever saw, even
+# when the real cause was e.g. a stuck dpkg lock or a broken third-party repo.
 pm_update() {
-    if [ "$PM" = "nala" ]; then nala update 2>/dev/null; else apt-get update -qq 2>/dev/null; fi
+    local out rc
+    if [ "$PM" = "nala" ]; then out=$(nala update 2>&1); else out=$(apt-get update -qq 2>&1); fi
+    rc=$?
+    [ $rc -ne 0 ] && printf '%s\n' "$out" >&2
+    return $rc
 }
 pm_install() {
     if [ "$PM" = "nala" ]; then nala install -y "$@" 2>/dev/null; else apt-get install -y "$@" 2>/dev/null; fi
@@ -615,10 +624,30 @@ install_ubuntu_studio_full() {
 # ========== GRAPHICS ==========
 install_graphics() {
     batch_install "Graphics" \
-        gimp inkscape krita darktable rawtherapee shotwell nomacs pinta blender \
+        gimp inkscape krita darktable rawtherapee shotwell nomacs blender \
         flameshot \
         imagemagick graphicsmagick optipng jpegoptim pngquant webp
+    install_pinta
     set_flameshot_hotkey
+}
+
+# Pinta (simple image editor/paint app). Mono-based Pinta 1.x was dropped from
+# Ubuntu's repos (universe stopped carrying it once Mono support was wound
+# down), so a plain `apt install pinta` 404s/"Not in repos" on current
+# releases - this is why it used to fail as part of the plain Graphics batch.
+# The actively-maintained Pinta 2.x (.NET-based) ships on Flathub instead, so
+# prefer the distro package where it still exists and fall back there
+# otherwise - same pattern as install_telegram.
+install_pinta() {
+    if is_installed pinta; then
+        SKIPPED_PACKAGES+=("pinta"); ((TOTAL_SKIPPED++)); log INFO "Already installed: pinta"; return 0
+    fi
+    if package_exists pinta; then
+        batch_install "Pinta" pinta
+    else
+        log INFO "pinta not in apt repos - installing from Flathub instead"
+        flatpak_install_flathub com.github.PintaProject.Pinta "Pinta"
+    fi
 }
 
 # Bind the Print Screen key to Flameshot instead of GNOME's built-in screenshot
@@ -2391,6 +2420,7 @@ install_desktop_apps() {
     install_remmina
     install_windows_app
     install_teamviewer
+    install_1password
 }
 
 # Vivaldi web browser - Chromium-based, feature-rich. Installed from Vivaldi's
@@ -2421,6 +2451,13 @@ install_vivaldi() {
 # is spotify-client (binary `spotify`, ships spotify.desktop for its folder icon).
 # Same keyring/.list convention as install_vscode; unlike VS Code, Spotify's repo
 # does NOT re-register itself, so the .list is kept for future updates.
+#
+# Spotify signs the repo with a key that it rotates periodically (each rotation
+# ships under a new pubkey_<KEYID>.gpg URL, with no stable unversioned alias) -
+# a hardcoded key ID here goes stale and updates start failing with "NO_PUBKEY
+# <newid>" even though the .deb itself hasn't changed. So the current key URL is
+# scraped from Spotify's own Linux download page (same idea as install_slack's
+# version scrape), with the last-known-good key ID kept as a pinned fallback.
 install_spotify() {
     # Gate on the .deb specifically, not `command -v spotify` - a leftover Spotify
     # snap also puts `spotify` on PATH and would make us wrongly skip the migration.
@@ -2429,8 +2466,12 @@ install_spotify() {
         remove_snap_if_present spotify; return 0
     fi
     log INFO "Installing Spotify (official apt repo via $PM)..."
+    local key_url
+    key_url=$(curl -fsSL "https://www.spotify.com/us/download/linux/" 2>/dev/null \
+        | grep -oP 'download\.spotify\.com/debian/pubkey_[A-F0-9]+\.(gpg|asc)' | head -1)
+    [ -z "$key_url" ] && key_url="download.spotify.com/debian/pubkey_5384CE82BA52C83A.gpg"
     # Dearmor Spotify's signing key straight into the keyring (public key, mode 644).
-    wget -qO- https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | gpg --dearmor \
+    wget -qO- "https://${key_url}" | gpg --dearmor \
         | install -D -m 644 /dev/stdin /usr/share/keyrings/spotify.gpg 2>/dev/null
     echo "deb [signed-by=/usr/share/keyrings/spotify.gpg] https://repository.spotify.com stable non-free" > /etc/apt/sources.list.d/spotify.list
     pm_update
@@ -2628,6 +2669,40 @@ install_teamviewer() {
     rm -rf "$t"
     FAILED_PACKAGES+=("teamviewer"); ((TOTAL_FAILED++))
     log WARNING "TeamViewer download failed - get it from https://www.teamviewer.com/"; return 0
+}
+
+# 1Password desktop app, from 1Password's official apt repo
+# (https://support.1password.com/install-linux/). amd64-only upstream - ARM
+# builds are tarball-only there, with no apt repo. Package is 1password (ships
+# 1password.desktop, so it lands a Desktop Apps folder icon via safe_install's
+# tracking). Same keyring convention as install_vscode/install_signal; the
+# repo does NOT self-register, so the .list is kept for future `apt upgrade`.
+# Also sets up the debsig-verify policy from 1Password's own install docs -
+# a no-op unless debsig-verify is installed and enabled, but harmless either
+# way and matches their documented steps exactly.
+install_1password() {
+    if is_installed 1password; then
+        SKIPPED_PACKAGES+=("1password"); ((TOTAL_SKIPPED++)); log INFO "Already installed: 1password"; return 0
+    fi
+    local a; a=$(dpkg --print-architecture 2>/dev/null)
+    if [ "$a" != "amd64" ]; then
+        FAILED_PACKAGES+=("1password"); ((TOTAL_FAILED++))
+        log WARNING "1Password's apt repo is amd64-only - not available for '$a' (use the tarball from 1password.com instead)"; return 0
+    fi
+    log INFO "Installing 1Password (official apt repo via $PM)..."
+    wget -qO- https://downloads.1password.com/linux/keys/1password.asc | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/1password-archive-keyring.gpg 2>/dev/null
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main" > /etc/apt/sources.list.d/1password.list
+
+    install -d -m 755 /etc/debsig/policies/AC2D62742012EA22 2>/dev/null
+    curl -fsSL https://downloads.1password.com/linux/debian/debsig/1password.pol \
+        -o /etc/debsig/policies/AC2D62742012EA22/1password.pol 2>/dev/null
+    install -d -m 755 /usr/share/debsig/keyrings/AC2D62742012EA22 2>/dev/null
+    wget -qO- https://downloads.1password.com/linux/keys/1password.asc | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg 2>/dev/null
+
+    pm_update
+    safe_install 1password
 }
 
 # ========== BROWSERS ==========

@@ -239,9 +239,11 @@ Official Ubuntu Studio meta-packages (note: **no hyphen** between "ubuntu" and "
 
 ### Graphics &amp; Image Manipulation
 
-**Raster/Vector Editors:** `gimp`, `inkscape`, `krita`, `darktable`, `rawtherapee`, `shotwell`, `nomacs`, `pinta`
+**Raster/Vector Editors:** `gimp`, `inkscape`, `krita`, `darktable`, `rawtherapee`, `shotwell`, `nomacs`
 
 **3D:** `blender`
+
+**Pinta** — apt's `pinta` was dropped from Ubuntu's repos along with Mono; installed from Flathub (`com.github.PintaProject.Pinta`) instead when the apt package isn't available, same fallback pattern as Telegram.
 
 **Command-line utilities:** `imagemagick`, `graphicsmagick`, `optipng`, `jpegoptim`, `pngquant`, `webp-tools`
 
@@ -616,9 +618,12 @@ Developer/cloud tooling installed together:
 
 Common desktop applications:
 
-- **Spotify** (snap) — installed as-is, with **no X11 Ozone override**; it runs under the session's native backend (Wayland where available) for a cleaner environment.
-- **Slack** (snap) — strict-confinement snap (no `--classic`).
+- **Spotify** — installed from Spotify's own apt repo (`repository.spotify.com`) rather than snap, so it updates through apt; migrates off a leftover snap automatically.
+- **Slack** — official `slack-desktop` `.deb` installed through the active package manager (version scraped from Slack's release notes, with a pinned fallback); migrates off a leftover snap automatically.
 - **Remmina** (remote-desktop client) — installed from the upstream `remmina-next` PPA when available (codename-aware via `add_ppa`, falls back to the distro package), with the RDP (`remmina-plugin-rdp`) and secret-storage (`remmina-plugin-secret`) plugins.
+- **Windows App for Linux** ([mariuszkopowski/windows-app-for-linux](https://github.com/mariuszkopowski/windows-app-for-linux)) — a remote-desktop client for Windows 365 / Azure Virtual Desktop / RDP. Not on Flathub, so the latest `x86_64` Flatpak bundle is downloaded from its GitHub releases and installed into the desktop user's per-user Flatpak scope (installs Flatpak itself first if missing).
+- **TeamViewer** — official vendor `.deb` downloaded and installed directly (amd64/arm64); the package registers TeamViewer's own apt repo so future updates flow through apt.
+- **1Password** — installed from [1Password's official apt repo](https://support.1password.com/install-linux/) (amd64 only); also configures the documented `debsig-verify` policy for package-integrity checks.
 
 ---
 
