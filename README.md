@@ -76,7 +76,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 - ✅ **Dual-Release Support (26.04 LTS & 26.10)**: A startup version check accepts both supported releases and stores the detected version/codename; release-specific behavior is dispatched via `is_lts()` and the resolved codename instead of maintaining two scripts. Add another release to the `SUPPORTED_VERSIONS` array to have the check accept it without prompting.
 - ✅ **Nala front-end (with apt-get fallback)**: [Nala](https://github.com/volitank/nala) is installed early and used for package installs/updates (parallel downloads, cleaner output). It's a thin layer over the same libapt/dpkg, so package behavior is identical. A `pm_install`/`pm_update` abstraction routes operations through Nala when present and **falls back to apt-get** if Nala isn't available — the script works either way. Queries (`apt-cache`, `dpkg`) intentionally stay on apt, which Nala doesn't replace.
 - ✅ **Verified Packages Only**: Every apt package name has been checked against the live Ubuntu 26.10 archive (`apt-cache policy`) before being added — several package names from earlier drafts (`ubuntu-studio-*`, `qemu-kvm`, `android-tools-adb`) turned out not to exist under those names and were corrected
-- ✅ **Direct Downloads for Third-Party**: Non-repo tools (VS Code, Sublime Text, Ollama, Cursor, Mistral AI Vibe) use their official installers/repositories
+- ✅ **Direct Downloads for Third-Party**: Non-repo tools (VS Code, Sublime Text, Ollama, Cursor, Mistral Vibe CLI) use their official installers/repositories
 - ✅ **Snap for Archive Gaps**: Tools with no real apt package at all (LXD, IntelliJ IDEA Community, DBeaver CE) are installed via `snap` instead of silently failing
 - ✅ **Robust Error Handling**: Gracefully skips unavailable packages and continues installation
 - ✅ **No Silent Duplicates**: Package lists were audited across all categories so the same tool isn't installed twice by accident (a few overlaps are intentional and documented — see [Known Limitations](#️-known-limitations) and inline comments in the script)
@@ -109,7 +109,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 - **Package Front-End:** Nala (auto-installed, with transparent apt-get fallback)
 - **Verified APT Packages:** 200+
 - **Snap-Only Tools:** 3 (LXD, IntelliJ IDEA Community, DBeaver CE)
-- **Third-Party Direct-Install Tools:** VS Code, Sublime Text, Ollama, Cursor, Mistral AI Vibe, Claude Code, Go, Rust/rustup, Chris Titus mybash, Azure CLI, lazygit (via Go), LazyVim + Nordic (Neovim config)
+- **Third-Party Direct-Install Tools:** VS Code, Sublime Text, Ollama, Cursor, Mistral Vibe CLI, Claude Code, Gemini CLI, Go, Rust/rustup, Chris Titus mybash, Azure CLI, lazygit (via Go), LazyVim + Nordic (Neovim config)
 - **Estimated Install Time:** 15 minutes – several hours (depending on selections; "Install EVERYTHING" is a long run)
 - **Estimated Disk Space:** 5–30GB+ (depending on selections)
 
@@ -477,11 +477,13 @@ Note: `libreoffice` is a meta-package that resolves to **seven separate real app
 | Tool                | Installation Method | Description                                              |
 | -------------------- | --------------------- | ----------------------------------------------------------- |
 | **Ollama**          | Official install script | Local LLM runner, auto-detects GPU/CPU                  |
-| **Mistral AI Vibe**  | AppImage download    | Desktop AI assistant from Mistral AI                     |
-| **Claude Code**     | `npm install -g @anthropic-ai/claude-code` | Anthropic's CLI code assistant (provides the `claude` command) |
+| **Alpaca**           | Flathub (`com.jeffser.Alpaca`) | Native GTK4 GUI client for Ollama                |
+| **Claude Code**     | Official native installer (`claude.ai/install.sh`), npm fallback | Anthropic's CLI code assistant (provides the `claude` command) |
+| **Gemini CLI**       | `npm install -g @google/gemini-cli` | Google's official CLI code assistant (provides the `gemini` command) |
+| **Mistral Vibe CLI** | Official installer script (`mistral.ai/vibe/install.sh`), installs the `mistral-vibe` Python package via `uv`/`pip` | Mistral's terminal coding agent (provides the `vibe` command) |
 | **Cursor**           | `.deb` download       | AI-powered code editor                                    |
 
-All four now register in the installed/skipped/failed tracking, so they appear in the summary and are fed to the app-folder resolver. **Cursor** ships its own `cursor.desktop` and **Mistral Vibe** gets a generated launcher, so both are grouped into the AI Tools folder. **Ollama** and **Claude CLI** are command-line only (no launcher), so they're tracked but don't get a folder icon — expected, same as `docker`/`adb`.
+All of these register in the installed/skipped/failed tracking, so they appear in the summary and are fed to the app-folder resolver. **Cursor** ships its own `cursor.desktop` and **Alpaca** exports a Flatpak launcher, so both are grouped into the AI Tools folder. **Ollama**, **Claude Code**, **Gemini CLI**, and **Mistral Vibe CLI** are command-line only (no launcher), so they're tracked but don't get a folder icon — expected, same as `docker`/`adb`.
 
 ---
 
@@ -723,7 +725,7 @@ Contains a timestamp, the running user, summary statistics, and the full install
 The script runs as **root** and installs software from a mix of Ubuntu repos and third-party sources. What that means for trust:
 
 - **Package integrity:** apt/Nala packages are signed by Ubuntu's archive keys. Third-party **apt repos** (VS Code, Sublime) pin their GPG key with `signed-by=` and import it directly into `/usr/share/keyrings/` (no `/tmp` intermediate). **PPAs** (Papirus, Remmina) trust the Launchpad PPA owner, whose packages run maintainer scripts as root.
-- **Remote install scripts run as root, trusted over HTTPS only:** NodeSource (`setup_20.x`), Ollama (`install.sh`), and Azure CLI (`InstallAzureCLIDeb`) are piped to `bash`/`sh`. These are the vendors' official install methods; integrity rests on TLS + the vendor, with no independent checksum. The **Cursor `.deb`** (`dpkg -i`) and **Mistral Vibe AppImage** are likewise TLS-trust only. rustup is installed **as your user**, not root.
+- **Remote install scripts run as root, trusted over HTTPS only:** NodeSource (`setup_20.x`), Ollama (`install.sh`), and Azure CLI (`InstallAzureCLIDeb`) are piped to `bash`/`sh`. These are the vendors' official install methods; integrity rests on TLS + the vendor, with no independent checksum. The **Cursor `.deb`** (`dpkg -i`) is likewise TLS-trust only. **Claude Code**, **Mistral Vibe CLI** (`install.sh`), and rustup are installed **as your user** (via `su - $SUDO_USER`), not root.
 - **Docker group = root-equivalent:** installing Docker adds your user to the `docker` group, which grants full control of the Docker socket — effectively root. This is standard and expected; know that it's a privilege boundary. (Prefer rootless Docker if you want to avoid it.)
 - **Third-party desktop code:** GNOME Shell extensions (from extensions.gnome.org) run in your shell as your user; `--classic` snaps (IntelliJ, DBeaver CE) run unconfined. Both execute third-party code by design.
 - **Source builds:** Logiops is compiled and `make install`ed from source in a **private `mktemp -d`** (not a predictable, reusable `/tmp` path).

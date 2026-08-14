@@ -1536,6 +1536,7 @@ install_ai_tools() {
     install_alpaca
     install_claude_code
     install_gemini_cli
+    install_vibe_cli
     install_cursor
 }
 
@@ -1635,6 +1636,37 @@ install_gemini_cli() {
     fi
     FAILED_PACKAGES+=("gemini"); ((TOTAL_FAILED++))
     log WARNING "Gemini CLI install failed - try: npm install -g @google/gemini-cli"; return 0
+}
+
+# Mistral Vibe CLI (https://docs.mistral.ai/getting-started/quickstarts/vibe-code/install-cli) -
+# Mistral's terminal coding agent. Distributed via Mistral's own installer
+# script, which uses `uv` (falling back to pip) to install the mistral-vibe
+# Python package - not an apt/npm package, so tracked manually like
+# install_claude_code. Needs Python 3.12+; run as the desktop user (not root),
+# same user-scoped pattern as install_claude_code, so `vibe` and its config
+# land in their home rather than root's.
+install_vibe_cli() {
+    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+
+    local check_cmd install_cmd
+    if [ -n "$u" ]; then
+        check_cmd="su - $u -c 'command -v vibe'"
+        install_cmd="su - $u -c 'curl -LsSf https://mistral.ai/vibe/install.sh | bash'"
+    else
+        check_cmd="command -v vibe"
+        install_cmd="curl -LsSf https://mistral.ai/vibe/install.sh | bash"
+    fi
+
+    if eval "$check_cmd" &>/dev/null || command -v vibe &>/dev/null; then
+        SKIPPED_PACKAGES+=("vibe"); ((TOTAL_SKIPPED++)); log INFO "Already installed: vibe"; return 0
+    fi
+    log INFO "Installing Mistral Vibe CLI..."
+    if eval "$install_cmd" 2>/dev/null && { eval "$check_cmd" &>/dev/null || command -v vibe &>/dev/null; }; then
+        INSTALLED_PACKAGES+=("vibe"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: vibe (run 'vibe' to sign in or paste an API key)"; return 0
+    fi
+    FAILED_PACKAGES+=("vibe"); ((TOTAL_FAILED++))
+    log WARNING "Vibe CLI install failed (needs Python 3.12+) - try: curl -LsSf https://mistral.ai/vibe/install.sh | bash"; return 0
 }
 
 install_cursor() {
