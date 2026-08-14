@@ -492,7 +492,11 @@ All of these register in the installed/skipped/failed tracking, so they appear i
 
 Option `22` has its own sub-menu so you can install everything below at once, or pick just one piece (e.g. only **Themes**) instead of the full bundle: **All GUI Tweaks**, **Icon Sets**, **Themes**, **Cursor Themes**, **Nerd Fonts**, **Chris Titus mybash**, **GUI Tools**, **GNOME Shell Extensions**.
 
-**Icon Sets** (via the Papirus Team PPA): `papirus-icon-theme`, `numix-icon-theme`, `breeze-icon-theme`, `adwaita-icon-theme`
+**Icon Sets:** (creators credited in [Acknowledgments](#-acknowledgments))
+
+- **Apt packages** (Papirus via its Team PPA; the rest are plain universe packages): `papirus-icon-theme`, `numix-icon-theme`, `numix-icon-theme-circle`, `breeze-icon-theme`, `adwaita-icon-theme`, `obsidian-icon-theme`
+- **Built from source, straight to `/usr/share/icons`** (no PPA/package exists for these): [Qogir](https://github.com/vinceliuice/Qogir-icon-theme), [WhiteSur](https://github.com/vinceliuice/WhiteSur-icon-theme), [Vimix](https://github.com/vinceliuice/Vimix-icon-theme) — each cloned and run through its own `install.sh` directly as root (their destination logic is already `$UID`-aware and has no other per-user dependency, unlike the GTK themes below, so no `su`-as-desktop-user dance is needed here). Tracked via a system-wide marker file under `/var/lib/ubuntu-postinstall-themes/`.
+- **Ready-made, no build step**: [Newaita](https://github.com/cbrnix/Newaita) (light + dark) — copied straight into `/usr/share/icons`.
 
 > The Papirus PPA is added through a codename-aware helper (`add_ppa`). PPAs are keyed by codename: the 26.04 LTS almost always has a build, while a brand-new interim release (26.10) frequently has none yet — if the PPA has no build for the running codename the helper warns and continues with the distro icon packages instead of leaving a broken apt source behind.
 
@@ -852,10 +856,11 @@ This script is provided **as-is** without warranty. You are free to:
 - **Ollama**: For making local LLMs accessible
 - **Mistral AI**: For Vibe and open-source AI models
 - **Genymobile**: For scrcpy
-- **[vinceliuice](https://github.com/vinceliuice)**: For the Graphite GTK theme
+- **[vinceliuice](https://github.com/vinceliuice)**: For the Graphite GTK theme and the Qogir, WhiteSur, and Vimix icon themes
 - **[Fausto-Korpsvart](https://github.com/Fausto-Korpsvart)**: For the Catppuccin, Everforest, Gruvbox, Kanagawa, Material, Nightfox, Osaka, Rosé Pine, and Tokyonight GTK themes
 - **[JustDeax](https://github.com/JustDeax)**: For the Obsidian Flow shell theme
 - **[metro2222](https://github.com/metro2222)**: For the Oval and Rounded Rectangle Dark Blue shell themes
+- **[cbrnix](https://github.com/cbrnix)**: For the Newaita icon theme
 - **All package maintainers**: For their hard work on the included software
 
 ---

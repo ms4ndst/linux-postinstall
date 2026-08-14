@@ -2229,12 +2229,83 @@ add_ppa() {
 install_icon_sets() {
     # Add Papirus Team PPA for additional icon themes (codename-aware; see add_ppa)
     add_ppa ppa:papirus/papirus papirus
+    # numix-icon-theme-circle and obsidian-icon-theme are plain universe
+    # packages (verified via apt-cache policy) - no PPA or manual build needed,
+    # unlike the vinceliuice/cbrnix sets below.
     batch_install "Icon Sets" \
         papirus-icon-theme \
         numix-icon-theme \
+        numix-icon-theme-circle \
         breeze-icon-theme \
-        adwaita-icon-theme
+        adwaita-icon-theme \
+        obsidian-icon-theme
+    install_qogir_icons
+    install_whitesur_icons
+    install_vimix_icons
+    install_newaita_icons
 }
+
+# Shared install mechanics for the vinceliuice family of icon theme generators
+# (Qogir, WhiteSur, Vimix) below. Each ships a bash installer whose destination
+# is already $UID-aware (root -> /usr/share/icons, otherwise
+# ~/.local/share/icons), with no other hardcoded $HOME dependency and no
+# self-elevating internal sudo call - unlike the GTK theme family
+# (install_gtk_theme_repo), which needed the desktop-user workaround for
+# exactly those reasons. So this runs directly as root, landing the icon set
+# system-wide where every user on the box can select it, and the marker file
+# lives system-wide too (/var/lib) to match.
+install_icon_theme_repo() {
+    local label="$1" repo="$2" slug="$3"; shift 3
+    local extra_args=("$@")
+
+    local marker="/var/lib/ubuntu-postinstall-themes/${slug}.done"
+    if [ -f "$marker" ]; then
+        SKIPPED_PACKAGES+=("$label icons"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label icons"; return 0
+    fi
+
+    command -v gtk-update-icon-cache &>/dev/null || safe_install libgtk-3-bin
+
+    local t; t=$(mktemp -d)
+    if ! git clone --depth 1 "$repo" "$t/src" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("$label icons"); ((TOTAL_FAILED++))
+        log WARNING "$label icons clone failed (needs network access to github.com)"; return 1
+    fi
+    log INFO "Installing $label icon theme..."
+    if bash "$t/src/install.sh" "${extra_args[@]}" 2>/dev/null; then
+        mkdir -p "$(dirname "$marker")" && touch "$marker"
+        INSTALLED_PACKAGES+=("$label icons"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $label icons (/usr/share/icons - pick via gnome-tweaks)"
+    else
+        FAILED_PACKAGES+=("$label icons"); ((TOTAL_FAILED++)); log WARNING "$label icons install failed"
+    fi
+    rm -rf "$t"
+}
+
+# Newaita (https://github.com/cbrnix/Newaita) - a ready-made icon theme with no
+# build step (two variants: Newaita, Newaita-dark). Cloned and copied straight
+# into /usr/share/icons since we're already root - unlike install_shell_theme_raw
+# (which deliberately runs as the desktop user), an icon theme has no per-user
+# config step to worry about, so there's no reason to involve SUDO_USER here.
+install_newaita_icons() {
+    if [ -d /usr/share/icons/Newaita ]; then
+        SKIPPED_PACKAGES+=("Newaita icons"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Newaita icons"; return 0
+    fi
+    local t; t=$(mktemp -d)
+    if ! git clone --depth 1 https://github.com/cbrnix/Newaita.git "$t/src" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("Newaita icons"); ((TOTAL_FAILED++))
+        log WARNING "Newaita icons clone failed (needs network access to github.com)"; return 1
+    fi
+    log INFO "Installing Newaita icon theme..."
+    if cp -r "$t/src/Newaita" "$t/src/Newaita-dark" /usr/share/icons/ 2>/dev/null; then
+        INSTALLED_PACKAGES+=("Newaita icons"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: Newaita icons (/usr/share/icons)"
+    else
+        FAILED_PACKAGES+=("Newaita icons"); ((TOTAL_FAILED++)); log WARNING "Newaita icons install failed"
+    fi
+    rm -rf "$t"
+}
+
+install_qogir_icons()    { install_icon_theme_repo "Qogir"    "https://github.com/vinceliuice/Qogir-icon-theme.git"    "qogir-icons"; }
+install_whitesur_icons() { install_icon_theme_repo "WhiteSur" "https://github.com/vinceliuice/WhiteSur-icon-theme.git" "whitesur-icons"; }
+install_vimix_icons()    { install_icon_theme_repo "Vimix"    "https://github.com/vinceliuice/Vimix-icon-theme.git"    "vimix-icons"; }
 
 # Shared install mechanics for the vinceliuice/Fausto-Korpsvart family of GTK
 # theme generators (Graphite plus the nine palette forks below - Catppuccin,
