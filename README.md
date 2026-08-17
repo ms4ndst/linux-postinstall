@@ -1,57 +1,112 @@
-# Ubuntu 26.04 LTS / 26.10 Post-Install Script
+# 🐧🎩 Linux Post-Install Scripts
 
-> **Menu-driven post-installation script with verified packages, error handling, installation checks, and automatic GNOME Shell app-folder creation — supports both Ubuntu 26.04 LTS and 26.10**
+> **Menu-driven post-installation scripts with verified packages, error handling, installation checks, and automatic GNOME Shell app-folder creation.**
+
 ![screenshot](screenshot.png)
+
+This repo ships **two independent, distro-specific scripts** — pick the one that matches your machine:
+
+- **[`post-install-ubuntu.sh`](post-install-ubuntu.sh)** — for **Ubuntu 26.04 LTS / 26.10**, built on apt/Nala.
+- **[`post-install-fedora.sh`](post-install-fedora.sh)** — for **Fedora Workstation**, built on `dnf5`/RPM Fusion.
+
+They share the same Catppuccin-themed menu-driven UX, the same installed/skipped/failed tracking, and the same GNOME Shell app-folder feature — but every install path (package names, repos, drivers, codecs) is re-sourced per distro rather than being a single script with `if`-branches. Neither script depends on or modifies the other; run whichever matches your system.
+
 ---
 
 ## 📋 Table of Contents
 
-- [🚀 Overview](#-overview)
-- [✨ Features](#-features)
-- [📥 Installation](#-installation)
-- [🎯 Usage](#-usage)
-- [🗂️ GNOME App Folders (Super Key Groups)](#️-gnome-app-folders-super-key-groups)
-- [📦 Package Categories](#-package-categories)
-  - [Ubuntu Studio (Media)](#ubuntu-studio-media)
-  - [Graphics &amp; Image Manipulation](#graphics--image-manipulation)
-  - [Video Creation &amp; Editing](#video-creation--editing)
-  - [Audio Production](#audio-production)
-  - [Code Editors](#code-editors)
-  - [Python Development](#python-development)
-  - [Web Development](#web-development)
-  - [Java Development](#java-development)
-  - [C/C++ Development](#cc-development)
-  - [Go Development](#go-development)
-  - [Rust Development](#rust-development)
-  - [Node.js Development](#nodejs-development)
-  - [PHP Development](#php-development)
-  - [Ruby Development](#ruby-development)
-  - [Database Tools](#database-tools)
-  - [Container &amp; Virtualization](#container--virtualization)
-  - [Gaming](#gaming)
-  - [Office &amp; Productivity](#office--productivity)
-  - [System Utilities](#system-utilities)
-  - [General Development Tools](#general-development-tools)
-  - [AI Tools](#ai-tools)
-  - [GUI Tweaks](#gui-tweaks)
-  - [Windows Software Support](#windows-software-support)
-  - [Android Tools](#android-tools)
-  - [Security Tools](#security-tools)
-  - [.NET Development](#net-development)
-  - [DevOps &amp; Cloud](#devops--cloud)
-  - [Desktop Apps](#desktop-apps)
-- [🔀 Bulk Options (A / B / C)](#-bulk-options-a--b--c)
-- [🔧 Error Handling &amp; Installation Checks](#-error-handling--installation-checks)
-- [📊 Installation Summary &amp; Logging](#-installation-summary--logging)
-- [🔒 Security Notes](#-security-notes)
-- [⚠️ Known Limitations](#️-known-limitations)
-- [⚙️ Customization](#-customization)
-- [🐛 Troubleshooting](#-troubleshooting)
+- [🐧 Ubuntu Post-Install Script](#-ubuntu-2604-lts--2610-post-install-script)
+  - [🚀 Overview](#-overview)
+  - [✨ Features](#-features)
+  - [📥 Installation](#-installation)
+  - [🎯 Usage](#-usage)
+  - [🗂️ GNOME App Folders (Super Key Groups)](#️-gnome-app-folders-super-key-groups)
+  - [📦 Package Categories](#-package-categories)
+    - [Ubuntu Studio (Media)](#ubuntu-studio-media)
+    - [Graphics &amp; Image Manipulation](#graphics--image-manipulation)
+    - [Video Creation &amp; Editing](#video-creation--editing)
+    - [Audio Production](#audio-production)
+    - [Code Editors](#code-editors)
+    - [Python Development](#python-development)
+    - [Web Development](#web-development)
+    - [Java Development](#java-development)
+    - [C/C++ Development](#cc-development)
+    - [Go Development](#go-development)
+    - [Rust Development](#rust-development)
+    - [Node.js Development](#nodejs-development)
+    - [PHP Development](#php-development)
+    - [Ruby Development](#ruby-development)
+    - [Database Tools](#database-tools)
+    - [Container &amp; Virtualization](#container--virtualization)
+    - [Gaming](#gaming)
+    - [Office &amp; Productivity](#office--productivity)
+    - [System Utilities](#system-utilities)
+    - [General Development Tools](#general-development-tools)
+    - [AI Tools](#ai-tools)
+    - [GUI Tweaks](#gui-tweaks)
+    - [Windows Software Support](#windows-software-support)
+    - [Android Tools](#android-tools)
+    - [Security Tools](#security-tools)
+    - [.NET Development](#net-development)
+    - [DevOps &amp; Cloud](#devops--cloud)
+    - [Desktop Apps](#desktop-apps)
+  - [🔀 Bulk Options (A / B / C)](#-bulk-options-a--b--c)
+  - [🔧 Error Handling &amp; Installation Checks](#-error-handling--installation-checks)
+  - [📊 Installation Summary &amp; Logging](#-installation-summary--logging)
+  - [🔒 Security Notes](#-security-notes)
+  - [⚠️ Known Limitations](#️-known-limitations)
+  - [⚙️ Customization](#-customization)
+  - [🐛 Troubleshooting](#-troubleshooting)
+- [🎩 Fedora Post-Install Script](#-fedora-post-install-script)
+  - [🚀 Fedora Overview](#-fedora-overview)
+  - [✨ Fedora Features](#-fedora-features)
+  - [📥 Fedora Installation](#-fedora-installation)
+  - [🎯 Fedora Usage](#-fedora-usage)
+  - [🗂️ Fedora GNOME App Folders (Super Key Groups)](#️-fedora-gnome-app-folders-super-key-groups)
+  - [📦 Fedora Package Categories](#-fedora-package-categories)
+    - [Fedora: Creative Suite](#fedora-creative-suite)
+    - [Fedora: Code Editors](#fedora-code-editors)
+    - [Fedora: Python](#fedora-python)
+    - [Fedora: Web Development](#fedora-web-development)
+    - [Fedora: Java](#fedora-java)
+    - [Fedora: C/C++](#fedora-cc)
+    - [Fedora: Go](#fedora-go)
+    - [Fedora: Rust](#fedora-rust)
+    - [Fedora: Node.js](#fedora-nodejs)
+    - [Fedora: PHP](#fedora-php)
+    - [Fedora: Ruby](#fedora-ruby)
+    - [Fedora: Databases](#fedora-databases)
+    - [Fedora: Containers & VMs](#fedora-containers--vms)
+    - [Fedora: Gaming](#fedora-gaming)
+    - [Fedora: Office & Productivity](#fedora-office--productivity)
+    - [Fedora: System Utilities](#fedora-system-utilities)
+    - [Fedora: General Development Tools](#fedora-general-development-tools)
+    - [Fedora: AI Tools](#fedora-ai-tools)
+    - [Fedora: GUI Tweaks](#fedora-gui-tweaks)
+    - [Fedora: Windows Software Support](#fedora-windows-software-support)
+    - [Fedora: Android Tools](#fedora-android-tools)
+    - [Fedora: Security Tools](#fedora-security-tools)
+    - [Fedora: .NET](#fedora-net)
+    - [Fedora: DevOps & Cloud](#fedora-devops--cloud)
+    - [Fedora: Desktop Apps](#fedora-desktop-apps)
+    - [Fedora: Browsers](#fedora-browsers)
+    - [Fedora: Communication](#fedora-communication)
+    - [Fedora: Drivers & Extra Repos](#fedora-drivers--extra-repos)
+  - [🔀 Fedora Bulk Options (A / B / C)](#-fedora-bulk-options-a--b--c)
+  - [🔧 Fedora Error Handling &amp; Installation Checks](#-fedora-error-handling--installation-checks)
+  - [📊 Fedora Installation Summary &amp; Logging](#-fedora-installation-summary--logging)
+  - [🔒 Fedora Security Notes](#-fedora-security-notes)
+  - [⚠️ Fedora Known Limitations](#-fedora-known-limitations)
+  - [⚙️ Fedora Customization](#-fedora-customization)
+  - [🐛 Fedora Troubleshooting](#-fedora-troubleshooting)
 - [📜 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
 
 ---
 
-## 🚀 Overview
+# 🐧 Ubuntu 26.04 LTS / 26.10 Post-Install Script
+
+### 🚀 Overview
 
 This script automates the post-installation setup of **Ubuntu 26.04 LTS and 26.10** by providing a menu-driven interface for installing software packages grouped by category. It is designed for developers, creatives, and power users who want to quickly set up a fully-featured development, media production, or virtualization environment.
 
@@ -83,9 +138,9 @@ Beyond just installing packages, after each category finishes it can also **crea
 
 ---
 
-## ✨ Features
+### ✨ Features
 
-### Core Features
+#### Core Features
 
 | Feature                       | Description                                                                                    |
 | ------------------------------ | ------------------------------------------------------------------------------------------------ |
@@ -103,7 +158,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 | **Summary Reporting**          | Shows detailed installation summary with the "S" command                                        |
 | **Log Saving**                 | Saves complete logs to `/var/log/ubuntu_post_install_TIMESTAMP.log`                             |
 
-### Statistics
+#### Statistics
 
 - **Main Menu Categories:** 28 (plus Ubuntu Studio and Security sub-menus)
 - **Package Front-End:** Nala (auto-installed, with transparent apt-get fallback)
@@ -115,9 +170,9 @@ Beyond just installing packages, after each category finishes it can also **crea
 
 ---
 
-## 📥 Installation
+### 📥 Installation
 
-### Prerequisites
+#### Prerequisites
 
 - **Ubuntu 26.04 LTS or 26.10** (the script detects the release at startup; on any other version it warns and asks whether to continue)
 - **Root access** (script must be run with `sudo`)
@@ -125,28 +180,28 @@ Beyond just installing packages, after each category finishes it can also **crea
 - **An active GNOME desktop session** if you want app folders created (see below) — running the script over plain SSH with no desktop session will still install packages fine, it just can't create the Super-key groups
 - **Minimum 10GB free disk space** (more for a full/media-heavy install)
 
-### Quick Start
+#### Quick Start
 
 ```bash
 # Make the script executable
-chmod +x post-install.sh
+chmod +x post-install-ubuntu.sh
 
 # Run with sudo
-sudo ./post-install.sh
+sudo ./post-install-ubuntu.sh
 ```
 
 ---
 
-## 🎯 Usage
+### 🎯 Usage
 
-### Running the Script
+#### Running the Script
 
 ```bash
-chmod +x post-install.sh
-sudo ./post-install.sh
+chmod +x post-install-ubuntu.sh
+sudo ./post-install-ubuntu.sh
 ```
 
-### Menu Navigation
+#### Menu Navigation
 
 1. **Main Menu**: Shows all 28 categories (`0`–`28`)
 2. **Sub-Menus**: Ubuntu Studio (option `1`) has a sub-menu (`1`–`6`); Security Tools (option `25`) has a sub-menu to choose Full or Defensive-only; GUI Tweaks (option `22`), Browsers (option `29`), and Communication (option `30`) each have a sub-menu to install everything in the category or pick a single item
@@ -156,22 +211,22 @@ sudo ./post-install.sh
 
 After a single category finishes installing, you'll be asked whether to group its apps into a GNOME app folder. Bulk options (`A`/`B`/`C`) **auto-create** a folder per category as they go — no prompts (fitting their hands-off nature).
 
-### Example Workflows
+#### Example Workflows
 
-#### Install a Development Environment
+##### Install a Development Environment
 
 ```bash
-sudo ./post-install.sh
+sudo ./post-install-ubuntu.sh
 # Select: 5 (Code Editors)   -> optionally create a "Code Editors" app folder
 # Select: 6 (Python Development)
 # Select: 7 (Web Development)
 # Press 0 to exit
 ```
 
-#### Install Media Production Tools
+##### Install Media Production Tools
 
 ```bash
-sudo ./post-install.sh
+sudo ./post-install-ubuntu.sh
 # Select: 1 (Ubuntu Studio) -> 1 (Full)
 # Select: 2 (Graphics)
 # Select: 3 (Video)          -> includes full codec/plugin stack + DVD support
@@ -179,25 +234,25 @@ sudo ./post-install.sh
 # Press 0 to exit
 ```
 
-#### Set Up Container & VM Tooling
+##### Set Up Container & VM Tooling
 
 ```bash
-sudo ./post-install.sh
+sudo ./post-install-ubuntu.sh
 # Select: 16 (Container & Virtualization)
 # -> installs Docker/Podman/LXC/LXD, KVM/QEMU + virt-manager/GNOME Boxes, and Cockpit
 ```
 
-#### Full System Setup
+##### Full System Setup
 
 ```bash
-sudo ./post-install.sh
+sudo ./post-install-ubuntu.sh
 # Select: C (Install EVERYTHING)
 # Wait for completion (potentially a few hours)
 ```
 
 ---
 
-## 🗂️ GNOME App Folders (Super Key Groups)
+### 🗂️ GNOME App Folders (Super Key Groups)
 
 This is the script's headline feature beyond plain package installation: after a category installs, it can create a real **GNOME Shell app folder** (via the `org.gnome.desktop.app-folders` gsettings schema) so the apps you just installed show up grouped together when you press **Super** and open the app grid — no logout required.
 
@@ -216,13 +271,13 @@ If nothing resolves for a whole category, the folder is skipped with a warning r
 
 ---
 
-## 📦 Package Categories
+### 📦 Package Categories
 
 Below is a breakdown of what each category actually installs, matching the current script. **All apt package names listed have been verified against the live Ubuntu 26.10 archive.**
 
 ---
 
-### Ubuntu Studio (Media)
+#### Ubuntu Studio (Media)
 
 Official Ubuntu Studio meta-packages (note: **no hyphen** between "ubuntu" and "studio" in the real package names — `ubuntustudio-video`, not `ubuntu-studio-video`).
 
@@ -237,7 +292,7 @@ Official Ubuntu Studio meta-packages (note: **no hyphen** between "ubuntu" and "
 
 ---
 
-### Graphics &amp; Image Manipulation
+#### Graphics &amp; Image Manipulation
 
 **Raster/Vector Editors:** `gimp`, `inkscape`, `krita`, `darktable`, `rawtherapee`, `shotwell`, `nomacs`
 
@@ -249,7 +304,7 @@ Official Ubuntu Studio meta-packages (note: **no hyphen** between "ubuntu" and "
 
 ---
 
-### Video Creation &amp; Editing
+#### Video Creation &amp; Editing
 
 **Editors:** `kdenlive`, `shotcut`, `pitivi`
 
@@ -269,7 +324,7 @@ Official Ubuntu Studio meta-packages (note: **no hyphen** between "ubuntu" and "
 
 ---
 
-### Audio Production
+#### Audio Production
 
 **DAWs & Editors:** `audacity`, `ardour`, `lmms`, `musescore`, `hydrogen`
 
@@ -285,7 +340,7 @@ Official Ubuntu Studio meta-packages (note: **no hyphen** between "ubuntu" and "
 
 ---
 
-### Code Editors
+#### Code Editors
 
 **APT Packages:** `vim`, `neovim`, `emacs`, `nano`, `geany`, `gedit`, `kate`
 
@@ -300,13 +355,13 @@ Both already-installed checks correctly mark the app as "skipped" (not silently 
 
 ---
 
-### Python Development
+#### Python Development
 
 `python3`, `python3-dev`, `python3-venv`, `python3-pip`, `python-is-python3`, `ipython3`, `pipx`
 
 ---
 
-### Web Development
+#### Web Development
 
 **Web Servers:**
 
@@ -326,7 +381,7 @@ Both already-installed checks correctly mark the app as "skipped" (not silently 
 
 ---
 
-### Java Development
+#### Java Development
 
 **JDK/JRE & Build Tools:** `default-jdk`, `default-jre`, `gradle`, `maven`, `ant`
 
@@ -340,7 +395,7 @@ Both already-installed checks correctly mark the app as "skipped" (not silently 
 
 ---
 
-### C/C++ Development
+#### C/C++ Development
 
 **Compilers:** `build-essential`, `gcc`, `g++`, `gfortran`, `clang`
 
@@ -352,7 +407,7 @@ Both already-installed checks correctly mark the app as "skipped" (not silently 
 
 ---
 
-### Go Development
+#### Go Development
 
 **APT Package:** `golang`
 
@@ -360,7 +415,7 @@ Both already-installed checks correctly mark the app as "skipped" (not silently 
 
 ---
 
-### Rust Development
+#### Rust Development
 
 **APT Packages:** `rustc`, `cargo`
 
@@ -368,13 +423,13 @@ Both already-installed checks correctly mark the app as "skipped" (not silently 
 
 ---
 
-### Node.js Development
+#### Node.js Development
 
 Calls the same Node.js installer used by [Web Development](#web-development) — NodeSource repository, Node.js 20.x, plus the same global npm package set. This overlap with Web Development is intentional (kept per an earlier explicit decision), not an accidental duplicate.
 
 ---
 
-### PHP Development
+#### PHP Development
 
 **Note:** the Ondrej PHP PPA is **not yet available for Ubuntu 26.10** — this category uses the **default Ubuntu repository PHP packages only**.
 
@@ -386,13 +441,13 @@ Calls the same Node.js installer used by [Web Development](#web-development) —
 
 ---
 
-### Ruby Development
+#### Ruby Development
 
 `ruby`, `ruby-dev`, `ruby-bundler`
 
 ---
 
-### Database Tools
+#### Database Tools
 
 **SQL/NoSQL Databases:** `mysql-server`, `mysql-client`, `postgresql`, `sqlite3`, `redis-server`, `redis-tools`, `memcached`
 
@@ -403,7 +458,7 @@ Calls the same Node.js installer used by [Web Development](#web-development) —
 
 ---
 
-### Container &amp; Virtualization
+#### Container &amp; Virtualization
 
 This category now actually covers both halves of its name — previously it only installed containers.
 
@@ -430,7 +485,7 @@ This category now actually covers both halves of its name — previously it only
 
 ---
 
-### Gaming
+#### Gaming
 
 `steam`, `lutris`, `gamemode`, `mangohud`
 
@@ -440,7 +495,7 @@ This category now actually covers both halves of its name — previously it only
 
 ---
 
-### Office &amp; Productivity
+#### Office &amp; Productivity
 
 `libreoffice`, `okular`, `evince`, `zathura`, `pandoc`
 
@@ -448,7 +503,7 @@ Note: `libreoffice` is a meta-package that resolves to **seven separate real app
 
 ---
 
-### System Utilities
+#### System Utilities
 
 **Process Monitoring:** `htop`, `iotop`, `nmon`, `sysstat`, `dstat`, `glances`
 
@@ -462,7 +517,7 @@ Note: `libreoffice` is a meta-package that resolves to **seven separate real app
 
 ---
 
-### General Development Tools
+#### General Development Tools
 
 `jq`, `tig`, `subversion`, `make`, `cmake`, `autoconf`, `automake`, `bison`, `flex`, `gettext`, `pkg-config`, `manpages`, `less`
 
@@ -470,7 +525,7 @@ Note: `libreoffice` is a meta-package that resolves to **seven separate real app
 
 ---
 
-### AI Tools
+#### AI Tools
 
 **Third-Party Tools (direct installation):**
 
@@ -488,7 +543,7 @@ All of these register in the installed/skipped/failed tracking, so they appear i
 
 ---
 
-### GUI Tweaks
+#### GUI Tweaks
 
 Option `22` has its own sub-menu so you can install everything below at once, or pick just one piece (e.g. only **Themes**) instead of the full bundle: **All GUI Tweaks**, **Icon Sets**, **Themes**, **Cursor Themes**, **Nerd Fonts**, **Chris Titus mybash**, **GUI Tools**, **GNOME Shell Extensions**.
 
@@ -552,7 +607,7 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Ner
 
 ---
 
-### Windows Software Support
+#### Windows Software Support
 
 **Wine Environment:** `wine`, `winetricks`, `zenity`
 
@@ -568,7 +623,7 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Ner
 
 ---
 
-### Android Tools
+#### Android Tools
 
 `adb`, `fastboot`, `scrcpy`
 
@@ -578,7 +633,7 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Ner
 
 ---
 
-### Security Tools
+#### Security Tools
 
 Standard security / pentest / defensive tooling, **all from Ubuntu's own repositories** (main/universe) — intended for authorized security testing, CTFs, education, and hardening/defensive work on systems you own or are permitted to test.
 
@@ -611,7 +666,7 @@ Most of these are CLI-only (no `.desktop` launcher), so they won't get folder ic
 
 ---
 
-### .NET Development
+#### .NET Development
 
 Installs the **.NET SDK** from Ubuntu's own repositories. Because the exact SDK versions available drift by release, the script installs the **newest `dotnet-sdk-*` actually present** (checks for `dotnet-sdk-10.0`, then `9.0`, then `8.0`) rather than hardcoding one that may have aged out, and adds the matching `aspnetcore-runtime-*` when packaged. EF Core and other `dotnet tool` installs are per-user (`dotnet tool install -g …`) and left to you.
 
@@ -619,7 +674,7 @@ Installs the **.NET SDK** from Ubuntu's own repositories. Because the exact SDK 
 
 ---
 
-### DevOps &amp; Cloud
+#### DevOps &amp; Cloud
 
 Developer/cloud tooling installed together:
 
@@ -631,7 +686,7 @@ Developer/cloud tooling installed together:
 
 ---
 
-### Desktop Apps
+#### Desktop Apps
 
 Common desktop applications:
 
@@ -644,7 +699,7 @@ Common desktop applications:
 
 ---
 
-## 🔀 Bulk Options (A / B / C)
+### 🔀 Bulk Options (A / B / C)
 
 | Option | Runs                                                                                                                                                                                            | Notes                                    |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
@@ -656,9 +711,9 @@ Common desktop applications:
 
 ---
 
-## 🔧 Error Handling &amp; Installation Checks
+### 🔧 Error Handling &amp; Installation Checks
 
-### Installation Check Flow
+#### Installation Check Flow
 
 ```
 1. Check if package is ALREADY INSTALLED
@@ -676,7 +731,7 @@ The install/update step itself runs through the `pm_install`/`pm_update` front-e
 
 Snap-only tools (`lxd`, `intellij-idea-community`, `dbeaver-ce`) go through the equivalent `safe_snap_install` flow instead, checking `command -v`/`snap list` before falling back to `snap install`.
 
-### Key Functions
+#### Key Functions
 
 | Function                            | Purpose                                                        |
 | ------------------------------------ | ----------------------------------------------------------------- |
@@ -697,7 +752,7 @@ Snap-only tools (`lxd`, `intellij-idea-community`, `dbeaver-ce`) go through the 
 | `set_terminal_font` / `configure_terminal_font` | Sets (after a prompt) the terminal / system monospace font as the logged-in user |
 | `log(level, message)`               | Color-coded logging (ERROR, WARNING, INFO, SUCCESS)              |
 
-### Error Recovery
+#### Error Recovery
 
 - **Failed Package Lists**: Continues installation even if some packages fail
 - **Dependency Fixing**: Falls back to `apt-get install -f` where relevant
@@ -707,9 +762,9 @@ Snap-only tools (`lxd`, `intellij-idea-community`, `dbeaver-ce`) go through the 
 
 ---
 
-## 📊 Installation Summary &amp; Logging
+### 📊 Installation Summary &amp; Logging
 
-### Real-Time Feedback
+#### Real-Time Feedback
 
 Output is themed with the **[Catppuccin](https://github.com/catppuccin/catppuccin) Mocha** palette (24-bit truecolor), assigned by semantic role. Colors **auto-disable** when output isn't a terminal or `NO_COLOR` is set, so piped/redirected output and the log file stay plain.
 
@@ -721,11 +776,11 @@ Output is themed with the **[Catppuccin](https://github.com/catppuccin/catppucci
 
 > Best viewed in a truecolor terminal (Ptyxis, GNOME Console, most modern terminals). On a legacy 8/16-color terminal the escapes degrade to the nearest supported color.
 
-### Summary Screen
+#### Summary Screen
 
 Press `S` at any time, or it's shown automatically after each category, to see totals, and lists of failed and skipped packages.
 
-### Log File
+#### Log File
 
 ```
 /var/log/ubuntu_post_install_TIMESTAMP.log
@@ -735,7 +790,7 @@ Contains a timestamp, the running user, summary statistics, and the full install
 
 ---
 
-## 🔒 Security Notes
+### 🔒 Security Notes
 
 The script runs as **root** and installs software from a mix of Ubuntu repos and third-party sources. What that means for trust:
 
@@ -748,7 +803,7 @@ The script runs as **root** and installs software from a mix of Ubuntu repos and
 
 ---
 
-## ⚠️ Known Limitations
+### ⚠️ Known Limitations
 
 - **Bulk options auto-create app folders**: `A`/`B`/`C` create a folder per category automatically via `auto_category` (no prompt). Categories whose packages have no GUI launcher (e.g. System Utilities, Android Tools) are skipped with a "no GUI apps" notice rather than producing an empty folder.
 - **DVD decryption legality**: `libdvd-pkg` (in the Video category) builds `libdvdcss2` from source, which is legal in some jurisdictions and legally gray in others (this is why it's in `multiverse` rather than `main`). It's on by default; remove the `install_libdvdcss` call if you'd rather it not run.
@@ -757,9 +812,9 @@ The script runs as **root** and installs software from a mix of Ubuntu repos and
 
 ---
 
-## ⚙️ Customization
+### ⚙️ Customization
 
-### Adding New Packages
+#### Adding New Packages
 
 ```bash
 batch_install "Category Name" \
@@ -770,7 +825,7 @@ batch_install "Category Name" \
 
 **Important:** verify new packages exist in the Ubuntu 26.10 repos (`apt-cache policy <pkg>`) before adding them — several package-name mistakes have been caught this way already (see the inline comments throughout the script).
 
-### Creating New Categories
+#### Creating New Categories
 
 1. Add an install function:
    ```bash
@@ -785,18 +840,18 @@ batch_install "Category Name" \
    ```
 4. Optionally add the new function to the `A`/`B`/`C` bulk chains in `main()`
 
-### Modifying Default Behavior
+#### Modifying Default Behavior
 
 - Color definitions and tracking arrays are declared at the top of the script
 - The `.desktop` resolution prefix guess list (for reverse-DNS-style app IDs) lives inside `create_menu_category`'s fallback tier — extend it if a new vendor's launcher isn't being found
 
-### Disabling Categories
+#### Disabling Categories
 
 Comment out or remove the menu `echo` line, the `case` branch, and the function definition.
 
 ---
 
-## 🐛 Troubleshooting
+### 🐛 Troubleshooting
 
 | Issue                              | Solution                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------- |
@@ -805,7 +860,7 @@ Comment out or remove the menu `echo` line, the `case` branch, and the function 
 | **Dependency errors**               | Run `sudo apt-get install -f` to fix broken dependencies                              |
 | **Network errors**                  | Check your internet connection and retry                                              |
 | **Disk space full**                 | Free up space (10GB+ recommended)                                                      |
-| **Permission denied**               | Ensure the script is executable: `chmod +x post-install.sh`                           |
+| **Permission denied**               | Ensure the script is executable: `chmod +x post-install-ubuntu.sh`                           |
 | **App folder not created**          | You need an active GNOME desktop session as the target user — check for the "No active GNOME session found" warning; running over plain SSH with nobody logged into the desktop won't work |
 | **An installed app's icon is missing from its folder** | Check the summary for "Desktop file not found: `<pkg>`" — for CLI-only tools (docker, adb, cockpit, etc.) this is expected; for a real GUI app, it may need a resolver fix (see `create_menu_category` in the script) |
 | **"Designed for Ubuntu 26.04/26.10, detected: …"** | You're on a release the script isn't validated against — answer `y` to continue anyway, or add your version to `SUPPORTED_VERSIONS` at the top of the script |
@@ -814,7 +869,7 @@ Comment out or remove the menu `echo` line, the `case` branch, and the function 
 | **`install-info` fails: `export: … bad variable name`** | A previous Java **or Go** install wrote `export` lines into `/etc/environment` (invalid there). Clean them and finish configuring: `sudo sed -i '/^export /d' /etc/environment && sudo dpkg --configure -a`. Current script versions no longer write those lines (Java → `/etc/profile.d/java-home.sh`, Go → `/etc/profile.d/go.sh`) and auto-strip old ones on the next run |
 | **`404 Not Found` / `is not signed` on package downloads** | A `nala fetch`-selected mirror is incomplete/stale (the script no longer selects mirrors, but a prior run leaves the chosen mirrors in `/etc/apt/sources.list.d/fetch.sources`). Restore Ubuntu's defaults: `sudo rm -f /etc/apt/sources.list.d/fetch.sources && sudo nala update` |
 
-### Manual Installation
+#### Manual Installation
 
 ```bash
 sudo apt-get install package-name
@@ -822,7 +877,7 @@ sudo apt-get install package-name
 
 Or follow the official installation instructions for third-party tools.
 
-### Checking Logs
+#### Checking Logs
 
 ```bash
 # View a specific log
@@ -834,13 +889,562 @@ ls -lt /var/log/ubuntu_post_install_*.log | head -1 | awk '{print $NF}' | xargs 
 
 ---
 
+# 🎩 Fedora Post-Install Script
+
+### 🚀 Fedora Overview
+
+`post-install-fedora.sh` is a from-scratch Fedora Workstation port of this project — same Catppuccin-themed menu-driven UX, same installed/skipped/failed tracking, same GNOME app-folder feature as the Ubuntu script above, but every install path re-sourced for **`dnf5`** and RPM-based Fedora instead of apt/Nala. It's a separate, independent script (not a fork controlled by a flag) — run whichever file matches your distro.
+
+On startup the script **detects the running release** by reading `/etc/os-release` directly (`ID=fedora`, `VERSION_ID`) rather than `lsb_release`, which isn't installed by default on Fedora. Running on an unsupported release isn't blocked — the script warns and asks whether to continue, same as the Ubuntu script.
+
+It then **bootstraps RPM Fusion** (free + nonfree) and the Cisco OpenH264 repo right after the first metadata refresh — this is the Fedora equivalent of the Ubuntu script installing Nala, except here it's load-bearing rather than cosmetic: almost every proprietary codec, driver, and third-party app below assumes RPM Fusion is already enabled.
+
+**Startup sequence** (before the menu appears), in order:
+
+1. **Root check** — must be run with `sudo`.
+2. **Version detection** — supports the current and previous Fedora release; warns and asks to continue on anything else.
+3. **Metadata refresh** (`dnf makecache`).
+4. **`bootstrap_repos`** — enables RPM Fusion free + nonfree, installs their AppStream metadata, enables the Cisco OpenH264 repo.
+5. **Base utilities** — `curl`, `git`, `gnupg2`, `dnf5-plugins`, `dbus-x11`, etc.
+6. **Interactive menu.**
+
+Beyond just installing packages, after each category finishes it can also **create a real GNOME Shell app folder** for the apps it just installed — identical mechanism to the Ubuntu script (`org.gnome.desktop.app-folders`), just resolving `.desktop` files via `rpm -ql` instead of `dpkg -L`. See [Fedora GNOME App Folders](#️-fedora-gnome-app-folders-super-key-groups) below.
+
+**Key Design Decisions (how this differs from a literal 1:1 port):**
+
+- ✅ **No per-domain metapackages, so Ubuntu Studio becomes "Creative Suite"**: Fedora has nothing like `ubuntustudio-video/audio/graphics/...`. Instead, **Creative Suite** uses Fedora's own comps groups — `dnf group install audio` (Fedora Jam) and `dnf group install design-suite` — plus a hand-curated Video Editing list and small Photography/Publishing picks. See [Fedora: Creative Suite](#fedora-creative-suite).
+- ✅ **"Ultramarine" → Terra, "Nobara" → nothing**: Ultramarine Linux has no repo installable on stock Fedora (it's a full OS spin); its parent project Fyra Labs' **Terra** repo is the practical substitute, scoped to its `extras` subrepo only. Nobara's own repo is **deliberately not added** — its maintainers document it as unsafe on a non-Nobara install, and its gaming-relevant packages are all natively available via RPM Fusion/Fedora anyway.
+- ✅ **Flatpak minimized**: every category was individually re-researched against vendor RPM repos, RPM Fusion, and COPR before falling back to Flatpak. It's used only for Signal, Floorp, Zen Browser, Spotify, Bruno, and Alpaca — confirmed via live research to be the only real option for each.
+- ✅ **Zero Snap usage**: both of the Ubuntu script's Snap-only escape hatches (IntelliJ IDEA Community, LXD) have real Fedora-native equivalents here (Flathub, Incus) — nothing in this script touches Snap.
+- ✅ **New: proprietary NVIDIA driver support**: the Ubuntu script has no GPU-driver category at all. Fedora's is an explicit opt-in with build-status polling and a flagged (not faked) Secure Boot step — see [Fedora: Drivers & Extra Repos](#fedora-drivers--extra-repos).
+- ✅ **Robust Error Handling**: same `package_exists`-before-`safe_install` safety net as the Ubuntu script — an unavailable package is skipped and logged, never a hard failure.
+
+---
+
+### ✨ Fedora Features
+
+#### Fedora Core Features
+
+| Feature                       | Description                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| **Version Detection**         | Detects the running release at startup via `/etc/os-release`, warns/prompts on anything unsupported |
+| **dnf5 Front-End**             | Uses plain `dnf` (dnf5 is Fedora 41+'s default) — no alternate front-end to bootstrap the way the Ubuntu script bootstraps Nala |
+| **Catppuccin-Themed Output**  | Same palette/menus/logging as the Ubuntu script, auto-disabled for non-TTY / `NO_COLOR`         |
+| **Interactive Menu**          | Text-based menu with 28 categories, plus Creative Suite, Security, GUI Tweaks, Browsers, Communication, and Drivers & Extra Repos sub-menus |
+| **GNOME App-Folder Creation** | Identical feature to the Ubuntu script, `rpm -ql`-based resolution                              |
+| **RPM Fusion Bootstrap**       | Enables free + nonfree repos and Cisco OpenH264 automatically on first run                       |
+| **NVIDIA Driver Support**      | Opt-in `akmod-nvidia` + CUDA install with build-status polling and Secure Boot detection (new — no Ubuntu-script equivalent) |
+| **Error Handling**             | Skips unavailable packages, continues installation                                              |
+| **Pre-Install Checks**        | Verifies if packages are already installed (`rpm -q`)                                            |
+| **Package Verification**      | Checks if packages exist in enabled repos before attempting (`dnf info -q`)                      |
+| **Zero Snap Usage**            | Every Snap-only case in the Ubuntu script has a Flathub or native dnf equivalent here            |
+| **Installation Tracking**     | Tracks installed, skipped, and failed packages per run                                          |
+| **Summary Reporting**          | Shows detailed installation summary with the "S" command                                        |
+| **Log Saving**                 | Saves complete logs to `/var/log/fedora_post_install_TIMESTAMP.log`                             |
+
+#### Fedora Statistics
+
+- **Main Menu Categories:** 28 (plus Creative Suite, Security, GUI Tweaks, Browsers, Communication, and Drivers & Extra Repos sub-menus)
+- **Package Front-End:** dnf5 (Fedora 41+'s default `dnf`)
+- **Third-Party/Vendor Repos:** Brave, Vivaldi, Google Chrome, Microsoft Edge, LibreWolf, TeamViewer, 1Password, Cursor, Slack, VS Code, Sublime Text, Microsoft Azure CLI, Microsoft Teams (teams-for-linux) — all real vendor `dnf`/yum repos
+- **RPM Fusion-Native Apps:** Steam, Discord, Telegram Desktop (better coverage than the Ubuntu script gets from apt for the latter two)
+- **COPR-Sourced:** DBeaver CE (`copart/dbeaver`)
+- **Flatpak-Only (confirmed no better source exists):** Signal, Floorp, Zen Browser, Spotify, Bruno, Alpaca
+- **Snap-Only Tools:** 0 — zero, by design
+- **Estimated Install Time:** 15 minutes – several hours (depending on selections; "EVERYTHING" is a long run)
+- **Estimated Disk Space:** 5–30GB+ (depending on selections)
+
+---
+
+### 📥 Fedora Installation
+
+#### Fedora Prerequisites
+
+- **Fedora Workstation** (current or previous release — the script detects it at startup; on any other version it warns and asks whether to continue)
+- **Root access** (script must be run with `sudo`)
+- **Internet connection** (for downloading packages, third-party repos/installers, and Nerd Fonts)
+- **An active GNOME desktop session** if you want app folders created, GNOME Shell extensions, or user-scoped GTK/icon themes installed — running over plain SSH with no desktop session still installs packages fine, it just skips those pieces
+- **Minimum 10GB free disk space** (more for a full/media-heavy install)
+
+#### Fedora Quick Start
+
+```bash
+# Make the script executable
+chmod +x post-install-fedora.sh
+
+# Run with sudo
+sudo ./post-install-fedora.sh
+```
+
+---
+
+### 🎯 Fedora Usage
+
+#### Fedora Menu Navigation
+
+1. **Main Menu**: Shows all 28 categories (`0`–`28`)
+2. **Sub-Menus**: Creative Suite (option `1`) has a 6-item sub-menu (Full/Graphics/Video/Audio/Photography/Publishing); GUI Tweaks (option `19`), Security Tools (option `22`), Browsers (option `26`), and Communication (option `27`) each have their own sub-menu; Drivers & Extra Repos (option `28`) offers NVIDIA and Terra as separate opt-ins
+3. **Bulk Options**: `A`, `B`, `C` (see [Fedora Bulk Options](#-fedora-bulk-options-a--b--c) below)
+4. **`S`** — Show Installation Summary
+5. **`0`** — Exit
+
+#### Fedora Example Workflows
+
+##### Install a Fedora Development Environment
+
+```bash
+sudo ./post-install-fedora.sh
+# Select: 2 (Code Editors)   -> optionally create a "Code Editors" app folder
+# Select: 3 (Python)
+# Select: 4 (Web Development)
+# Press 0 to exit
+```
+
+##### Install Fedora Creative Suite Tools
+
+```bash
+sudo ./post-install-fedora.sh
+# Select: 1 (Creative Suite) -> 1 (Full)
+# -> installs Design Suite (graphics), Video Editing, Fedora Jam (audio), Photography, Publishing
+```
+
+##### Set Up Fedora Container & VM Tooling
+
+```bash
+sudo ./post-install-fedora.sh
+# Select: 13 (Containers & VMs)
+# -> installs moby-engine/podman/Incus, KVM/QEMU + virt-manager/GNOME Boxes, and Cockpit
+```
+
+##### Enable NVIDIA Driver + Full System Setup
+
+```bash
+sudo ./post-install-fedora.sh
+# Select: 28 (Drivers & Extra Repos) -> 1 (NVIDIA Proprietary Driver)
+# Select: C (EVERYTHING)
+# Wait for completion (potentially a few hours)
+```
+
+---
+
+### 🗂️ Fedora GNOME App Folders (Super Key Groups)
+
+Exactly the same headline feature as the Ubuntu script — see [GNOME App Folders](#️-gnome-app-folders-super-key-groups) above for the full explanation of how it works (D-Bus session detection, `.desktop` resolution tiers, `NoDisplay`/`Hidden` filtering, snap/flatpak directory scanning). The only real difference: **tier 1** of `.desktop` resolution uses `rpm -ql <pkg>` instead of `dpkg -L`, and the meta-package dependency walk (**tier 2**) uses `rpm -q --requires` instead of `apt-cache depends --recurse --important`. Flatpak-exported app resolution (for Signal, Floorp, Zen, Spotify, Bruno, Alpaca) works identically to the Ubuntu script.
+
+---
+
+### 📦 Fedora Package Categories
+
+Below is a breakdown of what each Fedora category actually installs. **Package-name confidence note:** RPM Fusion/driver/codec packages, browsers, communication apps, desktop apps, Fedora Jam/Design Suite groups, Incus, and Flathub fallbacks were all individually verified against live vendor docs, packages.fedoraproject.org, and Flathub during development. The bulk of "ordinary" packages (editors, languages, system utilities) rely on standard Fedora naming conventions rather than a live re-check against a running Fedora system — the same `package_exists`-before-`safe_install` safety net means a wrong guess is logged "Not in repos" and skipped, not a hard failure.
+
+---
+
+#### Fedora: Creative Suite
+
+The Ubuntu-Studio-metapackage replacement. Option `1` opens a 6-item sub-menu:
+
+| # | Item | Installs |
+|---|------|----------|
+| 1 | **Full** | Everything below (Graphics + Video + Audio + Photography + Publishing) |
+| 2 | **Graphics & Design** | `dnf group install design-suite` (GIMP, Inkscape, Krita, Blender, Darktable, Scribus, digiKam, Synfig, Pitivi) + `nomacs`, `flameshot`, `imagemagick`, `GraphicsMagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp-tools`; also binds Print Screen to Flameshot |
+| 3 | **Video Editing** | `kdenlive`, `shotcut`, `obs-studio`, `mkvtoolnix`, `mkvtoolnix-gui`, `mpv`, `vlc`, `yt-dlp`, plus the full multimedia codec batch below |
+| 4 | **Audio Production** | `dnf group install audio` (Fedora Jam: Ardour9, Audacity, Carla, Hydrogen, Guitarix, LV2/LADSPA plugin stack) + `qjackctl`, `pulseaudio-utils`, `soundconverter`, `easytag`, `pavucontrol` |
+| 5 | **Photography** | `darktable`, `rawtherapee`, `digikam`, `hugin`, `gthumb` |
+| 6 | **Publishing** | `scribus`, `fontforge`, `calibre` |
+
+**Multimedia codecs** (installed as part of Video Editing, since real-world playback needs them): `ffmpeg-free` → `ffmpeg` swap, `gstreamer1-plugins-good/bad-free/bad-freeworld/ugly/ugly-free`, `gstreamer1-plugin-libav`, `openh264`, `gstreamer1-plugin-openh264`, `mozilla-openh264` — requires RPM Fusion + the Cisco OpenH264 repo, both enabled automatically on first run.
+
+**Design Suite and Fedora Jam overlap by design**: Design Suite already includes several photography (Darktable, digiKam) and desktop-publishing-adjacent tools, so Photography/Publishing here are intentionally kept smaller/non-redundant picks rather than a from-scratch list — mirroring how Ubuntu Studio's own metapackages sometimes overlapped too.
+
+---
+
+#### Fedora: Code Editors
+
+**dnf packages:** `vim-enhanced`, `neovim`, `emacs`, `nano`, `geany`, `gnome-text-editor`, `gedit`, `kate` (both `gnome-text-editor` and `gedit` are listed since which one ships depends on the exact Fedora release — GNOME replaced gedit with gnome-text-editor in GNOME 42+)
+
+**Third-party (official vendor repos):**
+
+- **Visual Studio Code** — Microsoft's official yum repo (`packages.microsoft.com/yumrepos/vscode`)
+- **Sublime Text** — Sublime HQ's official rpm repo (`download.sublimetext.com/rpm/stable`)
+
+**Bruno** — installed via Flathub (`com.usebruno.Bruno`); confirmed no stable rpm or COPR exists from usebruno.com.
+
+**LazyVim + Nordic (optional prompt):** identical feature to the Ubuntu script — replaces `~/.config/nvim` (existing config backed up first), clones [LazyVim/starter](https://github.com/LazyVim/starter) + the [Nordic](https://github.com/AlexvZyl/nordic.nvim) theme.
+
+---
+
+#### Fedora: Python
+
+`python3`, `python3-devel`, `python3-pip`, `python3-virtualenv`, `ipython`, `pipx`
+
+Fedora Workstation ships `python3` by default, and there's no `python-is-python3`-style package needed — Fedora's `python3` command already *is* the system Python.
+
+---
+
+#### Fedora: Web Development
+
+**Web Servers:**
+
+- `nginx` — started normally (owns port 80)
+- `httpd` (Apache) — installed for availability but not started; RPM `%post` scriptlets don't auto-start services the way Debian's do, so there's no need for the Ubuntu script's `policy-rc.d` workaround here at all
+
+**PHP baseline:** `php-fpm`, `php-cli`, `composer`
+
+**Node.js:** ships natively in Fedora's own repos at a current version — **no NodeSource repo needed at all**, unlike Ubuntu. `nodejs`, `npm`, plus the same global npm package set (`npm-check-updates`, `nodemon`, `pm2`, `webpack`, `webpack-cli`, `eslint`, `prettier`).
+
+---
+
+#### Fedora: Java
+
+**JDK/Build Tools:** `java-latest-openjdk`, `java-latest-openjdk-devel`, `gradle`, `maven`, `ant`, `junit`
+
+**IDE:** IntelliJ IDEA Community via **Flathub** (`com.jetbrains.IntelliJ-IDEA-Community`) — a genuine dedicated app distinct from JetBrains Toolbox, confirmed as the real replacement for the Ubuntu script's Snap install (no Fedora/RPM Fusion package exists).
+
+---
+
+#### Fedora: C/C++
+
+`gcc`, `gcc-c++`, `gcc-gfortran`, `clang`, `cmake`, `make`, `ninja-build`, `ccache`, `autoconf`, `automake`, `libtool`, `m4`, `bison`, `flex`, `gettext`, `pkgconf-pkg-config`, `cppcheck`, `valgrind`, `gdb`, `ltrace`, `strace`
+
+---
+
+#### Fedora: Go
+
+**dnf package:** `golang` (installed if present in repos)
+
+**Direct install fallback** (if `golang` isn't in repos and `go` isn't already on `PATH`): downloads Go 1.22.5 from the official source to `/usr/local/go`, symlinked into `/usr/local/bin`.
+
+---
+
+#### Fedora: Rust
+
+**Primary:** installs **rustup** from the official source **as the desktop user** (same as the Ubuntu script) so the toolchain lands in *their* `~/.cargo`, not root's.
+
+**Fallback:** distro `rust`/`cargo` packages if rustup fails or there's no sudo-invoking user.
+
+---
+
+#### Fedora: Node.js
+
+Calls the same Node.js installer used by [Fedora: Web Development](#fedora-web-development) — Fedora's native `nodejs`/`npm` packages, no NodeSource repo, plus the same global npm set.
+
+---
+
+#### Fedora: PHP
+
+`php-cli`, `php-fpm`, `php-devel`, `php-pear`, `php-mysqlnd`, `php-pgsql`, `php-pdo`, `php-gd`, `php-curl`, `php-mbstring`, `php-xml`, `php-zip`, `composer`
+
+---
+
+#### Fedora: Ruby
+
+`ruby`, `ruby-devel`, `rubygem-bundler`
+
+---
+
+#### Fedora: Databases
+
+**SQL/NoSQL:** `mariadb-server`, `mariadb` (Fedora's own repos ship MariaDB, not a plain `mysql-server` — Oracle's actual MySQL is a separate `community-mysql-server` package), `sqlite`, `sqlitebrowser`, `memcached`
+
+**Valkey (Redis-compatible):** `valkey` — Fedora dropped the `redis` package starting Fedora 40 after Redis's license change, in favor of the Linux Foundation's redis-protocol-compatible fork. This is the current Fedora path, not a downgrade.
+
+**PostgreSQL:** `postgresql-server`, `postgresql` — with an explicit `postgresql-setup --initdb` step run automatically if the database cluster doesn't exist yet. Unlike Debian's `postgresql-common`, RPM's `postgresql-server` package does **not** auto-initialize on install.
+
+**GUI Client:** DBeaver CE via **COPR** (`copart/dbeaver`) — no vendor rpm repo exists (dbeaver.io only ships a Debian apt repo, a standalone rpm, and Snap/Flathub, which DBeaver Corporation itself doesn't support).
+
+---
+
+#### Fedora: Containers & VMs
+
+**Containers:**
+
+- `moby-engine` (Fedora's own Docker-compatible build), `docker-compose`, `podman` — mirrors the Ubuntu script's own existing preference for the distro package over Docker Inc.'s official repo, for consistency
+- If moby-engine installs successfully: the invoking user is added to the `docker` group and the service is enabled/started
+- `incus` — natively packaged in Fedora since Fedora 41, the community-maintained fork that replaces the Ubuntu script's Snap-only `lxd`
+
+**Virtualization (KVM/QEMU):** `qemu-kvm`, `libvirt`, `virt-install`, `virt-manager`, `virt-viewer`, `gnome-boxes`, `cockpit`, `cockpit-machines`, `cockpit-podman`. If libvirt installs successfully: the invoking user is added to the `libvirt` group and `libvirtd` is enabled/started.
+
+> Fedora handles 32-bit/multilib packages natively via `.i686` builds — there's no Ubuntu-style "add the i386 architecture" step needed anywhere in this script.
+
+---
+
+#### Fedora: Gaming
+
+`steam` (from RPM Fusion nonfree — proprietary EULA), `lutris`, `gamemode`, `mangohud` (all three from Fedora's **own** repos, no RPM Fusion needed).
+
+RPM Fusion's native Steam package is fully functional for Proton/Steam Play and controller support (pulls in `steam-devices` udev rules + system Vulkan/Mesa libs that Lutris/MangoHud also share) — the Fedora community's own recommended default over the Flatpak version.
+
+---
+
+#### Fedora: Office & Productivity
+
+`libreoffice`, `okular`, `evince`, `gnome-papers`, `zathura`, `pandoc`
+
+Both `evince` and `gnome-papers` are listed since which one ships depends on the exact Fedora release — GNOME is transitioning from Evince to Papers.
+
+---
+
+#### Fedora: System Utilities
+
+**Process Monitoring:** `htop`, `iotop`, `sysstat`, `glances`
+
+**Network Monitoring:** `nethogs`, `iftop`, `nload`, `vnstat`, `tcpdump`, `wireshark`
+
+**System Inspection:** `lsof`, `strace`, `ltrace`, `valgrind`, `gdb`
+
+**Shells & Terminal:** `tmux`, `screen`, `zsh`, `fish`, `fzf`, `ripgrep`, `tree`, `ncdu`, `rsync`, `unzip`, `bat`
+
+> Unlike Ubuntu's `bat` package (which installs as `/usr/bin/batcat` due to a Debian name collision), Fedora's `bat` package installs straight to `/usr/bin/bat` — no alias needed.
+
+---
+
+#### Fedora: General Development Tools
+
+`jq`, `tig`, `subversion`, `make`, `cmake`, `autoconf`, `automake`, `bison`, `flex`, `gettext`, `pkgconf-pkg-config`, `man-db`, `man-pages`, `less`, plus Bruno (Flathub, see [Fedora: Code Editors](#fedora-code-editors))
+
+---
+
+#### Fedora: AI Tools
+
+Same tool set as the Ubuntu script — almost entirely package-manager-agnostic (vendor curl-installer scripts, npm globals, Flathub), ported near-verbatim:
+
+| Tool | Installation Method |
+|------|---------------------|
+| **Ollama** | Official install script |
+| **Alpaca** | Flathub (`com.jeffser.Alpaca`) |
+| **Claude Code** | Official native installer, npm fallback |
+| **Gemini CLI** | `npm install -g @google/gemini-cli` |
+| **Mistral Vibe CLI** | Official installer script |
+| **OpenCode** | Official native installer, npm fallback |
+| **Cursor** | Official yum repo (`downloads.cursor.com/yumrepo`) — real vendor repo as of ~2025, simpler than the Ubuntu script's `.deb`/AppImage download-API dance |
+
+---
+
+#### Fedora: GUI Tweaks
+
+Option `19` has its own sub-menu: **All GUI Tweaks**, **Icon Sets**, **Themes**, **Cursor Themes**, **Nerd Fonts**, **Chris Titus mybash**, **GUI Tools**, **GNOME Shell Extensions** — same shape as the Ubuntu script's.
+
+**Icon Sets:**
+
+- **dnf packages** (all ship directly in Fedora's own repos — no PPA equivalent needed for any of them): `papirus-icon-theme`, `numix-icon-theme`, `numix-icon-theme-circle`, `breeze-icon-theme`, `adwaita-icon-theme`, `obsidian-icon-theme`
+- **Built from source, straight to `/usr/share/icons`**: [Qogir](https://github.com/vinceliuice/Qogir-icon-theme), [WhiteSur](https://github.com/vinceliuice/WhiteSur-icon-theme), [Vimix](https://github.com/vinceliuice/Vimix-icon-theme) — same mechanism as the Ubuntu script (their destination logic is `$UID`-aware, so this runs directly as root, no `su`-as-desktop-user needed)
+- **Ready-made, no build step**: [Newaita](https://github.com/cbrnix/Newaita) (light + dark)
+
+**GTK/Shell Themes:** identical set and mechanism to the Ubuntu script — Graphite, Catppuccin, Everforest, Gruvbox, Kanagawa, Material, Nightfox, Osaka, Rosé Pine, Tokyonight (all cloned + `install.sh --libadwaita`), Oval and Rounded Rectangle Dark Blue (raw folder copies), Obsidian Flow (Python installer). `sassc` is installed via dnf instead of apt before any of these run.
+
+**GNOME Shell Extensions:** same curated set as the Ubuntu script (GSConnect, Window State Manager, Bluetooth Battery Meter, Auto Move Windows, User Themes, Clipboard History, Dash to Dock), installed via `gext`/pipx identically.
+
+**Chris Titus mybash:** same clone + `setup.sh` flow; upstream's `setup.sh` itself detects `dnf` and calls `sudo dnf install ...` internally rather than apt.
+
+---
+
+#### Fedora: Windows Software Support
+
+`wine`, `winetricks`, `zenity` — same hand-written `winetricks.desktop` launcher as the Ubuntu script (Fedora's winetricks package also ships no `.desktop` file of its own).
+
+---
+
+#### Fedora: Android Tools
+
+`android-tools` (Fedora bundles adb+fastboot into one package, unlike Ubuntu's separate `adb`/`fastboot`), `scrcpy`
+
+---
+
+#### Fedora: Security Tools
+
+Option `22` opens the same two-variant sub-menu as the Ubuntu script (Full / Defensive-only). **Caveat flagged more prominently here than other categories**: several classic pentest tools have historically been thin or absent in Fedora's own repos (no PPA-equivalent to pull them from) — expect more "Not in repos" skips here than elsewhere. Real GUI tools (`firewall-config`, `keepassxc`) get folder icons.
+
+**Firewall:** uses `firewalld` + `firewall-config` — Fedora's own default firewall manager, replacing the Ubuntu script's `ufw`/`gufw` pairing (there's no Fedora equivalent of `ufw`; firewalld already fills that role).
+
+Package sets otherwise mirror the Ubuntu script's Full/Defensive split closely: network scanning (`nmap`, `masscan`, `nmap-ncat`, `hping3`, `bind-utils`), web testing (`nikto`, `sqlmap`, `gobuster`, `whatweb`, `wfuzz`), cracking/wireless (`john`, `hashcat`, `hydra`, `aircrack-ng`, `macchanger`), forensics/RE (`radare2`, `binwalk`, `sleuthkit`, `steghide`, `yara`, `perl-Image-ExifTool`), hardening (`lynis`, `chkrootkit`, `rkhunter`, `clamav`, `clamav-update`, `fail2ban`, `aide`), and — Defensive-only adds `audit`, `suricata`.
+
+---
+
+#### Fedora: .NET
+
+`dotnet-sdk-9.0`, `dotnet-sdk-8.0`, `aspnetcore-runtime-9.0` — ships **natively in Fedora's own repos**, no Microsoft repo needed at all (mixing Microsoft's repo with Fedora's own dotnet packages is explicitly discouraged upstream). Simpler than the Ubuntu script's `packages.microsoft.com` dance.
+
+---
+
+#### Fedora: DevOps & Cloud
+
+- **Docker (standalone)** — `moby-engine` + `docker-compose`, same distro-native choice as [Fedora: Containers & VMs](#fedora-containers--vms)
+- **Azure CLI** — Microsoft's official yum repo (`packages.microsoft.com/yumrepos/azure-cli`)
+- **lazygit** — ships natively in Fedora's own repos (simpler than the Ubuntu script's `go install` build, which is kept only as a fallback if the package isn't found)
+
+---
+
+#### Fedora: Desktop Apps
+
+- **Spotify** — Flathub (`com.spotify.Client`); confirmed no rpm/repo exists from Spotify (their own page lists only Snap + a Debian apt repo, and states Linux isn't actively supported)
+- **Slack** — official but **undocumented** vendor repo via `packagecloud.io` (not linked from slack.com's own downloads page, which shows only a standalone rpm + Snap)
+- **Remmina** — ships directly in Fedora's own repos at a current version, no PPA equivalent needed the way Ubuntu needs `remmina-ppa-team`
+- **Windows App for Linux** — same standalone Flatpak-bundle-from-GitHub-releases mechanism as the Ubuntu script
+- **TeamViewer** — official yum repo (`linux.teamviewer.com/yum/stable`), Fedora explicitly listed as supported
+- **1Password** — official yum repo (`downloads.1password.com/linux/rpm/stable`); simpler than the Ubuntu apt path since rpm needs no `debsig-verify`-style extra policy step, just the repo + gpgkey
+
+---
+
+#### Fedora: Browsers
+
+Option `26` opens the same All/individual sub-menu shape as the Ubuntu script:
+
+| Browser | Source |
+|---------|--------|
+| Brave | Official yum repo |
+| Vivaldi | Official yum repo |
+| Google Chrome | Self-registering official rpm |
+| Microsoft Edge | Official yum repo |
+| LibreWolf | Official yum repo (supersedes older community COPRs) |
+| Zen Browser | Flathub — confirmed no vendor rpm/COPR exists |
+| Floorp | Flathub — Ablaze's own docs point to Flathub as the Linux path, no rpm/yum equivalent to `ppa.ablaze.one` |
+
+---
+
+#### Fedora: Communication
+
+Option `27` opens a 5-item sub-menu (**Zoom is not included** — dropped entirely per explicit request during development, unlike the Ubuntu script which doesn't have this category split out this way either):
+
+| App | Source |
+|-----|--------|
+| Signal | Flathub (`org.signal.Signal`) — confirmed no rpm/yum repo exists anywhere; the commonly-cited `updates.signal.org/desktop/yum/` URL 404s |
+| Discord | RPM Fusion nonfree, natively — better than a Flatpak fallback |
+| Telegram Desktop | RPM Fusion free, natively — more consistently available than Ubuntu's own `telegram-desktop` apt package |
+| Teams (teams-for-linux) | Its own real dnf repo (`repo.teamsforlinux.de/rpm`) |
+
+---
+
+#### Fedora: Drivers & Extra Repos
+
+New category — the Ubuntu script has no GPU-driver or extra-repo concept at all.
+
+| # | Item | What it does |
+|---|------|---------------|
+| 1 | **NVIDIA Proprietary Driver** | Installs `akmod-nvidia` + `xorg-x11-drv-nvidia-cuda` from RPM Fusion nonfree, then polls `modinfo -F version nvidia` for up to 5 minutes (the kernel module compiles in the background — RPM Fusion's own docs say to expect this). If Secure Boot is detected as enabled, prints the exact `kmodgenca`/`mokutil --import`/reboot-into-MOKManager commands rather than attempting to automate them — enrolling a Secure Boot key is a hardware-firmware-level interactive step no script can complete unattended. |
+| 2 | **Terra Repo** | Enables [Terra](https://github.com/terrapkg/packages) (Ultramarine Linux's parent project's general-purpose repo), scoped to the `terra-release-extras` subrepo only — deliberately **not** its alternate Mesa/NVIDIA subrepos, which conflict with RPM Fusion's own and would fight with option 1 above. Prompted opt-in either way. |
+
+---
+
+### 🔀 Fedora Bulk Options (A / B / C)
+
+| Option | Runs | Notes |
+| ------ | ---- | ----- |
+| **A** | Code Editors, Python, Web Development, Java, C/C++, Go, Rust, Node.js, PHP, Ruby, .NET, General Development Tools, AI Tools | "All Dev Tools" |
+| **B** | Creative Suite (Full) | "All Creative" |
+| **C** | Everything in A and B, plus Database Tools, Containers & VMs, Gaming, Office & Productivity, System Utilities, GUI Tweaks, Windows Software Support, Android Tools, Security Tools (Full), DevOps & Cloud, Desktop Apps, Browsers, Communication | "EVERYTHING" |
+
+**App folders:** identical behavior to the Ubuntu script — A/B/C **auto-create** a GNOME app folder per category (no prompts); individual numbered categories *ask* first. NVIDIA driver / Terra repo (option `28`) are intentionally **not** part of any bulk option — both are meaningful, semi-interactive opt-ins that shouldn't fire unattended during "EVERYTHING".
+
+---
+
+### 🔧 Fedora Error Handling & Installation Checks
+
+Same three-step check flow as the Ubuntu script (already installed? → exists in repos? → attempt install), just backed by `rpm -q` / `dnf info -q` / `dnf install -y` instead of `dpkg -l` / `apt-cache policy` / `pm_install`. No Nala-style front-end split — `dnf` is `dnf` either way.
+
+| Function | Purpose |
+|----------|---------|
+| `is_installed(pkg)` | Checks if a package is installed via `rpm -q` |
+| `package_exists(pkg)` | Verifies a package exists via `dnf info -q` (checks both installed and available) |
+| `bootstrap_repos` | Enables RPM Fusion free+nonfree, AppStream data, and Cisco OpenH264 — runs once, early |
+| `add_copr(project, tag)` | Enables a COPR project, degrading gracefully (like `add_ppa`) if it has no build for this release |
+| `safe_install(pkgs...)` / `batch_install(category, pkgs...)` | Same shape as the Ubuntu script |
+| `create_menu_category(...)` | Same GNOME app-folder feature, `rpm -ql`-based resolution |
+| `install_nvidia_driver` | Installs the NVIDIA driver, polls for the akmod build to finish, detects and flags Secure Boot |
+| `install_terra_repo` | Opt-in Terra repo setup, scoped to the `extras` subrepo only |
+
+---
+
+### 📊 Fedora Installation Summary & Logging
+
+Identical Catppuccin-themed summary/logging to the Ubuntu script. The only difference is the log path:
+
+```
+/var/log/fedora_post_install_TIMESTAMP.log
+```
+
+---
+
+### 🔒 Fedora Security Notes
+
+- **Package integrity:** dnf packages are signed by Fedora's own archive keys and RPM Fusion's. Third-party **yum/dnf repos** (VS Code, Brave, Vivaldi, Chrome, Edge, LibreWolf, TeamViewer, 1Password, Cursor, Azure CLI, Slack, Teams) pin their GPG key via `gpgkey=`/`rpm --import`. **COPR** (DBeaver CE) trusts the COPR project owner, whose packages run maintainer scripts as root — same trust model as an Ubuntu PPA.
+- **Remote install scripts run as root, trusted over HTTPS only:** Ollama's `install.sh`. Same trust model as the Ubuntu script — TLS + the vendor, no independent checksum.
+- **Claude Code, Mistral Vibe CLI, OpenCode, and rustup** are installed **as your user** (via `su - $SUDO_USER`), not root — same reasoning as the Ubuntu script (their installers assume a real `$HOME`).
+- **NVIDIA proprietary driver:** a real out-of-tree kernel module (`akmod-nvidia`), signed for Secure Boot only if you complete the MOK enrollment yourself (the script prints the steps but cannot automate the reboot-into-firmware-UI part).
+- **Docker/libvirt group = root-equivalent:** installing Docker or libvirt adds your user to the `docker`/`libvirt` group, which grants effective root over that daemon's socket — same caveat as the Ubuntu script.
+- **No secrets handled:** the script never asks for or stores passwords/tokens, and menu input (a single character) can't reach a shell.
+
+---
+
+### ⚠️ Fedora Known Limitations
+
+- **Package-name confidence varies by category** — see the note at the top of [Fedora Package Categories](#-fedora-package-categories). The "hard" categories were individually researched and verified; the bulk of ordinary packages weren't re-checked against a live Fedora system (none was available during development), and rely on the `package_exists` safety net instead of a pre-verified list.
+- **NVIDIA + Secure Boot needs a manual step**: the script detects Secure Boot and prints the exact commands, but enrolling the MOK key genuinely requires an interactive reboot into a firmware-level UI — no script can complete this unattended.
+- **Bulk options don't include Drivers & Extra Repos**: NVIDIA driver and Terra repo are deliberately excluded from `A`/`B`/`C` since they're meaningful, semi-interactive opt-ins, not safe to fire unattended.
+- **"Ubuntu Studio" categories are consolidated**: the Ubuntu script has separate top-level Graphics/Video/Audio categories *in addition to* its Ubuntu Studio sub-menu (a deliberate overlap there). Fedora has no per-domain metapackage split to mirror that duplication meaningfully, so this port folds all of it into one **Creative Suite** category — a simplification, not an oversight.
+
+---
+
+### ⚙️ Fedora Customization
+
+#### Adding New Packages (Fedora)
+
+```bash
+batch_install "Category Name" \
+    package1 \
+    package2 \
+    package3
+```
+
+**Important:** verify new packages exist in Fedora's repos (`dnf info -q <pkg>`) before adding them.
+
+#### Creating New Categories (Fedora)
+
+1. Add an install function:
+   ```bash
+   install_my_category() {
+       batch_install "My Category" package1 package2
+   }
+   ```
+2. Add a menu line in `show_main_menu`.
+3. Add a case branch in `main()`:
+   ```bash
+   29) reset_tracking; install_my_category; display_summary; prompt_menu_category "My Category" "icon" "Comment" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+   ```
+4. Optionally add the new function to the `A`/`B`/`C` bulk chains in `main()`.
+
+---
+
+### 🐛 Fedora Troubleshooting
+
+| Issue | Solution |
+| ----- | -------- |
+| **Script exits immediately** | Run with `sudo` |
+| **Package not found** | May not be in Fedora's repos yet — check the package name or install manually |
+| **Dependency errors** | Run `sudo dnf distro-sync` or `sudo dnf install --allowerasing <pkg>` to resolve conflicts |
+| **NVIDIA driver installed but the module won't load** | Check Secure Boot status: `mokutil --sb-state`. If enabled, the MOK key must be enrolled manually — see the exact commands the script prints, or [Fedora: Drivers & Extra Repos](#fedora-drivers--extra-repos) above |
+| **`akmods --status` shows a failed build** | Usually means kernel headers are missing or out of sync after a kernel update — `sudo akmods --force` after a reboot into the new kernel often fixes it |
+| **App folder not created** | Same requirement as the Ubuntu script — needs an active GNOME desktop session as the target user |
+| **"Designed for Fedora NN/NN, detected: …"** | You're on a release the script isn't validated against — answer `y` to continue anyway, or add your version to `SUPPORTED_VERSIONS` at the top of the script |
+
+#### Checking Fedora Logs
+
+```bash
+# View a specific log
+cat /var/log/fedora_post_install_*.log
+
+# Tail the most recent
+ls -lt /var/log/fedora_post_install_*.log | head -1 | awk '{print $NF}' | xargs cat
+```
+
+---
+
 ## 📜 License
 
-This script is provided **as-is** without warranty. You are free to:
+Both scripts are provided **as-is** without warranty. You are free to:
 
-- Use it for personal or commercial purposes
-- Modify and distribute it
-- Use it as a base for your own scripts
+- Use them for personal or commercial purposes
+- Modify and distribute them
+- Use them as a base for your own scripts
 
 **Attribution:**
 
@@ -851,11 +1455,13 @@ This script is provided **as-is** without warranty. You are free to:
 
 ## 🙏 Acknowledgments
 
-- **Ubuntu Community**: For the excellent package repositories
+- **Ubuntu Community** and **Fedora Community**: For the excellent package repositories
 - **Chris Titus Tech**: For the mybash configuration
 - **Ollama**: For making local LLMs accessible
 - **Mistral AI**: For Vibe and open-source AI models
 - **Genymobile**: For scrcpy
+- **RPM Fusion**: For proprietary codecs and drivers on Fedora
+- **Fyra Labs / Ultramarine Linux**: For the Terra repo
 - **[vinceliuice](https://github.com/vinceliuice)**: For the Graphite GTK theme and the Qogir, WhiteSur, and Vimix icon themes
 - **[Fausto-Korpsvart](https://github.com/Fausto-Korpsvart)**: For the Catppuccin, Everforest, Gruvbox, Kanagawa, Material, Nightfox, Osaka, Rosé Pine, and Tokyonight GTK themes
 - **[JustDeax](https://github.com/JustDeax)**: For the Obsidian Flow shell theme
@@ -865,4 +1471,4 @@ This script is provided **as-is** without warranty. You are free to:
 
 ---
 
-*Last updated: August 11, 2026*
+*Last updated: August 17, 2026*
