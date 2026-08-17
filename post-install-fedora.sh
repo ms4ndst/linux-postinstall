@@ -58,7 +58,7 @@ ui_section()  { printf "  ${LAVENDER}${BOLD}%s${NC}\n" "$1"; }
 # ~6 months, so - like the Ubuntu script's own SUPPORTED_VERSIONS - this array
 # needs bumping periodically; add a release here to make check_version accept
 # it without prompting.
-declare -a SUPPORTED_VERSIONS=("42" "43")
+declare -a SUPPORTED_VERSIONS=("42" "43" "44")
 FEDORA_VERSION=""
 
 declare -a INSTALLED_PACKAGES FAILED_PACKAGES SKIPPED_PACKAGES
@@ -121,10 +121,7 @@ is_installed() { rpm -q "$1" &>/dev/null; }
 package_exists() { dnf info -q "$1" &>/dev/null; }
 
 pm_update() {
-    local out rc
-    out=$(dnf makecache 2>&1); rc=$?
-    [ $rc -ne 0 ] && printf '%s\n' "$out" >&2
-    return $rc
+    dnf makecache
 }
 pm_install() { dnf install -y "$@" 2>/dev/null; }
 
@@ -466,15 +463,15 @@ install_creative_audio() {
 }
 
 install_creative_graphics() {
-    log INFO "Installing Graphics & Design (Design Suite group)..."
-    if dnf group install -y design-suite 2>/dev/null; then
+    log INFO "Installing Graphics & Design (Design Suite group)... (large transaction, texlive-latex is multi-GB - this can take a while)"
+    if dnf group install -y design-suite; then
         INSTALLED_PACKAGES+=("design-suite (Design Suite group)"); ((TOTAL_INSTALLED++))
         log SUCCESS "Installed: Graphics & Design (Design Suite)"
     else
         FAILED_PACKAGES+=("design-suite (Design Suite group)"); ((TOTAL_FAILED++))
         log WARNING "Design Suite group install failed - try: sudo dnf group install design-suite"
     fi
-    batch_install "Graphics (extra)" nomacs flameshot imagemagick GraphicsMagick optipng jpegoptim pngquant libwebp-tools
+    batch_install "Graphics (extra)" nomacs flameshot ImageMagick GraphicsMagick optipng jpegoptim pngquant libwebp-tools
     set_flameshot_hotkey
 }
 
@@ -732,8 +729,12 @@ install_vscode() {
     fi
     log INFO "Installing VS Code (Microsoft's official yum repo)..."
     rpm --import https://packages.microsoft.com/keys/microsoft.asc 2>/dev/null
-    dnf config-manager addrepo --from-repofile=https://packages.microsoft.com/yumrepos/vscode 2>/dev/null \
-        || dnf config-manager --add-repo https://packages.microsoft.com/yumrepos/vscode 2>/dev/null
+    dnf config-manager addrepo --id=vscode --save-filename=vscode.repo \
+        --set=name="Visual Studio Code" \
+        --set=baseurl=https://packages.microsoft.com/yumrepos/vscode \
+        --set=enabled=1 --set=gpgcheck=1 \
+        --set=gpgkey=https://packages.microsoft.com/keys/microsoft.asc \
+        --overwrite 2>/dev/null
     pm_update
     safe_install code
 }
@@ -963,7 +964,7 @@ install_office() {
     # gnome-papers is GNOME's replacement for Evince in newer GNOME releases;
     # both are listed since which one is present depends on the exact Fedora
     # release - package_exists skips whichever isn't there.
-    batch_install "Office" libreoffice okular evince gnome-papers zathura pandoc
+    batch_install "Office" libreoffice okular evince papers zathura pandoc-cli
 }
 
 # ========== SYSTEM UTILITIES ==========
@@ -981,7 +982,9 @@ install_system_utils() {
 # ========== ANDROID TOOLS ==========
 install_android_tools() {
     # Fedora bundles adb+fastboot into a single "android-tools" package,
-    # unlike Ubuntu's separate adb/fastboot packages.
+    # unlike Ubuntu's separate adb/fastboot packages. scrcpy has never
+    # shipped in Fedora's own repos - needs the zeno/scrcpy COPR.
+    add_copr "zeno/scrcpy" zeno
     batch_install "Android Tools" android-tools scrcpy
 }
 
@@ -1188,6 +1191,11 @@ install_gnome_extensions() {
     command -v pipx &>/dev/null || safe_install pipx
     log INFO "Setting up gext (GNOME Extension Manager CLI) via pipx..."
     su - "$user" -c 'command -v gext >/dev/null 2>&1 || pipx install gnome-extensions-cli --system-site-packages' 2>/dev/null
+    if ! su - "$user" -c 'PATH="$HOME/.local/bin:$PATH" command -v gext' &>/dev/null; then
+        log WARNING "gext install failed (pipx/network issue) - skipping all GNOME extensions"
+        FAILED_PACKAGES+=("GNOME extensions (gext setup failed)"); ((TOTAL_FAILED++))
+        return 1
+    fi
     local exts=(
         "gsconnect@andyholmes.github.io"
         "window-state-manager@kishorv06.github.io"
@@ -1199,10 +1207,12 @@ install_gnome_extensions() {
     )
     local e ok=0
     for e in "${exts[@]}"; do
-        if su - "$user" -c "PATH=\"\$HOME/.local/bin:\$PATH\" gext install '$e'" 2>/dev/null; then
+        if su - "$user" -c "XDG_RUNTIME_DIR='/run/user/$uid' DBUS_SESSION_BUS_ADDRESS='unix:path=/run/user/$uid/bus' PATH=\"\$HOME/.local/bin:\$PATH\" gext install '$e'" 2>/dev/null; then
             log INFO "Installed extension: $e"; ((ok++))
+            INSTALLED_PACKAGES+=("$e (extension)"); ((TOTAL_INSTALLED++))
         else
             log WARNING "Failed extension (skipped): $e"
+            FAILED_PACKAGES+=("$e (extension)"); ((TOTAL_FAILED++))
         fi
     done
     log INFO "GNOME extensions: $ok/${#exts[@]} installed - log out/in to activate"
@@ -1274,6 +1284,8 @@ install_gui_tools() {
 install_icon_sets() {
     # Unlike Ubuntu, Papirus/Numix/Breeze/Adwaita all ship directly in
     # Fedora's own repos already - no PPA equivalent needed for any of them.
+    # obsidian-icon-theme is the exception: it's only in an unofficial COPR.
+    add_copr "niohiani/MiscellanyMarketPlace" niohiani
     batch_install "Icon Sets" \
         papirus-icon-theme \
         numix-icon-theme \
@@ -1338,133 +1350,36 @@ install_qogir_icons()    { install_icon_theme_repo "Qogir"    "https://github.co
 install_whitesur_icons() { install_icon_theme_repo "WhiteSur" "https://github.com/vinceliuice/WhiteSur-icon-theme.git" "whitesur-icons"; }
 install_vimix_icons()    { install_icon_theme_repo "Vimix"    "https://github.com/vinceliuice/Vimix-icon-theme.git"    "vimix-icons"; }
 
-# ── GTK / GNOME Shell Themes ──────────────────────────────────────────────
-# Same family/mechanics as the Ubuntu script's theme installers - these are
-# git-clone-and-run-install.sh, essentially package-manager-agnostic except
-# for the sassc dependency, which now installs via dnf instead of apt.
-install_gtk_theme_repo() {
-    local label="$1" repo="$2" script_rel="$3" slug="$4"; shift 4
-    local extra_args=("$@")
-
+# ── GTK Theme ──────────────────────────────────────────────────────────────
+install_nordic_theme() {
     local user uid
     if ! read -r user uid < <(resolve_desktop_session); then
-        log INFO "No active desktop session - skipping $label theme"
-        SKIPPED_PACKAGES+=("$label theme"); ((TOTAL_SKIPPED++)); return 0
+        log INFO "No active desktop session - skipping Nordic theme"
+        SKIPPED_PACKAGES+=("Nordic theme"); ((TOTAL_SKIPPED++)); return 0
     fi
     local uh; uh=$(getent passwd "$user" | cut -d: -f6)
-    local marker="$uh/.cache/fedora-postinstall-themes/$slug.done"
-    if [ -f "$marker" ]; then
-        SKIPPED_PACKAGES+=("$label theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label theme"; return 0
-    fi
-
-    command -v sassc &>/dev/null || safe_install sassc
-
-    local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
-    if ! su - "$user" -c "git clone --depth 1 '$repo' '$t/src'" 2>/dev/null; then
-        rm -rf "$t"; FAILED_PACKAGES+=("$label theme"); ((TOTAL_FAILED++))
-        log WARNING "$label theme clone failed (needs network access to github.com)"; return 1
-    fi
-    log INFO "Installing $label theme..."
-    if su - "$user" -c "bash '$t/src/$script_rel' ${extra_args[*]}" 2>/dev/null; then
-        mkdir -p "$(dirname "$marker")" && touch "$marker"
-        chown -R "$user" "$uh/.cache/fedora-postinstall-themes" 2>/dev/null
-        INSTALLED_PACKAGES+=("$label theme"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $label theme (~/.themes - pick it in gnome-tweaks)"
-    else
-        FAILED_PACKAGES+=("$label theme"); ((TOTAL_FAILED++)); log WARNING "$label theme install failed"
-    fi
-    rm -rf "$t"
-}
-
-install_shell_theme_raw() {
-    local label="$1" repo="$2" src_subdir="$3" dest_name="$4"
-
-    local user uid
-    if ! read -r user uid < <(resolve_desktop_session); then
-        log INFO "No active desktop session - skipping $label theme"
-        SKIPPED_PACKAGES+=("$label theme"); ((TOTAL_SKIPPED++)); return 0
-    fi
-    local uh; uh=$(getent passwd "$user" | cut -d: -f6)
-    if [ -d "$uh/.local/share/themes/$dest_name" ]; then
-        SKIPPED_PACKAGES+=("$label theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label theme"; return 0
+    if [ -d "$uh/.themes/Nordic" ]; then
+        SKIPPED_PACKAGES+=("Nordic theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Nordic theme"; return 0
     fi
 
     local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
-    if ! su - "$user" -c "git clone --depth 1 '$repo' '$t/src'" 2>/dev/null; then
-        rm -rf "$t"; FAILED_PACKAGES+=("$label theme"); ((TOTAL_FAILED++))
-        log WARNING "$label theme clone failed (needs network access to github.com)"; return 1
+    if ! su - "$user" -c "git clone --depth 1 https://github.com/EliverLara/Nordic.git '$t/src'" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("Nordic theme"); ((TOTAL_FAILED++))
+        log WARNING "Nordic theme clone failed (needs network access to github.com)"; return 1
     fi
-    log INFO "Installing $label theme..."
-    if su - "$user" -c "mkdir -p '$uh/.local/share/themes' && cp -r '$t/src/$src_subdir' '$uh/.local/share/themes/$dest_name'" 2>/dev/null \
-        && [ -d "$uh/.local/share/themes/$dest_name" ]; then
-        INSTALLED_PACKAGES+=("$label theme"); ((TOTAL_INSTALLED++))
-        log SUCCESS "Installed: $label theme (~/.local/share/themes - select via the User Themes extension)"
+    log INFO "Installing Nordic theme..."
+    if su - "$user" -c "mkdir -p '$uh/.themes' && cp -r '$t/src/Nordic' '$uh/.themes/Nordic'" 2>/dev/null \
+        && [ -d "$uh/.themes/Nordic" ]; then
+        INSTALLED_PACKAGES+=("Nordic theme"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Nordic theme (~/.themes - pick it in gnome-tweaks)"
     else
-        FAILED_PACKAGES+=("$label theme"); ((TOTAL_FAILED++)); log WARNING "$label theme install failed"
+        FAILED_PACKAGES+=("Nordic theme"); ((TOTAL_FAILED++)); log WARNING "Nordic theme install failed"
     fi
     rm -rf "$t"
-}
-
-install_obsidian_flow_theme() {
-    local user uid
-    if ! read -r user uid < <(resolve_desktop_session); then
-        log INFO "No active desktop session - skipping Obsidian Flow theme"
-        SKIPPED_PACKAGES+=("Obsidian Flow theme"); ((TOTAL_SKIPPED++)); return 0
-    fi
-    local uh; uh=$(getent passwd "$user" | cut -d: -f6)
-    if su - "$user" -c "compgen -G '$uh/.themes/Obsidian flow*'" &>/dev/null; then
-        SKIPPED_PACKAGES+=("Obsidian Flow theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Obsidian Flow theme"; return 0
-    fi
-    command -v python3 &>/dev/null || safe_install python3
-
-    local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
-    if ! su - "$user" -c "git clone --depth 1 https://github.com/JustDeax/Obsidian-flow-shell-theme.git '$t/src'" 2>/dev/null; then
-        rm -rf "$t"; FAILED_PACKAGES+=("Obsidian Flow theme"); ((TOTAL_FAILED++))
-        log WARNING "Obsidian Flow theme clone failed (needs network access to github.com)"; return 1
-    fi
-    log INFO "Installing Obsidian Flow theme..."
-    if su - "$user" \
-        -c "XDG_RUNTIME_DIR='/run/user/$uid' DBUS_SESSION_BUS_ADDRESS='unix:path=/run/user/$uid/bus' python3 '$t/src/install.py' -a" 2>/dev/null; then
-        INSTALLED_PACKAGES+=("Obsidian Flow theme"); ((TOTAL_INSTALLED++))
-        log SUCCESS "Installed: Obsidian Flow theme (~/.themes - pick a color via the User Themes extension)"
-    else
-        FAILED_PACKAGES+=("Obsidian Flow theme"); ((TOTAL_FAILED++)); log WARNING "Obsidian Flow theme install failed"
-    fi
-    rm -rf "$t"
-}
-
-install_graphite_theme()   { install_gtk_theme_repo "Graphite"   "https://github.com/vinceliuice/Graphite-gtk-theme.git"        "install.sh"        "graphite"   --libadwaita; }
-install_catppuccin_theme() { install_gtk_theme_repo "Catppuccin" "https://github.com/Fausto-Korpsvart/Catppuccin-GTK-Theme.git" "themes/install.sh" "catppuccin" --libadwaita; }
-install_everforest_theme() { install_gtk_theme_repo "Everforest" "https://github.com/Fausto-Korpsvart/Everforest-GTK-Theme.git" "themes/install.sh" "everforest" --libadwaita; }
-install_gruvbox_theme()    { install_gtk_theme_repo "Gruvbox"    "https://github.com/Fausto-Korpsvart/Gruvbox-GTK-Theme.git"    "themes/install.sh" "gruvbox"    --libadwaita; }
-install_kanagawa_theme()   { install_gtk_theme_repo "Kanagawa"   "https://github.com/Fausto-Korpsvart/Kanagawa-GKT-Theme.git"   "themes/install.sh" "kanagawa"   --libadwaita; }
-install_material_theme()   { install_gtk_theme_repo "Material"   "https://github.com/Fausto-Korpsvart/Material-GTK-Themes.git"  "themes/install.sh" "material"   --libadwaita; }
-install_nightfox_theme()   { install_gtk_theme_repo "Nightfox"   "https://github.com/Fausto-Korpsvart/Nightfox-GTK-Theme.git"   "themes/install.sh" "nightfox"   --libadwaita; }
-install_osaka_theme()      { install_gtk_theme_repo "Osaka"      "https://github.com/Fausto-Korpsvart/Osaka-GTK-Theme.git"      "themes/install.sh" "osaka"      --libadwaita; }
-install_rose_pine_theme()  { install_gtk_theme_repo "Rose Pine"  "https://github.com/Fausto-Korpsvart/Rose-Pine-GTK-Theme.git"  "themes/install.sh" "rose-pine"  --libadwaita; }
-install_tokyonight_theme() { install_gtk_theme_repo "Tokyonight" "https://github.com/Fausto-Korpsvart/Tokyonight-GTK-Theme.git" "themes/install.sh" "tokyonight" --libadwaita; }
-
-install_oval_theme() { install_shell_theme_raw "Oval" "https://github.com/metro2222/ovel.git" "Oval" "Oval"; }
-install_rounded_rectangle_theme() {
-    install_shell_theme_raw "Rounded Rectangle Dark Blue" \
-        "https://github.com/metro2222/rounded-rectangle-dark-blue-theme.git" \
-        "Rounded-Rectangle-DarkBlue 1.3v" "Rounded-Rectangle-DarkBlue"
 }
 
 install_themes() {
-    batch_install "Themes" arc-theme
-    install_graphite_theme
-    install_catppuccin_theme
-    install_everforest_theme
-    install_gruvbox_theme
-    install_kanagawa_theme
-    install_material_theme
-    install_nightfox_theme
-    install_osaka_theme
-    install_rose_pine_theme
-    install_tokyonight_theme
-    install_oval_theme
-    install_rounded_rectangle_theme
-    install_obsidian_flow_theme
+    install_nordic_theme
 }
 
 install_cursor_themes() {
@@ -1562,7 +1477,7 @@ install_security_tools() {
         radare2 binwalk sleuthkit steghide yara perl-Image-ExifTool
 
     batch_install "Security - Hardening" \
-        lynis chkrootkit rkhunter clamav clamav-update fail2ban aide
+        lynis chkrootkit rkhunter clamav clamav-freshclam fail2ban aide
 
     # firewalld (Fedora's default firewall manager) replaces ufw/gufw -
     # there's no Fedora equivalent of Ubuntu's ufw/gufw pairing, firewalld
@@ -1576,7 +1491,7 @@ install_security_defensive() {
         lynis chkrootkit rkhunter aide audit
 
     batch_install "Defensive - Anti-Malware" \
-        clamav clamav-update
+        clamav clamav-freshclam
 
     batch_install "Defensive - IDS/IPS" \
         fail2ban suricata
@@ -1742,8 +1657,12 @@ install_edge() {
     fi
     log INFO "Installing Microsoft Edge (official yum repo)..."
     rpm --import https://packages.microsoft.com/keys/microsoft.asc 2>/dev/null
-    dnf config-manager addrepo --from-repofile=https://packages.microsoft.com/yumrepos/edge 2>/dev/null \
-        || dnf config-manager --add-repo https://packages.microsoft.com/yumrepos/edge 2>/dev/null
+    dnf config-manager addrepo --id=microsoft-edge --save-filename=microsoft-edge.repo \
+        --set=name="Microsoft Edge" \
+        --set=baseurl=https://packages.microsoft.com/yumrepos/edge \
+        --set=enabled=1 --set=gpgcheck=1 \
+        --set=gpgkey=https://packages.microsoft.com/keys/microsoft.asc \
+        --overwrite 2>/dev/null
     pm_update
     safe_install microsoft-edge-stable
 }
@@ -1852,17 +1771,61 @@ install_desktop_apps() {
 # Flathub (community-maintained) is the only real option.
 install_spotify() { flatpak_install_flathub com.spotify.Client "Spotify"; }
 
-# Slack - has a real but UNDOCUMENTED vendor repo via packagecloud.io (not
-# linked from slack.com/downloads/linux, which shows only a standalone rpm +
-# Snap). Using the vendor's own repo here rather than Flathub's unaffiliated
-# community build.
+# Slack - packagecloud.io/slacktechnologies/slack is real but permanently
+# stale: every rpm in it is registered under a frozen fedora/21 path from
+# ~2014 and was never updated to track current releases, so dnf gets a
+# repo with nothing matching modern Fedora. There's no static "latest" rpm
+# URL either - Slack's own downloads page embeds the current version-
+# specific link, so we scrape that (same technique current install guides
+# use) and install the rpm directly, keeping the official vendor build
+# rather than falling back to Flathub's unaffiliated community package.
+# Slack's own rpm postinst script re-registers packagecloud.io/slacktechnologies/
+# slack (and a -source variant) as a dnf repo on every install/reinstall, even
+# though that repo is permanently stale (frozen fedora/21 paths from ~2014).
+# Left enabled, it breaks every subsequent `dnf update`/`makecache` with GPG
+# "signing key not found" prompts and, if the box's CA trust is ever rebuilt,
+# curl "SSL CA cert" errors - neither has anything to do with Slack itself,
+# it's just noise from a repo nothing in it will ever be installed from.
+# disable_stale_slack_repo() is idempotent and safe to call whether or not
+# Slack (or the repo files) are present.
+disable_stale_slack_repo() {
+    local f found=false
+    for f in /etc/yum.repos.d/slacktechnologies_slack.repo \
+             /etc/yum.repos.d/slacktechnologies_slack-source.repo; do
+        [ -f "$f" ] && { rm -f "$f"; found=true; }
+    done
+    $found && log INFO "Removed stale packagecloud Slack repo file(s)"
+}
+
 install_slack() {
     if is_installed slack; then
-        SKIPPED_PACKAGES+=("slack"); ((TOTAL_SKIPPED++)); log INFO "Already installed: slack"; return 0
+        SKIPPED_PACKAGES+=("slack"); ((TOTAL_SKIPPED++)); log INFO "Already installed: slack"
+        disable_stale_slack_repo
+        return 0
     fi
-    log INFO "Installing Slack (official packagecloud.io repo)..."
-    curl -s https://packagecloud.io/install/repositories/slacktechnologies/slack/script.rpm.sh 2>/dev/null | bash 2>/dev/null
-    safe_install slack
+    log INFO "Installing Slack (direct rpm from slack.com - packagecloud repo is permanently stale)..."
+    local page url t
+    page=$(curl -sL "https://slack.com/downloads/instructions/linux?build=rpm&ddl=1" 2>/dev/null)
+    url=$(printf '%s' "$page" | grep -oE 'https://downloads\.slack-edge\.com/desktop-releases/linux/x64/[0-9.]+/slack-[0-9.]+-[0-9.]+\.el[0-9]+\.x86_64\.rpm' | head -1)
+    if [ -z "$url" ]; then
+        FAILED_PACKAGES+=("slack"); ((TOTAL_FAILED++))
+        log WARNING "Could not find current Slack rpm URL on slack.com (page layout may have changed)"; return 1
+    fi
+    t=$(mktemp -d)
+    if ! curl -sL -o "$t/slack.rpm" "$url" 2>/dev/null || [ ! -s "$t/slack.rpm" ]; then
+        rm -rf "$t"; FAILED_PACKAGES+=("slack"); ((TOTAL_FAILED++))
+        log WARNING "Slack rpm download failed ($url)"; return 1
+    fi
+    if dnf install -y "$t/slack.rpm" 2>/dev/null; then
+        INSTALLED_PACKAGES+=("slack"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: slack"
+    else
+        FAILED_PACKAGES+=("slack"); ((TOTAL_FAILED++)); log WARNING "Slack rpm install failed"
+    fi
+    rm -rf "$t"
+    # The rpm's own postinst hook is what plants the stale repo files - it
+    # runs as part of `dnf install` above, so this has to come after, not
+    # before, or the just-added files would just get re-added underneath us.
+    disable_stale_slack_repo
 }
 
 # Remmina ships directly in Fedora's own repos at a current version - no PPA
@@ -2039,7 +2002,7 @@ auto_category() {
 
 show_main_menu() {
     clear
-    ui_header "FEDORA ${FEDORA_VERSION:-42/43}  ·  POST-INSTALL" "dnf5 · RPM Fusion · GNOME app folders"
+    ui_header "FEDORA ${FEDORA_VERSION:-42/43/44}  ·  POST-INSTALL" "dnf5 · RPM Fusion · GNOME app folders"
     echo
     ui_section "Creative & Drivers"
     ui_cell  1 "Creative Suite";     ui_cell 28 "Drivers & Extra Repos"; echo
@@ -2145,7 +2108,7 @@ show_gui_tweaks_menu() {
     echo
     ui_item 1 "All GUI Tweaks (everything below)"
     ui_item 2 "Icon Sets"
-    ui_item 3 "Themes (GTK + GNOME Shell)"
+    ui_item 3 "GTK Theme (Nordic)"
     ui_item 4 "Cursor Themes"
     ui_item 5 "Nerd Fonts"
     ui_item 6 "Chris Titus mybash"
