@@ -566,7 +566,7 @@ install_multimedia_codecs() {
     batch_install "OpenH264" openh264 gstreamer1-plugin-openh264 mozilla-openh264
 }
 
-# ========== NVIDIA PROPRIETARY DRIVER (new - no Ubuntu-script equivalent) ==========
+# ========== NVIDIA DRIVER (new - no Ubuntu-script equivalent) ==========
 # Opt-in only: this is real hardware-specific state, not a package a user can
 # just skip on the wrong GPU. Installs from RPM Fusion nonfree, then POLLS for
 # the akmod build to finish instead of assuming it's done the instant `dnf
@@ -575,26 +575,40 @@ install_multimedia_codecs() {
 # genuinely interactive, hardware-firmware-level step (needs a mid-flow
 # reboot into a blue MOKManager screen) - this function prints the exact
 # commands and STOPS there rather than pretending to automate it.
+#
+# akmod-nvidia-open (NOT plain akmod-nvidia) is used deliberately: Blackwell-
+# generation cards (RTX 50 / RTX PRO Blackwell) have NO proprietary-branch
+# support at all - the closed kernel module cannot initialize that hardware,
+# only the open-source one can - and NVIDIA's own driver packages have been
+# defaulting to open modules for Turing-and-newer GPUs generally, so this is
+# the current mainstream path, not a Blackwell-only special case. Runs an
+# explicit `akmods --force` so the build is triggered immediately rather than
+# relying solely on akmod's own background trigger. Deliberately does NOT
+# auto-reboot for you - same reasoning as the Secure Boot step below: a
+# reboot here is a decision point, not something to fire blindly.
 install_nvidia_driver() {
     if ! is_installed rpmfusion-nonfree-release; then
         log WARNING "RPM Fusion nonfree isn't enabled - run bootstrap first"; return 1
     fi
-    local msg="Install the proprietary NVIDIA driver (akmod-nvidia + CUDA)?\n\nOnly do this on a machine with an NVIDIA GPU. The kernel module is compiled in the background after install and can take a few minutes."
+    local msg="Install the NVIDIA driver (akmod-nvidia-open + CUDA)?\n\nOpen kernel modules, not the legacy closed ones - required for Blackwell (RTX 50/RTX PRO) and the current default for Turing-and-newer GPUs generally. Only do this on a machine with an NVIDIA GPU. The kernel module is compiled in the background after install and can take a few minutes."
     local do_it=false
     if command -v whiptail &>/dev/null; then
-        whiptail --yesno "$msg" --yes-button "Install" --no-button "Skip" 12 72 && do_it=true
+        whiptail --yesno "$msg" --yes-button "Install" --no-button "Skip" 14 76 && do_it=true
     else
         echo -e "$msg [y/N]:"
         read -r REPLY
         { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
     fi
     if ! $do_it; then
-        SKIPPED_PACKAGES+=("akmod-nvidia"); ((TOTAL_SKIPPED++)); log INFO "Skipped NVIDIA driver"; return 0
+        SKIPPED_PACKAGES+=("akmod-nvidia-open"); ((TOTAL_SKIPPED++)); log INFO "Skipped NVIDIA driver"; return 0
     fi
 
-    batch_install "NVIDIA Driver" akmod-nvidia xorg-x11-drv-nvidia-cuda
+    batch_install "NVIDIA Driver" akmod-nvidia-open xorg-x11-drv-nvidia-cuda
 
-    if is_installed akmod-nvidia; then
+    if is_installed akmod-nvidia-open; then
+        log INFO "Forcing the akmod build now (akmods --force)..."
+        akmods --force 2>/dev/null
+
         log INFO "Waiting for the akmod kernel module to finish building (up to a few minutes)..."
         local waited=0
         while [ $waited -lt 300 ]; do
@@ -612,7 +626,10 @@ install_nvidia_driver() {
             log WARNING "  sudo kmodgenca -a"
             log WARNING "  sudo mokutil --import /etc/pki/akmods/certs/public_key.der   (sets an enrollment password)"
             log WARNING "  sudo systemctl reboot   (blue MOKManager screen -> Enroll MOK -> Continue -> Yes -> enter password)"
+        else
+            log INFO "Secure Boot is off/not detected - reboot when convenient to load the new kernel module: sudo reboot"
         fi
+        log INFO "Verify after reboot with: nvidia-smi"
     fi
 }
 
@@ -657,6 +674,168 @@ install_terra_repo() {
 install_drivers_and_repos() {
     install_nvidia_driver
     install_terra_repo
+}
+
+# ========== FILESYSTEM SNAPSHOTS & BACKUP (new - no Ubuntu-script equivalent) ==========
+# Fedora Workstation defaults to Btrfs since F33+, but unlike openSUSE it does
+# NOT wire Snapper into dnf5 out of the box, and there's no automatic
+# pre-transaction snapshot the way this script's own driver-install functions
+# (NVIDIA, above) could really use as a safety net. Fedora's own fix for that -
+# "BtrfsWithFullSystemSnapshots" (snapm/boom) - is a Change proposal targeted
+# at Fedora 45, not shipped as of this writing, and python3-dnf-plugin-snapper
+# is a dnf4/dnf-plugins-extras package whose dnf5 hook support is unconfirmed
+# per multiple open Fedora Discussion threads. So this installs and enables
+# the pieces that DO work reliably today regardless of that gap: Snapper's own
+# timeline/cleanup timers (independent of dnf entirely), btrfs-assistant as
+# the GUI (official Fedora repo package, not a COPR), and grub-btrfs (COPR -
+# not upstream Fedora) to surface snapshots as bootable GRUB entries - and
+# attempts the dnf hook as a bonus on top, not as the thing you should rely on.
+# On non-Btrfs roots (ext4/xfs - e.g. custom partitioning at install time),
+# Snapper doesn't apply at all, so Timeshift is used instead (official Fedora
+# package, rsync-mode GUI+CLI backup, no filesystem-specific requirement).
+#
+# PACKAGE NAME CONFIDENCE NOTE: snapper, btrfs-assistant and timeshift were
+# verified against packages.fedoraproject.org / fedora.pkgs.org during
+# development. The grub-btrfs COPR is NOT upstream Fedora and ownership is
+# unverified beyond a web search turning up kylegospo/grub-btrfs as one
+# actively-referenced option among a few (pego-copr/grub-btrfs, theoware/
+# grub-btrfs) - if it's empty or stale for your release, swap the coordinates
+# in install_snapshots_btrfs() below. add_copr's existing failure handling
+# (non-fatal, logged, continues) covers a wrong guess either way.
+
+detect_root_fstype() {
+    findmnt -no FSTYPE / 2>/dev/null
+}
+
+install_snapshots_full() {
+    local fstype; fstype=$(detect_root_fstype)
+    log INFO "Detected root filesystem: ${fstype:-unknown}"
+    if [ "$fstype" = "btrfs" ]; then
+        install_snapshots_btrfs
+    else
+        log WARNING "Root is not Btrfs (detected: ${fstype:-unknown}) - Snapper needs Btrfs, falling back to Timeshift (rsync mode)"
+        install_snapshots_timeshift
+    fi
+}
+
+install_snapshots_btrfs() {
+    batch_install "Snapshots (Snapper + GUI)" snapper btrfs-assistant
+
+    if is_installed snapper; then
+        if ! snapper list-configs 2>/dev/null | grep -qw root; then
+            log INFO "Creating Snapper config 'root' for /..."
+            if snapper -c root create-config / 2>/dev/null; then
+                log SUCCESS "Snapper config 'root' created"
+            else
+                log WARNING "Snapper config creation failed - your subvolume layout may need manual setup: sudo snapper -c root create-config /"
+            fi
+        else
+            log INFO "Snapper config 'root' already exists"
+        fi
+        # Ships inside the snapper package itself - just needs enabling.
+        if systemctl enable --now snapper-timeline.timer snapper-cleanup.timer 2>/dev/null; then
+            log SUCCESS "Enabled snapper-timeline.timer + snapper-cleanup.timer (scheduled snapshots + retention)"
+        else
+            log WARNING "Could not enable snapper timers - enable manually: sudo systemctl enable --now snapper-timeline.timer snapper-cleanup.timer"
+        fi
+    fi
+
+    # Boot-menu integration: lets you boot straight into a pre-change snapshot
+    # from GRUB if something goes wrong, without a live USB. See COPR note above.
+    add_copr "kylegospo/grub-btrfs" grub-btrfs
+    batch_install "Snapshots (GRUB boot entries)" grub-btrfs
+    if is_installed grub-btrfs; then
+        if systemctl enable --now grub-btrfsd 2>/dev/null; then
+            log SUCCESS "Enabled grub-btrfsd (snapshots now appear as GRUB boot entries)"
+        else
+            log WARNING "Could not enable grub-btrfsd - enable manually: sudo systemctl enable --now grub-btrfsd"
+        fi
+    fi
+
+    # Best-effort only: auto-snapshot on every dnf transaction. NOT guaranteed
+    # to actually hook dnf5 - see the section comment above. If it doesn't,
+    # the timeline timer enabled above still gives you snapshots regardless.
+    if package_exists python3-dnf-plugin-snapper; then
+        safe_install python3-dnf-plugin-snapper
+        log INFO "Installed the dnf-snapper plugin - dnf5 hook support is unconfirmed on this release; the timeline timer above is your reliable fallback either way"
+    fi
+
+    if is_installed snapper; then
+        log INFO "Taking an initial baseline snapshot..."
+        if snapper -c root create --description "post-install baseline" 2>/dev/null; then
+            log SUCCESS "Baseline snapshot created (sudo snapper -c root list to view)"
+        else
+            log WARNING "Baseline snapshot failed - fix the 'root' config first, then retry"
+        fi
+    fi
+}
+
+install_snapshots_timeshift() {
+    batch_install "Snapshots (Timeshift)" timeshift
+    if is_installed timeshift; then
+        log INFO "Timeshift installed - first run needs interactive setup (pick rsync mode + snapshot destination disk), this script won't guess your disk layout for you"
+        log INFO "Configure it with: sudo timeshift-gtk (GUI) or sudo timeshift --create (CLI)"
+    fi
+}
+
+# Ad-hoc snapshot, callable any time from the Snapshots submenu - useful
+# right before something risky (a driver install, a risky dnf transaction).
+snapshot_create_now() {
+    local fstype; fstype=$(detect_root_fstype)
+    if [ "$fstype" = "btrfs" ] && command -v snapper &>/dev/null; then
+        if snapper -c root create --description "manual $(date +%Y-%m-%d_%H:%M)" 2>/dev/null; then
+            log SUCCESS "Snapshot created - sudo snapper -c root list to view"
+        else
+            log ERROR "snapper create failed - is the 'root' config set up yet? (Full Setup, option 1, does this)"
+        fi
+    elif command -v timeshift &>/dev/null; then
+        if timeshift --create --comments "manual $(date +%Y-%m-%d_%H:%M)" 2>/dev/null; then
+            log SUCCESS "Snapshot created - timeshift --list to view"
+        else
+            log ERROR "timeshift --create failed - has it been configured yet? (run timeshift-gtk once first)"
+        fi
+    else
+        log WARNING "No snapshot tool installed yet - run Full Setup first (option 1)"
+    fi
+    read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _
+}
+
+snapshot_list() {
+    local fstype; fstype=$(detect_root_fstype)
+    if [ "$fstype" = "btrfs" ] && command -v snapper &>/dev/null; then
+        snapper -c root list 2>/dev/null || log WARNING "snapper list failed - config 'root' may not exist yet"
+    elif command -v timeshift &>/dev/null; then
+        timeshift --list 2>/dev/null || log WARNING "timeshift --list failed - not configured yet"
+    else
+        log WARNING "No snapshot tool installed yet - run Full Setup first (option 1)"
+    fi
+    read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _
+}
+
+# Launches whichever GUI actually got installed, in the desktop user's own
+# session (same resolve_desktop_session mechanism used for GNOME app folders/
+# Flameshot above) - both tools escalate privilege themselves via polkit when
+# needed, so this deliberately does NOT run them as root.
+snapshot_open_gui() {
+    local user uid
+    if ! read -r user uid < <(resolve_desktop_session); then
+        log WARNING "No active GNOME session detected - launch the GUI yourself: btrfs-assistant or timeshift-gtk"
+        return 1
+    fi
+    local home; home=$(getent passwd "$user" | cut -d: -f6)
+    if command -v btrfs-assistant &>/dev/null; then
+        sudo -u "$user" HOME="$home" XDG_RUNTIME_DIR="/run/user/${uid}" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${uid}/bus" \
+            nohup btrfs-assistant >/dev/null 2>&1 &
+        log SUCCESS "Launched Btrfs Assistant"
+    elif command -v timeshift-gtk &>/dev/null; then
+        sudo -u "$user" HOME="$home" XDG_RUNTIME_DIR="/run/user/${uid}" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${uid}/bus" \
+            nohup timeshift-gtk >/dev/null 2>&1 &
+        log SUCCESS "Launched Timeshift GUI"
+    else
+        log WARNING "No snapshot GUI installed yet - run Full Setup first (option 1)"
+        return 1
+    fi
+    sleep 1
 }
 
 # ========== CODE EDITORS ==========
@@ -2007,6 +2186,7 @@ show_main_menu() {
     ui_section "Creative & Drivers"
     ui_cell  1 "Creative Suite";     ui_cell 28 "Drivers & Extra Repos"; echo
     ui_cell 14 "Gaming";             ui_cell 25 "Desktop Apps";          echo
+    ui_cell 29 "Snapshots & Backup"; echo
     echo
     ui_section "Development"
     ui_cell  2 "Code Editors";       ui_cell  3 "Python";                echo
@@ -2034,7 +2214,7 @@ show_main_menu() {
     echo
     ui_rule
     ui_cell  S "Summary";            ui_cell  0 "Exit";                  echo
-    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-28 · A-C · S]${NC}${LAVENDER}: ${NC}"
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-29 · A-C · S]${NC}${LAVENDER}: ${NC}"
 }
 
 show_creative_menu() {
@@ -2125,13 +2305,28 @@ show_drivers_menu() {
     clear
     ui_header "DRIVERS & EXTRA REPOS"
     echo
-    ui_item 1 "NVIDIA Proprietary Driver (akmod-nvidia + CUDA)"
+    ui_item 1 "NVIDIA Driver (akmod-nvidia-open + CUDA)"
     ui_item 2 "Terra Repo (Ultramarine's parent project - extras only)"
     echo
     ui_item 0 "Back to Main Menu"
     echo
     ui_rule
     printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-2]${NC}${LAVENDER}: ${NC}"
+}
+
+show_snapshots_menu() {
+    clear
+    ui_header "SNAPSHOTS & BACKUP" "Auto-detects Btrfs (Snapper+GUI) vs other (Timeshift)"
+    echo
+    ui_item 1 "Full Setup (install + configure + enable timers)"
+    ui_item 2 "Create a snapshot now"
+    ui_item 3 "List snapshots"
+    ui_item 4 "Open GUI (Btrfs Assistant / Timeshift)"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-4]${NC}${LAVENDER}: ${NC}"
 }
 
 main() {
@@ -2252,6 +2447,18 @@ main() {
                     0) continue ;;
                     1) reset_tracking; install_nvidia_driver; display_summary ;;
                     2) reset_tracking; install_terra_repo; display_summary ;;
+                    *) log ERROR "Invalid choice"; sleep 2 ;;
+                esac
+                ;;
+            29)
+                show_snapshots_menu
+                read -r snap_choice
+                case "$snap_choice" in
+                    0) continue ;;
+                    1) reset_tracking; install_snapshots_full; display_summary ;;
+                    2) snapshot_create_now ;;
+                    3) snapshot_list ;;
+                    4) snapshot_open_gui ;;
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
