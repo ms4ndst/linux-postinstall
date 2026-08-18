@@ -1355,6 +1355,86 @@ install_containers() {
         systemctl start cockpit.socket 2>/dev/null || true
         log INFO "Cockpit enabled - manage containers/VMs at https://localhost:9090"
     fi
+
+    install_docker_libvirt_forward_fix
+}
+
+# Docker sets the iptables FORWARD chain's default policy to DROP and routes
+# everything through its own DOCKER-USER/DOCKER-FORWARD chains - and neither
+# restores the policy to ACCEPT when it stops nor scopes the DROP to just its
+# own bridges. This is Docker's own cross-distro behavior, not Ubuntu- or
+# ufw-specific - ufw sits on top of the same netfilter tables Docker is
+# editing, so it doesn't change any of this. Because install_containers()
+# (above) installs Docker and libvirt side by side, that combination silently
+# kills internet access for EVERY libvirt VM on a NAT network (virbr0,
+# virbr1, ...): DHCP and local-subnet traffic still work fine (that path
+# never touches FORWARD at all - it's answered directly by dnsmasq on the
+# host), so a VM looks "half connected" - gets a real IP, can ping its own
+# gateway, but every outbound TCP/UDP/ICMP packet to the actual internet
+# silently vanishes. Diagnosed the hard way, live, on real hardware
+# (nftables rule-by-rule, hook-priority-by-hook-priority) on the Fedora
+# variant of this script rather than assumed - ported here unchanged since
+# the underlying Docker behavior is identical on Ubuntu.
+#
+# Docker's own docs recommend fixing this with an exception in DOCKER-USER
+# specifically (a chain Docker creates once and never flushes on its own
+# restarts) rather than resetting the FORWARD policy globally, which would
+# blunt Docker's container network isolation for no reason. The "virbr+"
+# wildcard covers the default network AND any additional libvirt networks
+# created later, without needing their exact names in advance.
+#
+# DOCKER-USER rules don't survive a REBOOT on their own - nothing persists
+# raw iptables edits made outside ufw's own rule files - so this installs a
+# tiny oneshot systemd unit that reapplies the two rules after docker.service
+# comes up, on every boot, not just once right now.
+install_docker_libvirt_forward_fix() {
+    if ! command -v docker &>/dev/null || ! command -v virsh &>/dev/null; then
+        log INFO "Skipping Docker/libvirt forwarding fix - both Containers and Virtualization need to be installed first"
+        return 0
+    fi
+    if [ -f /etc/systemd/system/docker-libvirt-forward-fix.service ]; then
+        log INFO "Docker/libvirt forwarding fix already installed"
+        return 0
+    fi
+
+    log INFO "Installing Docker <-> libvirt forwarding fix (DOCKER-USER virbr+ exception)..."
+
+    cat > /usr/local/sbin/docker-libvirt-forward-fix.sh <<'DLFF_EOF'
+#!/bin/bash
+# Idempotent: allow libvirt bridge traffic (virbr0, virbr1, ...) through
+# Docker's DOCKER-USER chain. Without this, Docker's FORWARD policy=DROP
+# silently kills internet access for every libvirt NAT-networked VM, while
+# leaving DHCP/local-subnet traffic (which never hits FORWARD) working fine -
+# so the VM looks "half connected" instead of obviously broken.
+set -e
+for dir_flag in -i -o; do
+    iptables -C DOCKER-USER "$dir_flag" virbr+ -j ACCEPT 2>/dev/null \
+        || iptables -I DOCKER-USER "$dir_flag" virbr+ -j ACCEPT
+done
+DLFF_EOF
+    chmod +x /usr/local/sbin/docker-libvirt-forward-fix.sh
+
+    cat > /etc/systemd/system/docker-libvirt-forward-fix.service <<'DLFF_UNIT_EOF'
+[Unit]
+Description=Allow libvirt bridge traffic through Docker's FORWARD chain
+After=docker.service libvirtd.service
+Wants=docker.service libvirtd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/docker-libvirt-forward-fix.sh
+
+[Install]
+WantedBy=multi-user.target
+DLFF_UNIT_EOF
+
+    reload_systemd
+    if systemctl enable --now docker-libvirt-forward-fix.service 2>/dev/null; then
+        log SUCCESS "Docker/libvirt forwarding fix applied now and will reapply on every boot"
+    else
+        log WARNING "Could not enable docker-libvirt-forward-fix.service - apply manually: sudo iptables -I DOCKER-USER -i virbr+ -j ACCEPT && sudo iptables -I DOCKER-USER -o virbr+ -j ACCEPT"
+    fi
 }
 
 # Generic snap installer with proper tracking, reused by every snap-only
@@ -2675,6 +2755,11 @@ install_docker_standalone() {
         systemctl enable --now docker 2>/dev/null || true
         log INFO "Docker configured - log out/in for the 'docker' group to take effect"
     fi
+    # Covers the case where libvirt was already installed in an earlier run
+    # (via the Containers menu) - see install_docker_libvirt_forward_fix's
+    # own comment, above install_containers, for why this matters. No-ops
+    # cleanly if libvirt isn't present yet.
+    install_docker_libvirt_forward_fix
 }
 
 # Azure CLI via Microsoft's official install script (the exact command from
