@@ -676,6 +676,75 @@ install_drivers_and_repos() {
     install_terra_repo
 }
 
+# ========== PERIPHERALS (new - no Ubuntu-script equivalent) ==========
+# Solaar talks HID++ directly to Logitech peripherals (over a Bolt/Unifying
+# receiver OR native Bluetooth) - a different layer from logid/LogiOps (if
+# installed - button/gesture remapping) and from libinput (OS-side scroll
+# interpretation). It's needed here because at least one MX-series mouse
+# (MX Anywhere 3S, confirmed on this hardware) ships with its on-device HID++
+# "Scroll Wheel Resolution" feature OFF by default over Bluetooth. That
+# produces genuinely slow-but-smooth scrolling - not a libinput bug, not a
+# logid conflict, not a GNOME setting - so no OS-side fix touches it; only
+# flipping this on-device flag does.
+#
+# Opt-in and interactive, same shape as install_nvidia_driver/install_terra_repo:
+# this is one specific mouse's firmware state, not something every install
+# needs, and it can only be applied to a device that's actually paired/
+# connected at the time this runs (very possibly not true yet on a fresh
+# install - see fix_logitech_hires_scroll below).
+install_peripheral_tools() {
+    batch_install "Peripheral Management" solaar solaar-udev
+    if is_installed solaar; then
+        log INFO "Solaar installed - GUI: 'solaar', CLI: 'solaar config' for battery/DPI/gesture/scroll-feature control of Logitech HID++ mice and keyboards"
+    fi
+}
+
+# Applies the specific fix confirmed on this hardware: MX Anywhere 3S over
+# Bluetooth with its "Scroll Wheel Resolution" HID++ feature disabled.
+# `solaar config <device> hires-smooth-resolution 1` flips that feature ON
+# THE MOUSE ITSELF - it's a device-side flag, so it persists across reboots
+# and reconnects without Solaar needing to keep running (confirmed stable
+# after restarting logid on this setup, so the two don't fight over it here).
+#
+# PACKAGE/CLI CONFIDENCE NOTE: the setting name "hires-smooth-resolution" and
+# the "solaar config <device> <setting> <value>" form are taken from a
+# published fix for the same symptom on a different MX-series mouse (MX
+# Master 2S) - not independently verified against `solaar config --help` on
+# this exact Solaar version. If it errors below, run
+# `solaar config "MX Anywhere 3S"` with no value to list that device's real
+# setting names before assuming the fix itself is wrong.
+#
+# Device name is hardcoded to "MX Anywhere 3S" deliberately rather than
+# auto-parsed from `solaar show` output (that output's exact grammar wasn't
+# verified either, and a wrong parse fails silently - a wrong hardcoded name
+# fails loudly, which is safer for something this narrowly targeted). Update
+# the name below if this mouse is ever replaced.
+fix_logitech_hires_scroll() {
+    local device_name="MX Anywhere 3S"
+
+    if ! command -v solaar &>/dev/null; then
+        log INFO "Solaar not installed - installing it first..."
+        install_peripheral_tools
+    fi
+    if ! command -v solaar &>/dev/null; then
+        log ERROR "Solaar install failed - cannot apply the scroll fix"
+        return 1
+    fi
+
+    if ! solaar show 2>/dev/null | grep -qi "$device_name"; then
+        log WARNING "'$device_name' not seen by Solaar - pair/connect it first (Bluetooth Settings), then re-run this from the Peripherals menu"
+        return 1
+    fi
+
+    if solaar config "$device_name" hires-smooth-resolution 1 2>/dev/null; then
+        log SUCCESS "Enabled 'Scroll Wheel Resolution' on $device_name"
+        log INFO "Stored on the mouse itself - no reboot needed, test scrolling now"
+    else
+        log WARNING "'solaar config \"$device_name\" hires-smooth-resolution 1' failed - run: solaar config \"$device_name\"  (no value) to list its actual setting names, the CLI name may differ on your Solaar version"
+        return 1
+    fi
+}
+
 # ========== FILESYSTEM SNAPSHOTS & BACKUP (new - no Ubuntu-script equivalent) ==========
 # Fedora Workstation defaults to Btrfs since F33+, but unlike openSUSE it does
 # NOT wire Snapper into dnf5 out of the box, and there's no automatic
@@ -2227,7 +2296,7 @@ show_main_menu() {
     ui_section "Creative & Drivers"
     ui_cell  1 "Creative Suite";     ui_cell 28 "Drivers & Extra Repos"; echo
     ui_cell 14 "Gaming";             ui_cell 25 "Desktop Apps";          echo
-    ui_cell 29 "Snapshots & Backup"; echo
+    ui_cell 29 "Snapshots & Backup"; ui_cell 30 "Peripherals (Logitech)"; echo
     echo
     ui_section "Development"
     ui_cell  2 "Code Editors";       ui_cell  3 "Python";                echo
@@ -2255,7 +2324,7 @@ show_main_menu() {
     echo
     ui_rule
     ui_cell  S "Summary";            ui_cell  0 "Exit";                  echo
-    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-29 · A-C · S]${NC}${LAVENDER}: ${NC}"
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-30 · A-C · S]${NC}${LAVENDER}: ${NC}"
 }
 
 show_creative_menu() {
@@ -2368,6 +2437,19 @@ show_snapshots_menu() {
     echo
     ui_rule
     printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-4]${NC}${LAVENDER}: ${NC}"
+}
+
+show_peripherals_menu() {
+    clear
+    ui_header "PERIPHERALS (LOGITECH)" "Solaar - HID++ device management"
+    echo
+    ui_item 1 "Install Solaar (peripheral manager)"
+    ui_item 2 "Fix slow scroll wheel (MX Anywhere 3S - enable Scroll Wheel Resolution)"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-2]${NC}${LAVENDER}: ${NC}"
 }
 
 main() {
@@ -2500,6 +2582,16 @@ main() {
                     2) snapshot_create_now ;;
                     3) snapshot_list ;;
                     4) snapshot_open_gui ;;
+                    *) log ERROR "Invalid choice"; sleep 2 ;;
+                esac
+                ;;
+            30)
+                show_peripherals_menu
+                read -r periph_choice
+                case "$periph_choice" in
+                    0) continue ;;
+                    1) reset_tracking; install_peripheral_tools; display_summary ;;
+                    2) fix_logitech_hires_scroll ;;
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
