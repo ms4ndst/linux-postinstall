@@ -745,10 +745,51 @@ install_snapshots_btrfs() {
     add_copr "kylegospo/grub-btrfs" grub-btrfs
     batch_install "Snapshots (GRUB boot entries)" grub-btrfs
     if is_installed grub-btrfs; then
-        if systemctl enable --now grub-btrfsd 2>/dev/null; then
-            log SUCCESS "Enabled grub-btrfsd (snapshots now appear as GRUB boot entries)"
+        # NOTE: the daemon is grub-btrfs.path (triggers regen on snapshot
+        # changes), NOT "grub-btrfsd" - that name doesn't exist in the
+        # upstream package despite appearing in upstream's own docs prose;
+        # verified against the actual installed unit files. grub-btrfs.service
+        # itself is "static" (systemd-speak for "triggered, not enabled
+        # directly") - enabling the .path unit is what you want.
+        #
+        # The shipped grub-btrfs.path unit hardcodes Requires=/After=/
+        # BindsTo=/WantedBy= a phantom "-.snapshots.mount" unit - an
+        # openSUSE-style assumption that /.snapshots is its OWN mounted
+        # subvolume. Fedora's own `snapper create-config` creates .snapshots
+        # as a plain nested subvolume inside the SAME root mount instead, so
+        # that mount unit never exists here and enabling the unit as shipped
+        # fails ("Unit \x2esnapshots.mount not found."). Verified directly
+        # against `systemctl cat grub-btrfs.path` output during development.
+        # Fix: only if /.snapshots ISN'T its own mount (the Fedora-default
+        # case), fully SHADOW the vendor unit with a local file in
+        # /etc/systemd/system/ (same name - systemd's own precedence rule
+        # means the local file wins outright, no merge involved). A .path.d
+        # drop-in that tries to clear Requires=/After=/BindsTo= with empty
+        # assignments was tried first and did NOT reliably take effect in
+        # testing (Install-section override worked, Unit-section did not) -
+        # a full local override removes that ambiguity entirely rather than
+        # relying on list-clearing semantics that didn't hold up here.
+        if ! findmnt -no TARGET /.snapshots &>/dev/null; then
+            rm -f /etc/systemd/system/grub-btrfs.path.d/override.conf
+            rmdir /etc/systemd/system/grub-btrfs.path.d 2>/dev/null
+            cat > /etc/systemd/system/grub-btrfs.path <<'GBTRFS_OVERRIDE_EOF'
+[Unit]
+Description=Monitors for new snapshots
+DefaultDependencies=no
+
+[Path]
+PathModified=/.snapshots
+
+[Install]
+WantedBy=multi-user.target
+GBTRFS_OVERRIDE_EOF
+            systemctl daemon-reload
+        fi
+
+        if systemctl enable --now grub-btrfs.path 2>/dev/null; then
+            log SUCCESS "Enabled grub-btrfs.path (snapshots now trigger a GRUB regen automatically)"
         else
-            log WARNING "Could not enable grub-btrfsd - enable manually: sudo systemctl enable --now grub-btrfsd"
+            log WARNING "Could not enable grub-btrfs.path - enable manually: sudo systemctl enable --now grub-btrfs.path"
         fi
     fi
 
