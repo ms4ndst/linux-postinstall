@@ -227,17 +227,68 @@ ensure_yay() {
 }
 
 # Installs one AUR package as SUDO_USER. Deliberately NOT silenced with
-# 2>/dev/null the way repo installs are below: yay itself has no standing
-# privilege, so partway through a real AUR build it shells out to `sudo
-# pacman -U` to actually land the built package, which means it may need to
-# prompt SUDO_USER for their password right here, live. Since this whole
-# script is already an interactive, watched session (whiptail/read prompts
-# elsewhere), that's the expected/normal yay experience, not a bug to
-# suppress - hiding it would just make the script hang with no visible reason.
+# 2>/dev/null the way repo installs are below: yay's build output is worth
+# seeing on failure. yay itself has no standing privilege, so partway
+# through a real AUR build it shells out to `sudo pacman -U`/`-S` to
+# actually land the built package and any repo dependencies it pulled in.
+# That's exactly what enable_temp_passwordless_sudo (below) exists for - see
+# its comment for why relying on an interactive password prompt here doesn't
+# reliably work in this specific su-then-yay-then-sudo chain.
 aur_install() {
     local pkg="$1"
     ensure_yay || return 1
+    enable_temp_passwordless_sudo
     su - "$SUDO_USER" -c "yay -S --needed --noconfirm --removemake '$pkg'"
+}
+
+# yay must run unprivileged (makepkg refuses outright to run as root - Arch's
+# build tooling assumes an unprivileged builder), but still needs to shell
+# out to `sudo pacman -U`/`-S` itself to actually land a built AUR package or
+# pull its repo dependencies. This script runs as root already, so
+# aur_install drops to SUDO_USER via `su - ... -c` to run yay - chaining
+# root-script -> su -> yay -> sudo. That specific chain is a well-known
+# gotcha: sudo needs to open /dev/tty directly to prompt for a password (not
+# just an interactive stdin/stdout), and su's handling of the controlling
+# terminal across that hand-off frequently breaks that, independent of
+# whether this script itself is running interactively. The visible symptom
+# is exactly "sudo: a terminal is needed to read the password" with no
+# prompt ever shown - not a hang, an outright failure.
+#
+# Rather than fight that plumbing, grant SUDO_USER a narrowly-scoped,
+# TEMPORARY passwordless-sudo rule for pacman specifically (not a blanket
+# NOPASSWD: ALL) so yay's internal sudo calls never need to prompt at all,
+# and remove the rule again via traps so nothing persists past this run - a
+# crash, Ctrl-C, or a normal exit all trigger the same cleanup. Idempotent:
+# safe to call before every AUR install, only does real work once.
+AUR_SUDOERS_FILE=""
+
+enable_temp_passwordless_sudo() {
+    [ -n "$AUR_SUDOERS_FILE" ] && return 0
+    if [ -z "$SUDO_USER" ] || [ "$SUDO_USER" = "root" ]; then
+        return 1
+    fi
+    if ! command -v visudo &>/dev/null; then
+        log WARNING "visudo not found - cannot safely grant temporary sudo for AUR builds; yay may fail with 'a terminal is needed to read the password'"
+        return 1
+    fi
+    local f="/etc/sudoers.d/99-postinstall-aur-${SUDO_USER}"
+    local tmp; tmp=$(mktemp)
+    printf '%s ALL=(root) NOPASSWD: /usr/bin/pacman\n' "$SUDO_USER" > "$tmp"
+    if visudo -c -f "$tmp" &>/dev/null; then
+        install -m 0440 -o root -g root "$tmp" "$f"
+        AUR_SUDOERS_FILE="$f"
+        trap disable_temp_passwordless_sudo EXIT
+        trap 'disable_temp_passwordless_sudo; exit 130' INT TERM
+        log INFO "Granted $SUDO_USER temporary passwordless sudo for pacman (AUR builds only - removed automatically when this script exits)"
+    else
+        log WARNING "Generated sudoers rule failed validation - skipping temporary passwordless sudo"
+    fi
+    rm -f "$tmp"
+}
+
+disable_temp_passwordless_sudo() {
+    [ -n "$AUR_SUDOERS_FILE" ] && rm -f "$AUR_SUDOERS_FILE"
+    AUR_SUDOERS_FILE=""
 }
 
 # Enables the [multilib] repo (32-bit libs - needed for Steam, Wine, and most
