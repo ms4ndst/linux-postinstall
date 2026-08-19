@@ -1337,24 +1337,44 @@ install_windows_app() {
         SKIPPED_PACKAGES+=("Windows App"); ((TOTAL_SKIPPED++))
         log INFO "Already installed: Windows App (flatpak)"; return 0
     fi
-    local url tmp
-    url=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null \
-        | grep -oP '"browser_download_url":\s*"\K[^"]*x86_64[^"]*\.flatpak')
+    local api_json url tmp
+    api_json=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
+    if [ -z "$api_json" ]; then
+        log WARNING "Could not reach GitHub's API for $repo (network issue, or GitHub's unauthenticated rate limit - 60 requests/hour per IP - may already be used up) - skipping Windows App"
+        FAILED_PACKAGES+=("Windows App"); ((TOTAL_FAILED++)); return 1
+    fi
+    # Match any .flatpak asset rather than requiring "x86_64" in the
+    # filename specifically - the current release names it
+    # "Windows.App-<ver>-x86_64.flatpak" so the stricter match still works
+    # today, but there's only ever one .flatpak asset per release, so this
+    # is less likely to silently break if that naming ever changes upstream.
+    url=$(printf '%s' "$api_json" | grep -oP '"browser_download_url":\s*"\K[^"]*\.flatpak(?=")')
     if [ -z "$url" ]; then
-        log WARNING "Could not find a Windows App flatpak download URL - skipping"
+        log WARNING "Windows App's latest GitHub release has no .flatpak asset - skipping (check https://github.com/$repo/releases/latest manually)"
         FAILED_PACKAGES+=("Windows App"); ((TOTAL_FAILED++)); return 1
     fi
     tmp=$(mktemp -d)
     if ! curl -L -f --retry 2 -o "$tmp/windows-app.flatpak" "$url" 2>/dev/null; then
         rm -rf "$tmp"
-        log WARNING "Windows App download failed - skipping"
+        log WARNING "Windows App download failed ($url) - skipping"
         FAILED_PACKAGES+=("Windows App"); ((TOTAL_FAILED++)); return 1
     fi
     chmod 755 "$tmp" 2>/dev/null; chmod 644 "$tmp/windows-app.flatpak" 2>/dev/null
     chown "$SUDO_USER" "$tmp" "$tmp/windows-app.flatpak" 2>/dev/null || true
-    su - "$SUDO_USER" -c "flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo" 2>/dev/null || true
-    if su - "$SUDO_USER" -c "flatpak install --user -y '$tmp/windows-app.flatpak'" 2>/dev/null \
-        || su - "$SUDO_USER" -c "flatpak info --user '$app_id'" &>/dev/null; then
+    su - "$SUDO_USER" -c "flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo" || true
+    # Deliberately NOT silenced with 2>/dev/null on this specific call (unlike
+    # the curl steps above): this is the step that was reported failing in
+    # practice, and swallowing its stderr means the real reason (a runtime
+    # conflict between a system-wide and user-scope flathub remote, a stuck
+    # confirmation prompt, disk space, etc.) never gets seen - it just shows
+    # up as a generic "Failed: Windows App" with nothing to go on.
+    if su - "$SUDO_USER" -c "flatpak install --user -y '$tmp/windows-app.flatpak'"; then
+        rm -rf "$tmp"
+        INSTALLED_PACKAGES+=("Windows App"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Windows App (flatpak) - launch with: flatpak run $app_id"
+        return 0
+    fi
+    if su - "$SUDO_USER" -c "flatpak info --user '$app_id'" &>/dev/null; then
         rm -rf "$tmp"
         INSTALLED_PACKAGES+=("Windows App"); ((TOTAL_INSTALLED++))
         log SUCCESS "Installed: Windows App (flatpak) - launch with: flatpak run $app_id"
@@ -1362,7 +1382,7 @@ install_windows_app() {
     fi
     rm -rf "$tmp"
     FAILED_PACKAGES+=("Windows App"); ((TOTAL_FAILED++))
-    log ERROR "Failed: Windows App (flatpak)"
+    log ERROR "Failed: Windows App (flatpak) - see the flatpak error output above for the actual reason"
     return 1
 }
 
