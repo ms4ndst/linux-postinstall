@@ -1780,26 +1780,29 @@ install_peripheral_tools() {
 # setting can fix - only flipping this on-device flag does. Fully
 # package-manager-agnostic (Solaar's CLI is identical regardless of distro).
 fix_logitech_hires_scroll() {
-    local device_name="MX Anywhere 3S"
+    local device_name="MX Anywhere 3S" rc=0
     if ! command -v solaar &>/dev/null; then
         log INFO "Solaar not installed - installing it first..."
         install_peripheral_tools
     fi
     if ! command -v solaar &>/dev/null; then
         log ERROR "Solaar install failed - cannot apply the scroll fix"
-        return 1
-    fi
-    if ! solaar show 2>/dev/null | grep -qi "$device_name"; then
+        rc=1
+    elif ! solaar show 2>/dev/null | grep -qi "$device_name"; then
         log WARNING "'$device_name' not seen by Solaar - pair/connect it first (Bluetooth Settings), then re-run this from the Peripherals menu"
-        return 1
-    fi
-    if solaar config "$device_name" hires-smooth-resolution 1 2>/dev/null; then
+        rc=1
+    elif solaar config "$device_name" hires-smooth-resolution 1 2>/dev/null; then
         log SUCCESS "Enabled 'Scroll Wheel Resolution' on $device_name"
         log INFO "Stored on the mouse itself - no reboot needed, test scrolling now"
     else
         log WARNING "'solaar config \"$device_name\" hires-smooth-resolution 1' failed - run: solaar config \"$device_name\"  (no value) to list its actual setting names, the CLI name may differ on your Solaar version"
-        return 1
+        rc=1
     fi
+    # Every exit path above funnels through here (rc records the outcome)
+    # so whichever message printed actually gets read before the main menu
+    # loop clears the screen and redraws.
+    read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _
+    return $rc
 }
 
 # ========== NVIDIA DRIVER ==========
@@ -2001,6 +2004,7 @@ snapshot_create_now() {
         log ERROR "No snapshot tool available (Snapper/omarchy-snapshot/Timeshift) - run install_snapshots_full first"
         return 1
     fi
+    read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _
 }
 
 snapshot_list() {
@@ -2016,6 +2020,7 @@ snapshot_list() {
         log WARNING "No snapshot tool available (Snapper/Timeshift) - nothing to list"
         return 1
     fi
+    read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _
 }
 
 snapshot_open_gui() {
@@ -2357,6 +2362,15 @@ prompt_menu_category() {
 
     if $IS_OMARCHY; then
         log INFO "Omarchy's app launcher (Super+Space) already fuzzy-searches every installed app - no GNOME-style menu folder needed."
+        # On non-Omarchy this function always pauses naturally (it asks a
+        # y/N question about creating a GNOME app-folder below), which gives
+        # you time to read display_summary's output before the main menu
+        # redraws and clears the screen. Omarchy skips that question
+        # entirely, so without an explicit pause here the summary would
+        # flash by and vanish the instant this function returns - add the
+        # same "press Enter" pause used elsewhere (e.g. the Summary menu
+        # option) so a single-category run is actually readable here too.
+        read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _
         return 0
     fi
 
@@ -2631,11 +2645,12 @@ main() {
                 show_gui_tweaks_menu
                 read -r gui_choice
                 if $IS_OMARCHY; then
+                    local pause_prompt; pause_prompt="$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")"
                     case "$gui_choice" in
                         0) continue ;;
-                        1) reset_tracking; install_gui_tweaks; display_summary ;;
-                        2) reset_tracking; install_nerd_fonts; display_summary ;;
-                        3) reset_tracking; install_chris_titus_mybash; display_summary ;;
+                        1) reset_tracking; install_gui_tweaks; display_summary; read -p "$pause_prompt" _ ;;
+                        2) reset_tracking; install_nerd_fonts; display_summary; read -p "$pause_prompt" _ ;;
+                        3) reset_tracking; install_chris_titus_mybash; display_summary; read -p "$pause_prompt" _ ;;
                         4) omarchy_theme_picker ;;
                         *) log ERROR "Invalid choice"; sleep 2 ;;
                     esac
@@ -2703,9 +2718,9 @@ main() {
                 read -r drv_choice
                 case "$drv_choice" in
                     0) continue ;;
-                    1) reset_tracking; install_nvidia_driver; display_summary ;;
-                    2) reset_tracking; install_blackarch_repo; display_summary ;;
-                    3) reset_tracking; install_chaotic_aur; display_summary ;;
+                    1) reset_tracking; install_nvidia_driver; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
+                    2) reset_tracking; install_blackarch_repo; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
+                    3) reset_tracking; install_chaotic_aur; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
@@ -2714,7 +2729,7 @@ main() {
                 read -r snap_choice
                 case "$snap_choice" in
                     0) continue ;;
-                    1) reset_tracking; install_snapshots_full; display_summary ;;
+                    1) reset_tracking; install_snapshots_full; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
                     2) snapshot_create_now ;;
                     3) snapshot_list ;;
                     4) snapshot_open_gui ;;
@@ -2726,7 +2741,7 @@ main() {
                 read -r periph_choice
                 case "$periph_choice" in
                     0) continue ;;
-                    1) reset_tracking; install_peripheral_tools; display_summary ;;
+                    1) reset_tracking; install_peripheral_tools; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
                     2) fix_logitech_hires_scroll ;;
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
