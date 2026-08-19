@@ -1336,6 +1336,7 @@ install_containers() {
         systemctl enable libvirtd 2>/dev/null || true
         systemctl start libvirtd 2>/dev/null || true
         log INFO "libvirtd configured"
+        install_virtio_win
     fi
 
     # Cockpit is a real, actively-maintained web GUI
@@ -1357,6 +1358,37 @@ install_containers() {
     fi
 
     install_docker_libvirt_forward_fix
+}
+
+# Virtio-Win: the Windows guest drivers (network, disk, balloon, etc) needed
+# for a Windows VM under KVM/QEMU to get more than a crawling emulated IDE
+# disk and no network. Unlike Fedora (fedorapeople.org add-on repo) or Arch
+# (AUR), no Debian/Ubuntu apt package or PPA for these Windows driver ISOs
+# exists at all - so this goes straight to a one-shot download of upstream's
+# "latest stable" ISO rather than trying a package manager path first.
+install_virtio_win() {
+    if [ -e /var/lib/libvirt/images/virtio-win.iso ]; then
+        SKIPPED_PACKAGES+=("Virtio-Win drivers"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Virtio-Win drivers"; return 0
+    fi
+    download_virtio_win_iso
+}
+
+# Static URL maintained upstream to always point at the current stable
+# release - no version parsing/GitHub-releases lookup needed.
+download_virtio_win_iso() {
+    mkdir -p /var/lib/libvirt/images
+    log INFO "Downloading latest stable Virtio-Win ISO..."
+    local url="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso"
+    local tmp="/var/lib/libvirt/images/.virtio-win.iso.tmp"
+    if curl -fL --retry 3 -o "$tmp" "$url" 2>/dev/null && [ -s "$tmp" ]; then
+        mv "$tmp" /var/lib/libvirt/images/virtio-win.iso
+        INSTALLED_PACKAGES+=("Virtio-Win ISO"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Downloaded: Virtio-Win ISO -> /var/lib/libvirt/images/virtio-win.iso"
+    else
+        rm -f "$tmp"
+        FAILED_PACKAGES+=("Virtio-Win ISO"); ((TOTAL_FAILED++))
+        log WARNING "Virtio-Win ISO download failed (needs network access to fedorapeople.org)"
+    fi
 }
 
 # Docker sets the iptables FORWARD chain's default policy to DROP and routes
@@ -1969,6 +2001,7 @@ install_gnome_extensions() {
         "user-theme@gnome-shell-extensions.gcampax.github.com"         # User Themes (ego 19)
         "clipboard-history@alexsaveau.dev"                             # Clipboard History (ego 4839)
         "dash-to-dock@micxgx.gmail.com"                                # Dash to Dock (ego 307)
+        "compact-quick-settings@gnome-shell-extensions.mariospr.org"   # Compact Quick Settings (ego 5527)
     )
     local e ok=0
     for e in "${exts[@]}"; do
@@ -2524,6 +2557,7 @@ install_nightfox_theme()   { install_gtk_theme_repo "Nightfox"   "https://github
 install_osaka_theme()      { install_gtk_theme_repo "Osaka"      "https://github.com/Fausto-Korpsvart/Osaka-GTK-Theme.git"      "themes/install.sh" "osaka"      --libadwaita; }
 install_rose_pine_theme()  { install_gtk_theme_repo "Rose Pine"  "https://github.com/Fausto-Korpsvart/Rose-Pine-GTK-Theme.git"  "themes/install.sh" "rose-pine"  --libadwaita; }
 install_tokyonight_theme() { install_gtk_theme_repo "Tokyonight" "https://github.com/Fausto-Korpsvart/Tokyonight-GTK-Theme.git" "themes/install.sh" "tokyonight" --libadwaita; }
+install_colloid_theme()    { install_gtk_theme_repo "Colloid"    "https://github.com/vinceliuice/Colloid-gtk-theme.git"         "install.sh"        "colloid"    --libadwaita; }
 
 install_oval_theme() { install_shell_theme_raw "Oval" "https://github.com/metro2222/ovel.git" "Oval" "Oval"; }
 install_rounded_rectangle_theme() {
@@ -2532,8 +2566,76 @@ install_rounded_rectangle_theme() {
         "Rounded-Rectangle-DarkBlue 1.3v" "Rounded-Rectangle-DarkBlue"
 }
 
+install_arc_theme() { batch_install "Arc Theme" arc-theme; }
+
+# Material GNOME (https://github.com/SakibShahariar/material-gnome-theme) -
+# unlike the vinceliuice/Fausto-Korpsvart family above, the repo root IS the
+# theme tree with no install.sh, so it's a plain per-user clone-and-copy into
+# ~/.themes rather than a call through install_gtk_theme_repo. GTK4/Libadwaita
+# apps ignore ~/.themes entirely, so the upstream README also has us symlink
+# its gtk-4.0 stylesheets into ~/.config/gtk-4.0.
+install_material_gnome_theme() {
+    local user uid
+    if ! read -r user uid < <(resolve_desktop_session); then
+        log INFO "No active desktop session - skipping Material GNOME theme"
+        SKIPPED_PACKAGES+=("Material GNOME theme"); ((TOTAL_SKIPPED++)); return 0
+    fi
+    local uh; uh=$(getent passwd "$user" | cut -d: -f6)
+    if [ -d "$uh/.themes/Material-Gnome" ]; then
+        SKIPPED_PACKAGES+=("Material GNOME theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Material GNOME theme"; return 0
+    fi
+    local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
+    if ! su - "$user" -c "git clone --depth 1 https://github.com/SakibShahariar/material-gnome-theme.git '$t/src'" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("Material GNOME theme"); ((TOTAL_FAILED++))
+        log WARNING "Material GNOME theme clone failed (needs network access to github.com)"; return 1
+    fi
+    log INFO "Installing Material GNOME theme..."
+    if su - "$user" -c "rm -rf '$t/src/.git' && mkdir -p '$uh/.themes/Material-Gnome' && cp -r '$t/src/.' '$uh/.themes/Material-Gnome' && mkdir -p '$uh/.config/gtk-4.0' && ln -sf '$uh/.themes/Material-Gnome/gtk-4.0/gtk.css' '$uh/.config/gtk-4.0/gtk.css' && ln -sf '$uh/.themes/Material-Gnome/gtk-4.0/gtk-dark.css' '$uh/.config/gtk-4.0/gtk-dark.css'" 2>/dev/null \
+        && [ -d "$uh/.themes/Material-Gnome" ]; then
+        INSTALLED_PACKAGES+=("Material GNOME theme"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Material GNOME theme (~/.themes - pick it in gnome-tweaks)"
+    else
+        FAILED_PACKAGES+=("Material GNOME theme"); ((TOTAL_FAILED++)); log WARNING "Material GNOME theme install failed"
+    fi
+    rm -rf "$t"
+}
+
+# Lycia (https://github.com/Aevstiel/Lycia-Theme) ships its own install.sh,
+# but unlike the vinceliuice/Fausto-Korpsvart family it takes no CLI flags -
+# it interactively asks two questions instead. Feed it "yes" to the
+# GTK4/Libadwaita files and "no" to the GDM login-screen theme, since that
+# step overwrites a system gnome-shell resource file - too invasive for an
+# unattended installer.
+install_lycia_theme() {
+    local user uid
+    if ! read -r user uid < <(resolve_desktop_session); then
+        log INFO "No active desktop session - skipping Lycia theme"
+        SKIPPED_PACKAGES+=("Lycia theme"); ((TOTAL_SKIPPED++)); return 0
+    fi
+    local uh; uh=$(getent passwd "$user" | cut -d: -f6)
+    if [ -d "$uh/.themes/Lycia" ]; then
+        SKIPPED_PACKAGES+=("Lycia theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Lycia theme"; return 0
+    fi
+    # GTK3 murrine engine + gnome-themes-extra assets are runtime deps the
+    # theme itself needs to render - not something its installer pulls in.
+    batch_install "Lycia Theme Dependencies" gtk2-engines-murrine sassc gnome-themes-extra
+    local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
+    if ! su - "$user" -c "git clone --depth 1 https://github.com/Aevstiel/Lycia-Theme.git '$t/src'" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("Lycia theme"); ((TOTAL_FAILED++))
+        log WARNING "Lycia theme clone failed (needs network access to github.com)"; return 1
+    fi
+    log INFO "Installing Lycia theme..."
+    if printf 'Y\nN\n' | su - "$user" -c "bash '$t/src/install.sh'" 2>/dev/null && [ -d "$uh/.themes/Lycia" ]; then
+        INSTALLED_PACKAGES+=("Lycia theme"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Lycia theme (~/.themes - pick it in gnome-tweaks)"
+    else
+        FAILED_PACKAGES+=("Lycia theme"); ((TOTAL_FAILED++)); log WARNING "Lycia theme install failed"
+    fi
+    rm -rf "$t"
+}
+
 install_themes() {
-    batch_install "Themes" arc-theme
+    install_arc_theme
     install_graphite_theme
     install_catppuccin_theme
     install_everforest_theme
@@ -2544,9 +2646,12 @@ install_themes() {
     install_osaka_theme
     install_rose_pine_theme
     install_tokyonight_theme
+    install_colloid_theme
     install_oval_theme
     install_rounded_rectangle_theme
     install_obsidian_flow_theme
+    install_material_gnome_theme
+    install_lycia_theme
 }
 
 install_cursor_themes() {
@@ -3369,6 +3474,35 @@ show_browsers_menu() {
     printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-8]${NC}${LAVENDER}: ${NC}"
 }
 
+show_gtk_theme_menu() {
+    clear
+    ui_header "THEMES (GTK + GNOME Shell)" "Choose which theme(s) to install"
+    echo
+    ui_item 1 "All Themes (everything below)"
+    ui_item 2 "Arc"
+    ui_item 3 "Graphite"
+    ui_item 4 "Catppuccin"
+    ui_item 5 "Everforest"
+    ui_item 6 "Gruvbox"
+    ui_item 7 "Kanagawa"
+    ui_item 8 "Material"
+    ui_item 9 "Nightfox"
+    ui_item 10 "Osaka"
+    ui_item 11 "Rose Pine"
+    ui_item 12 "Tokyonight"
+    ui_item 13 "Colloid"
+    ui_item 14 "Oval"
+    ui_item 15 "Rounded Rectangle Dark Blue"
+    ui_item 16 "Obsidian Flow"
+    ui_item 17 "Material GNOME"
+    ui_item 18 "Lycia"
+    echo
+    ui_item 0 "Back"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-18]${NC}${LAVENDER}: ${NC}"
+}
+
 show_communication_menu() {
     clear
     ui_header "COMMUNICATION"
@@ -3392,7 +3526,7 @@ show_gui_tweaks_menu() {
     echo
     ui_item 1 "All GUI Tweaks (everything below)"
     ui_item 2 "Icon Sets"
-    ui_item 3 "Themes (GTK + GNOME Shell)"
+    ui_item 3 "Themes (GTK + GNOME Shell - choose which to install)"
     ui_item 4 "Cursor Themes"
     ui_item 5 "Nerd Fonts"
     ui_item 6 "Chris Titus mybash"
@@ -3535,7 +3669,32 @@ main() {
                     0) continue ;;
                     1) reset_tracking; install_gui_tweaks;        display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                     2) reset_tracking; install_icon_sets;         display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-                    3) reset_tracking; install_themes;            display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    3)
+                        show_gtk_theme_menu
+                        read -r theme_choice
+                        case "$theme_choice" in
+                            0) continue ;;
+                            1) reset_tracking; install_themes;               display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            2) reset_tracking; install_arc_theme;            display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            3) reset_tracking; install_graphite_theme;      display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            4) reset_tracking; install_catppuccin_theme;    display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            5) reset_tracking; install_everforest_theme;    display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            6) reset_tracking; install_gruvbox_theme;       display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            7) reset_tracking; install_kanagawa_theme;      display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            8) reset_tracking; install_material_theme;     display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            9) reset_tracking; install_nightfox_theme;     display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            10) reset_tracking; install_osaka_theme;       display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            11) reset_tracking; install_rose_pine_theme;   display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            12) reset_tracking; install_tokyonight_theme;  display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            13) reset_tracking; install_colloid_theme;     display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            14) reset_tracking; install_oval_theme;        display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            15) reset_tracking; install_rounded_rectangle_theme; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            16) reset_tracking; install_obsidian_flow_theme; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            17) reset_tracking; install_material_gnome_theme; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            18) reset_tracking; install_lycia_theme;       display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            *) log ERROR "Invalid choice"; sleep 2 ;;
+                        esac
+                        ;;
                     4) reset_tracking; install_cursor_themes;     display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                     5) reset_tracking; install_nerd_fonts; configure_terminal_font; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                     6) reset_tracking; install_chris_titus_mybash; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;

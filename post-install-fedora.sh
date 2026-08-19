@@ -1236,8 +1236,55 @@ install_containers() {
         systemctl enable --now libvirtd 2>/dev/null
         [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ] && usermod -aG libvirt "$SUDO_USER" 2>/dev/null \
             && log INFO "Added $SUDO_USER to the libvirt group (log out/in to take effect)"
+        install_virtio_win
     fi
     install_docker_libvirt_forward_fix
+}
+
+# Virtio-Win: the Windows guest drivers (network, disk, balloon, etc) needed
+# for a Windows VM under KVM/QEMU to get more than a crawling emulated IDE
+# disk and no network. Fedora doesn't carry these RPMs in its own repos (the
+# binaries are Red Hat/Fedora-virt-SIG-built Windows drivers, not something
+# Fedora packaging accepts directly) - the upstream-maintained add-on repo at
+# fedorapeople.org is the standard, dnf-updatable way to get them instead of
+# downloading the ISO by hand. Falls back to a direct one-shot ISO download
+# if the repo or package install doesn't go through (offline mirror, repo
+# down, etc) so a working ISO still lands either way.
+install_virtio_win() {
+    if [ -e /var/lib/libvirt/images/virtio-win.iso ]; then
+        SKIPPED_PACKAGES+=("Virtio-Win drivers"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Virtio-Win drivers"; return 0
+    fi
+    mkdir -p /var/lib/libvirt/images
+    log INFO "Adding the virtio-win repo (fedorapeople.org)..."
+    if dnf config-manager addrepo --from-repofile=https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo 2>/dev/null \
+        || dnf config-manager --add-repo https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo 2>/dev/null; then
+        batch_install "Virtio-Win Drivers" virtio-win
+    fi
+    if is_installed virtio-win && [ -f /usr/share/virtio-win/virtio-win.iso ]; then
+        ln -sf /usr/share/virtio-win/virtio-win.iso /var/lib/libvirt/images/virtio-win.iso
+        log SUCCESS "Virtio-Win ISO ready at /var/lib/libvirt/images/virtio-win.iso (symlink to /usr/share/virtio-win - stays current via dnf)"
+        return 0
+    fi
+    log WARNING "virtio-win repo/package unavailable - downloading the latest stable ISO directly instead"
+    download_virtio_win_iso
+}
+
+# Static URL maintained upstream to always point at the current stable
+# release - no version parsing/GitHub-releases lookup needed.
+download_virtio_win_iso() {
+    mkdir -p /var/lib/libvirt/images
+    log INFO "Downloading latest stable Virtio-Win ISO..."
+    local url="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso"
+    local tmp="/var/lib/libvirt/images/.virtio-win.iso.tmp"
+    if curl -fL --retry 3 -o "$tmp" "$url" 2>/dev/null && [ -s "$tmp" ]; then
+        mv "$tmp" /var/lib/libvirt/images/virtio-win.iso
+        INSTALLED_PACKAGES+=("Virtio-Win ISO"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Downloaded: Virtio-Win ISO -> /var/lib/libvirt/images/virtio-win.iso"
+    else
+        rm -f "$tmp"
+        FAILED_PACKAGES+=("Virtio-Win ISO"); ((TOTAL_FAILED++))
+        log WARNING "Virtio-Win ISO download failed (needs network access to fedorapeople.org)"
+    fi
 }
 
 # Docker sets the legacy iptables FORWARD chain's default policy to DROP and
@@ -1570,6 +1617,7 @@ install_gnome_extensions() {
         "user-theme@gnome-shell-extensions.gcampax.github.com"
         "clipboard-history@alexsaveau.dev"
         "dash-to-dock@micxgx.gmail.com"
+        "compact-quick-settings@gnome-shell-extensions.mariospr.org"
     )
     local e ok=0
     for e in "${exts[@]}"; do
@@ -1669,27 +1717,27 @@ install_icon_sets() {
 # (Qogir, WhiteSur, Vimix). Their destination logic is $UID-aware (root ->
 # /usr/share/icons) with no other hardcoded $HOME dependency, so this runs
 # directly as root - system-wide, no su-as-desktop-user needed.
-install_icon_theme_repo() {
-    local label="$1" repo="$2" slug="$3"; shift 3
+install_vinceliuice_repo() {
+    local label="$1" repo="$2" slug="$3" kind="$4"; shift 4
     local extra_args=("$@")
 
     local marker="/var/lib/fedora-postinstall-themes/${slug}.done"
     if [ -f "$marker" ]; then
-        SKIPPED_PACKAGES+=("$label icons"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label icons"; return 0
+        SKIPPED_PACKAGES+=("$label $kind"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label $kind"; return 0
     fi
     command -v gtk-update-icon-cache &>/dev/null || safe_install gtk3
 
     local t; t=$(mktemp -d)
     if ! git clone --depth 1 "$repo" "$t/src" 2>/dev/null; then
-        rm -rf "$t"; FAILED_PACKAGES+=("$label icons"); ((TOTAL_FAILED++))
-        log WARNING "$label icons clone failed (needs network access to github.com)"; return 1
+        rm -rf "$t"; FAILED_PACKAGES+=("$label $kind"); ((TOTAL_FAILED++))
+        log WARNING "$label $kind clone failed (needs network access to github.com)"; return 1
     fi
-    log INFO "Installing $label icon theme..."
+    log INFO "Installing $label $kind..."
     if bash "$t/src/install.sh" "${extra_args[@]}" 2>/dev/null; then
         mkdir -p "$(dirname "$marker")" && touch "$marker"
-        INSTALLED_PACKAGES+=("$label icons"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $label icons (/usr/share/icons - pick via gnome-tweaks)"
+        INSTALLED_PACKAGES+=("$label $kind"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $label $kind (pick via gnome-tweaks)"
     else
-        FAILED_PACKAGES+=("$label icons"); ((TOTAL_FAILED++)); log WARNING "$label icons install failed"
+        FAILED_PACKAGES+=("$label $kind"); ((TOTAL_FAILED++)); log WARNING "$label $kind install failed"
     fi
     rm -rf "$t"
 }
@@ -1712,9 +1760,10 @@ install_newaita_icons() {
     rm -rf "$t"
 }
 
-install_qogir_icons()    { install_icon_theme_repo "Qogir"    "https://github.com/vinceliuice/Qogir-icon-theme.git"    "qogir-icons"; }
-install_whitesur_icons() { install_icon_theme_repo "WhiteSur" "https://github.com/vinceliuice/WhiteSur-icon-theme.git" "whitesur-icons"; }
-install_vimix_icons()    { install_icon_theme_repo "Vimix"    "https://github.com/vinceliuice/Vimix-icon-theme.git"    "vimix-icons"; }
+install_qogir_icons()    { install_vinceliuice_repo "Qogir"    "https://github.com/vinceliuice/Qogir-icon-theme.git"    "qogir-icons"    "icons"; }
+install_whitesur_icons() { install_vinceliuice_repo "WhiteSur" "https://github.com/vinceliuice/WhiteSur-icon-theme.git" "whitesur-icons" "icons"; }
+install_vimix_icons()    { install_vinceliuice_repo "Vimix"    "https://github.com/vinceliuice/Vimix-icon-theme.git"    "vimix-icons"    "icons"; }
+install_colloid_theme()  { install_vinceliuice_repo "Colloid"  "https://github.com/vinceliuice/Colloid-gtk-theme.git"  "colloid-gtk-theme" "theme"; }
 
 # ── GTK Theme ──────────────────────────────────────────────────────────────
 install_nordic_theme() {
@@ -1744,8 +1793,71 @@ install_nordic_theme() {
     rm -rf "$t"
 }
 
+install_material_gnome_theme() {
+    local user uid
+    if ! read -r user uid < <(resolve_desktop_session); then
+        log INFO "No active desktop session - skipping Material GNOME theme"
+        SKIPPED_PACKAGES+=("Material GNOME theme"); ((TOTAL_SKIPPED++)); return 0
+    fi
+    local uh; uh=$(getent passwd "$user" | cut -d: -f6)
+    if [ -d "$uh/.themes/Material-Gnome" ]; then
+        SKIPPED_PACKAGES+=("Material GNOME theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Material GNOME theme"; return 0
+    fi
+    local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
+    if ! su - "$user" -c "git clone --depth 1 https://github.com/SakibShahariar/material-gnome-theme.git '$t/src'" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("Material GNOME theme"); ((TOTAL_FAILED++))
+        log WARNING "Material GNOME theme clone failed (needs network access to github.com)"; return 1
+    fi
+    # Repo root IS the theme tree (no install.sh) - drop it straight into
+    # ~/.themes/Material-Gnome, then symlink the GTK4/libadwaita stylesheets
+    # into ~/.config/gtk-4.0 since those apps ignore ~/.themes entirely.
+    log INFO "Installing Material GNOME theme..."
+    if su - "$user" -c "rm -rf '$t/src/.git' && mkdir -p '$uh/.themes/Material-Gnome' && cp -r '$t/src/.' '$uh/.themes/Material-Gnome' && mkdir -p '$uh/.config/gtk-4.0' && ln -sf '$uh/.themes/Material-Gnome/gtk-4.0/gtk.css' '$uh/.config/gtk-4.0/gtk.css' && ln -sf '$uh/.themes/Material-Gnome/gtk-4.0/gtk-dark.css' '$uh/.config/gtk-4.0/gtk-dark.css'" 2>/dev/null \
+        && [ -d "$uh/.themes/Material-Gnome" ]; then
+        INSTALLED_PACKAGES+=("Material GNOME theme"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Material GNOME theme (~/.themes - pick it in gnome-tweaks)"
+    else
+        FAILED_PACKAGES+=("Material GNOME theme"); ((TOTAL_FAILED++)); log WARNING "Material GNOME theme install failed"
+    fi
+    rm -rf "$t"
+}
+
+install_lycia_theme() {
+    local user uid
+    if ! read -r user uid < <(resolve_desktop_session); then
+        log INFO "No active desktop session - skipping Lycia theme"
+        SKIPPED_PACKAGES+=("Lycia theme"); ((TOTAL_SKIPPED++)); return 0
+    fi
+    local uh; uh=$(getent passwd "$user" | cut -d: -f6)
+    if [ -d "$uh/.themes/Lycia" ]; then
+        SKIPPED_PACKAGES+=("Lycia theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Lycia theme"; return 0
+    fi
+    # GTK3 murrine engine + gnome-themes-extra assets are runtime deps the
+    # theme itself needs to render - not something its installer pulls in.
+    batch_install "Lycia Theme Dependencies" gtk-murrine-engine sassc gnome-themes-extra
+    local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
+    if ! su - "$user" -c "git clone --depth 1 https://github.com/Aevstiel/Lycia-Theme.git '$t/src'" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("Lycia theme"); ((TOTAL_FAILED++))
+        log WARNING "Lycia theme clone failed (needs network access to github.com)"; return 1
+    fi
+    # install.sh interactively asks two questions: install the GTK4/Libadwaita
+    # files (yes) and install the GDM login-screen theme (no - that overwrites
+    # a system gnome-shell resource file, too invasive for an unattended run).
+    log INFO "Installing Lycia theme..."
+    if printf 'Y\nN\n' | su - "$user" -c "bash '$t/src/install.sh'" 2>/dev/null && [ -d "$uh/.themes/Lycia" ]; then
+        INSTALLED_PACKAGES+=("Lycia theme"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Lycia theme (~/.themes - pick it in gnome-tweaks)"
+    else
+        FAILED_PACKAGES+=("Lycia theme"); ((TOTAL_FAILED++)); log WARNING "Lycia theme install failed"
+    fi
+    rm -rf "$t"
+}
+
 install_themes() {
     install_nordic_theme
+    install_colloid_theme
+    install_material_gnome_theme
+    install_lycia_theme
 }
 
 install_cursor_themes() {
@@ -2480,7 +2592,7 @@ show_gui_tweaks_menu() {
     echo
     ui_item 1 "All GUI Tweaks (everything below)"
     ui_item 2 "Icon Sets"
-    ui_item 3 "GTK Theme (Nordic)"
+    ui_item 3 "GTK Themes (choose: Nordic / Colloid / Material GNOME / Lycia)"
     ui_item 4 "Cursor Themes"
     ui_item 5 "Nerd Fonts"
     ui_item 6 "Chris Titus mybash"
@@ -2491,6 +2603,22 @@ show_gui_tweaks_menu() {
     echo
     ui_rule
     printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-8]${NC}${LAVENDER}: ${NC}"
+}
+
+show_gtk_theme_menu() {
+    clear
+    ui_header "GTK THEMES" "Choose which GTK theme(s) to install"
+    echo
+    ui_item 1 "All GTK Themes (Nordic + Colloid + Material GNOME + Lycia)"
+    ui_item 2 "Nordic"
+    ui_item 3 "Colloid"
+    ui_item 4 "Material GNOME"
+    ui_item 5 "Lycia"
+    echo
+    ui_item 0 "Back"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-5]${NC}${LAVENDER}: ${NC}"
 }
 
 show_drivers_menu() {
@@ -2592,7 +2720,19 @@ main() {
                     0) continue ;;
                     1) reset_tracking; install_gui_tweaks;        display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                     2) reset_tracking; install_icon_sets;         display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-                    3) reset_tracking; install_themes;            display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    3)
+                        show_gtk_theme_menu
+                        read -r theme_choice
+                        case "$theme_choice" in
+                            0) continue ;;
+                            1) reset_tracking; install_themes;               display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            2) reset_tracking; install_nordic_theme;         display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            3) reset_tracking; install_colloid_theme;        display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            4) reset_tracking; install_material_gnome_theme; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            5) reset_tracking; install_lycia_theme;          display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                            *) log ERROR "Invalid choice"; sleep 2 ;;
+                        esac
+                        ;;
                     4) reset_tracking; install_cursor_themes;     display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                     5) reset_tracking; install_nerd_fonts; configure_terminal_font; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                     6) reset_tracking; install_chris_titus_mybash; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;

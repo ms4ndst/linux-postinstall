@@ -474,7 +474,9 @@ This category now actually covers both halves of its name — previously it only
 - `libvirt-daemon-system`, `libvirt-clients`, `bridge-utils`
 - `virtinst`, `virt-viewer`, `spice-client-gtk` — needed for virt-manager to actually create VMs and show their graphical console
 - **GUI front-ends (both installed — different UX, not a duplicate):** `virt-manager` (full-featured, multi-VM) and `gnome-boxes` (GNOME's simpler one-VM-at-a-time tool)
-- If `virsh` is available: the invoking user is added to the `libvirt` group and `libvirtd` is enabled/started
+- If `virsh` is available: the invoking user is added to the `libvirt` group, `libvirtd` is enabled/started, and the Virtio-Win Windows-guest drivers are fetched (see below)
+
+**Virtio-Win drivers (Windows guests):** no Debian/Ubuntu apt package or PPA exists for these, so the script downloads upstream's "latest stable" ISO directly (a static URL that's always kept current) to `/var/lib/libvirt/images/virtio-win.iso` — point a Windows VM's second CD-ROM at it during install to get the virtio network/disk/balloon drivers, instead of a crawling emulated IDE disk and no network. Skipped if that file already exists.
 
 **Cockpit (Web GUI):**
 
@@ -545,7 +547,7 @@ All of these register in the installed/skipped/failed tracking, so they appear i
 
 #### GUI Tweaks
 
-Option `22` has its own sub-menu so you can install everything below at once, or pick just one piece (e.g. only **Themes**) instead of the full bundle: **All GUI Tweaks**, **Icon Sets**, **Themes**, **Cursor Themes**, **Nerd Fonts**, **Chris Titus mybash**, **GUI Tools**, **GNOME Shell Extensions**.
+Option `22` has its own sub-menu so you can install everything below at once, or pick just one piece (e.g. only **Themes**) instead of the full bundle: **All GUI Tweaks**, **Icon Sets**, **Themes**, **Cursor Themes**, **Nerd Fonts**, **Chris Titus mybash**, **GUI Tools**, **GNOME Shell Extensions**. **Themes** itself opens a further sub-menu so you can pick any single theme instead of installing the full curated set.
 
 **Icon Sets:** (creators credited in [Acknowledgments](#-acknowledgments))
 
@@ -559,9 +561,11 @@ Option `22` has its own sub-menu so you can install everything below at once, or
 
 **Third-party GTK/Shell themes:** Beyond the apt-packaged `arc-theme`, a curated set of popular GitHub theme projects is installed straight from source, entirely **as the logged-in desktop user** (needs an active GNOME session — skipped cleanly otherwise, same as the GNOME extensions step):
 
-- **SASS-built GTK themes** ([Graphite](https://github.com/vinceliuice/Graphite-gtk-theme), [Catppuccin](https://github.com/Fausto-Korpsvart/Catppuccin-GTK-Theme), [Everforest](https://github.com/Fausto-Korpsvart/Everforest-GTK-Theme), [Gruvbox](https://github.com/Fausto-Korpsvart/Gruvbox-GTK-Theme), [Kanagawa](https://github.com/Fausto-Korpsvart/Kanagawa-GKT-Theme), [Material](https://github.com/Fausto-Korpsvart/Material-GTK-Themes), [Nightfox](https://github.com/Fausto-Korpsvart/Nightfox-GTK-Theme), [Osaka](https://github.com/Fausto-Korpsvart/Osaka-GTK-Theme), [Rosé Pine](https://github.com/Fausto-Korpsvart/Rose-Pine-GTK-Theme), [Tokyonight](https://github.com/Fausto-Korpsvart/Tokyonight-GTK-Theme)) — each is cloned and run through its own `install.sh` with `--libadwaita` (so GTK4/Libadwaita apps pick it up too), landing in `~/.themes`. `sassc` is installed first since every one of these installers self-elevates with an internal `sudo apt install sassc` when it's missing, which would otherwise hang waiting for a terminal. Idempotent via a per-theme sentinel file under `~/.cache/ubuntu-postinstall-themes/`, since (unlike an apt package) there's no single "is it installed" check for a theme.
+- **SASS-built GTK themes** ([Graphite](https://github.com/vinceliuice/Graphite-gtk-theme), [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme), [Catppuccin](https://github.com/Fausto-Korpsvart/Catppuccin-GTK-Theme), [Everforest](https://github.com/Fausto-Korpsvart/Everforest-GTK-Theme), [Gruvbox](https://github.com/Fausto-Korpsvart/Gruvbox-GTK-Theme), [Kanagawa](https://github.com/Fausto-Korpsvart/Kanagawa-GKT-Theme), [Material](https://github.com/Fausto-Korpsvart/Material-GTK-Themes), [Nightfox](https://github.com/Fausto-Korpsvart/Nightfox-GTK-Theme), [Osaka](https://github.com/Fausto-Korpsvart/Osaka-GTK-Theme), [Rosé Pine](https://github.com/Fausto-Korpsvart/Rose-Pine-GTK-Theme), [Tokyonight](https://github.com/Fausto-Korpsvart/Tokyonight-GTK-Theme)) — each is cloned and run through its own `install.sh` with `--libadwaita` (so GTK4/Libadwaita apps pick it up too), landing in `~/.themes`. `sassc` is installed first since every one of these installers self-elevates with an internal `sudo apt install sassc` when it's missing, which would otherwise hang waiting for a terminal. Idempotent via a per-theme sentinel file under `~/.cache/ubuntu-postinstall-themes/`, since (unlike an apt package) there's no single "is it installed" check for a theme.
 - **Ready-made GNOME Shell themes** ([Oval](https://github.com/metro2222/ovel), [Rounded Rectangle Dark Blue](https://github.com/metro2222/rounded-rectangle-dark-blue-theme)) — no build step, just copied into `~/.local/share/themes/`.
 - **[Obsidian Flow](https://github.com/JustDeax/Obsidian-flow-shell-theme)** — installed via its own Python installer (`install.py -a`, all accent colors/light/dark) rather than a folder copy, into `~/.themes`.
+- **[Material GNOME](https://github.com/SakibShahariar/material-gnome-theme)** — the repo root is the theme tree itself with no installer, so it's cloned and copied straight into `~/.themes/Material-Gnome`; its GTK4/Libadwaita stylesheets are then symlinked into `~/.config/gtk-4.0` since those apps ignore `~/.themes` entirely.
+- **[Lycia](https://github.com/Aevstiel/Lycia-Theme)** — its own `install.sh` is interactive, so answers are piped in: yes to the GTK4/Libadwaita files, no to the GDM login-screen theme (that step overwrites a system `gnome-shell-theme.gresource`, too invasive for an unattended installer). Needs `gtk2-engines-murrine`, `sassc`, and `gnome-themes-extra` as runtime dependencies, installed alongside it.
 
 All of these need the **User Themes** extension (installed by the GNOME extensions step above) to actually select and apply a shell theme; GTK themes are selectable directly in `gnome-tweaks`.
 
@@ -599,7 +603,7 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Ner
 
 **GUI Tools:** `gnome-tweaks`, `gnome-shell-extensions`, `gnome-themes-extra`, `nautilus`, `eog`, `file-roller`, `simple-scan`, `gnome-screenshot`, `gnome-system-monitor`, `dconf-editor`
 
-**GNOME Shell extensions:** installed via [`gext`](https://github.com/essembeh/gnome-extensions-cli) (set up per-user with `pipx`), as the logged-in user (needs an active GNOME session — skipped cleanly otherwise). Curated set: GSConnect, Window State Manager, Bluetooth Battery Meter, Auto Move Windows, User Themes, Clipboard History, [Dash to Dock](https://extensions.gnome.org/extension/307/dash-to-dock/). Best-effort — a failed extension is logged and skipped; some need a log-out/in to activate.
+**GNOME Shell extensions:** installed via [`gext`](https://github.com/essembeh/gnome-extensions-cli) (set up per-user with `pipx`), as the logged-in user (needs an active GNOME session — skipped cleanly otherwise). Curated set: GSConnect, Window State Manager, Bluetooth Battery Meter, Auto Move Windows, User Themes, Clipboard History, [Dash to Dock](https://extensions.gnome.org/extension/307/dash-to-dock/), [Compact Quick Settings](https://extensions.gnome.org/extension/5527/compact-quick-settings/). Best-effort — a failed extension is logged and skipped; some need a log-out/in to activate.
 
 **Logiops (Logitech HID++ driver) — optional prompt:** builds [PixlOne/logiops](https://github.com/PixlOne/logiops) from source and enables the `logid` service. **Prompted opt-in** because it only matters for configurable Logitech mice/keyboards and pulls a build toolchain. Writes a working `/etc/logid.cfg` (MX Master 3 / MX Master — gestures, smartshift, hi-res scroll, DPI) **embedded in the script** so it works standalone; any existing config is backed up to `/etc/logid.cfg.bak.<timestamp>` first. Edit the config in `write_logid_config()` to change mappings.
 
@@ -1162,7 +1166,9 @@ Calls the same Node.js installer used by [Fedora: Web Development](#fedora-web-d
 - If moby-engine installs successfully: the invoking user is added to the `docker` group and the service is enabled/started
 - `incus` — natively packaged in Fedora since Fedora 41, the community-maintained fork that replaces the Ubuntu script's Snap-only `lxd`
 
-**Virtualization (KVM/QEMU):** `qemu-kvm`, `libvirt`, `virt-install`, `virt-manager`, `virt-viewer`, `gnome-boxes`, `cockpit`, `cockpit-machines`, `cockpit-podman`. If libvirt installs successfully: the invoking user is added to the `libvirt` group and `libvirtd` is enabled/started.
+**Virtualization (KVM/QEMU):** `qemu-kvm`, `libvirt`, `virt-install`, `virt-manager`, `virt-viewer`, `gnome-boxes`, `cockpit`, `cockpit-machines`, `cockpit-podman`. If libvirt installs successfully: the invoking user is added to the `libvirt` group, `libvirtd` is enabled/started, and the Virtio-Win Windows-guest drivers are installed.
+
+**Virtio-Win drivers (Windows guests):** Fedora doesn't carry these Windows driver RPMs in its own repos, so the script adds the upstream-maintained [virtio-win repo](https://fedorapeople.org/groups/virt/virtio-win/repo/) (via `dnf config-manager addrepo --from-repofile=...`) and installs the `virtio-win` package, then symlinks its ISO from `/usr/share/virtio-win/virtio-win.iso` into `/var/lib/libvirt/images/virtio-win.iso` for easy pickup when creating a VM. If the repo or package install doesn't go through, it falls back to downloading upstream's "latest stable" ISO directly to the same path. Skipped if that file already exists.
 
 > Fedora handles 32-bit/multilib packages natively via `.i686` builds — there's no Ubuntu-style "add the i386 architecture" step needed anywhere in this script.
 
@@ -1222,7 +1228,7 @@ Same tool set as the Ubuntu script — almost entirely package-manager-agnostic 
 
 #### Fedora: GUI Tweaks
 
-Option `19` has its own sub-menu: **All GUI Tweaks**, **Icon Sets**, **Themes**, **Cursor Themes**, **Nerd Fonts**, **Chris Titus mybash**, **GUI Tools**, **GNOME Shell Extensions** — same shape as the Ubuntu script's.
+Option `19` has its own sub-menu: **All GUI Tweaks**, **Icon Sets**, **Themes**, **Cursor Themes**, **Nerd Fonts**, **Chris Titus mybash**, **GUI Tools**, **GNOME Shell Extensions** — same shape as the Ubuntu script's. **Themes** opens a further sub-menu so you can pick a single theme instead of installing all of them.
 
 **Icon Sets:**
 
@@ -1230,9 +1236,9 @@ Option `19` has its own sub-menu: **All GUI Tweaks**, **Icon Sets**, **Themes**,
 - **Built from source, straight to `/usr/share/icons`**: [Qogir](https://github.com/vinceliuice/Qogir-icon-theme), [WhiteSur](https://github.com/vinceliuice/WhiteSur-icon-theme), [Vimix](https://github.com/vinceliuice/Vimix-icon-theme) — same mechanism as the Ubuntu script (their destination logic is `$UID`-aware, so this runs directly as root, no `su`-as-desktop-user needed)
 - **Ready-made, no build step**: [Newaita](https://github.com/cbrnix/Newaita) (light + dark)
 
-**GTK/Shell Themes:** identical set and mechanism to the Ubuntu script — Graphite, Catppuccin, Everforest, Gruvbox, Kanagawa, Material, Nightfox, Osaka, Rosé Pine, Tokyonight (all cloned + `install.sh --libadwaita`), Oval and Rounded Rectangle Dark Blue (raw folder copies), Obsidian Flow (Python installer). `sassc` is installed via dnf instead of apt before any of these run.
+**GTK Themes:** [Nordic](https://github.com/EliverLara/Nordic) and [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme) (Colloid cloned + `install.sh`, same mechanism as the Qogir/WhiteSur/Vimix icon themes above but landing in `~/.themes`), [Material GNOME](https://github.com/SakibShahariar/material-gnome-theme) (no installer — cloned straight into `~/.themes/Material-Gnome` with its GTK4/Libadwaita stylesheets symlinked into `~/.config/gtk-4.0`), and [Lycia](https://github.com/Aevstiel/Lycia-Theme) (its interactive `install.sh` is fed "yes" to the GTK4/Libadwaita files and "no" to the GDM login-screen theme — that step overwrites a system `gnome-shell-theme.gresource`, too invasive for an unattended installer; needs `gtk-murrine-engine`, `sassc`, and `gnome-themes-extra` as runtime deps).
 
-**GNOME Shell Extensions:** same curated set as the Ubuntu script (GSConnect, Window State Manager, Bluetooth Battery Meter, Auto Move Windows, User Themes, Clipboard History, Dash to Dock), installed via `gext`/pipx identically.
+**GNOME Shell Extensions:** same curated set as the Ubuntu script (GSConnect, Window State Manager, Bluetooth Battery Meter, Auto Move Windows, User Themes, Clipboard History, Dash to Dock, Compact Quick Settings), installed via `gext`/pipx identically.
 
 **Chris Titus mybash:** same clone + `setup.sh` flow; upstream's `setup.sh` itself detects `dnf` and calls `sudo dnf install ...` internally rather than apt.
 
