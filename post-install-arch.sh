@@ -1342,7 +1342,17 @@ install_creative_graphics() {
     # fallback (pitivi-git) has reported missing-dependency issues, so don't
     # rely on that if [extra] ever drops the plain package.
     batch_install "Graphics & Design" gimp inkscape krita blender darktable pitivi
-    batch_install "Graphics (extra)" nomacs flameshot imagemagick graphicsmagick optipng jpegoptim pngquant libwebp
+    # nomacs (AUR-only) currently fails to build/install: its PKGBUILD
+    # depends on "quazip-qt6", which does not exist anywhere - not in the
+    # official repos, not in the AUR (only quazip-qt5/-qt4/-legacy and
+    # mingw-w64 cross-compile variants exist; confirmed via a live AUR RPC
+    # query) - so yay can never resolve that dependency no matter what.
+    # This is a break in nomacs's own AUR package, not something this
+    # script can work around by picking a different name. Swapped in qimgv
+    # instead: a Qt6 image viewer/browser filling the same role, maintained
+    # by the same AUR maintainer (FabioLolix) as nomacs, with no such broken
+    # dependency as of this writing.
+    batch_install "Graphics (extra)" qimgv flameshot imagemagick graphicsmagick optipng jpegoptim pngquant libwebp
     set_flameshot_hotkey
 }
 
@@ -2321,7 +2331,17 @@ show_main_menu() {
     ui_section "Creative & Drivers"
     ui_cell  1 "Creative Suite";     ui_cell 28 "Drivers & Extra Repos"; echo
     ui_cell 14 "Gaming";             ui_cell 25 "Desktop Apps";          echo
-    ui_cell 29 "Snapshots & Backup"; ui_cell 30 "Peripherals (Logitech)"; echo
+    # Snapshots & Backup is hidden on Omarchy: it already ships Btrfs +
+    # Snapper + Limine snapshots built in and wired to `omarchy update`
+    # (see the header note / install_snapshots_btrfs) - offering a menu
+    # item that mostly exists to re-explain "this is already set up" is
+    # more clutter than it's worth. Option 29 still works if typed
+    # directly (see the case handler below), it's just not listed here.
+    if $IS_OMARCHY; then
+        ui_cell "" "";                ui_cell 30 "Peripherals (Logitech)"; echo
+    else
+        ui_cell 29 "Snapshots & Backup"; ui_cell 30 "Peripherals (Logitech)"; echo
+    fi
     echo
     ui_section "Development"
     ui_cell  2 "Code Editors";       ui_cell  3 "Python";                echo
