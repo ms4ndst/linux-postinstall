@@ -50,6 +50,7 @@ They share the same Catppuccin-themed menu-driven UX, the same installed/skipped
     - [.NET Development](#net-development)
     - [DevOps &amp; Cloud](#devops--cloud)
     - [Desktop Apps](#desktop-apps)
+    - [Drivers & Extra Repos](#drivers--extra-repos)
   - [🔀 Bulk Options (A / B / C)](#-bulk-options-a--b--c)
   - [🔧 Error Handling &amp; Installation Checks](#-error-handling--installation-checks)
   - [📊 Installation Summary &amp; Logging](#-installation-summary--logging)
@@ -147,7 +148,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 | **Version Detection**         | Detects the running release at startup, supports **Ubuntu 26.04 LTS and 26.10**, warns/prompts on anything else |
 | **Nala Front-End**            | Installs and uses [Nala](https://github.com/volitank/nala) for installs/updates (parallel downloads, cleaner output); transparently falls back to apt-get if unavailable |
 | **Catppuccin-Themed Output**  | Menus, logs, and summary use the Catppuccin Mocha palette (truecolor), auto-disabled for non-TTY / `NO_COLOR` |
-| **Interactive Menu**          | Text-based menu with 28 categories (plus Ubuntu Studio and Security sub-menus)                 |
+| **Interactive Menu**          | Text-based menu with 28 categories, plus Ubuntu Studio, Security, GUI Tweaks, Browsers, Communication, and Drivers & Extra Repos sub-menus |
 | **GNOME App-Folder Creation** | After each category, optionally groups the apps you just installed into a Super-key app folder |
 | **Terminal Font Setup**       | In GUI Tweaks, optionally sets the terminal / system monospace font to an installed Nerd Font (works on Ptyxis, GNOME Console, and gnome-terminal) |
 | **Error Handling**             | Skips unavailable packages, continues installation                                              |
@@ -160,7 +161,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 
 #### Statistics
 
-- **Main Menu Categories:** 28 (plus Ubuntu Studio and Security sub-menus)
+- **Main Menu Categories:** 28 (plus Ubuntu Studio, Security, GUI Tweaks, Browsers, Communication, and Drivers & Extra Repos sub-menus)
 - **Package Front-End:** Nala (auto-installed, with transparent apt-get fallback)
 - **Verified APT Packages:** 200+
 - **Snap-Only Tools:** 3 (LXD, IntelliJ IDEA Community, DBeaver CE)
@@ -703,6 +704,14 @@ Common desktop applications:
 
 ---
 
+#### Drivers & Extra Repos
+
+Unlike Fedora's version of this category, there's no proprietary GPU driver here — `ubuntu-drivers`/the distro's own tooling already covers that. Just one item:
+
+- **DisplayLink Driver** — for USB/dock-connected display adapters (DL-3xxx–DL-7xxx chipsets). Synaptics publishes a real official apt repo (confirmed by extracting their `synaptics-repository-keyring.deb`: it drops `/etc/apt/sources.list.d/synaptics.list` pointing at `https://www.synaptics.com/sites/default/files/Ubuntu`), so the script downloads and `dpkg -i`s that keyring package, runs `apt update`, then installs `displaylink-driver` normally — the same repo/package their own `displaylink-installer.sh` uses internally when it detects apt, rather than running that vendor `.run` installer directly or hand-rolling a DKMS package. Prompted opt-in — only useful with actual DisplayLink hardware. If Secure Boot is enabled, prints the `mokutil --import`/reboot-into-MOKManager commands rather than attempting to automate them.
+
+---
+
 ### 🔀 Bulk Options (A / B / C)
 
 | Option | Runs                                                                                                                                                                                            | Notes                                    |
@@ -987,7 +996,7 @@ sudo ./post-install-fedora.sh
 #### Fedora Menu Navigation
 
 1. **Main Menu**: Shows all 28 categories (`0`–`28`)
-2. **Sub-Menus**: Creative Suite (option `1`) has a 6-item sub-menu (Full/Graphics/Video/Audio/Photography/Publishing); GUI Tweaks (option `19`), Security Tools (option `22`), Browsers (option `26`), and Communication (option `27`) each have their own sub-menu; Drivers & Extra Repos (option `28`) offers NVIDIA and Terra as separate opt-ins
+2. **Sub-Menus**: Creative Suite (option `1`) has a 6-item sub-menu (Full/Graphics/Video/Audio/Photography/Publishing); GUI Tweaks (option `19`), Security Tools (option `22`), Browsers (option `26`), and Communication (option `27`) each have their own sub-menu; Drivers & Extra Repos (option `28`) offers NVIDIA, Terra, and DisplayLink as separate opt-ins
 3. **Bulk Options**: `A`, `B`, `C` (see [Fedora Bulk Options](#-fedora-bulk-options-a--b--c) below)
 4. **`S`** — Show Installation Summary
 5. **`0`** — Exit
@@ -1322,12 +1331,13 @@ Option `27` opens a 5-item sub-menu (**Zoom is not included** — dropped entire
 
 #### Fedora: Drivers & Extra Repos
 
-New category — the Ubuntu script has no GPU-driver or extra-repo concept at all.
+The Ubuntu script has its own, much smaller Drivers & Extra Repos category (DisplayLink only — no GPU-driver or extra-repo concept beyond that).
 
 | # | Item | What it does |
 |---|------|---------------|
 | 1 | **NVIDIA Proprietary Driver** | Installs `akmod-nvidia` + `xorg-x11-drv-nvidia-cuda` from RPM Fusion nonfree, then polls `modinfo -F version nvidia` for up to 5 minutes (the kernel module compiles in the background — RPM Fusion's own docs say to expect this). If Secure Boot is detected as enabled, prints the exact `kmodgenca`/`mokutil --import`/reboot-into-MOKManager commands rather than attempting to automate them — enrolling a Secure Boot key is a hardware-firmware-level interactive step no script can complete unattended. |
 | 2 | **Terra Repo** | Enables [Terra](https://github.com/terrapkg/packages) (Ultramarine Linux's parent project's general-purpose repo), scoped to the `terra-release-extras` subrepo only — deliberately **not** its alternate Mesa/NVIDIA subrepos, which conflict with RPM Fusion's own and would fight with option 1 above. Prompted opt-in either way. |
+| 3 | **DisplayLink Driver** | Fedora carries no DisplayLink RPM in its own repos, so the script downloads the community [displaylink-rpm](https://github.com/displaylink-rpm/displaylink-rpm) project's prebuilt `fedora-<version>-displaylink-*.rpm` GitHub release asset matching the running Fedora version/arch and `dnf install`s it directly — its `%post` handles the DKMS `evdi` build and starts `displaylink-driver.service` itself, nothing left for the script to do afterward. Falls back to a warning pointing at the project's releases page if no matching build exists yet for the running Fedora version. Prompted opt-in, same shape as NVIDIA/Terra — only useful with actual DisplayLink hardware (USB docks/monitors, DL-3xxx–DL-7xxx chipsets). |
 
 ---
 
@@ -1385,7 +1395,7 @@ Identical Catppuccin-themed summary/logging to the Ubuntu script. The only diffe
 
 - **Package-name confidence varies by category** — see the note at the top of [Fedora Package Categories](#-fedora-package-categories). The "hard" categories were individually researched and verified; the bulk of ordinary packages weren't re-checked against a live Fedora system (none was available during development), and rely on the `package_exists` safety net instead of a pre-verified list.
 - **NVIDIA + Secure Boot needs a manual step**: the script detects Secure Boot and prints the exact commands, but enrolling the MOK key genuinely requires an interactive reboot into a firmware-level UI — no script can complete this unattended.
-- **Bulk options don't include Drivers & Extra Repos**: NVIDIA driver and Terra repo are deliberately excluded from `A`/`B`/`C` since they're meaningful, semi-interactive opt-ins, not safe to fire unattended.
+- **Bulk options don't include Drivers & Extra Repos**: NVIDIA driver, Terra repo, and the DisplayLink driver are deliberately excluded from `A`/`B`/`C` since they're meaningful, semi-interactive opt-ins, not safe to fire unattended.
 - **"Ubuntu Studio" categories are consolidated**: the Ubuntu script has separate top-level Graphics/Video/Audio categories *in addition to* its Ubuntu Studio sub-menu (a deliberate overlap there). Fedora has no per-domain metapackage split to mirror that duplication meaningfully, so this port folds all of it into one **Creative Suite** category — a simplification, not an oversight.
 
 ---

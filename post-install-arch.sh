@@ -1946,6 +1946,49 @@ EOF
     log SUCCESS "NVIDIA driver installed - reboot to load it"
 }
 
+# DisplayLink (USB/dock-connected display adapters, DL-3xxx through DL-7xxx
+# chipsets) has no official Arch package - the AUR's "displaylink" (which
+# pulls in evdi-dkms as a dependency automatically via yay) is the community
+# path, repackaging the same vendor installer Fedora's displaylink-rpm project
+# builds from. Unlike that RPM's %post, Arch's own packaging conventions
+# discourage a package auto-enabling services on install, so the
+# systemctl enable --now step below is done explicitly here, same as
+# docker/libvirtd elsewhere in this script.
+install_displaylink_driver() {
+    local msg="Install the DisplayLink driver (USB/dock display adapters)?\n\nBuilds the evdi DKMS kernel module + DisplayLinkManager from the AUR, for DL-3xxx through DL-7xxx chipset docking stations and USB monitors/adapters. Only useful if you actually have DisplayLink hardware."
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Install" --no-button "Skip" 14 76 && do_it=true
+    else
+        echo -e "$msg [y/N]:"; read -r REPLY
+        { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
+    fi
+    if ! $do_it; then
+        log INFO "Skipped DisplayLink driver"
+        return 0
+    fi
+
+    # evdi-dkms (the AUR dependency behind "displaylink") needs the matching
+    # kernel headers to build against - same detection as install_nvidia_driver.
+    local headers=() kpkg
+    while IFS= read -r kpkg; do
+        [ -n "$kpkg" ] && headers+=("${kpkg}-headers")
+    done < <(pacman -Qqs '^linux(-zen|-lts|-hardened)?$' 2>/dev/null)
+
+    batch_install "DisplayLink Driver" "${headers[@]}" displaylink
+
+    if is_installed displaylink; then
+        systemctl enable --now displaylink.service 2>/dev/null
+        if command -v mokutil &>/dev/null && mokutil --sb-state 2>/dev/null | grep -qi 'enabled'; then
+            log WARNING "Secure Boot is enabled - the DKMS-built evdi kernel module will not load until signed/enrolled."
+            log INFO  "DKMS normally prompts to enroll a Machine Owner Key (MOK) automatically on the next module build."
+            log INFO  "If it does not, run manually: sudo mokutil --import /var/lib/dkms/mok.pub"
+            log INFO  "then reboot and, on the blue MOK Manager screen, choose Enroll MOK -> Continue -> enter the password you just set -> reboot to finish enrollment."
+        fi
+        log SUCCESS "DisplayLink driver installed"
+    fi
+}
+
 # ========== SNAPSHOTS & BACKUP ==========
 detect_root_fstype() {
     findmnt -no FSTYPE / 2>/dev/null
@@ -2662,11 +2705,12 @@ show_drivers_menu() {
     ui_item 1 "NVIDIA Driver"
     ui_item 2 "BlackArch Repo (extra security/pentest packages, opt-in)"
     ui_item 3 "Chaotic-AUR Repo (prebuilt AUR binaries, opt-in)"
+    ui_item 4 "DisplayLink Driver (USB/dock display adapters, AUR)"
     echo
     ui_item 0 "Back to Main Menu"
     echo
     ui_rule
-    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-3]${NC}${LAVENDER}: ${NC}"
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-4]${NC}${LAVENDER}: ${NC}"
 }
 
 show_snapshots_menu() {
@@ -2840,6 +2884,7 @@ main() {
                     1) reset_tracking; install_nvidia_driver; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
                     2) reset_tracking; install_blackarch_repo; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
                     3) reset_tracking; install_chaotic_aur; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
+                    4) reset_tracking; install_displaylink_driver; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;

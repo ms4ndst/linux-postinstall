@@ -670,10 +670,72 @@ install_terra_repo() {
     fi
 }
 
+# ========== DISPLAYLINK DRIVER ==========
+# DisplayLink (USB/dock-connected display adapters, DL-3xxx through DL-7xxx
+# chipsets) has no Fedora/RPM Fusion package - displaylink-rpm is the
+# community project that builds it and, more usefully for us, publishes
+# prebuilt per-Fedora-version RPMs as GitHub release assets (fedora-<ver>-
+# displaylink-*.<arch>.rpm) - no local rpmbuild/DKMS toolchain or the
+# proprietary vendor zip download needed. `dnf install ./file.rpm` resolves
+# the RPM's own Requires (dkms, kernel-devel, etc) against Fedora's normal
+# repos, and its %post scriptlet does the dkms add/build/install and starts
+# displaylink-driver.service itself - nothing left for us to do afterward
+# except flag Secure Boot, same as install_nvidia_driver's akmod case.
+install_displaylink_driver() {
+    if is_installed displaylink; then
+        SKIPPED_PACKAGES+=("displaylink"); ((TOTAL_SKIPPED++)); log INFO "Already installed: displaylink"; return 0
+    fi
+    local msg="Install the DisplayLink driver (USB/dock display adapters)?\n\nDKMS-built evdi kernel module + DisplayLinkManager, for DL-3xxx through DL-7xxx chipset docking stations and USB monitors/adapters. Only useful if you actually have DisplayLink hardware."
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Install" --no-button "Skip" 14 76 && do_it=true
+    else
+        echo -e "$msg [y/N]:"
+        read -r REPLY
+        { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
+    fi
+    if ! $do_it; then
+        SKIPPED_PACKAGES+=("displaylink"); ((TOTAL_SKIPPED++)); log INFO "Skipped DisplayLink driver"; return 0
+    fi
+
+    local arch; arch=$(uname -m)
+    local ver="${FEDORA_VERSION:-$(rpm -E %fedora)}"
+    log INFO "Looking up the latest displaylink-rpm release for Fedora $ver ($arch)..."
+    local url
+    url=$(curl -fsSL "https://api.github.com/repos/displaylink-rpm/displaylink-rpm/releases/latest" 2>/dev/null \
+        | grep -oP '"browser_download_url":\s*"\K[^"]*fedora-'"$ver"'-displaylink[^"]*\.'"$arch"'\.rpm(?=")')
+    if [ -z "$url" ]; then
+        FAILED_PACKAGES+=("displaylink"); ((TOTAL_FAILED++))
+        log WARNING "No prebuilt displaylink-rpm release for Fedora $ver ($arch) yet - check https://github.com/displaylink-rpm/displaylink-rpm/releases and build from source manually if needed"
+        return 1
+    fi
+
+    local t; t=$(mktemp -d)
+    log INFO "Downloading DisplayLink driver RPM..."
+    if ! curl -fL --retry 3 -o "$t/displaylink.rpm" "$url" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("displaylink"); ((TOTAL_FAILED++))
+        log WARNING "DisplayLink driver download failed (needs network access to github.com)"; return 1
+    fi
+    log INFO "Installing DisplayLink driver (builds the evdi DKMS module - may take a minute)..."
+    if dnf install -y "$t/displaylink.rpm" 2>/dev/null && is_installed displaylink; then
+        INSTALLED_PACKAGES+=("displaylink"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: DisplayLink driver"
+        if mokutil --sb-state 2>/dev/null | grep -qi "enabled"; then
+            log WARNING "Secure Boot is ON - the evdi kernel module won't load until its DKMS-generated key is enrolled."
+            log WARNING "  sudo mokutil --import /var/lib/dkms/mok.pub   (sets an enrollment password, needs a reboot into MOKManager)"
+            log WARNING "  after reboot: sudo dkms autoinstall && sudo systemctl reboot"
+        fi
+    else
+        FAILED_PACKAGES+=("displaylink"); ((TOTAL_FAILED++))
+        log WARNING "DisplayLink driver install failed - check the dkms build log at /var/log/displaylink/displaylink.log"
+    fi
+    rm -rf "$t"
+}
+
 # ========== DRIVERS & EXTRA REPOS (new - no Ubuntu-script equivalent) ==========
 install_drivers_and_repos() {
     install_nvidia_driver
     install_terra_repo
+    install_displaylink_driver
 }
 
 # ========== PERIPHERALS (new - no Ubuntu-script equivalent) ==========
@@ -2627,11 +2689,12 @@ show_drivers_menu() {
     echo
     ui_item 1 "NVIDIA Driver (akmod-nvidia-open + CUDA)"
     ui_item 2 "Terra Repo (Ultramarine's parent project - extras only)"
+    ui_item 3 "DisplayLink Driver (USB/dock display adapters)"
     echo
     ui_item 0 "Back to Main Menu"
     echo
     ui_rule
-    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-2]${NC}${LAVENDER}: ${NC}"
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-3]${NC}${LAVENDER}: ${NC}"
 }
 
 show_snapshots_menu() {
@@ -2792,6 +2855,7 @@ main() {
                     0) continue ;;
                     1) reset_tracking; install_nvidia_driver; display_summary ;;
                     2) reset_tracking; install_terra_repo; display_summary ;;
+                    3) reset_tracking; install_displaylink_driver; display_summary ;;
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;

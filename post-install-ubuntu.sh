@@ -1360,6 +1360,57 @@ install_containers() {
     install_docker_libvirt_forward_fix
 }
 
+# DisplayLink (USB/dock-connected display adapters, DL-3xxx through DL-7xxx
+# chipsets) has a real official Synaptics apt repo - confirmed by extracting
+# their published synaptics-repository-keyring.deb, which drops
+# /etc/apt/sources.list.d/synaptics.list pointing at
+# https://www.synaptics.com/sites/default/files/Ubuntu (stable main +
+# stable non-free) - the exact same repo/package their own
+# displaylink-installer.sh uses internally (dpkg -i the keyring, apt install
+# displaylink-driver) when it detects apt. Using that real repo instead of
+# running their vendor .run installer script or hand-rolling a DKMS package
+# gets automatic updates through normal apt upgrades. Opt-in and interactive,
+# same shape as Fedora/Arch's driver installs - only useful with actual
+# DisplayLink hardware.
+install_displaylink_driver() {
+    if is_installed displaylink-driver; then
+        SKIPPED_PACKAGES+=("displaylink-driver"); ((TOTAL_SKIPPED++)); log INFO "Already installed: displaylink-driver"; return 0
+    fi
+    local msg="Install the DisplayLink driver (USB/dock display adapters)?\n\nAdds Synaptics' official apt repo and installs displaylink-driver (DKMS evdi kernel module + DisplayLinkManager), for DL-3xxx through DL-7xxx chipset docking stations and USB monitors/adapters. Only useful if you actually have DisplayLink hardware."
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Install" --no-button "Skip" 14 76 && do_it=true
+    else
+        echo -e "$msg [y/N]:"; read -r REPLY
+        { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
+    fi
+    if ! $do_it; then
+        SKIPPED_PACKAGES+=("displaylink-driver"); ((TOTAL_SKIPPED++)); log INFO "Skipped DisplayLink driver"; return 0
+    fi
+
+    log INFO "Adding Synaptics' official DisplayLink apt repo..."
+    local t; t=$(mktemp -d)
+    if ! curl -fsSL -o "$t/synaptics-repository-keyring.deb" "https://www.synaptics.com/sites/default/files/Ubuntu/pool/stable/main/all/synaptics-repository-keyring.deb" \
+        || ! dpkg -i "$t/synaptics-repository-keyring.deb" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("displaylink-driver"); ((TOTAL_FAILED++))
+        log WARNING "DisplayLink apt repo setup failed (needs network access to synaptics.com)"; return 1
+    fi
+    rm -rf "$t"
+    apt-get update -qq 2>/dev/null
+
+    batch_install "DisplayLink Driver" displaylink-driver
+
+    if is_installed displaylink-driver; then
+        systemctl enable --now displaylink-driver.service 2>/dev/null
+        if command -v mokutil &>/dev/null && mokutil --sb-state 2>/dev/null | grep -qi 'enabled'; then
+            log WARNING "Secure Boot is enabled - the DKMS-built evdi kernel module will not load until signed/enrolled."
+            log INFO  "DKMS normally prompts to enroll a Machine Owner Key (MOK) automatically on the next module build."
+            log INFO  "If it does not, run manually: sudo mokutil --import /var/lib/dkms/mok.pub"
+            log INFO  "then reboot and, on the blue MOK Manager screen, choose Enroll MOK -> Continue -> enter the password you just set -> reboot to finish enrollment."
+        fi
+    fi
+}
+
 # Virtio-Win: the Windows guest drivers (network, disk, balloon, etc) needed
 # for a Windows VM under KVM/QEMU to get more than a crawling emulated IDE
 # disk and no network. Unlike Fedora (fedorapeople.org add-on repo) or Arch
@@ -3412,6 +3463,7 @@ show_main_menu() {
     echo
     ui_section "Compatibility & Devices"
     ui_cell 23 "Windows (Wine)";     ui_cell 24 "Android Tools";        echo
+    ui_cell 31 "Drivers & Extra Repos";                                 echo
     echo
     ui_section "Internet & Communication"
     ui_cell 29 "Browsers";           ui_cell 30 "Communication";        echo
@@ -3518,6 +3570,18 @@ show_communication_menu() {
     echo
     ui_rule
     printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-6]${NC}${LAVENDER}: ${NC}"
+}
+
+show_drivers_menu() {
+    clear
+    ui_header "DRIVERS & EXTRA REPOS"
+    echo
+    ui_item 1 "DisplayLink Driver (USB/dock display adapters)"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-1]${NC}${LAVENDER}: ${NC}"
 }
 
 show_gui_tweaks_menu() {
@@ -3745,6 +3809,15 @@ main() {
                     4) reset_tracking; install_zoom;      display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                     5) reset_tracking; install_telegram;  display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                     6) reset_tracking; install_teams;     display_summary; prompt_menu_category "Communication" "internet-group-chat" "Communication Apps" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    *) log ERROR "Invalid choice"; sleep 2 ;;
+                esac
+                ;;
+            31)
+                show_drivers_menu
+                read -r drv_choice
+                case "$drv_choice" in
+                    0) continue ;;
+                    1) reset_tracking; install_displaylink_driver; display_summary ;;
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
