@@ -651,13 +651,14 @@ flatpak_install_flathub() {
 # `command -v <tool>` first, so on Omarchy those checks succeed immediately
 # and the function just logs "already installed" and returns, exactly the
 # idempotency behavior the rest of this script relies on everywhere else.
-# Ollama, Alpaca, and Cursor aren't among Omarchy's nine stubs, so those still
-# genuinely install something new even there.
+# Ollama, Alpaca, Claude Desktop, and Cursor aren't among Omarchy's nine
+# stubs, so those still genuinely install something new even there.
 install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
     install_alpaca
     install_claude_code
+    install_claude_desktop
     install_gemini_cli
     install_vibe_cli
     install_opencode
@@ -703,6 +704,45 @@ install_claude_code() {
     fi
     FAILED_PACKAGES+=("claude"); ((TOTAL_FAILED++))
     log WARNING "Claude Code install failed - try: curl -fsSL https://claude.ai/install.sh | bash"; return 0
+}
+
+# Claude Desktop - unofficial repackaging by
+# https://github.com/aaddrick/claude-desktop-debian. The project's own AUR
+# package (claude-desktop-appimage, which builds this) was deleted 2026-08-01
+# as a duplicate-package cleanup and is pending reinstatement - see that
+# repo's README for status. Until it's back, download the AppImage straight
+# from GitHub Releases and hand-write a launcher, same fallback shape as
+# install_cursor's AppImage path on the Ubuntu script. Tracking name
+# "claude-desktop" (the command it adds).
+install_claude_desktop() {
+    if command -v claude-desktop &>/dev/null; then
+        SKIPPED_PACKAGES+=("claude-desktop"); ((TOTAL_SKIPPED++)); log INFO "Already installed: claude-desktop"; return 0
+    fi
+    log INFO "Installing Claude Desktop (AppImage - AUR package pending reinstatement)..."
+    local t; t=$(mktemp -d)
+    local app_url
+    app_url=$(curl -fsSL https://api.github.com/repos/aaddrick/claude-desktop-debian/releases/latest 2>/dev/null \
+        | grep -o '"browser_download_url": *"[^"]*-amd64\.AppImage"' | head -n1 | cut -d'"' -f4)
+    if [ -n "$app_url" ] && curl -L -f --retry 2 -o "$t/claude-desktop.AppImage" "$app_url" 2>/dev/null; then
+        chmod +x "$t/claude-desktop.AppImage"; mv "$t/claude-desktop.AppImage" /usr/local/bin/claude-desktop
+        cat > /usr/share/applications/claude-desktop.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Claude Desktop
+GenericName=AI Assistant
+Comment=Anthropic's Claude desktop app
+Exec=claude-desktop %F
+Icon=claude-desktop
+Terminal=false
+Categories=Network;Utility;
+EOF
+        chmod 644 /usr/share/applications/claude-desktop.desktop
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("claude-desktop"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: claude-desktop (AppImage, /usr/local/bin/claude-desktop)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("claude-desktop"); ((TOTAL_FAILED++))
+    log WARNING "Claude Desktop download failed - get it from https://github.com/aaddrick/claude-desktop-debian/releases"; return 0
 }
 
 install_gemini_cli() {

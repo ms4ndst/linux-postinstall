@@ -1472,6 +1472,7 @@ install_ai_tools() {
     install_ollama
     install_alpaca
     install_claude_code
+    install_claude_desktop
     install_gemini_cli
     install_vibe_cli
     install_opencode
@@ -1517,6 +1518,23 @@ install_claude_code() {
     fi
     FAILED_PACKAGES+=("claude"); ((TOTAL_FAILED++))
     log WARNING "Claude Code install failed - try: curl -fsSL https://claude.ai/install.sh | bash"; return 0
+}
+
+# Claude Desktop - unofficial repackaging by
+# https://github.com/aaddrick/claude-desktop-debian, ships as an .rpm since
+# Fedora has no official Anthropic repo of its own (same launcher/--doctor
+# extras as the Ubuntu build). A real dnf repo means `dnf upgrade` keeps it
+# current from here on, same rationale as install_cursor above. Tracking
+# name matches the real rpm package name so its .desktop resolves
+# automatically for the AI Tools app-folder.
+install_claude_desktop() {
+    if command -v claude-desktop-unofficial &>/dev/null || is_installed claude-desktop-unofficial; then
+        SKIPPED_PACKAGES+=("claude-desktop-unofficial"); ((TOTAL_SKIPPED++)); log INFO "Already installed: claude-desktop-unofficial"; return 0
+    fi
+    log INFO "Installing Claude Desktop (unofficial rpm repo)..."
+    curl -fsSL https://pkg.claude-desktop-debian.dev/rpm/claude-desktop-unofficial.repo -o /etc/yum.repos.d/claude-desktop-unofficial.repo 2>/dev/null
+    pm_update
+    safe_install claude-desktop-unofficial
 }
 
 install_gemini_cli() {

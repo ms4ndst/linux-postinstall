@@ -1698,6 +1698,7 @@ install_ai_tools() {
     install_ollama
     install_alpaca
     install_claude_code
+    install_claude_desktop
     install_gemini_cli
     install_vibe_cli
     install_opencode
@@ -1770,6 +1771,31 @@ install_claude_code() {
     fi
     FAILED_PACKAGES+=("claude"); ((TOTAL_FAILED++))
     log WARNING "Claude Code install failed - try: curl -fsSL https://claude.ai/install.sh | bash"; return 0
+}
+
+# Claude Desktop - unofficial repackaging of Anthropic's official Linux .deb
+# from https://github.com/aaddrick/claude-desktop-debian. Anthropic's own .deb
+# ships from its own apt repo, but this project's claude-desktop-unofficial
+# package layers on a Linux-native launcher (opt-in Wayland, tray, global
+# hotkey, autostart healing) and a --doctor diagnostic, and installs
+# side-by-side with the official package (both share ~/.config/Claude, so
+# only one can run at a time). Tracking name matches the real apt package
+# name so dpkg -L resolves its .desktop file automatically for the AI Tools
+# app-folder, same as install_vscode above.
+install_claude_desktop() {
+    if command -v claude-desktop-unofficial &>/dev/null; then
+        SKIPPED_PACKAGES+=("claude-desktop-unofficial"); ((TOTAL_SKIPPED++))
+        log INFO "Claude Desktop already installed"
+        return 0
+    fi
+    log INFO "Installing Claude Desktop..."
+    curl -fsSL https://pkg.claude-desktop-debian.dev/KEY.gpg | gpg --dearmor \
+        | install -D -m 644 /dev/stdin /usr/share/keyrings/claude-desktop-unofficial.gpg 2>/dev/null
+    echo "deb [signed-by=/usr/share/keyrings/claude-desktop-unofficial.gpg arch=amd64,arm64] https://pkg.claude-desktop-debian.dev stable main" > /etc/apt/sources.list.d/claude-desktop-unofficial.list
+    apt-get update -qq 2>/dev/null
+    safe_install claude-desktop-unofficial
+    # Keep BOTH the keyring and the .list (like install_sublime_text/install_bruno):
+    # the package doesn't re-register its own repo, so future `apt upgrade` needs it.
 }
 
 install_gemini_cli() {
