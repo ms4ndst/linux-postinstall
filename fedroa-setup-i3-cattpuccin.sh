@@ -4,8 +4,8 @@
 # Theme: Catppuccin Mocha | Layout: gapped + picom blur/shadows
 #
 # Installs: i3, picom, polybar, rofi, dunst, kitty, feh, i3lock-color (COPR,
-#           with a stock i3lock fallback), xss-lock, polkit-gnome, flameshot,
-#           ImageMagick, brightnessctl, playerctl, numlockx, dex, autorandr,
+#           with a stock i3lock fallback), xss-lock, lxqt-policykit, flameshot,
+#           ImageMagick, brightnessctl, playerctl, numlockx, dex-autostart, autorandr,
 #           arandr, fastfetch, Nerd Font, tray helpers, GTK/icon theme, rofi
 #           power menu, per-monitor polybar + wallpaper with autorandr hotplug.
 # Idempotent-ish: safe to re-run, but back up existing configs first if you
@@ -53,10 +53,10 @@ sudo dnf install -y \
   xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-xauth xrandr xset \
   i3 i3lock \
   picom polybar rofi dunst kitty feh \
-  xss-lock NetworkManager-applet pasystray blueman polkit-gnome pipewire-pulseaudio \
+  xss-lock network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq flameshot ImageMagick \
-  brightnessctl playerctl numlockx dex autorandr arandr \
+  brightnessctl playerctl numlockx dex-autostart autorandr arandr \
   jetbrains-mono-fonts
 
 # brightnessctl's udev rules gate /sys/class/backlight writes behind the
@@ -207,13 +207,15 @@ exec_always --no-startup-id ~/.local/bin/polybar-launch.sh
 exec --no-startup-id nm-applet
 exec --no-startup-id pasystray
 exec --no-startup-id blueman-applet
-exec --no-startup-id /usr/libexec/polkit-gnome-authentication-agent-1
+exec --no-startup-id /usr/libexec/lxqt-policykit-agent
 exec --no-startup-id ~/.local/bin/wallpaper.sh
 exec --no-startup-id dunst
 exec --no-startup-id numlockx on
 # Runs any other installed app's ~/.config/autostart .desktop entries (tray
 # apps, sync clients, etc.) - bare i3 has no XDG autostart support of its own.
-exec --no-startup-id dex -a -e i3
+# (Fedora packages upstream's "dex" as "dex-autostart" - same tool/flags,
+# renamed to avoid a name collision with an unrelated Fedora package.)
+exec --no-startup-id dex-autostart -a -e i3
 exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.local/bin/lock.sh
 # Idle-based lock: screensaver activation at 5min (triggers xss-lock -> lock.sh),
 # DPMS standby/suspend/off at 5/10/15min so the lock lands before the display blanks.

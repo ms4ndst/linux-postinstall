@@ -1478,9 +1478,9 @@ It targets **Fedora only** (checks for `dnf` at startup and aborts otherwise) an
 
 **Core stack:** `xorg-x11-server-Xorg`, `xorg-x11-xinit`, `xorg-x11-xauth`, `xrandr`, `xset`, `i3`, `i3lock`, `picom`, `polybar`, `rofi`, `dunst`, `kitty`, `feh`
 
-**Session/tray helpers:** `xss-lock`, `NetworkManager-applet`, `pasystray`, `blueman`, `polkit-gnome`, `pipewire-pulseaudio`
+**Session/tray helpers:** `xss-lock`, `network-manager-applet`, `pasystray`, `blueman`, `lxqt-policykit`, `pipewire-pulseaudio`
 
-**Utilities:** `lxappearance`, `papirus-icon-theme`, `fastfetch`, `git`, `curl`, `unzip`, `jq`, `flameshot`, `ImageMagick`, `brightnessctl`, `playerctl`, `numlockx`, `dex`, `autorandr`, `arandr`, `jetbrains-mono-fonts`
+**Utilities:** `lxappearance`, `papirus-icon-theme`, `fastfetch`, `git`, `curl`, `unzip`, `jq`, `flameshot`, `ImageMagick`, `brightnessctl`, `playerctl`, `numlockx`, `dex-autostart`, `autorandr`, `arandr`, `jetbrains-mono-fonts`
 
 **i3lock-color** (COPR `tokariew/i3lock-color`) — a colorized fork of i3lock used for the themed lock screen. The COPR enable/install is best-effort: if it fails for any reason (repo down, arch mismatch), the script falls back to the plain `i3lock` it already installed unconditionally, and `lock.sh` detects at runtime which binary is actually present so the lock screen never silently breaks either way.
 
@@ -1565,7 +1565,8 @@ This is best-effort and never blocks the rest of the script — if snapper isn't
 
 - **Systray is single-owner.** With one polybar instance per monitor, only whichever instance wins the X11 systray selection (usually the first one launched) actually shows tray icons — the others render everything except the tray module. This is an inherent X11 protocol limit, not a bug.
 - **Idle-lock timing is fixed.** `xset s 300 dpms 300 600 900` locks the screen (via `xss-lock`) at 5 minutes idle, with the display standing by/suspending/powering off at 5/10/15 minutes — edit that line in the generated `~/.config/i3/config` if you want different timings.
-- **`dex -a -e i3` runs third-party autostart entries** (from `~/.config/autostart` and `/etc/xdg/autostart`) alongside the script's own explicit `exec` lines for `nm-applet`/`pasystray`/`blueman-applet`. In the unlikely event a package ships its own autostart `.desktop` entry for one of those same apps, you could see a duplicate tray icon until the next reload.
+- **`dex-autostart -a -e i3` runs third-party autostart entries** (from `~/.config/autostart` and `/etc/xdg/autostart`) alongside the script's own explicit `exec` lines for `nm-applet`/`pasystray`/`blueman-applet`/the polkit agent. In the unlikely event a package ships its own autostart `.desktop` entry for one of those same apps *without* an `OnlyShowIn=` restriction that excludes i3, you could see a duplicate tray icon until the next reload. (`lxqt-policykit`'s own autostart entry is `OnlyShowIn=LXQt;`, so it's never double-launched — the script's explicit `exec` is the only thing that starts it under i3.)
+- **`polkit-gnome` was removed from Fedora 41+** (upstream stopped shipping it); the script uses **`lxqt-policykit`** instead, which provides the same authentication-agent role via `/usr/libexec/lxqt-policykit-agent`.
 - **NVIDIA users:** picom defaults to the `glx` backend (comment in `~/.config/picom/picom.conf` notes this is tuned for Mesa/Intel/AMD) — switch it to `xrender` if you see tearing or flicker on the proprietary NVIDIA driver.
 - Every config file this script manages is **overwritten on re-run** with no automatic backup — if you've hand-edited any of them, copy them aside first.
 
