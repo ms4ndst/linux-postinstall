@@ -11,6 +11,8 @@ This repo ships **two independent, distro-specific scripts** — pick the one th
 
 They share the same Catppuccin-themed menu-driven UX, the same installed/skipped/failed tracking, and the same GNOME Shell app-folder feature — but every install path (package names, repos, drivers, codecs) is re-sourced per distro rather than being a single script with `if`-branches. Neither script depends on or modifies the other; run whichever matches your system.
 
+There's also a third, standalone script that isn't part of that pair: **[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh)** builds a full Catppuccin Mocha–themed **i3 tiling window manager** desktop on top of Fedora — a single-purpose rice script, not a menu-driven package browser. Run it after (or independently of) `post-install-fedora.sh`. See [i3 + Catppuccin Rice Script](#-i3--catppuccin-rice-script-fedora) below.
+
 ---
 
 ## 📋 Table of Contents
@@ -100,6 +102,14 @@ They share the same Catppuccin-themed menu-driven UX, the same installed/skipped
   - [⚠️ Fedora Known Limitations](#-fedora-known-limitations)
   - [⚙️ Fedora Customization](#-fedora-customization)
   - [🐛 Fedora Troubleshooting](#-fedora-troubleshooting)
+- [🎨 i3 + Catppuccin Rice Script (Fedora)](#-i3--catppuccin-rice-script-fedora)
+  - [🚀 i3 Script Overview](#-i3-script-overview)
+  - [📦 What Gets Installed](#-what-gets-installed)
+  - [📥 i3 Script Installation & Usage](#-i3-script-installation--usage)
+  - [⌨️ Keybinding Cheat Sheet](#️-keybinding-cheat-sheet)
+  - [🖥️ Multi-Monitor Setup](#️-multi-monitor-setup)
+  - [🛟 Rollback Safety Net](#-rollback-safety-net)
+  - [⚠️ i3 Script Known Limitations & Caveats](#️-i3-script-known-limitations--caveats)
 - [📜 License](#-license)
 - [🙏 Acknowledgments](#-acknowledgments)
 
@@ -1454,9 +1464,116 @@ ls -lt /var/log/fedora_post_install_*.log | head -1 | awk '{print $NF}' | xargs 
 
 ---
 
+# 🎨 i3 + Catppuccin Rice Script (Fedora)
+
+### 🚀 i3 Script Overview
+
+[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh) is a standalone, single-purpose script — separate from `post-install-fedora.sh` above — that builds a complete **Catppuccin Mocha–themed i3 tiling window manager** desktop on Fedora: gapped tiling, picom blur/shadows/rounded corners, a per-monitor polybar status bar, rofi launcher, dunst notifications, kitty terminal, and a full keybinding set covering window management, media/volume/brightness, screenshots, locking, power, and multi-monitor control. It's meant to be run once on a fresh Fedora install (or after `post-install-fedora.sh`) to go from "bare X11" to "usable themed i3 session."
+
+It targets **Fedora only** (checks for `dnf` at startup and aborts otherwise) and is **idempotent-ish**: safe to re-run, but it *overwrites* every config file it manages (`~/.config/i3`, `picom`, `polybar`, `rofi`, `dunst`, `kitty`, `fastfetch`, `autorandr/postswitch`) without prompting — back up your own dotfiles first if you've customized any of them.
+
+---
+
+### 📦 What Gets Installed
+
+**Core stack:** `xorg-x11-server-Xorg`, `xorg-x11-xinit`, `xorg-x11-xauth`, `xrandr`, `xset`, `i3`, `i3lock`, `picom`, `polybar`, `rofi`, `dunst`, `kitty`, `feh`
+
+**Session/tray helpers:** `xss-lock`, `NetworkManager-applet`, `pasystray`, `blueman`, `polkit-gnome`, `pipewire-pulseaudio`
+
+**Utilities:** `lxappearance`, `papirus-icon-theme`, `fastfetch`, `git`, `curl`, `unzip`, `jq`, `flameshot`, `ImageMagick`, `brightnessctl`, `playerctl`, `numlockx`, `dex`, `autorandr`, `arandr`, `jetbrains-mono-fonts`
+
+**i3lock-color** (COPR `tokariew/i3lock-color`) — a colorized fork of i3lock used for the themed lock screen. The COPR enable/install is best-effort: if it fails for any reason (repo down, arch mismatch), the script falls back to the plain `i3lock` it already installed unconditionally, and `lock.sh` detects at runtime which binary is actually present so the lock screen never silently breaks either way.
+
+**JetBrainsMono Nerd Font** — the patched build (with glyph icons for polybar/rofi/i3) isn't in Fedora's repos, so it's downloaded directly from [ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts) releases into `~/.local/share/fonts`. Best-effort: a failed download just logs a warning and skips it — it doesn't abort the rest of the script.
+
+Also adds the invoking user to the **`video`** group (required for `brightnessctl` to write `/sys/class/backlight` without root) — takes effect on next login.
+
+---
+
+### 📥 i3 Script Installation & Usage
+
+```bash
+chmod +x fedroa-setup-i3-cattpuccin.sh
+sudo ./fedroa-setup-i3-cattpuccin.sh
+```
+
+After it finishes:
+
+1. Log out.
+2. At the GDM login screen, click the gear icon next to the password field and select **i3** (installing the `i3` package registers the session automatically).
+3. First login looks bare for a couple of seconds until picom/polybar spawn. If polybar doesn't appear, run `polybar -c ~/.config/polybar/config.ini top` from a kitty terminal (`Mod+Return`) to see errors directly.
+4. Brightness keys need the `video` group membership added above — log out/in (or reboot) once for that to take effect.
+5. For multi-monitor, see [Multi-Monitor Setup](#️-multi-monitor-setup) below.
+
+---
+
+### ⌨️ Keybinding Cheat Sheet
+
+`Mod` = Super/Windows key.
+
+| Binding | Action |
+| --- | --- |
+| `Mod+Return` | Open kitty |
+| `Mod+d` / `Mod+shift+d` | Rofi app launcher (`drun`) / run launcher |
+| `Mod+l` | Lock screen |
+| `Mod+shift+p` | Power menu (lock / suspend / logout / reboot / shutdown) |
+| `Print` | Screenshot (`flameshot gui`, falls back to `import`) |
+| `Mod+shift+q` | Close focused window |
+| `Mod+f` | Fullscreen toggle |
+| `Mod+shift+space` | Floating toggle |
+| `Mod+space` | Toggle tiling/floating focus |
+| `Mod+h/j/k/;` | Focus left/down/up/right |
+| `Mod+shift+h/j/k/;` | Move window left/down/up/right |
+| `Mod+ctrl+h/l` | Focus next/prev **monitor** |
+| `Mod+ctrl+shift+h/l` | Move workspace to next/prev **monitor** |
+| `Mod+1..5` / `Mod+shift+1..5` | Switch to / move window to workspace 1–5 |
+| `Mod+r` | Resize mode (`h/j/k/l` to resize, `Return`/`Escape` to exit) |
+| `Mod+shift+r` / `Mod+shift+c` | Restart / reload i3 |
+| `Mod+shift+e` | Exit i3 (with confirm) |
+| `XF86Audio{Raise,Lower,Mute}Volume` | Volume via `pactl` |
+| `XF86MonBrightness{Up,Down}` | Brightness via `brightnessctl` |
+| `XF86Audio{Play,Next,Prev}` | Media control via `playerctl` |
+
+---
+
+### 🖥️ Multi-Monitor Setup
+
+The script wires up per-monitor polybar, per-monitor wallpaper, and hotplug handling out of the box:
+
+1. Plug in your monitor(s), run `arandr` to drag them into the layout you want (position, orientation, primary), then save it: `autorandr --save mylayout`.
+2. From then on, **autorandr** auto-detects that saved layout (or any other known layout) whenever the monitor set changes and re-applies it automatically.
+3. Its `~/.config/autorandr/postswitch` hook (installed by the script) re-runs two helper scripts on every profile change:
+   - `~/.local/bin/polybar-launch.sh` — kills any existing polybar instance(s) and launches one fresh instance **per connected output** (`polybar --list-monitors`), so every monitor gets its own bar instead of just the primary one.
+   - `~/.local/bin/wallpaper.sh` — feh normally stretches a single wallpaper across the *entire combined* virtual screen; this repeats the same image once per connected output so each monitor gets its own independent fill instead of one stretched panorama.
+4. `Mod+ctrl+h/l` and `Mod+ctrl+shift+h/l` move focus/workspaces between outputs (see cheat sheet above).
+
+---
+
+### 🛟 Rollback Safety Net
+
+Before touching anything, the script checks for **Btrfs + an existing snapper `root` config** (which Fedora's Btrfs-by-default installer sets up automatically on recent releases). If found, it takes a snapshot (`snapper -c root create --type single`) and prints the exact rollback command:
+
+```bash
+sudo snapper -c root undochange <snapshot-number>..0
+```
+
+This is best-effort and never blocks the rest of the script — if snapper isn't installed or there's no `root` config, it logs a warning and proceeds without a rollback point.
+
+---
+
+### ⚠️ i3 Script Known Limitations & Caveats
+
+- **Systray is single-owner.** With one polybar instance per monitor, only whichever instance wins the X11 systray selection (usually the first one launched) actually shows tray icons — the others render everything except the tray module. This is an inherent X11 protocol limit, not a bug.
+- **Idle-lock timing is fixed.** `xset s 300 dpms 300 600 900` locks the screen (via `xss-lock`) at 5 minutes idle, with the display standing by/suspending/powering off at 5/10/15 minutes — edit that line in the generated `~/.config/i3/config` if you want different timings.
+- **`dex -a -e i3` runs third-party autostart entries** (from `~/.config/autostart` and `/etc/xdg/autostart`) alongside the script's own explicit `exec` lines for `nm-applet`/`pasystray`/`blueman-applet`. In the unlikely event a package ships its own autostart `.desktop` entry for one of those same apps, you could see a duplicate tray icon until the next reload.
+- **NVIDIA users:** picom defaults to the `glx` backend (comment in `~/.config/picom/picom.conf` notes this is tuned for Mesa/Intel/AMD) — switch it to `xrender` if you see tearing or flicker on the proprietary NVIDIA driver.
+- Every config file this script manages is **overwritten on re-run** with no automatic backup — if you've hand-edited any of them, copy them aside first.
+
+---
+
 ## 📜 License
 
-Both scripts are provided **as-is** without warranty. You are free to:
+All scripts in this repo are provided **as-is** without warranty. You are free to:
 
 - Use them for personal or commercial purposes
 - Modify and distribute them
@@ -1487,4 +1604,4 @@ Both scripts are provided **as-is** without warranty. You are free to:
 
 ---
 
-*Last updated: August 17, 2026*
+*Last updated: August 25, 2026*
