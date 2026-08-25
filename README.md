@@ -4,14 +4,15 @@
 
 ![screenshot](screenshot.png)
 
-This repo ships **two independent, distro-specific scripts** — pick the one that matches your machine:
+This repo ships **three independent, distro-specific scripts** — pick the one that matches your machine:
 
 - **[`post-install-ubuntu.sh`](post-install-ubuntu.sh)** — for **Ubuntu 26.04 LTS / 26.10**, built on apt/Nala.
 - **[`post-install-fedora.sh`](post-install-fedora.sh)** — for **Fedora Workstation**, built on `dnf5`/RPM Fusion.
+- **[`post-install-arch.sh`](post-install-arch.sh)** — for **Arch Linux and [Omarchy](https://omarchy.org)**, built on `pacman` with a `yay` AUR fallback.
 
-They share the same Catppuccin-themed menu-driven UX, the same installed/skipped/failed tracking, and the same GNOME Shell app-folder feature — but every install path (package names, repos, drivers, codecs) is re-sourced per distro rather than being a single script with `if`-branches. Neither script depends on or modifies the other; run whichever matches your system.
+They share the same Catppuccin-themed menu-driven UX, the same installed/skipped/failed tracking, and the same GNOME Shell app-folder feature — but every install path (package names, repos, drivers, codecs) is re-sourced per distro rather than being a single script with `if`-branches. None of the three scripts depends on or modifies another; run whichever matches your system.
 
-There's also a third, standalone script that isn't part of that pair: **[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh)** builds a full Catppuccin Mocha–themed **i3 tiling window manager** desktop on top of Fedora — a single-purpose rice script, not a menu-driven package browser. Run it after (or independently of) `post-install-fedora.sh`. See [i3 + Catppuccin Rice Script](#-i3--catppuccin-rice-script-fedora) below.
+There's also a fourth, standalone script that isn't part of that trio: **[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh)** builds a full Catppuccin Mocha–themed **i3 tiling window manager** desktop on top of Fedora — a single-purpose rice script, not a menu-driven package browser. Run it after (or independently of) `post-install-fedora.sh`. See [i3 + Catppuccin Rice Script](#-i3--catppuccin-rice-script-fedora) below.
 
 ---
 
@@ -102,6 +103,51 @@ There's also a third, standalone script that isn't part of that pair: **[`fedroa
   - [⚠️ Fedora Known Limitations](#-fedora-known-limitations)
   - [⚙️ Fedora Customization](#-fedora-customization)
   - [🐛 Fedora Troubleshooting](#-fedora-troubleshooting)
+- [🏹 Arch Linux / Omarchy Post-Install Script](#-arch-linux--omarchy-post-install-script)
+  - [🚀 Arch Overview](#-arch-overview)
+  - [✨ Arch Features](#-arch-features)
+  - [📥 Arch Installation](#-arch-installation)
+  - [🎯 Arch Usage](#-arch-usage)
+  - [🗂️ Arch GNOME App Folders (Super Key Groups)](#️-arch-gnome-app-folders-super-key-groups)
+  - [📦 Arch Package Categories](#-arch-package-categories)
+    - [Arch: AI Tools](#arch-ai-tools)
+    - [Arch: Code Editors](#arch-code-editors)
+    - [Arch: Python](#arch-python)
+    - [Arch: Web Development](#arch-web-development)
+    - [Arch: Java](#arch-java)
+    - [Arch: C/C++](#arch-cc)
+    - [Arch: Go](#arch-go)
+    - [Arch: Rust](#arch-rust)
+    - [Arch: Node.js](#arch-nodejs)
+    - [Arch: PHP](#arch-php)
+    - [Arch: Ruby](#arch-ruby)
+    - [Arch: .NET](#arch-net)
+    - [Arch: General Dev Tools](#arch-general-dev-tools)
+    - [Arch: DevOps & Cloud](#arch-devops--cloud)
+    - [Arch: Database Tools](#arch-database-tools)
+    - [Arch: Containers & VMs](#arch-containers--vms)
+    - [Arch: Gaming](#arch-gaming)
+    - [Arch: Windows Software Support](#arch-windows-software-support)
+    - [Arch: Browsers](#arch-browsers)
+    - [Arch: Communication](#arch-communication)
+    - [Arch: Desktop Apps](#arch-desktop-apps)
+    - [Arch: Creative Suite](#arch-creative-suite)
+    - [Arch: Office & Productivity](#arch-office--productivity)
+    - [Arch: System Utilities](#arch-system-utilities)
+    - [Arch: Android Tools](#arch-android-tools)
+    - [Arch: Security Tools](#arch-security-tools)
+    - [Arch: Peripherals (Logitech)](#arch-peripherals-logitech)
+    - [Arch: Drivers & Extra Repos](#arch-drivers--extra-repos)
+    - [Arch: Snapshots & Backup](#arch-snapshots--backup)
+    - [Arch: GUI Tweaks / Theming](#arch-gui-tweaks--theming)
+  - [🔀 Arch Bulk Options (A / B / C)](#-arch-bulk-options-a--b--c)
+  - [🔧 Arch Error Handling &amp; Installation Checks](#-arch-error-handling--installation-checks)
+  - [📊 Arch Installation Summary &amp; Logging](#-arch-installation-summary--logging)
+  - [🐉 Omarchy-Specific Behavior](#-omarchy-specific-behavior)
+  - [🔒 Arch Security Notes](#-arch-security-notes)
+  - [⚠️ Arch Known Limitations](#-arch-known-limitations)
+  - [⚙️ Arch Customization](#-arch-customization)
+  - [🐛 Arch Troubleshooting](#-arch-troubleshooting)
 - [🎨 i3 + Catppuccin Rice Script (Fedora)](#-i3--catppuccin-rice-script-fedora)
   - [🚀 i3 Script Overview](#-i3-script-overview)
   - [📦 What Gets Installed](#-what-gets-installed)
@@ -1464,6 +1510,590 @@ ls -lt /var/log/fedora_post_install_*.log | head -1 | awk '{print $NF}' | xargs 
 
 ---
 
+# 🏹 Arch Linux / Omarchy Post-Install Script
+
+### 🚀 Arch Overview
+
+[`post-install-arch.sh`](post-install-arch.sh) is the Arch/Omarchy port of `post-install-fedora.sh` — same category taxonomy, same Catppuccin-themed menu UX, same installed/skipped/failed tracking — rebuilt on **`pacman`** with a **`yay`** AUR fallback instead of `dnf`. It explicitly targets two things:
+
+- **Plain Arch Linux.**
+- **[Omarchy](https://omarchy.org)** — an opinionated Arch distro built on Hyprland + a custom Quickshell desktop shell, shipped as an ISO and updated via real pacman packages rather than a curl\|bash overlay. Reviewed against Omarchy v4.0.0 ("Quattro") during development.
+
+Two things follow directly from also targeting Omarchy:
+
+1. **Omarchy already owns the whole desktop layer** — Hyprland, its own Quickshell bar/launcher/notifications/lock-screen/theme system, terminal (Foot), editor (Neovim), browser (Chromium), file manager (Nautilus), screenshot tool, and even nine pre-wired AI coding-agent CLIs via mise stubs. This script never tries to install or theme a desktop environment on top of that — the GNOME-specific helpers (app-folders, terminal-font, Shell extensions) only do anything if a GNOME session is genuinely running, which is never true on Omarchy and only true on a plain-Arch-plus-GNOME box.
+2. **Omarchy guards raw pacman syncs.** Since v4.0.0 it ships a pacman pre-transaction hook that aborts any direct full-sync (`pacman -Sy`/`-Syu`) not launched through `omarchy update`. The script never runs a raw `-Syu` when Omarchy is detected — only targeted `pacman -S <pkg>` installs, which the guard doesn't touch.
+
+Everywhere Omarchy already provides a first-party wrapper for something this script would otherwise hand-roll (theme switching, NVIDIA driver selection, Btrfs snapshots, web-app `.desktop` files), the script **detects and defers to that wrapper** instead of duplicating its logic — see [Omarchy-Specific Behavior](#-omarchy-specific-behavior) below for the full list.
+
+**Package-name confidence note:** Arch has no RPM-Fusion/COPR-style curated third-party layer — "not in the official repos" here almost always means "check the AUR," not "unavailable." `safe_install` therefore tries the official repos first and transparently falls back to the AUR (via `yay`) per package, following the same verification spirit as the Fedora script's own confidence notes. `is_installed`/`package_exists` still gate every install, so a wrong guess is logged "Not in repos or AUR" and skipped rather than failing the whole run.
+
+---
+
+### ✨ Arch Features
+
+#### Arch Core Features
+
+| Feature | Description |
+| --- | --- |
+| **Omarchy Detection** | Detects Omarchy vs. plain Arch at startup and adapts menus, driver installs, theming, and update behavior accordingly |
+| **pacman + AUR (yay) Front-End** | `safe_install` checks official repos first, falls back to AUR via `yay` per package — no single-source assumption |
+| **AUR Bootstrap** | Installs `yay` from **yay-bin** (prebuilt, no Go toolchain needed) if missing; no-op on Omarchy, which ships it by default |
+| **Temporary Passwordless-Sudo Workaround** | Grants (and always revokes via `trap`) a narrowly-scoped `NOPASSWD: /usr/bin/pacman` rule so `yay` can call `sudo pacman` mid-build without a broken TTY chain |
+| **Catppuccin-Themed Output** | Same palette/menus/logging as the Ubuntu/Fedora scripts, auto-disabled for non-TTY / `NO_COLOR` |
+| **Interactive Menu** | Text-based menu with 30 categories, plus Creative Suite, Security, Browsers, Communication, GUI Tweaks, GTK Themes, Drivers, Snapshots, and Peripherals sub-menus |
+| **GNOME App-Folder Creation** | Same feature as Ubuntu/Fedora, `pacman -Qlq`-based resolution — explicitly a no-op under Hyprland/Omarchy (no GNOME session to target) |
+| **Snapshots & Backup Category** | New category with no Fedora/Ubuntu equivalent — Btrfs + Snapper + grub-btrfs, or Timeshift on non-Btrfs roots; Omarchy-aware (won't fight Omarchy's own Snapper/Limine setup) |
+| **BlackArch & Chaotic-AUR Repo Bootstraps** | Opt-in third-party repo setups under Drivers & Extra Repos — BlackArch's official `strap.sh` with a manual checksum cross-check, Chaotic-AUR's signed keyring/mirrorlist |
+| **NVIDIA Driver Support** | Defers to Omarchy's own `omarchy-apply-hardware` hardware detector when present; otherwise a manual DKMS-based install with dynamic kernel-headers detection and Secure Boot guidance |
+| **Manjaro / Garuda Awareness** | Manjaro gets a hard confirmation gate warning that this script's AUR-heavy flow risks breaking Manjaro's intentionally-delayed package branch; Garuda gets an informational note that Chaotic-AUR/Snapper are typically already enabled there |
+| **Error Handling** | Skips unavailable packages, continues installation |
+| **Installation Tracking** | Tracks installed, skipped, and failed packages per run — AUR-sourced installs are tagged `(AUR)` in the summary |
+| **Summary Reporting** | Shows detailed installation summary with the "S" command |
+| **Log Saving** | Saves complete logs to `/var/log/arch_post_install_TIMESTAMP.log`, recording "Omarchy `<version>`" or "Arch Linux" as the detected system type |
+
+#### Arch Statistics
+
+- **Main Menu Categories:** 30 (Snapshots & Backup is hidden from the on-screen list on Omarchy but still reachable if typed directly), plus Creative Suite, Security, Browsers, Communication, GUI Tweaks, GTK Themes, Drivers, Snapshots, and Peripherals sub-menus
+- **Package Front-End:** `pacman`, with `yay` bootstrapped automatically for AUR fallback
+- **AUR-Sourced Tools (no official-repo package exists):** VS Code, Sublime Text, Cursor, most browsers (Brave, Edge, Chrome, Zen, Floorp), Spotify, Slack, TeamViewer, 1Password, teams-for-linux, virtio-win, DisplayLink driver, and several security tools (`whatweb`, `wfuzz`, `sleuthkit-git`, `steghide`, `chkrootkit`, `aide`, `suricata`)
+- **Official-Repo Wins Over Fedora/Ubuntu:** Vivaldi, LibreWolf, Signal, Discord, Telegram, DBeaver, Azure CLI, lazygit, scrcpy, and most of the Security Tools "Firewall & Privacy" batch all land directly in Arch's `[extra]` repo — no vendor repo, COPR, or RPM Fusion dance needed
+- **Flatpak-Only (last resort, no reliable repo/AUR alternative):** Alpaca, Bruno, IntelliJ IDEA Community, Windows App for Linux
+- **Estimated Install Time:** 15 minutes – several hours (AUR builds compile from source, so individual packages can be noticeably slower than Fedora/Ubuntu's prebuilt binaries, especially without Chaotic-AUR enabled)
+- **Estimated Disk Space:** 5–30GB+ (depending on selections)
+
+---
+
+### 📥 Arch Installation
+
+#### Prerequisites
+
+- **Arch Linux or Omarchy** — no formal version gate (rolling release); the script detects Omarchy vs. plain Arch and adapts automatically
+- **Root access** (script must be run with `sudo`)
+- **A real non-root user session** (`$SUDO_USER`) for anything that touches the AUR — `yay`/`makepkg` refuse to run as root
+- **Internet connection**
+- **An active GNOME desktop session** if you want app folders created on a plain-Arch+GNOME box — meaningless (and skipped) on Omarchy/Hyprland
+
+#### Quick Start
+
+```bash
+chmod +x post-install-arch.sh
+sudo ./post-install-arch.sh
+```
+
+---
+
+### 🎯 Arch Usage
+
+#### Running the Script
+
+```bash
+chmod +x post-install-arch.sh
+sudo ./post-install-arch.sh
+```
+
+At startup the script runs `bootstrap_arch` (installs `yay` if missing, enables `[multilib]`) and `update_packages` — a full `pacman -Syu` on plain Arch (deliberate: the Arch Wiki warns a bare `-Sy` without an immediate `-u` risks a partial-upgrade break), but this step is **entirely skipped on Omarchy** because of its update-guard hook — you'd run `omarchy update` for that instead.
+
+#### Menu Navigation
+
+1. **Main Menu**: numbered categories `0`–`30`, grouped on screen into Creative & Drivers, Development, Data/System/Desktop, Compatibility & Devices, and Internet & Communication
+2. **Sub-Menus**: Creative Suite (`1`), Security Tools (`22`), Browsers (`26`), Communication (`27`), GUI Tweaks/Theming (`19`, itself branching into a GTK Themes sub-menu), Drivers & Extra Repos (`28`), Snapshots & Backup (`29`), Peripherals (`30`) each open their own sub-menu
+3. **Bulk Options**: `A` (All Dev Tools), `B` (All Creative), `C` (EVERYTHING) — see [Bulk Options](#-arch-bulk-options-a--b--c) below
+4. **`S`** — Show Installation Summary
+5. **`0`** — Exit
+
+The menu subtitle line reads differently depending on what's detected: `pacman · AUR (yay) · GNOME app folders (if present)` on plain Arch, or `pacman · AUR (yay) · Omarchy <version>` on Omarchy.
+
+#### Example Workflows
+
+##### Install a Development Environment
+
+```bash
+sudo ./post-install-arch.sh
+# Select: 2 (Code Editors)
+# Select: 4 (Web Development)
+# Select: 18 (AI Tools)
+# Press 0 to exit
+```
+
+##### Install Creative/Media Tools
+
+```bash
+sudo ./post-install-arch.sh
+# Select: 1 (Creative Suite) -> 1 (Full)
+# -> installs Graphics & Design, Video Editing, Audio Production, Photography, Publishing
+```
+
+##### Set Up Containers & VMs
+
+```bash
+sudo ./post-install-arch.sh
+# Select: 13 (Containers & VMs)
+# -> installs Docker/Podman, KVM/QEMU + virt-manager/GNOME Boxes, Cockpit, and the docker/libvirt bridge-forwarding fix
+```
+
+##### Full System Setup
+
+```bash
+sudo ./post-install-arch.sh
+# Select: C (EVERYTHING)
+# Wait for completion (AUR builds make this the slowest of the three scripts' full runs)
+```
+
+---
+
+### 🗂️ Arch GNOME App Folders (Super Key Groups)
+
+Same feature and same `org.gnome.desktop.app-folders` gsettings mechanism as the Ubuntu/Fedora scripts, with an Arch-specific resolution order: a package's own file list (`pacman -Qlq`) first, then a dependency walk for meta-packages with no launcher of their own, then a reverse-DNS prefix guess, then a Flatpak-exports match for Flatpak-only tools (Alpaca, Bruno, IntelliJ, Windows App).
+
+**On Omarchy this feature is a deliberate, explicit no-op.** `prompt_menu_category` detects Omarchy and, instead of prompting, logs: *"Omarchy's app launcher (Super+Space) already fuzzy-searches every installed app — no GNOME-style menu folder needed"* — then does a bare pause so the category's install summary doesn't flash by and vanish (the confirmation prompt that normally provides that pause is what's being skipped). Bulk-run categories (`A`/`B`/`C`) call `create_menu_category` directly and unprompted either way — still a no-op if no GNOME `app-folders` schema is present.
+
+---
+
+### 📦 Arch Package Categories
+
+Below is a breakdown of what each category installs. Packages are tagged **(AUR)** where Arch has no official-repo equivalent; everything else is `[extra]`/`[core]`/`[multilib]`.
+
+---
+
+#### Arch: AI Tools
+
+| Tool | Installation Method |
+| --- | --- |
+| **Ollama** | Official install script |
+| **Alpaca** | Flathub (`com.jeffser.Alpaca`) — no reliable AUR package |
+| **Claude Code** | Official native installer, npm fallback |
+| **Claude Desktop** | AppImage downloaded directly from [aaddrick/claude-desktop-debian](https://github.com/aaddrick/claude-desktop-debian)'s GitHub Releases — its own AUR package (`claude-desktop-appimage`) was deleted 2026-08-01 in an AUR duplicate-package cleanup and is pending reinstatement, so the script hand-writes a `.desktop` launcher instead of waiting on it |
+| **Gemini CLI** | `npm install -g @google/gemini-cli` |
+| **Mistral Vibe CLI** | Official installer script (needs Python 3.12+) |
+| **OpenCode** | Official native installer, npm fallback |
+| **Cursor** | **(AUR)** `cursor-bin` — simpler than Fedora's yum-repo bootstrap, no repo registration needed |
+
+**Omarchy note:** it pre-wires nine coding-agent CLIs (`claude`, `codex`, `opencode`, `gemini`, `copilot`, `crush`, `grok`, `pi`, `omp`) as lazy-loading mise stubs already on `$PATH` — no special-casing needed, every function here already gates on `command -v` first and just reports "already installed." Ollama, Alpaca, Claude Desktop, and Cursor aren't among those nine stubs, so they still install fresh even on Omarchy.
+
+---
+
+#### Arch: Code Editors
+
+**Official repo:** `vim`, `neovim`, `emacs`, `nano`, `geany`, `gnome-text-editor`, `gedit`, `kate`
+
+**AUR:** `visual-studio-code-bin` (VS Code has **no** official-repo package on Arch at all — even the community OSS build is AUR-only), `sublime-text-4`
+
+**Bruno** — Flathub (`com.usebruno.Bruno`); AUR entries have historically been flaky/unmaintained
+
+**LazyVim + Nordic (optional prompt):** same opt-in as Ubuntu/Fedora — backs up any existing `~/.config/nvim` first (this correctly catches and backs up Omarchy's own `omarchy-nvim` config too, with no special-casing needed).
+
+---
+
+#### Arch: Python
+
+`python`, `python-pip`, `python-virtualenv`, `ipython`, `python-pipx`
+
+---
+
+#### Arch: Web Development
+
+`nginx`; `apache`, `php-fpm`, `php`, `composer` (not started, mirroring the Ubuntu/Fedora port-80 avoidance); Node.js + the same global npm package set as [Node.js Development](#arch-nodejs).
+
+---
+
+#### Arch: Java
+
+`jdk-openjdk`, `gradle`, `maven`, `ant`, `junit` — Arch has no separate javadoc split package (bundled into `jdk-openjdk`). Plus IntelliJ IDEA Community via Flathub (`com.jetbrains.IntelliJ-IDEA-Community`).
+
+---
+
+#### Arch: C/C++
+
+`gcc`, `gcc-fortran`, `clang`, `cmake`, `make`, `ninja`, `ccache`, `autoconf`, `automake`, `libtool`, `m4`, `bison`, `flex`, `gettext`, `pkgconf`, `cppcheck`, `valgrind`, `gdb`, `ltrace`, `strace`
+
+---
+
+#### Arch: Go
+
+The official package is simply `go` (not `golang`) — installed directly if `go` isn't already on `PATH`.
+
+---
+
+#### Arch: Rust
+
+Prefers `rustup` (installed as your user into `~/.cargo/bin`, matching Ubuntu/Fedora's approach); falls back to the official `rust` package, which bundles `rustc`+`cargo`+stdlib as one package with no split.
+
+---
+
+#### Arch: PHP
+
+`php`, `php-fpm`, `php-gd`, `php-curl`, `php-pgsql`, `php-sqlite`, `composer` — unlike Fedora, Arch doesn't split out `php-xml`/`php-mbstring`/`php-json`; they're compiled into the base `php` package.
+
+---
+
+#### Arch: Ruby
+
+`ruby`, `ruby-bundler` — rubygems ships bundled inside `ruby`, not as a separate package.
+
+---
+
+#### Arch: Node.js
+
+Same installer as [Web Development](#arch-web-development): `nodejs`, `npm`, plus global packages `npm-check-updates`, `nodemon`, `pm2`, `webpack`, `webpack-cli`, `eslint`, `prettier`.
+
+---
+
+#### Arch: .NET
+
+`dotnet-sdk`, `aspnet-runtime` — both landed in the official `[extra]` repo; no longer requires a Microsoft-maintained AUR package.
+
+---
+
+#### Arch: General Dev Tools
+
+`jq`, `tig`, `subversion`, `make`, `cmake`, `autoconf`, `automake`, `bison`, `flex`, `gettext`, `pkgconf`, `man-db`, `man-pages`, `less`, plus Bruno (see [Code Editors](#arch-code-editors)).
+
+---
+
+#### Arch: DevOps & Cloud
+
+- **Docker + docker-compose** — dedicated standalone install, enables the service, adds the invoking user to the `docker` group
+- **Azure CLI** — official `[extra]` package `azure-cli` (no longer AUR-only)
+- **lazygit** — official `[extra]` package (unlike Fedora's historical `go install`/COPR fallback)
+
+---
+
+#### Arch: Database Tools
+
+`mariadb`, `sqlite`, `sqlitebrowser`, `memcached`, and **`valkey`** (Redis-compatible) — Arch moved `redis` to AUR/deprecated status and replaced it in `[extra]` with `valkey` in 2024 over Redis's license change (the same dispute driving Fedora's own valkey default), so unlike Fedora there's no "offer both" choice here.
+
+`postgresql` is initialized via `sudo -u postgres bash -c "initdb ..."` — deliberately **not** `su - postgres -c`, since Arch's `postgres` system user has shell `/usr/bin/nologin`, which would silently no-op under `su -`. MariaDB gets an explicit first-run `mariadb-install-db` (Arch's package, unlike Debian/Fedora's, doesn't do this in a post-install scriptlet).
+
+**DBeaver** — official `[extra]` package `dbeaver` directly, no COPR/third-party repo needed.
+
+---
+
+#### Arch: Containers & VMs
+
+**Containers:** `docker`, `docker-compose`, `podman`, `iptables` (explicit — Arch's docker package depends on nftables, and libvirt only optionally suggests `iptables-nft`, needed for the bridge-forward fix below). Docker enabled, user added to the `docker` group.
+
+**Virtualization:** `qemu-full`, `libvirt`, `virt-install`, `virt-manager`, `virt-viewer`, `gnome-boxes`, `cockpit`, `cockpit-machines`, `cockpit-podman`. `libvirtd` enabled, user added to the `libvirt` group.
+
+**Virtio-Win drivers:** tries the **(AUR)** `virtio-win` package first (its own PKGBUILD drops the ISO straight into `/var/lib/libvirt/images/virtio-win.iso`, no symlink detour needed like Fedora's RPM); falls back to a direct download of upstream's "stable" ISO if the AUR build is unavailable.
+
+**Docker/libvirt bridge-forward fix:** the same Docker-sets-FORWARD-to-DROP-without-scoping issue documented in the Ubuntu/Fedora sections — a systemd oneshot service inserts `DOCKER-USER` ACCEPT rules for libvirt's `virbr+` bridges idempotently, `After=`/`Wants=` both `docker.service` and `libvirtd.service`.
+
+---
+
+#### Arch: Gaming
+
+`steam`, `lutris`, `gamemode`, `mangohud`, `lib32-gamemode`, `lib32-mangohud` (multilib enabled first). The user is explicitly added to the **`gamemode`** group — unlike Fedora, Arch's `gamemode` package does **not** auto-enroll the user, so without this `gamemoded` is denied permission to change the CPU governor/niceness.
+
+**Omarchy note:** Omarchy ships its own on-demand installers (`omarchy-install-gaming-steam`, `-lutris`, `-gpu-lib32`), but running this category doesn't conflict — `safe_install` just no-ops on anything already installed.
+
+---
+
+#### Arch: Windows Software Support
+
+`wine`, `wine-mono`, `wine-gecko`, `winetricks`, `zenity` (multilib enabled first); a `winetricks.desktop` GUI launcher is written since the package ships none.
+
+---
+
+#### Arch: Browsers
+
+Nearly every browser here needed a hand-rolled vendor-repo dance on Fedora; on Arch almost all have a well-established AUR `-bin` package or land directly in `[extra]`.
+
+| Browser | Source |
+| --- | --- |
+| Brave | **(AUR)** `brave-bin` |
+| Vivaldi | Official `[extra]` |
+| Microsoft Edge | **(AUR)** `microsoft-edge-stable-bin` |
+| Google Chrome | **(AUR)** `google-chrome` (repackages Google's official `.deb`; occasionally breaks briefly if Google changes URLs, fixed fast given 2000+ AUR votes) |
+| LibreWolf | Official `[extra]` |
+| Zen Browser | **(AUR)** `zen-browser-bin` (avoids the from-source `zen-browser` package's heavy rust/llvm/wasi toolchain) |
+| Floorp | **(AUR)** `floorp-bin` — no Flathub fallback needed here, unlike Fedora |
+
+---
+
+#### Arch: Communication
+
+| App | Source |
+| --- | --- |
+| Signal | Official `[extra]` (`signal-desktop`) — vs. Fedora's dedicated vendor repo |
+| Discord | Official `[extra]` — vs. Fedora's RPM Fusion nonfree requirement |
+| Telegram | Official `[extra]` (`telegram-desktop`) — vs. Fedora's RPM Fusion requirement |
+| Microsoft Teams | **(AUR)** `teams-for-linux` — same community project Ubuntu/Fedora consume via their own repos |
+
+---
+
+#### Arch: Desktop Apps
+
+| App | Source |
+| --- | --- |
+| Spotify | **(AUR)** `spotify` |
+| Slack | **(AUR)** `slack-desktop` — no manual release-note version-scraping needed, unlike Fedora |
+| Remmina | Official `[extra]` `remmina` + `freerdp` (explicit — freerdp is only an optional dep) |
+| TeamViewer | **(AUR)** `teamviewer` — community-maintained, no official vendor support; the AUR package has carried an out-of-date flag before |
+| 1Password | **(AUR)** `1password` — not on Arch/AUR's officially-supported platform list, unlike Fedora's rpm/Ubuntu's deb |
+| Windows App for Linux | No AUR package exists — the script queries GitHub's API for the latest [mariuszkopowski/windows-app-for-linux](https://github.com/mariuszkopowski/windows-app-for-linux) release, downloads the `.flatpak` asset, and installs it into the desktop user's per-user Flatpak scope |
+
+---
+
+#### Arch: Creative Suite
+
+Fedora uses `dnf` comps groups ("Fedora Jam", "Design Suite") for this; Arch has **no equivalent metapackage/group at all**, so every sub-category here is hand-curated.
+
+- **Graphics & Design:** `gimp`, `inkscape`, `krita`, `blender`, `darktable`, `pitivi`, `qimgv` (swapped in for `nomacs` — its AUR package depends on a nonexistent `quazip-qt6`, confirmed via a live AUR query; `qimgv` fills the same role from the same maintainer), `flameshot`, `imagemagick`, `graphicsmagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp`. Also binds Print Screen to `flameshot gui` via gsettings on GNOME (explicit no-op on Omarchy, which has its own `omarchy-capture-*` screenshot tooling).
+- **Video Editing:** `kdenlive`, `shotcut`, `obs-studio`, `mkvtoolnix-cli`, `mkvtoolnix-gui`, `mpv`, `vlc`, `yt-dlp`, plus multimedia codecs (`ffmpeg` — already the full/unencumbered build on Arch, no swap needed like Fedora's `ffmpeg-free`→`ffmpeg`; `gst-plugins-good/bad/ugly`, `gst-libav`).
+- **Audio Production:** `ardour`, `audacity`, `carla`, `hydrogen`, `guitarix`, `qjackctl`, `lsp-plugins-lv2`, `calf`, `libpulse`, `soundconverter`, `easytag`, `pavucontrol`.
+- **Photography:** `darktable`, `rawtherapee`, `digikam`, `hugin`, `gthumb`.
+- **Publishing:** `scribus`, `fontforge`, `calibre`.
+- **Full** — runs Graphics, Video, Audio, Photography, and Publishing in sequence.
+
+---
+
+#### Arch: Office & Productivity
+
+`libreoffice-fresh`, `okular`, `evince`, `zathura`, `pandoc-cli` (bare `pandoc` doesn't exist as a package name on Arch — that's the Haskell library, `haskell-pandoc`).
+
+---
+
+#### Arch: System Utilities
+
+`htop`, `iotop`, `sysstat`, `glances`, `nethogs`, `iftop`, `nload`, `vnstat`, `tcpdump`, `wireshark-cli`, `wireshark-qt` (Arch splits Wireshark into a core/tshark package and a separate Qt GUI, unlike Fedora's single package), `lsof`, `strace`, `ltrace`, `valgrind`, `gdb`, `tmux`, `screen`, `zsh`, `fish`, `fzf`, `ripgrep`, `tree`, `ncdu`, `rsync`, `unzip`, `bat`.
+
+---
+
+#### Arch: Android Tools
+
+`android-tools`, `android-udev`, `scrcpy` — `scrcpy` lands directly in `[extra]` (depends on `android-tools`), no COPR needed like Fedora.
+
+---
+
+#### Arch: Security Tools
+
+Same Full/Defensive-only sub-menu split as Ubuntu/Fedora, installed in themed batches — notably, Arch's **Firewall & Privacy** batch (`firewalld`, `firewall-config`, `openvpn`, `wireguard-tools`, `proxychains-ng`, `torsocks`, `keepassxc`, `ettercap`) is **entirely official-repo**, needing no AUR or BlackArch fallback at all, unlike Fedora.
+
+- **Network:** `nmap` (bundles `ncat` itself, unlike Fedora's separate package), `masscan`, `hping`, `bind` (provides `dig`/`nslookup`; Fedora calls this package `bind-utils`)
+- **Web app testing:** `nikto`, `sqlmap`, `gobuster` (all landed in `[extra]`, previously AUR/BlackArch-only), **(AUR)** `whatweb`, `wfuzz` (both carry real maintenance risk — `whatweb` flagged by its own maintainer for possible removal, `wfuzz` has open Python 3.13 build issues)
+- **Cracking & wireless:** `john`, `hashcat`, `hydra`, `aircrack-ng`, `macchanger` — all official, including macchanger (Fedora needs a third-party repo for it)
+- **Forensics & RE:** `radare2`, `binwalk`, **(AUR)** `sleuthkit-git` (no plain `sleuthkit` package exists anywhere), **(AUR)** `steghide` (open unresolved libjpeg-turbo build issue), `yara`, `perl-image-exiftool`
+- **Hardening:** `lynis`, **(AUR)** `chkrootkit`, `rkhunter`, `clamav` (bundles freshclam directly), `fail2ban`, **(AUR)** `aide`
+- **Firewall & Privacy:** `firewalld`, `firewall-config`, `openvpn`, `wireguard-tools`, `proxychains-ng`, `torsocks`, `keepassxc`, `ettercap` — if firewalld installs, the script notes Arch's more idiomatic minimal alternative is `ufw`, and never installs both (they conflict)
+
+**Defensive only:** `lynis`, `chkrootkit`, `rkhunter`, `aide`, `audit` (in Arch's `[core]`, often already present), `clamav`, `fail2ban`, **(AUR)** `suricata`, `firewalld`, `firewall-config`, `openvpn`, `wireguard-tools`, `keepassxc`.
+
+**BlackArch repo (opt-in):** downloads BlackArch's official `strap.sh`, computes its SHA1, and asks you to manually cross-check it against blackarch.org's published value before running it (a hardcoded checksum would go stale — see [BlackArch/blackarch#1249](https://github.com/BlackArch/blackarch/issues/1249)). Carries an extra Omarchy-specific warning about layering an uncurated repo on top of Omarchy's curated package set.
+
+**Chaotic-AUR repo (opt-in):** same risk profile/warning shape as BlackArch — imports Chaotic-AUR's signing key, installs its keyring/mirrorlist packages via direct `pacman -U`, and appends a `[chaotic-aur]` section to `/etc/pacman.conf` (Chaotic-AUR's own docs recommend it precede other third-party repos there). Also enables multilib first, since Chaotic-AUR's docs list it as a flat prerequisite.
+
+---
+
+#### Arch: Peripherals (Logitech)
+
+`solaar` (udev rules bundled in the main package, no separate `-udev` split). A dedicated fix — `solaar config "MX Anywhere 3S" hires-smooth-resolution 1` — addresses a real hardware issue: the MX Anywhere 3S over Bluetooth ships with its "Scroll Wheel Resolution" HID++ feature disabled by default, causing slow-but-smooth scrolling that no OS-level setting can fix.
+
+---
+
+#### Arch: Drivers & Extra Repos
+
+| # | Item | Notes |
+| --- | --- | --- |
+| 1 | **NVIDIA Driver** | **Omarchy:** re-invokes `omarchy-apply-hardware --install-user <user>` (its documented idempotent hardware-redetection entry point) rather than re-deriving GPU classification logic — Omarchy's own tooling picks `nvidia-open-dkms` (GSP-capable: Turing/Ampere/Ada/Blackwell) vs. `nvidia-580xx-dkms` (pre-GSP: Maxwell/Pascal) via sysfs detection. **Plain Arch:** installs `nvidia-open-dkms`, `nvidia-utils`, `lib32-nvidia-utils`, `libva-nvidia-driver` plus dynamically-detected kernel `-headers` packages (matches `linux`/`linux-zen`/`linux-lts`/`linux-hardened`) — DKMS is chosen deliberately over the plain `nvidia` package so it survives kernel updates on non-stock kernels. Writes `modeset=1` and an mkinitcpio hook; prints MOK-enrollment instructions if Secure Boot is enabled |
+| 2 | **BlackArch Repo** | Opt-in — see [Security Tools](#arch-security-tools) above |
+| 3 | **Chaotic-AUR Repo** | Opt-in — see [Security Tools](#arch-security-tools) above |
+| 4 | **DisplayLink Driver** | **(AUR)** `displaylink` (pulls in `evdi-dkms` automatically); installs matching kernel headers first; explicitly enables `displaylink.service` (Arch packaging convention discourages auto-enabling services, unlike Fedora's RPM `%post`) |
+
+---
+
+#### Arch: Snapshots & Backup
+
+**New category with no Fedora/Ubuntu equivalent.** Detects the root filesystem type and routes accordingly:
+
+- **Btrfs root:** installs `snapper`, `grub-btrfs`, `btrfs-assistant`; creates a Snapper `root` config; enables `snapper-timeline.timer`/`snapper-cleanup.timer`; conditionally enables `grub-btrfsd.service` only if GRUB is the actually-detected bootloader (useless — and left disabled — under Limine or systemd-boot). **On Omarchy**, if its own Snapper `root` config already exists, the script deliberately does **not** re-create it or re-enable the timeline timer — Omarchy intentionally disables that timer in favor of update-triggered + manual snapshots via `limine-snapper-sync`, and re-enabling it would fight that choice. `btrfs-assistant` is still installed either way as a standalone GUI.
+- **Non-Btrfs root:** falls back to `timeshift`.
+- **Create a snapshot now:** prefers `omarchy-snapshot create` on Omarchy (wraps Snapper across every configured config, cleans up by count); else Snapper directly on a Btrfs root; else Timeshift.
+- **List snapshots / Open GUI:** Snapper list or `timeshift --list`; `btrfs-assistant` GUI if installed, else Omarchy's own `omarchy-snapshot restore` (interactive `limine-snapper-restore`) with a confirmation prompt, else `timeshift-gtk`.
+
+---
+
+#### Arch: GUI Tweaks / Theming
+
+This menu **branches entirely on Omarchy vs. plain Arch**, since Omarchy already owns theming/terminal/Shell:
+
+- **On Omarchy:** the sub-menu only offers Nerd Fonts, Chris Titus mybash, and an **Omarchy theme picker** (wraps `omarchy-theme-switcher`, or lists themes via `omarchy-theme-list` with manual `omarchy-theme-set` instructions if the switcher isn't available).
+- **On plain Arch:** the full set below is offered.
+
+**Icon Sets:** `papirus-icon-theme`, `numix-icon-theme-git` (the original `numix-icon-theme` name is no longer packaged, only this community rebuild), `breeze-icons`, `adwaita-icon-theme`, plus [Qogir](https://github.com/vinceliuice/Qogir-icon-theme), [WhiteSur](https://github.com/vinceliuice/WhiteSur-icon-theme), [Vimix](https://github.com/vinceliuice/Vimix-icon-theme), and [Newaita](https://github.com/cbrnix/Newaita) built/copied from source, same as the Ubuntu script's approach.
+
+**GTK Themes:** [Nordic](https://github.com/EliverLara/Nordic), [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme), [Material GNOME](https://github.com/SakibShahariar/material-gnome-theme), and [Lycia](https://github.com/Aevstiel/Lycia-Theme) — the last piped `Y`/`N` answers (yes to GTK4/libadwaita files, no to the GDM login-screen theme, same unattended-safety reasoning as the Ubuntu script).
+
+**Cursor Themes:** `capitaine-cursors`, `xcursor-breeze5` (breeze-icons ships no XCursor files of its own).
+
+**Nerd Fonts:** prefers official `ttf-*-nerd` pacman packages (FiraCode, JetBrainsMono, Hack, SourceCodePro, CascadiaCode, UbuntuMono, DejaVu) over GitHub-release downloads, only falling back to a direct download for whatever pacman doesn't cover.
+
+**GUI Tools:** `gnome-tweaks`, `nautilus`, `loupe` (swapped in for `eog`, which is being phased out upstream — the script checks and adapts automatically), `file-roller`, `simple-scan`, `gnome-screenshot`, `gnome-system-monitor`, `dconf-editor`. **Explicit no-op on Omarchy** (no GNOME session).
+
+**GNOME Shell Extensions:** same curated set and `gext`/pipx install method as Ubuntu/Fedora. **Explicit no-op on Omarchy**, which replaces GNOME Shell entirely with its own Quickshell desktop.
+
+**Chris Titus mybash:** same clone-and-run pattern as Ubuntu/Fedora, root-run `setup.sh` for the nested-sudo-needs-a-real-terminal reason, falling back to a plain config copy.
+
+**Logiops (optional prompt):** builds [PixlOne/logiops](https://github.com/PixlOne/logiops) from source, writes a default `/etc/logid.cfg` (smartshift + hi-res scroll), enables the `logid` service.
+
+---
+
+### 🔀 Arch Bulk Options (A / B / C)
+
+| Option | Runs | Notes |
+| --- | --- | --- |
+| **A** | Code Editors, Python, Web Development, Java, C/C++, Go, Rust, Node.js, PHP, Ruby, .NET, General Dev Tools, AI Tools | "All Dev Tools" — 13 categories |
+| **B** | Creative Suite (Full) | "All Creative" — a single call |
+| **C** | Everything in A and B, plus Database Tools, Containers & VMs, Gaming, Office & Productivity, System Utilities, GUI Tweaks, Windows Software Support, Android Tools, Security Tools, Browsers, Communication, Desktop Apps | "EVERYTHING" — 27 categories total |
+
+**Deliberately excluded from all bulk options:** Peripherals, Drivers & Extra Repos (NVIDIA/BlackArch/Chaotic-AUR/DisplayLink), and Snapshots & Backup — same reasoning as Fedora's exclusion of its Drivers category: these are meaningful, semi-interactive opt-ins, not safe to fire unattended. Every bulk-run category attempts `create_menu_category` unprompted (no-op on Omarchy).
+
+---
+
+### 🔧 Arch Error Handling & Installation Checks
+
+Same three-step check flow as Ubuntu/Fedora (already installed? → exists somewhere? → attempt install), extended with an AUR fallback tier:
+
+```
+1. Check if package is ALREADY INSTALLED (pacman -Qq)
+   ↓ Yes → Skip (SKIPPED_PACKAGES)
+   ↓ No
+2. Check if package EXISTS in an official repo (pacman -Si)
+   ↓ Yes → Install via pacman -S --needed --noconfirm
+   ↓ No
+3. Check if package EXISTS in the AUR (yay -Si, only if yay is available)
+   ↓ Yes → Install via yay (tagged "(AUR)" in tracking)
+   ↓ No → Fail ("Not in repos or AUR")
+```
+
+| Function | Purpose |
+| --- | --- |
+| `is_installed(pkg)` | `pacman -Qq` |
+| `repo_package_exists(pkg)` | `pacman -Si` |
+| `aur_package_exists(pkg)` | `yay -Si`, only if `yay` is present |
+| `package_exists(pkg)` | `repo_package_exists \|\| aur_package_exists` |
+| `ensure_yay()` | Bootstraps `yay` from **yay-bin** (no Go toolchain needed); runs the clone/build as `$SUDO_USER` since `makepkg` refuses to run as root, and only the final `pacman -U` runs as root; no-op on Omarchy |
+| `enable_temp_passwordless_sudo()` / `disable_temp_passwordless_sudo()` | Grants a narrowly-scoped, temporary `NOPASSWD: /usr/bin/pacman` rule via a `visudo -c`-validated `/etc/sudoers.d/` drop-in so `yay` can call `sudo pacman` from inside the `su`-as-user context without hitting "sudo: a terminal is needed to read the password" — removed via `trap` on exit no matter how the script terminates |
+| `aur_install(pkg)` | `su - $SUDO_USER -c "yay -S --needed --noconfirm --removemake '$pkg'"` — deliberately not silenced, so real build failures stay visible |
+| `safe_install(pkgs...)` / `batch_install(category, pkgs...)` | Same shape as Ubuntu/Fedora, extended with the AUR tier above |
+| `bootstrap_multilib()` | Enables `[multilib]` by uncommenting Arch's existing commented-out block in `/etc/pacman.conf`, rather than appending a duplicate section (a documented real footgun) |
+| `update_packages()` | Full `pacman -Syu` on plain Arch (the Arch Wiki warns against a bare `-Sy`); entirely skipped on Omarchy due to its update-guard hook |
+| `create_menu_category(...)` | Same GNOME app-folder feature; explicit no-op path on Omarchy |
+
+---
+
+### 📊 Arch Installation Summary & Logging
+
+Same Catppuccin-themed summary as Ubuntu/Fedora. AUR-sourced packages appear in the summary with a trailing `(AUR)` so you can see repo vs. AUR provenance at a glance. Logs save to:
+
+```
+/var/log/arch_post_install_TIMESTAMP.log
+```
+
+recording the detected system type as either `Omarchy <version>` or `Arch Linux`.
+
+---
+
+### 🐉 Omarchy-Specific Behavior
+
+Because Omarchy already owns so much of the desktop/system layer, this script defers to Omarchy's own tooling in more places than any other category in this repo. Full list:
+
+- **AI Tools** — Omarchy's nine pre-wired mise-stub CLIs mean most AI tool installs just report "already installed" and move on.
+- **NVIDIA Driver** — re-invokes `omarchy-apply-hardware --install-user <user>` instead of re-deriving GPU-generation classification logic.
+- **Snapshots & Backup** — detects and preserves Omarchy's own Snapper `root` config and its deliberately-disabled timeline timer (in favor of `limine-snapper-sync`), rather than overwriting it; `omarchy-snapshot`/`limine-snapper-restore` are used as the create/restore entry points when available.
+- **GUI Tweaks / Theming menu** — branches to a reduced menu (Nerd Fonts, mybash, theme picker only) instead of the full plain-Arch set.
+- **Omarchy theme picker** — wraps `omarchy-theme-switcher`/`omarchy-theme-list`/`omarchy-theme-set`, an Omarchy-only menu entry.
+- **GNOME Shell extensions & GUI Tools** — explicit no-ops (Omarchy replaces GNOME Shell entirely with Quickshell).
+- **Terminal font configuration** — explicit no-op (Omarchy uses its own Quickshell-based terminal theming, not GNOME Terminal/gsettings).
+- **Screenshot hotkey binding** — explicit no-op (Omarchy has its own `omarchy-capture-*` tooling and keybindings).
+- **GNOME App Folders** — explicit no-op everywhere, with a message pointing at Omarchy's own fuzzy-search app launcher (Super+Space) instead.
+- **Gaming** — informational note only; Omarchy's own on-demand installers (`omarchy-install-gaming-steam`, etc.) don't conflict with this category, they're just redundant if you've already used them.
+- **Package updates** — `update_packages()` never runs a raw `pacman -Syu` on Omarchy, respecting its pre-transaction sync-guard hook; you're pointed at `omarchy update` instead.
+- **BlackArch / Chaotic-AUR** — both carry an *additional* Omarchy-specific warning in their confirmation prompts about layering an uncurated repo on top of Omarchy's curated package set.
+
+---
+
+### 🔒 Arch Security Notes
+
+- **AUR trust model:** AUR packages are user-submitted `PKGBUILD`s that compile from source and can run arbitrary code during the build (`makepkg`) and via post-install hooks — there is no Arch-team review comparable to the official repos. This script's `package_exists`/`aur_install` gate what gets *attempted*, not what the build itself does; you're trusting each AUR maintainer individually, same as running `yay -S` yourself.
+- **Temporary passwordless-sudo grant:** scoped to `NOPASSWD: /usr/bin/pacman` only (not a blanket `NOPASSWD: ALL`), validated with `visudo -c` before being written, and removed via `trap` on exit regardless of how the script terminates — but it does exist as a real, if narrow, privilege-escalation window for the duration of AUR installs.
+- **BlackArch / Chaotic-AUR:** both are large, uncurated third-party repos carrying real dependency/version-churn risk and their own signing-key trust chain — both are opt-in with an explicit confirmation dialog, and BlackArch additionally asks you to manually verify `strap.sh`'s SHA1 against blackarch.org's published value rather than trusting a hardcoded checksum that would go stale.
+- **Remote install scripts run as root, trusted over HTTPS only:** Ollama, Claude Code, Mistral Vibe CLI, OpenCode, and rustup's official installers — same trust model as the Ubuntu/Fedora scripts. Claude Code, Vibe, OpenCode, and rustup specifically run **as your user** (via `su - $SUDO_USER`), not root.
+- **NVIDIA proprietary driver:** a real out-of-tree DKMS kernel module, signed for Secure Boot only if you complete MOK enrollment yourself (the script prints the exact commands but can't automate the reboot-into-firmware step).
+- **Docker/libvirt group = root-equivalent:** same caveat as Ubuntu/Fedora — group membership grants effective root over that daemon's socket.
+- **No secrets handled:** the script never asks for or stores passwords/tokens beyond the sudoers drop-in described above, and menu input (a single character) can't reach a shell.
+
+---
+
+### ⚠️ Arch Known Limitations
+
+- **AUR build times:** AUR installs compile from source via `makepkg`/`yay` rather than pulling a prebuilt binary, so individual packages (VS Code, Cursor, most browsers, Spotify, Slack, TeamViewer, 1Password, several security tools) can be noticeably slower than the Ubuntu/Fedora equivalents — especially with Chaotic-AUR not enabled.
+- **yay bootstrap requirements:** needs a real non-root `SUDO_USER` session (fails gracefully with a warning otherwise) and network access to `aur.archlinux.org`.
+- **Manjaro compatibility risk:** combining Manjaro's intentionally-delayed package branch with this script's AUR-heavy automatic flow is a known way to hit mismatched glibc/library-version breakage — the script gates this with a hard confirmation prompt rather than blocking outright, but the risk is real, not hypothetical.
+- **Individual package-confidence caveats**, called out in the script's own comments: `whatweb`/`wfuzz` (Python 3.13 build issues / possible AUR removal), `steghide` (unresolved libjpeg-turbo AUR build issue), `sleuthkit` (only the `-git` AUR variant exists), `nomacs` (broken AUR dependency on a nonexistent `quazip-qt6`, worked around by substituting `qimgv`), Pitivi (low upstream activity, fragile AUR fallback), TeamViewer/1Password (no formal AUR maintenance/vendor-support guarantee).
+- **BlackArch/Chaotic-AUR trust trade-off:** both meaningfully expand your system's trusted-signing-key surface and third-party dependency churn — see [Security Notes](#-arch-security-notes) above.
+- **Omarchy update-guard interaction:** any pacman.conf change that needs a fresh sync (enabling `[multilib]` or `[chaotic-aur]`) is left un-synced on Omarchy with an instruction to run `omarchy update` afterward, since the script never runs `-Syu` itself there.
+- **Package-name confidence varies by category**, same as Fedora — the harder/AUR-dependent categories were individually researched against archlinux.org/packages and aur.archlinux.org during development; ordinary official-repo packages rely on the `package_exists` safety net rather than a pre-verified list against a live system.
+
+---
+
+### ⚙️ Arch Customization
+
+#### Adding New Packages (Arch)
+
+```bash
+batch_install "Category Name" \
+    package1 \
+    package2 \
+    package3
+```
+
+`safe_install` (called by `batch_install`) already tries the official repos first and falls back to the AUR automatically — you don't need to pre-decide which tier a new package belongs to.
+
+**Important:** verify new packages exist (`pacman -Si <pkg>` for official repos, `yay -Si <pkg>` for AUR) before adding them.
+
+#### Creating New Categories (Arch)
+
+1. Add an install function:
+   ```bash
+   install_my_category() {
+       batch_install "My Category" package1 package2
+   }
+   ```
+2. Add a menu line in `show_main_menu`.
+3. Add a case branch in `main()`:
+   ```bash
+   31) reset_tracking; install_my_category; display_summary; prompt_menu_category "My Category" "icon" "Comment" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+   ```
+4. Optionally add the new function to the `A`/`B`/`C` bulk chains in `main()`.
+
+---
+
+### 🐛 Arch Troubleshooting
+
+| Issue | Solution |
+| --- | --- |
+| **Script exits immediately** | Run with `sudo` |
+| **"Not in repos or AUR"** | The package name may be wrong, or genuinely doesn't exist for Arch — check `pacman -Si <pkg>` and `yay -Si <pkg>` manually |
+| **AUR install fails / "terminal is needed to read the password"** | Should be handled automatically by the temporary passwordless-sudo grant — if you still hit this, check `/etc/sudoers.d/99-postinstall-aur-<user>` was actually written and removed cleanly; re-run the script |
+| **`yay` never got installed** | Needs a real non-root `SUDO_USER` — running the script as raw `root` (not via `sudo` from a user login) skips AUR bootstrap entirely by design |
+| **Raw `pacman -Syu` refuses to run / mentions a pre-transaction hook** | You're on Omarchy — use `omarchy update` instead; this script deliberately never runs a raw full-sync there |
+| **NVIDIA driver installed but the module won't load** | Check Secure Boot: `mokutil --sb-state`. If enabled, enroll the MOK key manually — see the exact commands the script prints, or [Arch: Drivers & Extra Repos](#arch-drivers--extra-repos) above |
+| **App folder not created** | Expected on Omarchy/Hyprland (no GNOME session exists to target) — on plain Arch, needs an active GNOME desktop session as the target user |
+| **Manjaro: dependency/version conflicts after running this script** | This is the known risk flagged in the script's own Manjaro confirmation gate — Manjaro's delayed package branch and this script's AUR-heavy flow can genuinely clash; consider using Manjaro's own pamac/GUI tools for anything AUR-related instead |
+
+#### Checking Arch Logs
+
+```bash
+# View a specific log
+cat /var/log/arch_post_install_*.log
+
+# Tail the most recent
+ls -lt /var/log/arch_post_install_*.log | head -1 | awk '{print $NF}' | xargs cat
+```
+
+---
+
 # 🎨 i3 + Catppuccin Rice Script (Fedora)
 
 ### 🚀 i3 Script Overview
@@ -1589,7 +2219,10 @@ All scripts in this repo are provided **as-is** without warranty. You are free t
 
 ## 🙏 Acknowledgments
 
-- **Ubuntu Community** and **Fedora Community**: For the excellent package repositories
+- **Ubuntu Community**, **Fedora Community**, and **Arch Linux Community**: For the excellent package repositories
+- **[Omarchy](https://omarchy.org) / Basecamp**: For the opinionated Hyprland-based Arch distro the Arch script detects and defers to
+- **Arch Linux AUR maintainers** and the **[yay](https://github.com/Jguer/yay)** project: For making the AUR usable as an automated fallback layer
+- **BlackArch Linux** and **[Chaotic-AUR](https://aur.chaotic.cx/)**: For the opt-in security-tooling and prebuilt-AUR-binary repos the Arch script can bootstrap
 - **Chris Titus Tech**: For the mybash configuration
 - **Ollama**: For making local LLMs accessible
 - **Mistral AI**: For Vibe and open-source AI models
@@ -1601,6 +2234,8 @@ All scripts in this repo are provided **as-is** without warranty. You are free t
 - **[JustDeax](https://github.com/JustDeax)**: For the Obsidian Flow shell theme
 - **[metro2222](https://github.com/metro2222)**: For the Oval and Rounded Rectangle Dark Blue shell themes
 - **[cbrnix](https://github.com/cbrnix)**: For the Newaita icon theme
+- **[PixlOne](https://github.com/PixlOne)**: For Logiops, the Logitech HID++ driver the Arch and Ubuntu scripts can build from source
+- **[aaddrick](https://github.com/aaddrick)**: For the Claude Desktop Linux repackaging project
 - **All package maintainers**: For their hard work on the included software
 
 ---
