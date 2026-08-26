@@ -2098,25 +2098,32 @@ ls -lt /var/log/arch_post_install_*.log | head -1 | awk '{print $NF}' | xargs ca
 
 ### 🚀 i3 Script Overview
 
-[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh) is a standalone, single-purpose script — separate from `post-install-fedora.sh` above — that builds a complete **Catppuccin Mocha–themed i3 tiling window manager** desktop on Fedora: gapped tiling, picom blur/shadows/rounded corners, a per-monitor polybar status bar, rofi launcher, dunst notifications, kitty terminal, and a full keybinding set covering window management, media/volume/brightness, screenshots, locking, power, and multi-monitor control. It's meant to be run once on a fresh Fedora install (or after `post-install-fedora.sh`) to go from "bare X11" to "usable themed i3 session."
+[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh) is a standalone, single-purpose script — separate from `post-install-fedora.sh` above — that builds a complete **Catppuccin Mocha–themed i3 tiling window manager** desktop on Fedora: gapped tiling with always-visible borders (2px, mauve on the focused window), picom blur/shadows/rounded corners, a per-monitor powerline-style polybar status bar (with a native bluetooth widget and a modern-tray-icon proxy so apps like 1Password/Discord/OBS actually show a tray icon), rofi launcher, dunst notifications, kitty terminal, copyq clipboard history, udiskie USB automount, pcmanfm file manager, gammastep night light, nitrogen wallpaper picker, a Catppuccin GTK2/3/4 theme, and a full keybinding set covering window management, media/volume/brightness (with on-screen level popups), screenshots, locking, power, and multi-monitor control. It's meant to be run once on a fresh Fedora install (or after `post-install-fedora.sh`) to go from "bare X11" to "usable themed i3 session."
 
-It targets **Fedora only** (checks for `dnf` at startup and aborts otherwise) and is **idempotent-ish**: safe to re-run, but it *overwrites* every config file it manages (`~/.config/i3`, `picom`, `polybar`, `rofi`, `dunst`, `kitty`, `fastfetch`, `autorandr/postswitch`) without prompting — back up your own dotfiles first if you've customized any of them.
+It targets **Fedora only** (checks for `dnf` at startup and aborts otherwise) and is **idempotent-ish**: safe to re-run, but it *overwrites* every config file it manages (`~/.config/i3`, `picom`, `polybar`, `rofi`, `dunst`, `kitty`, `fastfetch`, `gtk-3.0`/`gtk-4.0`, `autorandr/postswitch`) without prompting — back up your own dotfiles first if you've customized any of them.
 
 ---
 
 ### 📦 What Gets Installed
 
-**Core stack:** `xorg-x11-server-Xorg`, `xorg-x11-xinit`, `xorg-x11-xauth`, `xrandr`, `xset`, `i3`, `i3lock`, `picom`, `polybar`, `rofi`, `dunst`, `kitty`, `feh`
+**Core stack:** `xorg-x11-server-Xorg`, `xorg-x11-xinit`, `xorg-x11-xauth`, `xrandr`, `xset`, `i3`, `i3lock`, `picom`, `polybar`, `rofi`, `dunst`, `kitty`
 
-**Session/tray helpers:** `xss-lock`, `network-manager-applet`, `pasystray`, `blueman`, `lxqt-policykit`, `pipewire-pulseaudio`
+**Session/tray helpers:** `xss-lock`, `network-manager-applet`, `pasystray`, `blueman`, `lxqt-policykit`, `pipewire-pulseaudio`, `copyq` (clipboard history — runs as a floating window, toggled with `Mod+shift+v`), `udiskie` (auto-mounts USB drives/SD cards on insert, tray icon for eject), `gammastep` (auto-adjusts screen color temperature by time of day, via geoclue2 if available), `nitrogen` (wallpaper picker, `Mod+shift+w`), `gnome-calendar` (opened by clicking the polybar clock, pulls in `evolution-data-server` so calendar/task reminder popups work too). The `network-manager-applet`/`pasystray`/`blueman` *packages* are installed for `NetworkManager`/`PulseAudio`/`bluetoothd` themselves, but their tray-icon *applets* (`nm-applet`, `pasystray`, `blueman-applet`) are deliberately never autostarted — polybar's own wifi/volume/bluetooth widgets replace that display, and their `/etc/xdg/autostart` entries are overridden with `Hidden=true` in `~/.config/autostart/` so nothing brings them back.
 
-**Utilities:** `lxappearance`, `papirus-icon-theme`, `fastfetch`, `git`, `curl`, `unzip`, `jq`, `flameshot`, `ImageMagick`, `brightnessctl`, `playerctl`, `numlockx`, `dex-autostart`, `autorandr`, `arandr`, `jetbrains-mono-fonts`
+**Utilities:** `lxappearance`, `papirus-icon-theme`, `fastfetch`, `git`, `curl`, `unzip`, `jq`, `flameshot`, `ImageMagick`, `brightnessctl`, `playerctl`, `numlockx`, `dex-autostart`, `autorandr`, `arandr`, `jetbrains-mono-fonts`, `pcmanfm` (file manager, `Mod+e`), `libnotify` (backs the volume/brightness OSD popups)
 
 **i3lock-color** (COPR `tokariew/i3lock-color`) — a colorized fork of i3lock used for the themed lock screen. The COPR enable/install is best-effort: if it fails for any reason (repo down, arch mismatch), the script falls back to the plain `i3lock` it already installed unconditionally, and `lock.sh` detects at runtime which binary is actually present so the lock screen never silently breaks either way.
 
-**JetBrainsMono Nerd Font** — the patched build (with glyph icons for polybar/rofi/i3) isn't in Fedora's repos, so it's downloaded directly from [ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts) releases into `~/.local/share/fonts`. Best-effort: a failed download just logs a warning and skips it — it doesn't abort the rest of the script.
+**JetBrainsMono Nerd Font** — the patched build (with glyph icons for polybar/rofi/i3) isn't in Fedora's repos, so it's downloaded directly from [ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts) releases into `~/.local/share/fonts`. Best-effort: a failed download just logs a warning and skips it — it doesn't abort the rest of the script. A second, *unpatched* JetBrains Mono (`jetbrains-mono-fonts`, from Fedora's repos) is also installed and used specifically for polybar's digit-only labels — some Nerd Font patched builds have broken/asymmetric advance widths on ordinary glyphs ([nerd-fonts#991](https://github.com/ryanoasis/nerd-fonts/issues/991)), which otherwise skews text off-center inside its own widget.
 
 Also adds the invoking user to the **`video`** group (required for `brightnessctl` to write `/sys/class/backlight` without root) — takes effect on next login.
+
+**snixembed** — not packaged for Fedora, so it's built from source (`vala`/`gtk3-devel`/`libdbusmenu-devel`/`libdbusmenu-gtk3-devel`, all installed above) from [~steef/snixembed](https://git.sr.ht/~steef/snixembed) and installed to `~/.local/bin/snixembed`. It proxies the modern StatusNotifierItem tray-icon protocol (used by most current apps — 1Password, Discord, OBS, etc.) into the legacy XEmbed protocol polybar's tray module actually understands; without it, SNI-only apps simply don't show a tray icon at all. Best-effort like the font download — a failed build just logs a warning and moves on.
+
+**Polybar theme:** a Catppuccin Mocha *powerline* bar — each widget is a solid-color segment joined by rounded Nerd Font separator glyphs, so the whole thing reads as one continuous ribbon rather than isolated text blobs. The system tray sits at the left of the right-hand widget group, bookended by a thin mauve "cap" segment so it reads as a closed container instead of trailing off, with the clock as the very last, right-most segment. `internal/network`'s `click-left`/`click-right` config keys are silently ignored by polybar (confirmed upstream: [polybar#1617](https://github.com/polybar/polybar/issues/1617)) — the wifi/ethernet widget's click-to-open-`nm-connection-editor` (and right-click wifi-toggle) instead use inline `%{A...}` action tags embedded in the label, which is the actual supported mechanism. The bluetooth widget has no native polybar module backing it — a small poll script (`~/.local/bin/polybar-bluetooth.sh`) calls `bluetoothctl show` instead, click-opens `blueman-manager`. Since `blueman-manager` unconditionally spawns `blueman-applet` as its own backend with no way to opt out, `~/.local/bin/blueman-applet-guard.sh` runs in the background killing it back off every few seconds so the disabled tray icon can't reappear. There's no GUI theme manager for polybar itself (nothing like `lxappearance`) — it's plain-text `config.ini`, hand-edited or swapped for a community config like [adi1090x/polybar-themes](https://github.com/adi1090x/polybar-themes) if you want a totally different look instead of this one.
+
+**Catppuccin GTK2/3/4 theme** — not packaged for Fedora either; the official [catppuccin/gtk](https://github.com/catppuccin/gtk) GitHub release ships a prebuilt theme folder (just CSS + assets, no build step) for the Mocha/mauve variant, downloaded straight into `~/.themes`. `~/.config/gtk-3.0/settings.ini`, `~/.config/gtk-4.0/settings.ini`, and `~/.gtkrc-2.0` (a completely different, older config format GTK2 apps still use) are all pointed at it, alongside Papirus-Dark icons. Re-run `lxappearance` (already installed) any time to change the theme/icons/font/cursor interactively instead.
+- GTK4 apps built with **libadwaita** (e.g. `gnome-calendar`) hardcode Adwaita/Adwaita-dark and ignore `gtk-theme-name` entirely — a deliberate GNOME design choice, not a bug. The one working override is the `GTK_THEME` environment variable, which the script sets session-wide via `~/.config/environment.d/gtk-theme.conf` (takes effect on the *next* login, not retroactively). If you swap in a different theme later, make sure its `gtk-4.0/gtk.css` doesn't use `!important` or `-gtk-icon-effect` — both are GTK3-only and GTK4's stricter CSS parser silently drops any rule using them.
 
 ---
 
@@ -2131,7 +2138,7 @@ After it finishes:
 
 1. Log out.
 2. At the GDM login screen, click the gear icon next to the password field and select **i3** (installing the `i3` package registers the session automatically).
-3. First login looks bare for a couple of seconds until picom/polybar spawn. If polybar doesn't appear, run `polybar -c ~/.config/polybar/config.ini top` from a kitty terminal (`Mod+Return`) to see errors directly.
+3. First login looks bare for a couple of seconds until picom/polybar spawn. If polybar doesn't appear, run `polybar -c ~/.config/polybar/config.ini top-primary` from a kitty terminal (`Mod+Return`) to see errors directly.
 4. Brightness keys need the `video` group membership added above — log out/in (or reboot) once for that to take effect.
 5. For multi-monitor, see [Multi-Monitor Setup](#️-multi-monitor-setup) below.
 
@@ -2145,8 +2152,11 @@ After it finishes:
 | --- | --- |
 | `Mod+Return` | Open kitty |
 | `Mod+d` / `Mod+shift+d` | Rofi app launcher (`drun`) / run launcher |
+| `Mod+e` | File manager (`pcmanfm`) |
+| `Mod+shift+w` | Wallpaper picker (`nitrogen`) |
 | `Mod+l` | Lock screen |
 | `Mod+shift+p` | Power menu (lock / suspend / logout / reboot / shutdown) |
+| `Mod+shift+v` | Clipboard history (`copyq toggle`, opens as a floating window) |
 | `Print` | Screenshot (`flameshot gui`, falls back to `import`) |
 | `Mod+shift+q` | Close focused window |
 | `Mod+f` | Fullscreen toggle |
@@ -2156,26 +2166,29 @@ After it finishes:
 | `Mod+shift+h/j/k/;` | Move window left/down/up/right |
 | `Mod+ctrl+h/l` | Focus next/prev **monitor** |
 | `Mod+ctrl+shift+h/l` | Move workspace to next/prev **monitor** |
-| `Mod+1..5` / `Mod+shift+1..5` | Switch to / move window to workspace 1–5 |
+| `Mod+1..9` / `Mod+shift+1..9` | Switch to / move window to workspace 1–9 |
 | `Mod+r` | Resize mode (`h/j/k/l` to resize, `Return`/`Escape` to exit) |
 | `Mod+shift+r` / `Mod+shift+c` | Restart / reload i3 |
 | `Mod+shift+e` | Exit i3 (with confirm) |
-| `XF86Audio{Raise,Lower,Mute}Volume` | Volume via `pactl` |
-| `XF86MonBrightness{Up,Down}` | Brightness via `brightnessctl` |
+| `XF86Audio{Raise,Lower,Mute}Volume` | Volume via `pactl`, with a dunst level popup |
+| `XF86MonBrightness{Up,Down}` | Brightness via `brightnessctl`, with a dunst level popup |
 | `XF86Audio{Play,Next,Prev}` | Media control via `playerctl` |
+
+Several polybar widgets are clickable too: left-click the wifi/ethernet widget opens `nm-connection-editor`, right-click wifi toggles the radio on/off, left-click the bluetooth widget opens `blueman-manager`, and left-click the clock opens `gnome-calendar` — all open as small centered floating windows (`for_window` rules in the generated i3 config) instead of tiling full-height. Evolution's calendar/task reminder popup (`class="Evolution-alarm-notify"`, titled "Reminders") gets the same floating/centered treatment whenever it appears on its own.
 
 ---
 
 ### 🖥️ Multi-Monitor Setup
 
-The script wires up per-monitor polybar, per-monitor wallpaper, and hotplug handling out of the box:
+The script wires up per-monitor polybar, wallpaper restoration, and hotplug handling out of the box:
 
 1. Plug in your monitor(s), run `arandr` to drag them into the layout you want (position, orientation, primary), then save it: `autorandr --save mylayout`.
 2. From then on, **autorandr** auto-detects that saved layout (or any other known layout) whenever the monitor set changes and re-applies it automatically.
-3. Its `~/.config/autorandr/postswitch` hook (installed by the script) re-runs two helper scripts on every profile change:
-   - `~/.local/bin/polybar-launch.sh` — kills any existing polybar instance(s) and launches one fresh instance **per connected output** (`polybar --list-monitors`), so every monitor gets its own bar instead of just the primary one.
-   - `~/.local/bin/wallpaper.sh` — feh normally stretches a single wallpaper across the *entire combined* virtual screen; this repeats the same image once per connected output so each monitor gets its own independent fill instead of one stretched panorama.
+3. Its `~/.config/autorandr/postswitch` hook (installed by the script) re-runs on every profile change:
+   - `~/.local/bin/polybar-launch.sh` — kills any existing polybar instance(s) and launches one fresh instance **per connected output** (`polybar --list-monitors`). Whichever output xrandr reports as primary gets the `top-primary` bar (systray + battery + bluetooth widgets); every other output gets `top-secondary` (same modules minus those three) — only one polybar instance can ever win the X11 systray selection, so giving the others an identical tray slot just left it permanently empty, and a second bluetooth radio reading would just be a duplicate of the primary bar's.
+   - `nitrogen --restore` — re-applies your saved wallpaper pick across the new output layout (nitrogen fills every connected output natively, no per-monitor tiling script needed).
 4. `Mod+ctrl+h/l` and `Mod+ctrl+shift+h/l` move focus/workspaces between outputs (see cheat sheet above).
+5. **By default, i3 pins each workspace to whichever output it was first created on** and leaves it there — with no explicit assignment, that makes multi-monitor feel like separate unrelated desktops per screen, since switching workspaces only changes what the *currently focused* output shows. The generated `~/.config/i3/config` has a commented `workspace <n> output <name>` block in the workspaces section as a template — uncomment and edit the output names to match `xrandr --query` (or `polybar --list-monitors`) on your hardware to pin workspace ranges to specific monitors for predictable placement across reboots.
 
 ---
 
@@ -2193,11 +2206,18 @@ This is best-effort and never blocks the rest of the script — if snapper isn't
 
 ### ⚠️ i3 Script Known Limitations & Caveats
 
-- **Systray is single-owner.** With one polybar instance per monitor, only whichever instance wins the X11 systray selection (usually the first one launched) actually shows tray icons — the others render everything except the tray module. This is an inherent X11 protocol limit, not a bug.
+- **Systray is single-owner.** Only one polybar instance can ever hold the X11 systray selection — this is an inherent X11 protocol limit, not a bug. The script routes around it by only asking the primary-output bar (`top-primary`) for the `tray` module at all; secondary outputs use `top-secondary`, which never requests one, so you don't see an empty/broken tray slot on the other monitors.
 - **Idle-lock timing is fixed.** `xset s 300 dpms 300 600 900` locks the screen (via `xss-lock`) at 5 minutes idle, with the display standing by/suspending/powering off at 5/10/15 minutes — edit that line in the generated `~/.config/i3/config` if you want different timings.
-- **`dex-autostart -a -e i3` runs third-party autostart entries** (from `~/.config/autostart` and `/etc/xdg/autostart`) alongside the script's own explicit `exec` lines for `nm-applet`/`pasystray`/`blueman-applet`/the polkit agent. In the unlikely event a package ships its own autostart `.desktop` entry for one of those same apps *without* an `OnlyShowIn=` restriction that excludes i3, you could see a duplicate tray icon until the next reload. (`lxqt-policykit`'s own autostart entry is `OnlyShowIn=LXQt;`, so it's never double-launched — the script's explicit `exec` is the only thing that starts it under i3.)
+- **`dex-autostart -a -e i3` runs third-party autostart entries** (from `~/.config/autostart` and `/etc/xdg/autostart`) alongside the script's own explicit `exec` lines. `nm-applet`/`pasystray`/`blueman` all ship their own such entries, which is exactly why they're overridden with `Hidden=true` (see "What Gets Installed" above) rather than just leaving their `exec` lines out — omitting the `exec` line alone wouldn't have stopped `dex-autostart` from bringing them back anyway. If some *other* package ever ships an autostart `.desktop` entry for one of the apps this script's widgets already replace, without an `OnlyShowIn=` restriction excluding i3, you'd see a duplicate icon until you add the same `Hidden=true` override for it. (`lxqt-policykit`'s own autostart entry is `OnlyShowIn=LXQt;`, so it's never double-launched — the script's explicit `exec` is the only thing that starts it under i3.)
+- **Gaps and borders are always visible by design**, not i3's defaults. `smart_gaps`/`smart_borders`/`hide_edge_borders smart` all hide things specifically when there's only one window or gaps are present — which made a single-window workspace look inconsistent with a multi-window one. The script omits/changes those directives so gaps (8px inner / 2px outer) and the 2px border always render the same regardless of window count; edit `gaps inner`/`gaps outer` in the generated `~/.config/i3/config` if 8/2 isn't to your taste.
+- **A window that already requested `border=none` before the script last ran keeps that state until it's closed and reopened** (or you run `i3-msg '[title=".*"] border pixel 2'` once to force it retroactively) — border mode is decided at window-creation time, not continuously re-evaluated, so re-running the script (or just editing `hide_edge_borders`) doesn't retroactively fix windows that were already open.
+- **`snixembed` isn't packaged for Fedora** and is built from source (see "What Gets Installed" above) — best-effort like the Nerd Font download; a failed build (network issue, missing/renamed dependency) just logs a warning. Without it, apps that only support the modern StatusNotifierItem tray protocol (1Password, Discord, OBS, etc.) simply won't show a tray icon at all, though everything else in this script works fine regardless.
+- **No backlight device found** (common on desktops, or laptops where the monitor itself controls brightness) makes the script show the keyboard-layout widget in that polybar slot instead of the brightness widget — both are always defined in the generated config either way.
 - **`polkit-gnome` was removed from Fedora 41+** (upstream stopped shipping it); the script uses **`lxqt-policykit`** instead, which provides the same authentication-agent role via `/usr/libexec/lxqt-policykit-agent`.
 - **NVIDIA users:** picom defaults to the `glx` backend (comment in `~/.config/picom/picom.conf` notes this is tuned for Mesa/Intel/AMD) — switch it to `xrender` if you see tearing or flicker on the proprietary NVIDIA driver.
+- **`gammastep` needs a location source to compute sunrise/sunset.** It uses `geoclue2` automatically if that's installed (commonly pulled in as a dependency); if it isn't, gammastep will fail to start silently in the background — set a fixed location manually in `~/.config/gammastep/config.ini` (see `man gammastep`) if the night-shift color change never kicks in.
+- **The volume/brightness OSD popups (`osd-volume.sh`/`osd-brightness.sh`) parse `pactl`/`brightnessctl` text output**, which is best-effort — if you're on an unusual PulseAudio/PipeWire or `brightnessctl` version whose output format differs, the notification may show a blank or wrong percentage even though the volume/brightness change itself still applies correctly.
+- **Flameshot ≥14 defaults to capturing via the XDG desktop portal** (`org.freedesktop.portal.Screenshot`), which nothing on a bare i3 session implements — `flameshot gui` fails with "Could not locate org.freedesktop.portal.desktop" instead of taking a screenshot. The script sets `useX11LegacyScreenshot=true` in `~/.config/flameshot/flameshot.ini` (merged in, not overwritten, so any `savePath`/etc. you've already set survives) to force the portal-free native X11 capture path instead.
 - Every config file this script manages is **overwritten on re-run** with no automatic backup — if you've hand-edited any of them, copy them aside first.
 
 ---
