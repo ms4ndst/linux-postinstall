@@ -1360,6 +1360,43 @@ install_containers() {
     install_docker_libvirt_forward_fix
 }
 
+# ========== PRINTERS (HP/CUPS) ==========
+# CUPS + HPLIP cover the open-source rendering path for most printers, but
+# several HP models - especially older "host-based" LaserJets/inkjets like
+# the LaserJet P1006/P1005/P1018 - also need a proprietary HP-supplied plugin
+# for actual rasterization. Without it, jobs sit in the queue and silently
+# fail with "hplip.plugin-error" / "m_Job initialization failed with error =
+# 48" in /var/log/cups/error_log, with no obvious error surfaced to the user
+# (confirmed directly against a real LaserJet P1006 - jobs looked "queued"
+# forever with no error dialog anywhere).
+install_printer_support() {
+    batch_install "Printer Support" cups hplip system-config-printer
+    systemctl enable --now cups.service &>/dev/null || true
+}
+
+# hp-plugin's installed/not-installed state lives in /var/lib/hp/hplip.state
+# under a [plugin] section - only run the (interactive, license-accepting)
+# installer if it isn't already recorded there. Only prompted when an HP
+# device is actually detected (CUPS's discovered devices, or the USB vendor
+# ID 03f0) - most printers don't need this at all, so there's no reason to
+# bother everyone else with an interactive EULA + download.
+install_hp_plugin() {
+    if ! command -v hp-plugin &>/dev/null; then
+        log INFO "hplip not installed yet - installing printer support first..."
+        install_printer_support
+    fi
+    if ! lpinfo -v 2>/dev/null | grep -qi "hp\|hewlett" && ! lsusb 2>/dev/null | grep -qi "03f0"; then
+        log WARNING "No HP printer detected (USB or CUPS-discovered) - plug it in first, then run this again."
+        return 1
+    fi
+    if grep -qx "installed = 1" /var/lib/hp/hplip.state 2>/dev/null; then
+        log SUCCESS "HP proprietary plugin already installed."
+        return 0
+    fi
+    log INFO "Running hp-plugin - accept the download and license prompts to install HP's proprietary plugin (needed by several older LaserJet/inkjet models)."
+    hp-plugin -i
+}
+
 # DisplayLink (USB/dock-connected display adapters, DL-3xxx through DL-7xxx
 # chipsets) has a real official Synaptics apt repo - confirmed by extracting
 # their published synaptics-repository-keyring.deb, which drops
@@ -3489,7 +3526,7 @@ show_main_menu() {
     echo
     ui_section "Compatibility & Devices"
     ui_cell 23 "Windows (Wine)";     ui_cell 24 "Android Tools";        echo
-    ui_cell 31 "Drivers & Extra Repos";                                 echo
+    ui_cell 31 "Drivers & Extra Repos"; ui_cell 32 "Printers (CUPS + HP)"; echo
     echo
     ui_section "Internet & Communication"
     ui_cell 29 "Browsers";           ui_cell 30 "Communication";        echo
@@ -3500,7 +3537,7 @@ show_main_menu() {
     echo
     ui_rule
     ui_cell  S "Summary";            ui_cell  0 "Exit";                 echo
-    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-30 · A-C · S]${NC}${LAVENDER}: ${NC}"
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-32 · A-C · S]${NC}${LAVENDER}: ${NC}"
 }
 
 show_ubuntu_studio_menu() {
@@ -3608,6 +3645,19 @@ show_drivers_menu() {
     echo
     ui_rule
     printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-1]${NC}${LAVENDER}: ${NC}"
+}
+
+show_printers_menu() {
+    clear
+    ui_header "PRINTERS (CUPS + HP)" "HPLIP - HP's Linux printing/imaging stack"
+    echo
+    ui_item 1 "Install printer support (cups + hplip + system-config-printer)"
+    ui_item 2 "Install/check HP proprietary plugin (some older LaserJets/inkjets need this)"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-2]${NC}${LAVENDER}: ${NC}"
 }
 
 show_gui_tweaks_menu() {
@@ -3844,6 +3894,16 @@ main() {
                 case "$drv_choice" in
                     0) continue ;;
                     1) reset_tracking; install_displaylink_driver; display_summary ;;
+                    *) log ERROR "Invalid choice"; sleep 2 ;;
+                esac
+                ;;
+            32)
+                show_printers_menu
+                read -r printer_choice
+                case "$printer_choice" in
+                    0) continue ;;
+                    1) reset_tracking; install_printer_support; display_summary ;;
+                    2) install_hp_plugin ;;
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;

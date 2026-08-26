@@ -54,6 +54,7 @@ There's also a fourth, standalone script that isn't part of that trio: **[`fedro
     - [DevOps &amp; Cloud](#devops--cloud)
     - [Desktop Apps](#desktop-apps)
     - [Drivers & Extra Repos](#drivers--extra-repos)
+    - [Printers (CUPS + HP)](#printers-cups--hp)
   - [🔀 Bulk Options (A / B / C)](#-bulk-options-a--b--c)
   - [🔧 Error Handling &amp; Installation Checks](#-error-handling--installation-checks)
   - [📊 Installation Summary &amp; Logging](#-installation-summary--logging)
@@ -96,6 +97,7 @@ There's also a fourth, standalone script that isn't part of that trio: **[`fedro
     - [Fedora: Browsers](#fedora-browsers)
     - [Fedora: Communication](#fedora-communication)
     - [Fedora: Drivers & Extra Repos](#fedora-drivers--extra-repos)
+    - [Fedora: Printers (CUPS + HP)](#fedora-printers-cups--hp)
   - [🔀 Fedora Bulk Options (A / B / C)](#-fedora-bulk-options-a--b--c)
   - [🔧 Fedora Error Handling &amp; Installation Checks](#-fedora-error-handling--installation-checks)
   - [📊 Fedora Installation Summary &amp; Logging](#-fedora-installation-summary--logging)
@@ -139,6 +141,7 @@ There's also a fourth, standalone script that isn't part of that trio: **[`fedro
     - [Arch: Peripherals (Logitech)](#arch-peripherals-logitech)
     - [Arch: Drivers & Extra Repos](#arch-drivers--extra-repos)
     - [Arch: Snapshots & Backup](#arch-snapshots--backup)
+    - [Arch: Printers (CUPS + HP)](#arch-printers-cups--hp)
     - [Arch: GUI Tweaks / Theming](#arch-gui-tweaks--theming)
   - [🔀 Arch Bulk Options (A / B / C)](#-arch-bulk-options-a--b--c)
   - [🔧 Arch Error Handling &amp; Installation Checks](#-arch-error-handling--installation-checks)
@@ -204,7 +207,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 | **Version Detection**         | Detects the running release at startup, supports **Ubuntu 26.04 LTS and 26.10**, warns/prompts on anything else |
 | **Nala Front-End**            | Installs and uses [Nala](https://github.com/volitank/nala) for installs/updates (parallel downloads, cleaner output); transparently falls back to apt-get if unavailable |
 | **Catppuccin-Themed Output**  | Menus, logs, and summary use the Catppuccin Mocha palette (truecolor), auto-disabled for non-TTY / `NO_COLOR` |
-| **Interactive Menu**          | Text-based menu with 28 categories, plus Ubuntu Studio, Security, GUI Tweaks, Browsers, Communication, and Drivers & Extra Repos sub-menus |
+| **Interactive Menu**          | Text-based menu with 28 categories, plus Ubuntu Studio, Security, GUI Tweaks, Browsers, Communication, Drivers & Extra Repos, and Printers sub-menus |
 | **GNOME App-Folder Creation** | After each category, optionally groups the apps you just installed into a Super-key app folder |
 | **Terminal Font Setup**       | In GUI Tweaks, optionally sets the terminal / system monospace font to an installed Nerd Font (works on Ptyxis, GNOME Console, and gnome-terminal) |
 | **Error Handling**             | Skips unavailable packages, continues installation                                              |
@@ -217,7 +220,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 
 #### Statistics
 
-- **Main Menu Categories:** 28 (plus Ubuntu Studio, Security, GUI Tweaks, Browsers, Communication, and Drivers & Extra Repos sub-menus)
+- **Main Menu Categories:** 28 (plus Ubuntu Studio, Security, GUI Tweaks, Browsers, Communication, Drivers & Extra Repos, and Printers sub-menus)
 - **Package Front-End:** Nala (auto-installed, with transparent apt-get fallback)
 - **Verified APT Packages:** 200+
 - **Snap-Only Tools:** 3 (LXD, IntelliJ IDEA Community, DBeaver CE)
@@ -768,6 +771,15 @@ Unlike Fedora's version of this category, there's no proprietary GPU driver here
 
 ---
 
+#### Printers (CUPS + HP)
+
+| # | Item | What it does |
+|---|------|---------------|
+| 1 | **Printer Support** | Installs `cups`, `hplip`, and `system-config-printer`, then `systemctl enable --now cups.service`. |
+| 2 | **HP Proprietary Plugin** | Several HP models — especially older "host-based" LaserJets/inkjets like the LaserJet P1006/P1005/P1018 — need a proprietary HP-supplied plugin on top of HPLIP's open-source `hpcups` driver for actual rasterization; without it, jobs sit in the queue and silently fail with `hplip.plugin-error` / `m_Job initialization failed with error = 48` in `/var/log/cups/error_log`, with no error surfaced anywhere else (confirmed directly against a real LaserJet P1006). Checks `/var/lib/hp/hplip.state` (an `installed = 1` line under `[plugin]` means it's already done) and, if an HP device is actually detected — CUPS's discovered devices, or USB vendor ID `03f0` — runs the interactive `hp-plugin -i`, which downloads the plugin from HP, prompts to accept its license, and installs it. Skipped entirely (with a message) if no HP device is detected. |
+
+---
+
 ### 🔀 Bulk Options (A / B / C)
 
 | Option | Runs                                                                                                                                                                                            | Notes                                    |
@@ -999,7 +1011,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 | **Version Detection**         | Detects the running release at startup via `/etc/os-release`, warns/prompts on anything unsupported |
 | **dnf5 Front-End**             | Uses plain `dnf` (dnf5 is Fedora 41+'s default) — no alternate front-end to bootstrap the way the Ubuntu script bootstraps Nala |
 | **Catppuccin-Themed Output**  | Same palette/menus/logging as the Ubuntu script, auto-disabled for non-TTY / `NO_COLOR`         |
-| **Interactive Menu**          | Text-based menu with 28 categories, plus Creative Suite, Security, GUI Tweaks, Browsers, Communication, and Drivers & Extra Repos sub-menus |
+| **Interactive Menu**          | Text-based menu with 28 categories, plus Creative Suite, Security, GUI Tweaks, Browsers, Communication, Drivers & Extra Repos, and Printers sub-menus |
 | **GNOME App-Folder Creation** | Identical feature to the Ubuntu script, `rpm -ql`-based resolution                              |
 | **RPM Fusion Bootstrap**       | Enables free + nonfree repos and Cisco OpenH264 automatically on first run                       |
 | **NVIDIA Driver Support**      | Opt-in `akmod-nvidia` + CUDA install with build-status polling and Secure Boot detection (new — no Ubuntu-script equivalent) |
@@ -1013,7 +1025,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 
 #### Fedora Statistics
 
-- **Main Menu Categories:** 28 (plus Creative Suite, Security, GUI Tweaks, Browsers, Communication, and Drivers & Extra Repos sub-menus)
+- **Main Menu Categories:** 28 (plus Creative Suite, Security, GUI Tweaks, Browsers, Communication, Drivers & Extra Repos, and Printers sub-menus)
 - **Package Front-End:** dnf5 (Fedora 41+'s default `dnf`)
 - **Third-Party/Vendor Repos:** Brave, Vivaldi, Google Chrome, Microsoft Edge, LibreWolf, TeamViewer, 1Password, Cursor, Slack, VS Code, Sublime Text, Microsoft Azure CLI, Microsoft Teams (teams-for-linux) — all real vendor `dnf`/yum repos
 - **RPM Fusion-Native Apps:** Steam, Discord, Telegram Desktop (better coverage than the Ubuntu script gets from apt for the latter two)
@@ -1397,6 +1409,15 @@ The Ubuntu script has its own, much smaller Drivers & Extra Repos category (Disp
 
 ---
 
+#### Fedora: Printers (CUPS + HP)
+
+| # | Item | What it does |
+|---|------|---------------|
+| 1 | **Printer Support** | Installs `cups`, `hplip`, and `system-config-printer`, then `systemctl enable --now cups.service`. |
+| 2 | **HP Proprietary Plugin** | Several HP models — especially older "host-based" LaserJets/inkjets like the LaserJet P1006/P1005/P1018 — need a proprietary HP-supplied plugin on top of HPLIP's open-source `hpcups` driver for actual rasterization; without it, jobs sit in the queue and silently fail with `hplip.plugin-error` / `m_Job initialization failed with error = 48` in `/var/log/cups/error_log`, with no error surfaced anywhere else (confirmed directly against a real LaserJet P1006). This option checks `/var/lib/hp/hplip.state` (an `installed = 1` line under `[plugin]` means it's already done) and, if an HP device is actually detected — either in CUPS's discovered devices or by USB vendor ID `03f0` — runs the interactive `hp-plugin -i`, which downloads the plugin from HP, prompts to accept its license, and installs it. Skipped entirely (with a message) if no HP device is detected, since most printers never need this. |
+
+---
+
 ### 🔀 Fedora Bulk Options (A / B / C)
 
 | Option | Runs | Notes |
@@ -1451,7 +1472,7 @@ Identical Catppuccin-themed summary/logging to the Ubuntu script. The only diffe
 
 - **Package-name confidence varies by category** — see the note at the top of [Fedora Package Categories](#-fedora-package-categories). The "hard" categories were individually researched and verified; the bulk of ordinary packages weren't re-checked against a live Fedora system (none was available during development), and rely on the `package_exists` safety net instead of a pre-verified list.
 - **NVIDIA + Secure Boot needs a manual step**: the script detects Secure Boot and prints the exact commands, but enrolling the MOK key genuinely requires an interactive reboot into a firmware-level UI — no script can complete this unattended.
-- **Bulk options don't include Drivers & Extra Repos**: NVIDIA driver, Terra repo, and the DisplayLink driver are deliberately excluded from `A`/`B`/`C` since they're meaningful, semi-interactive opt-ins, not safe to fire unattended.
+- **Bulk options don't include Drivers & Extra Repos or Printers**: NVIDIA driver, Terra repo, the DisplayLink driver, and the HP proprietary plugin are deliberately excluded from `A`/`B`/`C` since they're meaningful, semi-interactive opt-ins (the HP plugin in particular downloads from HP and requires accepting a license), not safe to fire unattended.
 - **"Ubuntu Studio" categories are consolidated**: the Ubuntu script has separate top-level Graphics/Video/Audio categories *in addition to* its Ubuntu Studio sub-menu (a deliberate overlap there). Fedora has no per-domain metapackage split to mirror that duplication meaningfully, so this port folds all of it into one **Creative Suite** category — a simplification, not an oversight.
 
 ---
@@ -1541,7 +1562,7 @@ Everywhere Omarchy already provides a first-party wrapper for something this scr
 | **AUR Bootstrap** | Installs `yay` from **yay-bin** (prebuilt, no Go toolchain needed) if missing; no-op on Omarchy, which ships it by default |
 | **Temporary Passwordless-Sudo Workaround** | Grants (and always revokes via `trap`) a narrowly-scoped `NOPASSWD: /usr/bin/pacman` rule so `yay` can call `sudo pacman` mid-build without a broken TTY chain |
 | **Catppuccin-Themed Output** | Same palette/menus/logging as the Ubuntu/Fedora scripts, auto-disabled for non-TTY / `NO_COLOR` |
-| **Interactive Menu** | Text-based menu with 30 categories, plus Creative Suite, Security, Browsers, Communication, GUI Tweaks, GTK Themes, Drivers, Snapshots, and Peripherals sub-menus |
+| **Interactive Menu** | Text-based menu with 31 categories, plus Creative Suite, Security, Browsers, Communication, GUI Tweaks, GTK Themes, Drivers, Snapshots, Peripherals, and Printers sub-menus |
 | **GNOME App-Folder Creation** | Same feature as Ubuntu/Fedora, `pacman -Qlq`-based resolution — explicitly a no-op under Hyprland/Omarchy (no GNOME session to target) |
 | **Snapshots & Backup Category** | New category with no Fedora/Ubuntu equivalent — Btrfs + Snapper + grub-btrfs, or Timeshift on non-Btrfs roots; Omarchy-aware (won't fight Omarchy's own Snapper/Limine setup) |
 | **BlackArch & Chaotic-AUR Repo Bootstraps** | Opt-in third-party repo setups under Drivers & Extra Repos — BlackArch's official `strap.sh` with a manual checksum cross-check, Chaotic-AUR's signed keyring/mirrorlist |
@@ -1554,7 +1575,7 @@ Everywhere Omarchy already provides a first-party wrapper for something this scr
 
 #### Arch Statistics
 
-- **Main Menu Categories:** 30 (Snapshots & Backup is hidden from the on-screen list on Omarchy but still reachable if typed directly), plus Creative Suite, Security, Browsers, Communication, GUI Tweaks, GTK Themes, Drivers, Snapshots, and Peripherals sub-menus
+- **Main Menu Categories:** 31 (Snapshots & Backup is hidden from the on-screen list on Omarchy but still reachable if typed directly), plus Creative Suite, Security, Browsers, Communication, GUI Tweaks, GTK Themes, Drivers, Snapshots, Peripherals, and Printers sub-menus
 - **Package Front-End:** `pacman`, with `yay` bootstrapped automatically for AUR fallback
 - **AUR-Sourced Tools (no official-repo package exists):** VS Code, Sublime Text, Cursor, most browsers (Brave, Edge, Chrome, Zen, Floorp), Spotify, Slack, TeamViewer, 1Password, teams-for-linux, virtio-win, DisplayLink driver, and several security tools (`whatweb`, `wfuzz`, `sleuthkit-git`, `steghide`, `chkrootkit`, `aide`, `suricata`)
 - **Official-Repo Wins Over Fedora/Ubuntu:** Vivaldi, LibreWolf, Signal, Discord, Telegram, DBeaver, Azure CLI, lazygit, scrcpy, and most of the Security Tools "Firewall & Privacy" batch all land directly in Arch's `[extra]` repo — no vendor repo, COPR, or RPM Fusion dance needed
@@ -1913,6 +1934,15 @@ Same Full/Defensive-only sub-menu split as Ubuntu/Fedora, installed in themed ba
 
 ---
 
+#### Arch: Printers (CUPS + HP)
+
+| # | Item | What it does |
+|---|------|---------------|
+| 1 | **Printer Support** | Installs `cups`, `hplip`, `system-config-printer` (all in the official `extra` repo), then `systemctl enable --now cups.service` — Arch never auto-enables systemd units on install, unlike Fedora/Ubuntu's packaging, so this step is required, not just belt-and-suspenders. |
+| 2 | **HP Proprietary Plugin** | Several HP models — especially older "host-based" LaserJets/inkjets like the LaserJet P1006/P1005/P1018 — need a proprietary HP-supplied plugin on top of HPLIP's open-source `hpcups` driver for actual rasterization; without it, jobs sit in the queue and silently fail with `hplip.plugin-error` / `m_Job initialization failed with error = 48` in `/var/log/cups/error_log`, with no error surfaced anywhere else (confirmed directly against a real LaserJet P1006). Checks `/var/lib/hp/hplip.state` (an `installed = 1` line under `[plugin]` means it's already done) and, if an HP device is actually detected — CUPS's discovered devices, or USB vendor ID `03f0` — runs the interactive `hp-plugin -i`, which downloads the plugin from HP, prompts to accept its license, and installs it. Skipped entirely (with a message) if no HP device is detected. |
+
+---
+
 #### Arch: GUI Tweaks / Theming
 
 This menu **branches entirely on Omarchy vs. plain Arch**, since Omarchy already owns theming/terminal/Shell:
@@ -2108,7 +2138,7 @@ It targets **Fedora only** (checks for `dnf` at startup and aborts otherwise) an
 
 **Core stack:** `xorg-x11-server-Xorg`, `xorg-x11-xinit`, `xorg-x11-xauth`, `xrandr`, `xset`, `i3`, `i3lock`, `picom`, `polybar`, `rofi`, `dunst`, `kitty`
 
-**Session/tray helpers:** `xss-lock`, `network-manager-applet`, `pasystray`, `blueman`, `lxqt-policykit`, `pipewire-pulseaudio`, `copyq` (clipboard history — runs as a floating window, toggled with `Mod+shift+v`), `udiskie` (auto-mounts USB drives/SD cards on insert, tray icon for eject), `gammastep` (auto-adjusts screen color temperature by time of day, via geoclue2 if available), `nitrogen` (wallpaper picker, `Mod+shift+w`), `gnome-calendar` (opened by clicking the polybar clock, pulls in `evolution-data-server` so calendar/task reminder popups work too). The `network-manager-applet`/`pasystray`/`blueman` *packages* are installed for `NetworkManager`/`PulseAudio`/`bluetoothd` themselves, but their tray-icon *applets* (`nm-applet`, `pasystray`, `blueman-applet`) are deliberately never autostarted — polybar's own wifi/volume/bluetooth widgets replace that display, and their `/etc/xdg/autostart` entries are overridden with `Hidden=true` in `~/.config/autostart/` so nothing brings them back.
+**Session/tray helpers:** `xss-lock`, `network-manager-applet`, `pasystray`, `blueman`, `lxqt-policykit`, `pipewire-pulseaudio`, `copyq` (clipboard history — runs as a floating window, toggled with `Mod+shift+v`), `udiskie` (auto-mounts USB drives/SD cards on insert, tray icon for eject), `gammastep` (auto-adjusts screen color temperature by time of day, via geoclue2 if available), `nitrogen` (wallpaper picker, `Mod+shift+w`), `gnome-calendar` (opened by clicking the polybar clock, pulls in `evolution-data-server` so calendar/task reminder popups work too), `system-config-printer` (CUPS printer setup GUI, `Mod+p` — a plain GTK3 app, no GNOME Settings dependency; `cups` itself ships with Fedora Workstation already), `hplip` (HP's printer driver stack — if an HP device is detected without its proprietary plugin installed, the script automatically runs the interactive `hp-plugin -i` for you; see [Known Limitations](#️-i3-script-known-limitations--caveats) below). The `network-manager-applet`/`pasystray`/`blueman` *packages* are installed for `NetworkManager`/`PulseAudio`/`bluetoothd` themselves, but their tray-icon *applets* (`nm-applet`, `pasystray`, `blueman-applet`) are deliberately never autostarted — polybar's own wifi/volume/bluetooth widgets replace that display, and their `/etc/xdg/autostart` entries are overridden with `Hidden=true` in `~/.config/autostart/` so nothing brings them back.
 
 **Utilities:** `lxappearance`, `papirus-icon-theme`, `fastfetch`, `git`, `curl`, `unzip`, `jq`, `flameshot`, `ImageMagick`, `brightnessctl`, `playerctl`, `numlockx`, `dex-autostart`, `autorandr`, `arandr`, `jetbrains-mono-fonts`, `pcmanfm` (file manager, `Mod+e`), `libnotify` (backs the volume/brightness OSD popups)
 
@@ -2154,6 +2184,7 @@ After it finishes:
 | `Mod+d` / `Mod+shift+d` | Rofi app launcher (`drun`) / run launcher |
 | `Mod+e` | File manager (`pcmanfm`) |
 | `Mod+shift+w` | Wallpaper picker (`nitrogen`) |
+| `Mod+p` | Printer setup (`system-config-printer`) |
 | `Mod+l` | Lock screen |
 | `Mod+shift+p` | Power menu (lock / suspend / logout / reboot / shutdown) |
 | `Mod+shift+v` | Clipboard history (`copyq toggle`, opens as a floating window) |
@@ -2174,7 +2205,7 @@ After it finishes:
 | `XF86MonBrightness{Up,Down}` | Brightness via `brightnessctl`, with a dunst level popup |
 | `XF86Audio{Play,Next,Prev}` | Media control via `playerctl` |
 
-Several polybar widgets are clickable too: left-click the wifi/ethernet widget opens `nm-connection-editor`, right-click wifi toggles the radio on/off, left-click the bluetooth widget opens `blueman-manager`, and left-click the clock opens `gnome-calendar` — all open as small centered floating windows (`for_window` rules in the generated i3 config) instead of tiling full-height. Evolution's calendar/task reminder popup (`class="Evolution-alarm-notify"`, titled "Reminders") gets the same floating/centered treatment whenever it appears on its own.
+Several polybar widgets are clickable too: left-click the wifi/ethernet widget opens `nm-connection-editor`, right-click wifi toggles the radio on/off, left-click the bluetooth widget opens `blueman-manager`, and left-click the clock opens `gnome-calendar` — all open as small centered floating windows (`for_window` rules in the generated i3 config) instead of tiling full-height. The same treatment applies to `system-config-printer` (`Mod+p`) and to Evolution's calendar/task reminder popup (`class="Evolution-alarm-notify"`, titled "Reminders"), which appears on its own whenever a reminder fires.
 
 ---
 
@@ -2218,6 +2249,7 @@ This is best-effort and never blocks the rest of the script — if snapper isn't
 - **`gammastep` needs a location source to compute sunrise/sunset.** It uses `geoclue2` automatically if that's installed (commonly pulled in as a dependency); if it isn't, gammastep will fail to start silently in the background — set a fixed location manually in `~/.config/gammastep/config.ini` (see `man gammastep`) if the night-shift color change never kicks in.
 - **The volume/brightness OSD popups (`osd-volume.sh`/`osd-brightness.sh`) parse `pactl`/`brightnessctl` text output**, which is best-effort — if you're on an unusual PulseAudio/PipeWire or `brightnessctl` version whose output format differs, the notification may show a blank or wrong percentage even though the volume/brightness change itself still applies correctly.
 - **Flameshot ≥14 defaults to capturing via the XDG desktop portal** (`org.freedesktop.portal.Screenshot`), which nothing on a bare i3 session implements — `flameshot gui` fails with "Could not locate org.freedesktop.portal.desktop" instead of taking a screenshot. The script sets `useX11LegacyScreenshot=true` in `~/.config/flameshot/flameshot.ini` (merged in, not overwritten, so any `savePath`/etc. you've already set survives) to force the portal-free native X11 capture path instead.
+- **HP plugin install is best-effort and only runs if a device is detected.** The script checks CUPS's discovered devices and the USB vendor ID `03f0` (Hewlett-Packard) before touching anything; if neither turns up, it logs a message and skips entirely rather than forcing an interactive EULA/download on everyone. If your HP printer only shows up *after* the script runs (plugged in later, or discovered once CUPS/avahi have had a moment to probe the network), just run `hp-plugin -i` yourself afterward — it's the exact same command, and it's a no-op if the plugin's already installed (checked via `/var/lib/hp/hplip.state`).
 - Every config file this script manages is **overwritten on re-run** with no automatic backup — if you've hand-edited any of them, copy them aside first.
 
 ---

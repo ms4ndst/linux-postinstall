@@ -1851,6 +1851,48 @@ install_peripheral_tools() {
     fi
 }
 
+# ========== PRINTERS (HP/CUPS) ==========
+# CUPS + HPLIP cover the open-source rendering path for most printers, but
+# several HP models - especially older "host-based" LaserJets/inkjets like
+# the LaserJet P1006/P1005/P1018 - also need a proprietary HP-supplied plugin
+# for actual rasterization. Without it, jobs sit in the queue and silently
+# fail with "hplip.plugin-error" / "m_Job initialization failed with error =
+# 48" in /var/log/cups/error_log, with no obvious error surfaced to the user
+# (confirmed directly against a real LaserJet P1006 - jobs looked "queued"
+# forever with no error dialog anywhere).
+#
+# Unlike Fedora/Ubuntu, Arch never auto-enables systemd units on install -
+# cups.service staying disabled+dead after a plain `pacman -S cups` is
+# expected Arch behavior, not a bug, so the explicit enable --now here is
+# required, not just belt-and-suspenders.
+install_printer_support() {
+    batch_install "Printer Support" cups hplip system-config-printer
+    systemctl enable --now cups.service &>/dev/null || true
+}
+
+# hp-plugin's installed/not-installed state lives in /var/lib/hp/hplip.state
+# under a [plugin] section - only run the (interactive, license-accepting)
+# installer if it isn't already recorded there. Only prompted when an HP
+# device is actually detected (CUPS's discovered devices, or the USB vendor
+# ID 03f0) - most printers don't need this at all, so there's no reason to
+# bother everyone else with an interactive EULA + download.
+install_hp_plugin() {
+    if ! command -v hp-plugin &>/dev/null; then
+        log INFO "hplip not installed yet - installing printer support first..."
+        install_printer_support
+    fi
+    if ! lpinfo -v 2>/dev/null | grep -qi "hp\|hewlett" && ! lsusb 2>/dev/null | grep -qi "03f0"; then
+        log WARNING "No HP printer detected (USB or CUPS-discovered) - plug it in first, then run this again."
+        return 1
+    fi
+    if grep -qx "installed = 1" /var/lib/hp/hplip.state 2>/dev/null; then
+        log SUCCESS "HP proprietary plugin already installed."
+        return 0
+    fi
+    log INFO "Running hp-plugin - accept the download and license prompts to install HP's proprietary plugin (needed by several older LaserJet/inkjet models)."
+    hp-plugin -i
+}
+
 # Applies a specific fix confirmed on real hardware: an MX Anywhere 3S over
 # Bluetooth with its "Scroll Wheel Resolution" HID++ feature disabled by
 # default, producing genuinely slow-but-smooth scrolling that no OS-side
@@ -2601,6 +2643,7 @@ show_main_menu() {
     else
         ui_cell 29 "Snapshots & Backup"; ui_cell 30 "Peripherals (Logitech)"; echo
     fi
+    ui_cell 31 "Printers (CUPS + HP)";                                   echo
     echo
     ui_section "Development"
     ui_cell  2 "Code Editors";       ui_cell  3 "Python";                echo
@@ -2628,7 +2671,7 @@ show_main_menu() {
     echo
     ui_rule
     ui_cell  S "Summary";            ui_cell  0 "Exit";                  echo
-    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-30 · A-C · S]${NC}${LAVENDER}: ${NC}"
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-31 · A-C · S]${NC}${LAVENDER}: ${NC}"
 }
 
 show_creative_menu() {
@@ -2774,6 +2817,19 @@ show_peripherals_menu() {
     echo
     ui_item 1 "Install Solaar (peripheral manager)"
     ui_item 2 "Fix slow scroll wheel (MX Anywhere 3S - enable Scroll Wheel Resolution)"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-2]${NC}${LAVENDER}: ${NC}"
+}
+
+show_printers_menu() {
+    clear
+    ui_header "PRINTERS (CUPS + HP)" "HPLIP - HP's Linux printing/imaging stack"
+    echo
+    ui_item 1 "Install printer support (cups + hplip + system-config-printer)"
+    ui_item 2 "Install/check HP proprietary plugin (some older LaserJets/inkjets need this)"
     echo
     ui_item 0 "Back to Main Menu"
     echo
@@ -2947,6 +3003,16 @@ main() {
                     0) continue ;;
                     1) reset_tracking; install_peripheral_tools; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
                     2) fix_logitech_hires_scroll ;;
+                    *) log ERROR "Invalid choice"; sleep 2 ;;
+                esac
+                ;;
+            31)
+                show_printers_menu
+                read -r printer_choice
+                case "$printer_choice" in
+                    0) continue ;;
+                    1) reset_tracking; install_printer_support; display_summary; read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _ ;;
+                    2) install_hp_plugin ;;
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;

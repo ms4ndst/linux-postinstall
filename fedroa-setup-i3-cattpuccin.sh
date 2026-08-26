@@ -62,6 +62,7 @@ sudo dnf install -y \
   picom polybar rofi dunst kitty \
   xss-lock network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
   copyq udiskie pcmanfm gammastep libnotify nitrogen gnome-calendar \
+  system-config-printer hplip \
   vala gtk3-devel libdbusmenu-devel libdbusmenu-gtk3-devel \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq flameshot ImageMagick \
@@ -164,6 +165,7 @@ for_window [class="^Blueman-manager$"] floating enable, resize set 500 400, move
 for_window [class="^copyq$"] floating enable, resize set 450 500, move position center
 for_window [class="^Evolution-alarm-notify$"] floating enable, resize set 450 350, move position center
 for_window [class="^gnome-calendar$"] floating enable, resize set 700 550, move position center
+for_window [class="^System-config-printer\.py$"] floating enable, resize set 750 550, move position center
 
 # --- launch ---
 bindsym $mod+Return exec kitty
@@ -171,6 +173,7 @@ bindsym $mod+d exec rofi -show drun -theme ~/.config/rofi/catppuccin-mocha.rasi
 bindsym $mod+shift+d exec rofi -show run -theme ~/.config/rofi/catppuccin-mocha.rasi
 bindsym $mod+e exec pcmanfm
 bindsym $mod+shift+w exec nitrogen
+bindsym $mod+p exec system-config-printer
 bindsym $mod+shift+q kill
 bindsym $mod+shift+c reload
 bindsym $mod+shift+r restart
@@ -1277,6 +1280,36 @@ mkdir -p "$CONF/environment.d"
 cat > "$CONF/environment.d/gtk-theme.conf" <<EOF
 GTK_THEME=$GTK_THEME_NAME
 EOF
+
+# ----------------------------------------------------------------------------
+# 14. HP printer plugin check (best-effort — only runs if an HP device is
+#     actually present)
+# ----------------------------------------------------------------------------
+# CUPS + HPLIP (installed above) cover the open-source rendering path for
+# most printers, but several HP models - especially older "host-based"
+# LaserJets/inkjets like the LaserJet P1006/P1005/P1018 - also need a
+# proprietary HP-supplied plugin for actual rasterization. Without it, jobs
+# sit in the queue and silently fail with "hplip.plugin-error" /
+# "m_Job initialization failed with error = 48" in
+# /var/log/cups/error_log, with no obvious error shown anywhere - confirmed
+# directly against a real LaserJet P1006 on this exact setup.
+#
+# Only checked/installed if an HP device is actually detected (CUPS's
+# discovered devices, or USB vendor ID 03f0) - most printers don't need this
+# at all, so there's no reason to force an interactive EULA + download on
+# everyone. hp-plugin's installed state lives in /var/lib/hp/hplip.state
+# under a [plugin] section.
+if command -v hp-plugin >/dev/null 2>&1 \
+    && (lpinfo -v 2>/dev/null | grep -qi "hp\|hewlett" || lsusb 2>/dev/null | grep -qi "03f0"); then
+  if grep -qx "installed = 1" /var/lib/hp/hplip.state 2>/dev/null; then
+    log "HP proprietary plugin already installed."
+  else
+    log "HP printer detected without its proprietary plugin installed - running hp-plugin now (accept the download/license prompts, and your sudo password when asked)..."
+    hp-plugin -i || warn "hp-plugin failed or was cancelled - re-run 'hp-plugin -i' manually later if print jobs silently sit in the queue."
+  fi
+else
+  log "No HP printer detected - skipping HP plugin check (harmless if you add one later; just run 'hp-plugin -i' then)."
+fi
 
 log "Done."
 cat <<'EOF'
