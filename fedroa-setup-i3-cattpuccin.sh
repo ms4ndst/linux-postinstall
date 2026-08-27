@@ -66,7 +66,8 @@ sudo dnf install -y \
   vala gtk3-devel libdbusmenu-devel libdbusmenu-gtk3-devel \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq flameshot ImageMagick \
-  brightnessctl playerctl numlockx dex-autostart autorandr arandr \
+  brightnessctl playerctl numlockx dex-autostart autorandr arandr xdotool \
+  pipx \
   jetbrains-mono-fonts
 
 # network-manager-applet/pasystray/blueman/udiskie are still installed above -
@@ -87,7 +88,13 @@ sudo usermod -aG video "$USER" 2>/dev/null \
 
 log "Enabling COPR for i3lock-color (not in official Fedora repos)..."
 sudo dnf copr enable -y tokariew/i3lock-color || warn "COPR enable failed — you can install i3lock-color manually later."
-sudo dnf install -y i3lock-color || warn "i3lock-color install failed; falling back to stock i3lock for now."
+# The tokariew build installs itself AS /usr/bin/i3lock (same binary name,
+# extended flags - there's no separate "i3lock-color" command), which
+# conflicts file-for-file with the stock i3lock already installed above -
+# `dnf install` alone fails the whole transaction over that conflict.
+# `dnf swap` removes the old package and installs the new one as one atomic
+# transaction, which is exactly the fix for this class of same-file conflict.
+sudo dnf swap -y i3lock i3lock-color || warn "i3lock-color install failed; falling back to stock i3lock for now."
 
 # ----------------------------------------------------------------------------
 # 2. Nerd Font (JetBrainsMono) — official Fedora repos don't ship patched fonts
@@ -166,6 +173,7 @@ for_window [class="^copyq$"] floating enable, resize set 450 500, move position 
 for_window [class="^Evolution-alarm-notify$"] floating enable, resize set 450 350, move position center
 for_window [class="^gnome-calendar$"] floating enable, resize set 700 550, move position center
 for_window [class="^System-config-printer\.py$"] floating enable, resize set 750 550, move position center
+for_window [class="^Screensaver$"] fullscreen enable
 
 # --- launch ---
 bindsym $mod+Return exec kitty
@@ -174,13 +182,15 @@ bindsym $mod+shift+d exec rofi -show run -theme ~/.config/rofi/catppuccin-mocha.
 bindsym $mod+e exec pcmanfm
 bindsym $mod+shift+w exec nitrogen
 bindsym $mod+p exec system-config-printer
+bindsym $mod+c exec --no-startup-id ~/.local/bin/caffeine-toggle.sh
+bindsym $mod+Escape exec --no-startup-id kitty --class Screensaver -e ~/.local/bin/screensaver.sh
 bindsym $mod+shift+q kill
 bindsym $mod+shift+c reload
 bindsym $mod+shift+r restart
 bindsym $mod+shift+e exec i3-nagbar -t warning -m 'Exit i3?' -B 'Yes' 'i3-msg exit'
 
 # --- lock / screenshot / power ---
-bindsym $mod+l exec --no-startup-id ~/.local/bin/lock.sh
+bindsym $mod+l exec --no-startup-id ~/.local/bin/lock.sh --with-screensaver
 bindsym $mod+shift+p exec --no-startup-id ~/.local/bin/powermenu.sh
 bindsym Print exec --no-startup-id "flameshot gui || import /tmp/shot-$(date +%s).png"
 
@@ -308,10 +318,12 @@ exec --no-startup-id numlockx on
 # (Fedora packages upstream's "dex" as "dex-autostart" - same tool/flags,
 # renamed to avoid a name collision with an unrelated Fedora package.)
 exec --no-startup-id dex-autostart -a -e i3
-exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.local/bin/lock.sh
-# Idle-based lock: screensaver activation at 5min (triggers xss-lock -> lock.sh),
-# DPMS standby/suspend/off at 5/10/15min so the lock lands before the display blanks.
-exec --no-startup-id xset s 300 dpms 300 600 900
+exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.local/bin/lock.sh --with-screensaver
+# Idle-based lock: screensaver activation at 30min (triggers xss-lock ->
+# lock.sh --with-screensaver, which force-blanks the display immediately on
+# lock regardless of these DPMS timers - see lock_and_blank() in lock.sh).
+# DPMS standby/suspend/off at 30/60/90min are mostly a fallback for that.
+exec --no-startup-id xset s 1800 dpms 1800 3600 5400
 
 bar {
     mode invisible
@@ -534,6 +546,30 @@ label-font = 2
 label-foreground = ${colors.teal}
 label-background = ${colors.peach}
 
+[module/sep-teal-green]
+type = custom/text
+format = <label>
+label = "@@SEP@@"
+label-font = 2
+label-foreground = ${colors.teal}
+label-background = ${colors.green}
+
+[module/sep-green-peach]
+type = custom/text
+format = <label>
+label = "@@SEP@@"
+label-font = 2
+label-foreground = ${colors.green}
+label-background = ${colors.peach}
+
+[module/sep-green-yellow]
+type = custom/text
+format = <label>
+label = "@@SEP@@"
+label-font = 2
+label-foreground = ${colors.green}
+label-background = ${colors.yellow}
+
 [module/sep-teal-yellow]
 type = custom/text
 format = <label>
@@ -696,6 +732,19 @@ format = <label>
 label-foreground = ${colors.base}
 format-background = ${colors.teal}
 
+; "Caffeine" toggle - no packaged equivalent exists for Fedora (checked both
+; dnf and Flathub). click-left toggles idle/lock/sleep inhibition (section
+; 6c below); click-right forces the screensaver/lock to activate right now.
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.base}
+format-background = ${colors.green}
+
 [module/battery]
 type = internal/battery
 battery = @@BATTERY_NAME@@
@@ -763,12 +812,13 @@ ICO_MEM=$''       # nf-fa-hdd_o - the more commonly-cited "memory" glyph
 ICO_CPU=$''
 ICO_BT=$''
 ICO_BACKLIGHT=$'󰃟'    # nf-md-brightness_6 (supplementary plane codepoint)
+ICO_COFFEE=$''      # nf-fa-coffee
 
 if [ -n "$BATTERY_NAME" ]; then
-  PRIMARY_MID="sep-teal-peach battery sep-peach-yellow"
+  PRIMARY_MID="sep-teal-green caffeine sep-green-peach battery sep-peach-yellow"
 else
   warn "No battery detected - skipping the polybar battery widget (desktop machine, or an unusual power_supply naming)."
-  PRIMARY_MID="sep-teal-yellow"
+  PRIMARY_MID="sep-teal-green caffeine sep-green-yellow"
   BATTERY_NAME=BAT0
   AC_NAME=AC
 fi
@@ -881,6 +931,55 @@ while true; do
 done
 EOF
 chmod +x "$BIN/blueman-applet-guard.sh"
+
+log "Writing caffeine (idle/sleep inhibitor) toggle + polybar widget scripts..."
+cat > "$BIN/caffeine-toggle.sh" <<'EOF'
+#!/usr/bin/env bash
+# "Caffeine" toggle - no packaged equivalent exists for Fedora (neither dnf
+# nor Flathub carry one), so this is a small hand-rolled stand-in for the
+# classic GNOME Caffeine extension: click to inhibit screen-blank/lock/sleep,
+# click again to release. Nothing changes system-wide while it's off.
+#
+# Two things happen while active:
+#   1. xset's screensaver/DPMS timers are disabled, so xss-lock never fires
+#      (it triggers off X11's screensaver-activation signal) and the display
+#      never blanks/suspends.
+#   2. A backgrounded `systemd-inhibit` holds idle/sleep/lid-switch locks so
+#      systemd-logind won't suspend even on lid close, matching what the
+#      screensaver-based inhibition alone wouldn't cover.
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/caffeine.pid"
+IDLE_RESTORE="300 dpms 300 600 900"
+
+if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+  kill "$(cat "$PIDFILE")" 2>/dev/null
+  rm -f "$PIDFILE"
+  xset s $IDLE_RESTORE
+  notify-send -h string:x-dunst-stack-tag:caffeine "Caffeine: off" "Screen lock/sleep restored"
+else
+  xset s off -dpms
+  systemd-inhibit --what=idle:sleep:handle-lid-switch --who="i3-caffeine" \
+      --why="User requested via caffeine-toggle.sh" --mode=block \
+      sleep infinity &
+  disown
+  echo "$!" > "$PIDFILE"
+  notify-send -h string:x-dunst-stack-tag:caffeine "Caffeine: on" "Screen lock/sleep inhibited until toggled off"
+fi
+EOF
+chmod +x "$BIN/caffeine-toggle.sh"
+
+cat > "$BIN/polybar-caffeine.sh" <<'EOF'
+#!/usr/bin/env bash
+# polybar custom/script module: prints caffeine (idle/sleep inhibit) state.
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/caffeine.pid"
+if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+  STATE="on"
+else
+  STATE="off"
+fi
+printf '  @@ICO_COFFEE@@ %s ' "$STATE"
+EOF
+chmod +x "$BIN/polybar-caffeine.sh"
+sed -i "s/@@ICO_COFFEE@@/$ICO_COFFEE/" "$BIN/polybar-caffeine.sh"
 
 # ----------------------------------------------------------------------------
 # 6d. Disable the redundant tray applets' own autostart entries
@@ -1113,33 +1212,207 @@ EOF
 log "Writing lock script..."
 cat > "$BIN/lock.sh" <<'EOF'
 #!/usr/bin/env bash
-# --insidecolor/--ringcolor/etc. are i3lock-color-only flags - stock i3lock
-# rejects unknown options and would just fail to lock, so branch on which
-# binary is actually present instead of assuming the COPR build succeeded.
-if command -v i3lock-color >/dev/null 2>&1; then
-  exec i3lock-color \
-    --insidecolor=1e1e2eff \
-    --ringcolor=cba6f7ff \
-    --line-uses-inside \
-    --keyhlcolor=a6e3a1ff \
-    --ringvercolor=f9e2afff \
-    --ringwrongcolor=f38ba8ff \
-    --separatorcolor=313244ff \
-    --verifcolor=cdd6f4ff \
-    --wrongcolor=f38ba8ff \
-    --insidevercolor=1e1e2eff \
-    --insidewrongcolor=1e1e2eff \
-    --timecolor=cdd6f4ff \
-    --datecolor=a6adc8ff \
-    --clock --indicator
+# --with-screensaver (passed by both xss-lock on idle activation and the
+# Mod+l keybind) runs the ASCII screensaver first; dismissing it (any
+# keypress) proceeds straight into the real password-protected lock below -
+# unlike Omarchy's version, dismissing early does NOT cancel the pending
+# lock, so locking stays fully enforced either way.
+if [ "$1" = "--with-screensaver" ]; then
+  kitty --class Screensaver -e ~/.local/bin/screensaver.sh
+  # Blank the instant the screensaver window closes, before i3lock has even
+  # started - otherwise the screensaver closing reveals the real desktop
+  # underneath for however long i3lock then takes to start up (blur capture
+  # + grab acquisition isn't instant), which is the "shows the desktop for a
+  # few seconds" gap. i3lock's own dpms-off call below still runs once it's
+  # actually ready; this one exists purely to cover that startup window.
+  xset dpms force off
+fi
+
+# Color flags are i3lock-color-only - stock i3lock rejects unknown options
+# and would just fail to lock. The tokariew COPR build of i3lock-color
+# installs itself AS /usr/bin/i3lock (same binary name, extended flags -
+# there is no separate "i3lock-color" command), so detect by checking
+# whether the i3lock-color PACKAGE is installed via rpm, not by binary name
+# or `--help` output - i3lock's `--help` always prints the same terse usage
+# summary regardless of build (it just points to `man i3lock` for the full
+# flag list), so grepping it for a color flag name never actually matches
+# either build and silently always falls through to the plain branch below.
+# This build is based on the modern Raymo111/i3lock-color fork, whose flags
+# use hyphens (--inside-color) rather than the older eBrnd-style names
+# (--insidecolor) - confirmed against `man i3lock` on this exact build,
+# since guessing the wrong style fails with "unrecognized option" even when
+# the color-capable binary IS installed.
+# Blank the display immediately on lock rather than leaving the blurred
+# lock screen lit until the idle DPMS timer eventually catches up (minutes
+# later) - i3lock has to be backgrounded (not exec'd) so this script can
+# still run `xset dpms force off` right after it starts. Any keypress/mouse
+# movement wakes the display back up (X's own DPMS behavior) straight into
+# the running i3lock prompt.
+lock_and_blank() {
+  "$@" &
+  local pid=$!
+  xset dpms force off
+  wait "$pid"
+}
+
+# A different Catppuccin Mocha accent for the ring/keypress-highlight every
+# lock (the full official 14-color accent set) - purely cosmetic variety,
+# doesn't touch the ringver/ringwrong/wrong colors below, which stay fixed
+# so "verifying"/"wrong password" feedback always reads the same regardless
+# of which accent got picked.
+ACCENTS=(f5e0dc f2cdcd f5c2e7 cba6f7 f38ba8 eba0ac fab387 f9e2af a6e3a1 94e2d5 89dceb 74c7ec 89b4fa b4befe)
+ACCENT="${ACCENTS[$RANDOM % ${#ACCENTS[@]}]}"
+
+GREETERS=(
+  "Halt! Who goes there?"
+  "Access denied. Nice try though."
+  "The system is sleeping. Don't wake it rudely."
+  "Enter the secret handshake."
+  "sudo unlock-my-life"
+  "404: Productivity not found. Try again later."
+  "This machine is protected by 1s and 0s."
+  "Locked tighter than my code reviews."
+  "Insert coin to continue."
+  "Powered by caffeine and Stack Overflow."
+  "Not today, script kiddie."
+  "Beep boop. State your business."
+  "I'm sorry, Dave. I'm afraid I can't do that."
+  "Open the pod bay doors... after you unlock."
+  "It's not a bug, it's an undocumented feature."
+  "42. Now enter the actual password."
+  "Have you tried turning it off and on again?"
+  "Resistance is futile. Password required."
+  "This is not the login screen you're looking for."
+  "May the Force be with your password."
+  "Live long and log in."
+  "Do or do not unlock. There is no try."
+  "Great Scott! You need 1.21 gigawatts. Or your password."
+  "There is no cloud. It's just my computer."
+  "In case of emergency: sudo !!"
+  "rm -rf /doubts && unlock"
+)
+GREETER="${GREETERS[$RANDOM % ${#GREETERS[@]}]}"
+
+WRONGS=(
+  "Nope."
+  "Not even close."
+  "Try again, hacker."
+  "Access denied. Obviously."
+  "That's a hard no."
+  "Swing and a miss."
+  "Nice try, but no cigar."
+  "Computer says no."
+  "Wrong. Try harder."
+  "Denied. As expected."
+  "ERROR 401: Unauthorized human."
+  "This is not the password you're looking for."
+  "I have a bad feeling about this password."
+  "Insufficient mana. Try again."
+)
+WRONG="${WRONGS[$RANDOM % ${#WRONGS[@]}]}"
+
+if rpm -q i3lock-color >/dev/null 2>&1; then
+  lock_and_blank i3lock \
+    --blur=5 \
+    --clock --indicator \
+    --no-modkey-text \
+    --inside-color=1e1e2ecc \
+    --ring-color="${ACCENT}ff" \
+    --line-uses-ring \
+    --keyhl-color=cdd6f4ff \
+    --bshl-color=f38ba8ff \
+    --ringver-color=f9e2afff \
+    --insidever-color=1e1e2ecc \
+    --ringwrong-color=f38ba8ff \
+    --insidewrong-color=1e1e2ecc \
+    --separator-color=313244ff \
+    --verif-color=cdd6f4ff \
+    --wrong-color=f38ba8ff \
+    --time-color=cdd6f4ff \
+    --date-color=a6adc8ff \
+    --greeter-pos="ix:iy+r+50" \
+    --time-pos="ix:iy+r+100" \
+    --date-pos="ix:iy+r+140" \
+    --greeter-text="$GREETER" \
+    --greeter-color=cdd6f4ff \
+    --wrong-text="$WRONG"
 elif command -v i3lock >/dev/null 2>&1; then
-  exec i3lock -c 1e1e2e
+  lock_and_blank i3lock -c 1e1e2e
 else
-  echo "lock.sh: neither i3lock-color nor i3lock is installed" >&2
+  echo "lock.sh: i3lock is not installed" >&2
   exit 1
 fi
 EOF
 chmod +x "$BIN/lock.sh"
+
+# ----------------------------------------------------------------------------
+# 11a. ASCII screensaver (Terminal Text Effects) - Mod+Escape, and shown
+#      automatically before an idle-triggered lock (see --with-screensaver
+#      above). Inspired by Omarchy's built-in one, same underlying tool
+#      (`tte`), just run in a plain fullscreen kitty window instead of
+#      Omarchy's Astal/AGS shell (which i3 doesn't have an equivalent of).
+# ----------------------------------------------------------------------------
+log "Installing Terminal Text Effects (tte) via pipx for the ASCII screensaver..."
+if command -v pipx >/dev/null 2>&1; then
+  pipx install terminaltexteffects 2>/dev/null \
+    || warn "pipx install terminaltexteffects failed - the screensaver (Mod+Escape, and before an idle lock) won't work until you run it manually."
+else
+  warn "pipx not found - skipping the ASCII screensaver's tte dependency. Install pipx and run 'pipx install terminaltexteffects' to enable it later."
+fi
+
+log "Writing screensaver script..."
+cat > "$BIN/screensaver.sh" <<'EOF'
+#!/usr/bin/env bash
+# ASCII-art screensaver, inspired by Omarchy's built-in one - same underlying
+# tool (Terminal Text Effects / `tte`, pipx-installed), just run in a plain
+# fullscreen kitty window instead of Omarchy's Astal/AGS shell (which i3
+# doesn't have an equivalent of). Exits on any keypress OR mouse movement.
+LOGO="$HOME/.config/screensaver/logo.txt"
+[ -f "$LOGO" ] || fastfetch --logo Fedora -s none > "$LOGO"
+
+# A plain fullscreen terminal only sees mouse movement as input if it typed
+# something into stdin (it doesn't, by default) - polling the pointer
+# position via xdotool is what actually catches "moved the mouse" as a
+# dismiss trigger, not just keypresses.
+mouse_pos() { xdotool getmouselocation --shell 2>/dev/null | awk -F= '/^X=/{x=$2} /^Y=/{y=$2} END{print x, y}'; }
+LAST_POS="$(mouse_pos)"
+
+while true; do
+  # tte plays one effect to completion (several seconds) before returning,
+  # so waiting for it to finish before checking for input meant dismissing
+  # could take as long as the current animation - background it instead and
+  # poll for either dismiss condition every 0.2s, killing it the instant
+  # either fires, instead of waiting for it to finish on its own.
+  #
+  # tte's canvas defaults to the size of the input text itself (--canvas-*
+  # -1), which is why effects were confined to a small box in the corner -
+  # canvas-width/height 0 matches the actual terminal size instead, and the
+  # anchor flags center both the canvas in the terminal and the logo within
+  # that canvas, so effects (rain, fireworks, etc.) spread across the whole
+  # screen rather than staying cramped around the logo's own bounding box.
+  tte --random-effect --frame-rate 60 --input-file "$LOGO" \
+    --canvas-width 0 --canvas-height 0 \
+    --anchor-canvas c --anchor-text c &
+  TTE_PID=$!
+
+  while kill -0 "$TTE_PID" 2>/dev/null; do
+    if read -t 0.2 -n 1 -s; then
+      kill "$TTE_PID" 2>/dev/null
+      exit 0
+    fi
+    CUR_POS="$(mouse_pos)"
+    if [ -n "$CUR_POS" ] && [ "$CUR_POS" != "$LAST_POS" ]; then
+      kill "$TTE_PID" 2>/dev/null
+      exit 0
+    fi
+  done
+done
+EOF
+chmod +x "$BIN/screensaver.sh"
+mkdir -p "$CONF/screensaver"
+if command -v fastfetch >/dev/null 2>&1; then
+  fastfetch --logo Fedora -s none > "$CONF/screensaver/logo.txt" 2>/dev/null
+fi
 
 # ----------------------------------------------------------------------------
 # 11b. Power menu (lock / shutdown / reboot / suspend / logout via rofi)
