@@ -1318,6 +1318,11 @@ WRONGS=(
 )
 WRONG="${WRONGS[$RANDOM % ${#WRONGS[@]}]}"
 
+# --wrong-pos below (and --verif-pos, same idea) isn't in `man i3lock` - it's
+# a real flag, confirmed straight from i3lock.c/unlock_indicator.c on
+# github.com/Raymo111/i3lock-color, just missing from the man page. It has
+# its own position independent of --greeter-pos, defaulting to "ix:iy"
+# (centered on the ring, same as --verif-pos) if never set.
 if rpm -q i3lock-color >/dev/null 2>&1; then
   lock_and_blank i3lock \
     --blur=5 \
@@ -1341,6 +1346,7 @@ if rpm -q i3lock-color >/dev/null 2>&1; then
     --greeter-pos="ix:iy+r+50" \
     --time-pos="ix:iy+r+100" \
     --date-pos="ix:iy+r+140" \
+    --wrong-pos="ix:iy-r-30" \
     --greeter-text="$GREETER" \
     --greeter-color=cdd6f4ff \
     --wrong-text="$WRONG"
