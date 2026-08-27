@@ -1255,13 +1255,20 @@ lock_and_blank() {
   wait "$pid"
 }
 
-# A different Catppuccin Mocha accent for the ring/keypress-highlight every
-# lock (the full official 14-color accent set) - purely cosmetic variety,
-# doesn't touch the ringver/ringwrong/wrong colors below, which stay fixed
-# so "verifying"/"wrong password" feedback always reads the same regardless
-# of which accent got picked.
+# A different Catppuccin Mocha accent for the ring every lock (the full
+# official 14-color accent set) - purely cosmetic variety, doesn't touch the
+# ringver/ringwrong/wrong colors below, which stay fixed so "verifying"/
+# "wrong password" feedback always reads the same regardless of which
+# accent got picked. The array is roughly warm-to-cool hue ordered, so the
+# keypress highlight picks the accent 7 slots away (half the array) from
+# the ring's - opposite-ish in hue, giving a genuinely different, vibrant
+# color rather than a flat neutral, while staying entirely within the
+# Catppuccin palette. A flat near-black was tried first and worked for
+# contrast, but read as dull compared to the ring's own vibrancy.
 ACCENTS=(f5e0dc f2cdcd f5c2e7 cba6f7 f38ba8 eba0ac fab387 f9e2af a6e3a1 94e2d5 89dceb 74c7ec 89b4fa b4befe)
-ACCENT="${ACCENTS[$RANDOM % ${#ACCENTS[@]}]}"
+ACCENT_IDX=$((RANDOM % ${#ACCENTS[@]}))
+ACCENT="${ACCENTS[$ACCENT_IDX]}"
+KEYHL="${ACCENTS[$(( (ACCENT_IDX + 7) % ${#ACCENTS[@]} ))]}"
 
 GREETERS=(
   "Halt! Who goes there?"
@@ -1318,8 +1325,9 @@ if rpm -q i3lock-color >/dev/null 2>&1; then
     --no-modkey-text \
     --inside-color=1e1e2ecc \
     --ring-color="${ACCENT}ff" \
+    --ring-width=14 \
     --line-uses-ring \
-    --keyhl-color=cdd6f4ff \
+    --keyhl-color="${KEYHL}ff" \
     --bshl-color=f38ba8ff \
     --ringver-color=f9e2afff \
     --insidever-color=1e1e2ecc \
