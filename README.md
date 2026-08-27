@@ -2125,7 +2125,7 @@ ls -lt /var/log/arch_post_install_*.log | head -1 | awk '{print $NF}' | xargs ca
 ---
 
 # 🎨 i3 + Catppuccin Rice Script (Fedora)
-
+![screenshot](i3_screenshot.png)
 ### 🚀 i3 Script Overview
 
 [`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh) is a standalone, single-purpose script — separate from `post-install-fedora.sh` above — that builds a complete **Catppuccin Mocha–themed i3 tiling window manager** desktop on Fedora: gapped tiling with always-visible borders (2px, mauve on the focused window), picom blur/shadows/rounded corners, a per-monitor powerline-style polybar status bar (with a native bluetooth widget and a modern-tray-icon proxy so apps like 1Password/Discord/OBS actually show a tray icon), rofi launcher, dunst notifications, kitty terminal, copyq clipboard history, udiskie USB automount, pcmanfm file manager, gammastep night light, nitrogen wallpaper picker, a Catppuccin GTK2/3/4 theme, and a full keybinding set covering window management, media/volume/brightness (with on-screen level popups), screenshots, locking, power, and multi-monitor control. It's meant to be run once on a fresh Fedora install (or after `post-install-fedora.sh`) to go from "bare X11" to "usable themed i3 session."
