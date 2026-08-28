@@ -1612,7 +1612,7 @@ install_system_utils() {
         htop iotop sysstat glances \
         nethogs iftop nload vnstat tcpdump wireshark-cli wireshark-qt \
         lsof strace ltrace valgrind gdb \
-        tmux screen zsh fish fzf ripgrep tree ncdu rsync unzip bat
+        tmux screen zsh fish fzf ripgrep tree ncdu rsync unzip bat glow
 }
 
 # ========== ANDROID TOOLS ==========

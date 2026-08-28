@@ -1702,11 +1702,21 @@ install_office() {
 
 # ========== SYSTEM UTILITIES ==========
 install_system_utils() {
+    # Charm publishes their own apt repo for glow (a markdown-in-terminal
+    # renderer) - no official Debian/Ubuntu package exists. Same idiom as
+    # install_claude_desktop above: dearmored keyring + sources.list.d entry.
+    if [ ! -f /usr/share/keyrings/charm.gpg ]; then
+        log INFO "Adding Charm's apt repo (for glow)..."
+        curl -fsSL https://repo.charm.sh/apt/gpg.key | gpg --dearmor \
+            | install -D -m 644 /dev/stdin /usr/share/keyrings/charm.gpg 2>/dev/null
+        echo "deb [signed-by=/usr/share/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" > /etc/apt/sources.list.d/charm.list
+        apt-get update -qq 2>/dev/null
+    fi
     batch_install "System Utils" \
         htop iotop nmon sysstat dstat glances \
         nethogs iftop nload vnstat tcpdump wireshark \
         lsof strace ltrace valgrind gdb \
-        tmux screen byobu zsh fish fzf ripgrep tree ncdu rsync unzip bat
+        tmux screen byobu zsh fish fzf ripgrep tree ncdu rsync unzip bat glow
     # NOTE: the apt package "bat" installs its binary as /usr/bin/batcat, not
     # /usr/bin/bat, due to an unrelated Debian package name collision. Users
     # typing "bat" after this will get "command not found" unless they alias

@@ -1481,11 +1481,26 @@ install_office() {
 
 # ========== SYSTEM UTILITIES ==========
 install_system_utils() {
+    # Charm publishes their own yum repo for glow (a markdown-in-terminal
+    # renderer) - no Fedora COPR/official build exists. Exact repo stanza
+    # from their own install docs (github.com/charmbracelet/glow#installation).
+    if [ ! -f /etc/yum.repos.d/charm.repo ]; then
+        log INFO "Adding Charm's yum repo (for glow)..."
+        cat > /etc/yum.repos.d/charm.repo <<'REPOEOF'
+[charm]
+name=Charm
+baseurl=https://repo.charm.sh/yum/
+enabled=1
+gpgcheck=1
+gpgkey=https://repo.charm.sh/yum/gpg.key
+REPOEOF
+        pm_update
+    fi
     batch_install "System Utils" \
         htop iotop sysstat glances \
         nethogs iftop nload vnstat tcpdump wireshark \
         lsof strace ltrace valgrind gdb \
-        tmux screen zsh fish fzf ripgrep tree ncdu rsync unzip bat
+        tmux screen zsh fish fzf ripgrep tree ncdu rsync unzip bat glow
     # NOTE: unlike Ubuntu's "bat" package (which installs as /usr/bin/batcat
     # due to a Debian name collision), Fedora's "bat" package installs
     # straight to /usr/bin/bat - no alias/rename needed here.

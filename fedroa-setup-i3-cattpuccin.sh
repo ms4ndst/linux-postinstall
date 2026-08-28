@@ -183,6 +183,7 @@ bindsym $mod+e exec pcmanfm
 bindsym $mod+shift+w exec nitrogen
 bindsym $mod+p exec system-config-printer
 bindsym $mod+c exec --no-startup-id ~/.local/bin/caffeine-toggle.sh
+bindsym $mod+n exec --no-startup-id ~/.local/bin/dnd-toggle.sh
 bindsym $mod+Escape exec --no-startup-id kitty --class Screensaver -e ~/.local/bin/screensaver.sh
 bindsym $mod+shift+q kill
 bindsym $mod+shift+c reload
@@ -352,6 +353,17 @@ shadow-exclude = [
 fading = true;
 fade-in-step = 0.05;
 fade-out-step = 0.05;
+# The screensaver kitty window and i3lock (an override-redirect window with
+# no conventional WM_CLASS at all - confirmed from its own source, so this
+# is the only way to target it specifically) fading in/out on the
+# screensaver->lock transition is what looked like "flicker"/"going black":
+# the screensaver fades OUT revealing the real desktop underneath mid-fade,
+# then i3lock fades IN from fully transparent (briefly looking like a black
+# screen) rather than either just appearing/disappearing instantly.
+fade-exclude = [
+  "class_g = 'Screensaver'",
+  "override_redirect = true"
+];
 
 corner-radius = 10;
 rounded-corners-exclude = [
@@ -570,6 +582,30 @@ label-font = 2
 label-foreground = ${colors.green}
 label-background = ${colors.yellow}
 
+[module/sep-green-red]
+type = custom/text
+format = <label>
+label = "@@SEP@@"
+label-font = 2
+label-foreground = ${colors.green}
+label-background = ${colors.red}
+
+[module/sep-red-peach]
+type = custom/text
+format = <label>
+label = "@@SEP@@"
+label-font = 2
+label-foreground = ${colors.red}
+label-background = ${colors.peach}
+
+[module/sep-red-yellow]
+type = custom/text
+format = <label>
+label = "@@SEP@@"
+label-font = 2
+label-foreground = ${colors.red}
+label-background = ${colors.yellow}
+
 [module/sep-teal-yellow]
 type = custom/text
 format = <label>
@@ -745,6 +781,16 @@ format = <label>
 label-foreground = ${colors.base}
 format-background = ${colors.green}
 
+; Do Not Disturb toggle - pauses/resumes dunst via dunstctl.
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.base}
+format-background = ${colors.red}
+
 [module/battery]
 type = internal/battery
 battery = @@BATTERY_NAME@@
@@ -813,12 +859,14 @@ ICO_CPU=$''
 ICO_BT=$''
 ICO_BACKLIGHT=$'󰃟'    # nf-md-brightness_6 (supplementary plane codepoint)
 ICO_COFFEE=$''      # nf-fa-coffee
+ICO_BELL=$''      # nf-fa-bell
+ICO_BELL_OFF=$''  # nf-fa-bell-slash
 
 if [ -n "$BATTERY_NAME" ]; then
-  PRIMARY_MID="sep-teal-green caffeine sep-green-peach battery sep-peach-yellow"
+  PRIMARY_MID="sep-teal-green caffeine sep-green-red dnd sep-red-peach battery sep-peach-yellow"
 else
   warn "No battery detected - skipping the polybar battery widget (desktop machine, or an unusual power_supply naming)."
-  PRIMARY_MID="sep-teal-green caffeine sep-green-yellow"
+  PRIMARY_MID="sep-teal-green caffeine sep-green-red dnd sep-red-yellow"
   BATTERY_NAME=BAT0
   AC_NAME=AC
 fi
@@ -980,6 +1028,46 @@ printf '  @@ICO_COFFEE@@ %s ' "$STATE"
 EOF
 chmod +x "$BIN/polybar-caffeine.sh"
 sed -i "s/@@ICO_COFFEE@@/$ICO_COFFEE/" "$BIN/polybar-caffeine.sh"
+
+log "Writing Do Not Disturb toggle + polybar widget scripts..."
+cat > "$BIN/dnd-toggle.sh" <<'EOF'
+#!/usr/bin/env bash
+# Do Not Disturb toggle for dunst. Notify BEFORE pausing (a notification
+# sent after wouldn't show - that's the whole point of pausing) rather than
+# after, so the confirmation is actually visible either way.
+#
+# dunst's own pause only covers standard desktop notifications (the
+# freedesktop Notifications D-Bus interface) - GNOME Calendar/Evolution's
+# reminder popups are a separate mechanism entirely (evolution-alarm-notify,
+# its own dedicated window, not a desktop notification), so this also flips
+# its notify-enable-display/notify-enable-audio gsettings in lockstep to
+# actually cover both.
+if [ "$(dunstctl is-paused)" = "true" ]; then
+  dunstctl set-paused false
+  gsettings set org.gnome.evolution-data-server.calendar notify-enable-display true
+  gsettings set org.gnome.evolution-data-server.calendar notify-enable-audio true
+  notify-send -h string:x-dunst-stack-tag:dnd "Do Not Disturb: off" "Notifications resumed"
+else
+  notify-send -h string:x-dunst-stack-tag:dnd "Do Not Disturb: on" "Notifications silenced until toggled off"
+  dunstctl set-paused true
+  gsettings set org.gnome.evolution-data-server.calendar notify-enable-display false
+  gsettings set org.gnome.evolution-data-server.calendar notify-enable-audio false
+fi
+EOF
+chmod +x "$BIN/dnd-toggle.sh"
+
+cat > "$BIN/polybar-dnd.sh" <<'EOF'
+#!/usr/bin/env bash
+# polybar custom/script module: prints notification state (on/off), not
+# dunst pause-mode state - "off" / bell-slash means silenced (dunst paused).
+if [ "$(dunstctl is-paused)" = "true" ]; then
+  printf '  @@ICO_BELL_OFF@@ off '
+else
+  printf '  @@ICO_BELL@@ on '
+fi
+EOF
+chmod +x "$BIN/polybar-dnd.sh"
+sed -i "s/@@ICO_BELL_OFF@@/$ICO_BELL_OFF/; s/@@ICO_BELL@@/$ICO_BELL/" "$BIN/polybar-dnd.sh"
 
 # ----------------------------------------------------------------------------
 # 6d. Disable the redundant tray applets' own autostart entries
@@ -1219,13 +1307,6 @@ cat > "$BIN/lock.sh" <<'EOF'
 # lock, so locking stays fully enforced either way.
 if [ "$1" = "--with-screensaver" ]; then
   kitty --class Screensaver -e ~/.local/bin/screensaver.sh
-  # Blank the instant the screensaver window closes, before i3lock has even
-  # started - otherwise the screensaver closing reveals the real desktop
-  # underneath for however long i3lock then takes to start up (blur capture
-  # + grab acquisition isn't instant), which is the "shows the desktop for a
-  # few seconds" gap. i3lock's own dpms-off call below still runs once it's
-  # actually ready; this one exists purely to cover that startup window.
-  xset dpms force off
 fi
 
 # Color flags are i3lock-color-only - stock i3lock rejects unknown options
@@ -1248,6 +1329,15 @@ fi
 # still run `xset dpms force off` right after it starts. Any keypress/mouse
 # movement wakes the display back up (X's own DPMS behavior) straight into
 # the running i3lock prompt.
+#
+# A repeated "keep re-asserting dpms off" loop was tried here to fight a
+# suspected DPMS auto-wake during i3lock's startup, but the actual flicker
+# turned out to be picom fading the screensaver/i3lock windows in and out
+# (see picom.conf's fade-exclude) - repeatedly calling `xset dpms force
+# off` risked being an additional source of visible flicker on its own
+# (some panels/drivers visibly blink on every DPMS state-change command,
+# even a no-op one), so back to a single call now that the real cause is
+# fixed at the compositor level instead.
 lock_and_blank() {
   "$@" &
   local pid=$!
@@ -1323,9 +1413,21 @@ WRONG="${WRONGS[$RANDOM % ${#WRONGS[@]}]}"
 # github.com/Raymo111/i3lock-color, just missing from the man page. It has
 # its own position independent of --greeter-pos, defaulting to "ix:iy"
 # (centered on the ring, same as --verif-pos) if never set.
+#
+# -c/--color (a solid fill) and --blur are mutually exclusive in this
+# codebase - render_lock() paints one or the other, never both - so there's
+# no flag to just "darken the blur". -i/--image DOES still get drawn on top
+# of the blur unconditionally, though (confirmed in unlock_indicator.c), so
+# a solid black PNG tiled (-t) across the screen works as a resolution-
+# independent dimming overlay: a 1x1 pixel repeated via CAIRO_EXTEND_REPEAT
+# covers any screen size without needing to know actual resolution.
+DIM="$HOME/.config/i3lock/dim.png"
+[ -f "$DIM" ] || { mkdir -p "$HOME/.config/i3lock"; magick -size 1x1 xc:"rgba(0,0,0,0.45)" "$DIM"; }
+
 if rpm -q i3lock-color >/dev/null 2>&1; then
   lock_and_blank i3lock \
-    --blur=5 \
+    --blur=8 \
+    -i "$DIM" -t \
     --clock --indicator \
     --no-modkey-text \
     --inside-color=1e1e2ecc \
