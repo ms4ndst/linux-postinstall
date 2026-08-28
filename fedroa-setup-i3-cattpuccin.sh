@@ -1847,6 +1847,51 @@ else
   log "No HP printer detected - skipping HP plugin check (harmless if you add one later; just run 'hp-plugin -i' then)."
 fi
 
+# ----------------------------------------------------------------------------
+# 14b. Audio: pin the Jabra Link 380 to its analog output profile
+# ----------------------------------------------------------------------------
+# The Jabra Link 380 USB dongle exposes both an Analog Stereo profile and an
+# IEC958 (S/PDIF digital) profile. WirePlumber sometimes selects - or auto-
+# switches to - the IEC958 one, which plays media (Spotify, YouTube, ...) at a
+# heavily attenuated level, while a call that had grabbed the analog/headset
+# routing still sounds fine - making it look app-specific when it's really the
+# device profile. This drop-in forces the analog profile and disables auto-
+# profile switching so it can't flip back. The +input:mono-fallback variant
+# keeps the headset microphone available for meetings.
+#
+# The device.name match is a regex (leading ~) on the vendor portion only, so
+# it works regardless of the dongle's serial number (0b0e is Jabra's USB
+# vendor id). Harmless on machines without the dongle - the rule simply never
+# matches - so it's written unconditionally, ready for the next time one is
+# plugged in. Takes effect on the next WirePlumber start; the best-effort
+# restart below applies it immediately if a user session is already running.
+log "Writing WirePlumber rule to pin the Jabra Link 380 to its analog profile..."
+mkdir -p "$CONF/wireplumber/wireplumber.conf.d"
+cat > "$CONF/wireplumber/wireplumber.conf.d/51-jabra-analog.conf" <<'EOF'
+monitor.alsa.rules = [
+  {
+    matches = [
+      {
+        device.name = "~alsa_card.usb.*Jabra_Link_380.*"
+      }
+    ]
+    actions = {
+      update-props = {
+        device.profile = "output:analog-stereo+input:mono-fallback"
+        api.acp.auto-profile = false
+      }
+    }
+  }
+]
+EOF
+if systemctl --user is-active --quiet wireplumber 2>/dev/null; then
+  systemctl --user restart wireplumber 2>/dev/null \
+    && log "WirePlumber restarted - Jabra rule active in this session." \
+    || warn "Could not restart WirePlumber now - the rule applies on next login."
+else
+  log "WirePlumber not running in this session - the Jabra rule applies on next login."
+fi
+
 log "Done."
 cat <<'EOF'
 
