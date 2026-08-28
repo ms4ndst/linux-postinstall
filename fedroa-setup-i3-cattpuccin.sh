@@ -67,6 +67,7 @@ sudo dnf install -y \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq flameshot ImageMagick \
   brightnessctl playerctl numlockx dex-autostart autorandr arandr xdotool \
+  solaar solaar-udev \
   pipx \
   jetbrains-mono-fonts
 
@@ -319,6 +320,15 @@ exec --no-startup-id numlockx on
 # (Fedora packages upstream's "dex" as "dex-autostart" - same tool/flags,
 # renamed to avoid a name collision with an unrelated Fedora package.)
 exec --no-startup-id dex-autostart -a -e i3
+# MX Anywhere 3S needs its Scroll Wheel Resolution HID++ feature toggled
+# off-then-on after every reconnect (reboot, sleep/wake) for scrolling to
+# work properly - see ~/.local/bin/fix-mx-scroll.sh for why a plain "set to
+# true" isn't enough. Silently a no-op on any other hardware (the device
+# just never shows up in `solaar show`, so the retry loop times out and
+# exits quietly) - hardcoded to this specific, confirmed mouse rather than
+# gated behind generic detection, matching the same fix already offered as
+# a manual Peripherals menu action in post-install-fedora.sh.
+exec --no-startup-id ~/.local/bin/fix-mx-scroll.sh
 exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.local/bin/lock.sh --with-screensaver
 # Idle-based lock: screensaver activation at 30min (triggers xss-lock ->
 # lock.sh --with-screensaver, which force-blanks the display immediately on
@@ -912,6 +922,19 @@ cat > "$BIN/polybar-launch.sh" <<'EOF'
 # a stale X state), or if nothing is marked primary at all.
 pkill -x polybar
 while pgrep -x polybar >/dev/null; do sleep 0.1; done
+# picom restarts via its own separate exec_always line at the same time
+# polybar does (on both i3 reload/restart and login) - with no ordering
+# between the two, polybar (and its tray, embedding icons from apps that
+# are already running) could start compositing before picom's new instance
+# is actually up, which showed up as tray icons flashing visible for a
+# moment then disappearing once the old compositor state finally caught up
+# (or never fully did). Wait up to 5s for picom to exist before launching;
+# proceed anyway past that so a picom failure doesn't block the bar
+# forever.
+for _ in $(seq 1 50); do
+  pgrep -x picom >/dev/null && break
+  sleep 0.1
+done
 LIST="$(polybar --list-monitors 2>/dev/null)"
 if [ -z "$LIST" ]; then
   polybar -c ~/.config/polybar/config.ini top-primary &
@@ -929,6 +952,26 @@ else
     first=0
   done <<< "$LIST"
 fi
+
+# snixembed never actually restarts on its own on i3 restart/reload - its
+# own --fork helper deliberately exits immediately if a StatusNotifierWatcher
+# already exists (to avoid a second instance), and its source has no logic
+# at all for detecting that the X11 tray SELECTION changed owners (confirmed
+# by reading it - no _NET_SYSTEM_TRAY_S0/MANAGER handling anywhere). So when
+# the polybar instance snixembed's icons were embedded in just died above
+# and a brand new one claimed the tray, those already-registered icons are
+# orphaned with nothing to recover them - this is what actually explained
+# the tray coming back empty (or icons flashing then vanishing) after
+# Mod+shift+r, not a picom/compositor timing issue as first suspected.
+# Force-restarting snixembed here (after the new polybar/tray already
+# exists) makes every already-running SNI app notice the watcher's name
+# changed owner and re-register + re-embed fresh - confirmed this already
+# happens automatically (Slack and CopyQ both re-registered on their own)
+# the last time snixembed's binary itself was replaced mid-session.
+pkill -x snixembed
+while pgrep -x snixembed >/dev/null; do sleep 0.1; done
+snixembed --fork &
+disown
 EOF
 chmod +x "$BIN/polybar-launch.sh"
 
@@ -1068,6 +1111,30 @@ fi
 EOF
 chmod +x "$BIN/polybar-dnd.sh"
 sed -i "s/@@ICO_BELL_OFF@@/$ICO_BELL_OFF/; s/@@ICO_BELL@@/$ICO_BELL/" "$BIN/polybar-dnd.sh"
+
+log "Writing MX Anywhere 3S scroll-fix script..."
+cat > "$BIN/fix-mx-scroll.sh" <<'EOF'
+#!/usr/bin/env bash
+# MX Anywhere 3S's "Scroll Wheel Resolution" HID++ feature doesn't reliably
+# take effect on a fresh connection - manually toggling it off then on again
+# in Solaar is what actually fixes it after every reboot, so this replicates
+# that exact off-then-on sequence automatically at login instead of just
+# setting it to 1 (which can be a no-op if Solaar's cached state already
+# reads true even though the mouse itself isn't honoring it). Retries for up
+# to 20s since the mouse may not have finished reconnecting over Bluetooth
+# yet by the time i3 starts.
+DEVICE="MX Anywhere 3S"
+for _ in $(seq 1 10); do
+  if solaar show 2>/dev/null | grep -q "$DEVICE"; then
+    solaar config "$DEVICE" hires-smooth-resolution 0 2>/dev/null
+    sleep 1
+    solaar config "$DEVICE" hires-smooth-resolution 1 2>/dev/null
+    exit 0
+  fi
+  sleep 2
+done
+EOF
+chmod +x "$BIN/fix-mx-scroll.sh"
 
 # ----------------------------------------------------------------------------
 # 6d. Disable the redundant tray applets' own autostart entries
@@ -1533,20 +1600,100 @@ fi
 # ----------------------------------------------------------------------------
 # 11b. Power menu (lock / shutdown / reboot / suspend / logout via rofi)
 # ----------------------------------------------------------------------------
+log "Writing power menu theme..."
+cat > "$CONF/rofi/powermenu.rasi" <<'EOF'
+* {
+    base:     #1e1e2eff;
+    mantle:   #181825ff;
+    text:     #cdd6f4ff;
+    subtext:  #a6adc8ff;
+    mauve:    #cba6f7ff;
+    surface0: #313244ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
 log "Writing power menu script..."
 cat > "$BIN/powermenu.sh" <<'EOF'
 #!/usr/bin/env bash
-choice=$(printf ' Lock\n Suspend\n Logout\n Reboot\n Shutdown' \
-  | rofi -dmenu -i -p "Power" -theme ~/.config/rofi/catppuccin-mocha.rasi)
+# Icon-only menu (green=lock, sky=suspend, yellow=logout, peach=reboot,
+# red=shutdown) - no labels, so there's no text to wrap/clip in a narrow
+# column. rofi echoes back the exact line it displayed, so matching on the
+# icon glyph itself (rather than a label string) is what identifies the
+# selection here.
+choice=$(printf '<span foreground="#a6e3a1" font="JetBrainsMono Nerd Font 26">@@ICO_LOCK@@</span>\n<span foreground="#89dceb" font="JetBrainsMono Nerd Font 26">@@ICO_SUSPEND@@</span>\n<span foreground="#f9e2af" font="JetBrainsMono Nerd Font 26">@@ICO_LOGOUT@@</span>\n<span foreground="#fab387" font="JetBrainsMono Nerd Font 26">@@ICO_REBOOT@@</span>\n<span foreground="#f38ba8" font="JetBrainsMono Nerd Font 26">@@ICO_SHUTDOWN@@</span>' \
+  | rofi -dmenu -markup-rows -i -p "" -theme ~/.config/rofi/powermenu.rasi)
 case "$choice" in
-  *Lock*)     ~/.local/bin/lock.sh ;;
-  *Suspend*)  systemctl suspend ;;
-  *Logout*)   i3-msg exit ;;
-  *Reboot*)   systemctl reboot ;;
-  *Shutdown*) systemctl poweroff ;;
+  *"@@ICO_LOCK@@"*)     ~/.local/bin/lock.sh --with-screensaver ;;
+  *"@@ICO_SUSPEND@@"*)  systemctl suspend ;;
+  *"@@ICO_LOGOUT@@"*)   i3-msg exit ;;
+  *"@@ICO_REBOOT@@"*)   systemctl reboot ;;
+  *"@@ICO_SHUTDOWN@@"*) systemctl poweroff ;;
 esac
 EOF
 chmod +x "$BIN/powermenu.sh"
+ICO_LOCK=$''
+ICO_SUSPEND=$''
+ICO_LOGOUT=$''
+ICO_REBOOT=$''
+ICO_SHUTDOWN=$''
+sed -i \
+  -e "s/@@ICO_LOCK@@/$ICO_LOCK/g" \
+  -e "s/@@ICO_SUSPEND@@/$ICO_SUSPEND/g" \
+  -e "s/@@ICO_LOGOUT@@/$ICO_LOGOUT/g" \
+  -e "s/@@ICO_REBOOT@@/$ICO_REBOOT/g" \
+  -e "s/@@ICO_SHUTDOWN@@/$ICO_SHUTDOWN/g" \
+  "$BIN/powermenu.sh"
 
 # ----------------------------------------------------------------------------
 # 11c. Volume/brightness OSD (dunst progress-bar popup on each key press)
