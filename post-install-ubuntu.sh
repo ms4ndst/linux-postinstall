@@ -832,6 +832,34 @@ install_audio() {
         qjackctl jackd2 pulseaudio-module-jack ladspa-sdk calf-plugins xjadeo \
         soundconverter easytag flac lame opus-tools vorbis-tools wavpack sox libsox-fmt-all \
         pavucontrol
+    install_cliamp
+}
+
+# cliamp (https://www.cliamp.stream/) - terminal Winamp-style music player/
+# streamer (Spotify/Qobuz/YouTube Music/Plex/Jellyfin/30,000+ radio stations).
+# Not packaged for Ubuntu - vendor curl|sh installer fetches a prebuilt
+# release binary (no build deps needed) into ~/.local/bin, same shape as
+# install_claude_code above.
+install_cliamp() {
+    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+    local check_cmd install_cmd
+    if [ -n "$u" ]; then
+        check_cmd="su - $u -c 'command -v cliamp'"
+        install_cmd="su - $u -c 'curl -fsSL https://raw.githubusercontent.com/bjarneo/cliamp/HEAD/install.sh | sh'"
+    else
+        check_cmd="command -v cliamp"
+        install_cmd="curl -fsSL https://raw.githubusercontent.com/bjarneo/cliamp/HEAD/install.sh | sh"
+    fi
+    if eval "$check_cmd" &>/dev/null; then
+        SKIPPED_PACKAGES+=("cliamp"); ((TOTAL_SKIPPED++)); log INFO "Already installed: cliamp"; return 0
+    fi
+    log INFO "Installing CLIamp (terminal music player)..."
+    if eval "$install_cmd" 2>/dev/null && eval "$check_cmd" &>/dev/null; then
+        INSTALLED_PACKAGES+=("cliamp"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: cliamp (~/.local/bin - ensure it's on your PATH)"; return 0
+    fi
+    FAILED_PACKAGES+=("cliamp"); ((TOTAL_FAILED++))
+    log WARNING "CLIamp install failed - try: curl -fsSL https://raw.githubusercontent.com/bjarneo/cliamp/HEAD/install.sh | sh"; return 0
 }
 
 # ========== CODE EDITORS ==========

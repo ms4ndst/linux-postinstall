@@ -14,7 +14,8 @@
 #           nitrogen wallpaper picker, Catppuccin GTK3/4 theme, per-monitor
 #           polybar (powerline-style Catppuccin theme with a native bluetooth
 #           widget, primary/secondary split so only one instance claims the
-#           systray) + always-visible window borders and tightened gaps.
+#           systray), CLIamp terminal music player (Mod+m), + always-visible
+#           window borders and tightened gaps.
 # Idempotent-ish: safe to re-run, but back up existing configs first if you
 # have your own dotfiles — this OVERWRITES the files listed below.
 # ============================================================================
@@ -171,6 +172,7 @@ floating_modifier $mod
 for_window [class="^Nm-connection-editor$"] floating enable, resize set 550 450, move position center
 for_window [class="^Blueman-manager$"] floating enable, resize set 500 400, move position center
 for_window [class="^copyq$"] floating enable, resize set 450 500, move position center
+for_window [class="^Cliamp$"] floating enable, resize set 700 500, move position center
 for_window [class="^Evolution-alarm-notify$"] floating enable, resize set 450 350, move position center
 for_window [class="^gnome-calendar$"] floating enable, resize set 700 550, move position center
 for_window [class="^System-config-printer\.py$"] floating enable, resize set 750 550, move position center
@@ -198,6 +200,9 @@ bindsym Print exec --no-startup-id "flameshot gui || import /tmp/shot-$(date +%s
 
 # --- clipboard history (copyq) ---
 bindsym $mod+shift+v exec --no-startup-id copyq toggle
+
+# --- music (cliamp, https://www.cliamp.stream/) ---
+bindsym $mod+m exec --no-startup-id kitty --class Cliamp -e cliamp
 
 # --- volume / brightness / media (adjust key names if your kernel maps differ) ---
 # osd-*.sh wrap pactl/brightnessctl and pop a dunst progress-bar notification
@@ -1890,6 +1895,25 @@ if systemctl --user is-active --quiet wireplumber 2>/dev/null; then
     || warn "Could not restart WirePlumber now - the rule applies on next login."
 else
   log "WirePlumber not running in this session - the Jabra rule applies on next login."
+fi
+
+# ----------------------------------------------------------------------------
+# 14c. CLIamp (terminal music player) - Mod+m
+# ----------------------------------------------------------------------------
+# Not packaged for Fedora - vendor curl|sh installer fetches a prebuilt
+# release binary (no Go/build deps needed) into ~/.local/bin, same shape as
+# the Claude Code installer pattern used elsewhere. Best-effort like
+# snixembed/the Nerd Font above - a failed install just logs a warning.
+if ! command -v cliamp >/dev/null 2>&1; then
+  log "Installing CLIamp (terminal music player)..."
+  if curl -fsSL https://raw.githubusercontent.com/bjarneo/cliamp/HEAD/install.sh | sh >/dev/null 2>&1 \
+      && command -v cliamp >/dev/null 2>&1; then
+    log "CLIamp installed ($(command -v cliamp)) - launch with Mod+m."
+  else
+    warn "CLIamp install failed (network issue) - install manually from https://www.cliamp.stream/ if you want it."
+  fi
+else
+  log "CLIamp already installed, skipping."
 fi
 
 log "Done."

@@ -1479,6 +1479,11 @@ install_creative_audio() {
     batch_install "Audio Production" \
         ardour audacity carla hydrogen guitarix qjackctl \
         lsp-plugins-lv2 calf libpulse soundconverter easytag pavucontrol
+    # cliamp (https://www.cliamp.stream/) - terminal Winamp-style music
+    # player/streamer (Spotify/Qobuz/YouTube Music/radio). AUR-only, but
+    # safe_install's aur_package_exists fallback picks it up automatically
+    # like any other package here - no special-casing needed.
+    batch_install "Audio Production" cliamp
 }
 
 install_creative_graphics() {
