@@ -23,6 +23,10 @@
 #           18-theme bspwm collection), and a hidrot reskin ported from
 #           Murzchnvok/polybar-collection - each a full
 #           color+layout+module-styling package, not just a palette swap),
+#           plus a square "-square" counterpart for every one of those 21
+#           (42 total) with every rounded bar corner, pill end-cap, and
+#           rofi window/element corner squared off - same colors and
+#           layout, zero curves,
 #           CLIamp terminal music player (Mod+m), an
 #           Omarchy-style app menu (Mod+alt+space) for this rice's own
 #           utility scripts (including a floating on-screen keybinding
@@ -421,7 +425,7 @@ shadow-radius = 18;
 shadow-opacity = 0.55;
 shadow-color = "#11111b";
 shadow-exclude = [
-  "class_g = 'polybar'",
+  "class_g = 'Polybar'",
   "class_g = 'i3-frame'"
 ];
 
@@ -450,8 +454,20 @@ corner-radius = 10;
 # rounding attempts disagree. window_type = 'menu' targets exactly this
 # (confirmed distinct from dunst notifications, which report
 # _NET_WM_WINDOW_TYPE_NOTIFICATION/UTILITY - so this doesn't touch those).
+# class_g must be 'Polybar' (capital P) to actually match - picom's class_g
+# is WM_CLASS's second ("general class") field, which polybar reports as
+# "Polybar", not the lowercase "polybar" instance name in the first field
+# (confirmed via `xprop WM_CLASS` on a live polybar window). A lowercase
+# 'polybar' here silently never matches, so this exclusion (and the
+# matching ones in shadow-exclude/blur-background-exclude above/below) did
+# nothing - every polybar theme's bar window was getting this 10px corner
+# clip regardless of its own configured `radius`, most visibly on
+# radius=0 "flat" themes, which should never have shown a rounded corner
+# at all. Caught by screenshotting a flat theme's actual bar corner and
+# seeing wallpaper peeking through a curve that had no source in the
+# theme's own polybar config.
 rounded-corners-exclude = [
-  "class_g = 'polybar'",
+  "class_g = 'Polybar'",
   "window_type = 'menu'"
 ];
 
@@ -460,7 +476,7 @@ blur: {
   strength = 6;
 }
 blur-background-exclude = [
-  "class_g = 'polybar'"
+  "class_g = 'Polybar'"
 ];
 
 active-opacity = 1.0;
@@ -5286,6 +5302,4290 @@ format-background = ${colors.surface0}
 screenchange-reload = true
 EOF
 
+cat > "$CONF/polybar/themes/aline-square.ini" <<'EOF'
+; Aline - a light/pastel theme, the only non-dark theme in this rice's
+; set. Rounded-cap bracket groups (bi/bd = U+E0B6/U+E0B4, the same
+; half-circle pair Mocha's own separators and Archcraft's LD/RD use) wrap
+; clusters of related widgets in one shared cream ("mc") capsule, plain
+; icon-prefix-colored widgets inside - structurally close to this rice's
+; own Archcraft theme (same glyph family, same "shared group background"
+; idea), but never dark: bar/text/group colors are all warm cream/plum,
+; not a single dark canvas anywhere. Modeled directly on github.com/
+; gh0stzk/dotfiles' real "aline" rice (config/bspwm/rices/aline/
+; {config,modules}.ini, read from a full local clone of the repo, not
+; fetched piecemeal) - a genuine polybar config, unlike this same repo's
+; "andrea"/"z0mbi3" rices which turned out to be EWW-based instead
+; (checked per-rice this time, not assumed from one example). Workspaces
+; get a real per-number identity here: each UNFOCUSED workspace shows its
+; own uniquely-colored circled-number icon (ws-icon-N, a genuine Material
+; Design "circled digit" codepoint per number) rather than a shared style,
+; collapsing to a plain digit only once focused or urgent - matching the
+; source's own "unique icon when empty, shared style when active" split.
+; The source's own usercard/mplayer/power/colorpicker/weather modules are
+; static buttons or external scripts specific to that rice's own toolkit
+; (Weather/Colorpicker/OpenApps helper commands) not present in this rig,
+; so they're left out rather than faked - same call this rice's other
+; themes made for widgets they couldn't actually port (Summer-heat's
+; Spotify/Google-Calendar, Archcraft's tray-adjacent extras). Two of the
+; source's own icon codepoints (a workspace "active" check-glyph, U+F09DE,
+; and a mute icon, U+F6A9) turned out to be MISSING from this rice's
+; actual installed Nerd Font build when render-tested before use (one
+; came back as a generic bullet placeholder, the other fully blank) -
+; caught by rendering every new codepoint before writing it into a real
+; file, not after; replaced with a plain digit and plain "muted" text,
+; both already proven safe by every other theme in this set.
+[colors]
+base = #FAF4ED
+mantle = #FAF4ED
+surface0 = #F2E9E1
+surface1 = #F2E9E1
+text = #575279
+subtext = #9893A5
+teal = #2E7480
+; Dedicated dark, fully-opaque backdrop for the system tray specifically -
+; most tray icons (Discord, 1Password, etc.) are drawn in white/light
+; colors expecting a dark bar and become invisible against this theme's
+; own light cream chips (caught via direct feedback, not assumed).
+tray-bg = #3D3757
+green = #286983
+yellow = #A15E15
+red = #B4637A
+blue = #2E5D66
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius-top = 0
+radius-bottom = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center = date
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight pulseaudio sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu sep tray
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio sep network-wired network-wireless sep memory cpu
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state> <label-mode>
+format-background = ${colors.surface0}
+index-sort = true
+wrapping-scroll = false
+ws-icon-0 = 1;󰬺
+ws-icon-1 = 2;󰬻
+ws-icon-2 = 3;󰬼
+ws-icon-3 = 4;󰬽
+ws-icon-4 = 5;󰬾
+ws-icon-5 = 6;󰬿
+ws-icon-6 = 7;󰭀
+ws-icon-7 = 8;󰭁
+ws-icon-8 = 9;󰭂
+ws-icon-default = "♟"
+label-focused = ${self.ws-label}
+ws-label = %index%
+label-unfocused = %icon%
+label-urgent = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.blue}
+label-focused-padding = 3
+label-unfocused-font = 3
+label-unfocused-padding = 2
+label-urgent-font = 3
+label-urgent-foreground = ${colors.red}
+label-urgent-padding = 2
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-background = ${colors.surface0}
+format-prefix = " "
+format-prefix-foreground = ${colors.text}
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label-font = 3
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-background = ${colors.surface0}
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = " %percentage%% "
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-background = ${colors.surface0}
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.teal}
+format-muted-background = ${colors.surface0}
+label-volume = " %percentage%% "
+label-muted = " muted "
+label-muted-foreground = ${colors.red}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-background = ${colors.surface0}
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-background = ${colors.surface0}
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+format-background = ${colors.surface0}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+format-background = ${colors.surface0}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-background = ${colors.surface0}
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-background = ${colors.surface0}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-background = ${colors.surface0}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = " %percentage%% "
+label-discharging = " %percentage%% "
+label-full = " Full "
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = " "
+format-prefix-foreground = ${colors.text}
+label = " %percentage_used%% "
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = " "
+format-prefix-foreground = ${colors.text}
+label = " %percentage%% "
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.tray-bg}
+format-background = ${colors.tray-bg}
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/archcraft-square.ini" <<'EOF'
+; Archcraft - grouped clusters bracketed by rounded-cap decorators, where
+; the group's own widgets share the SAME background as the caps so the
+; whole thing reads as one seamless rounded capsule (not the cap floating
+; alone with unfilled content, which was wrong on the first pass here -
+; confirmed by reading the real decor.ini + modules.ini together: LD/RD
+; content-foreground = ALTBACKGROUND on content-background = BACKGROUND,
+; and every module they bracket (i3, tray, date) sets its own
+; format-background = ALTBACKGROUND to match). Standalone items outside
+; any bracket are separated by a small dot glyph instead of a divider
+; line. Modeled directly on the REAL Archcraft i3wm polybar config
+; (github.com/archcraft-os/archcraft-i3wm, files/theme/polybar/
+; {decor,modules,colors}.ini - fetched and read directly, not guessed):
+; its own LD/RD "decor" modules use exactly these two glyphs (U+E0B6/
+; U+E0B4, the same half-circle pair Mocha's separators use, just
+; bracketing a GROUP instead of connecting every segment) and its own
+; "dot" module uses U+F444. This is the 4th genuinely distinct structure
+; in this rice's theme set: Mocha connects every segment with an arrow,
+; Dracula has no backgrounds anywhere, Nord groups widgets under one
+; shared fill block with a real gap between groups, Archcraft groups them
+; under a rounded-cap capsule shape - closest in spirit to Archcraft's
+; real workspace/tray cluster on the left and clock cluster on the right
+; in its own config's modules-left/modules-right, while non-bracketed
+; widgets (backlight/volume/network/battery/memory/cpu) stay completely
+; flat with only a colored icon prefix, matching modules.ini's own
+; [module/cpu] etc exactly (format = <label>, no format-background at
+; all). Colors are Archcraft's own real palette (colors.ini) - a
+; One-Dark-adjacent scheme, not Catppuccin, Dracula, or Nord - mapped
+; onto this rice's 15 tokens: BACKGROUND/ALTBACKGROUND -> base/mantle/
+; surface0/surface1, FOREGROUND/ALTFOREGROUND -> text/subtext, MAGENTA ->
+; mauve/lavender (only one purple in the source), BLUE -> blue, CYAN ->
+; sky/teal, GREEN -> green, YELLOW -> yellow, ACCENT (its own highlight
+; rose/pink, not a generic peach) -> peach, RED -> red.
+[colors]
+base     = #1e222a
+mantle   = #1e222a
+surface0 = #292e39
+surface1 = #292e39
+text     = #c8ccd4
+subtext  = #727c91
+mauve    = #c678dd
+lavender = #c678dd
+blue     = #61afef
+sky      = #56b6c2
+green    = #98c379
+teal     = #56b6c2
+yellow   = #e5c07b
+peach    = #da6e89
+red      = #e06c75
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+; The left cluster is the workspace switcher alone (already bracketed by
+; LD/RD in bar/base); the tray gets its own small bracketed group here
+; since it's primary-only. Every widget on the right is plain/unfilled,
+; dot-separated, with one final LD/RD-bracketed group for the clock.
+modules-left = i3 dot tray
+modules-right = backlight dot pulseaudio dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot date-icon date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight dot pulseaudio dot network-wired network-wireless dot memory dot cpu dot date-icon date
+
+[module/dot]
+type = custom/text
+format = <label>
+label = "  "
+label-foreground = ${colors.subtext}
+
+; --- real widgets ------------------------------------------------------------
+; format-background here matches LD/RD's own foreground so the caps and
+; the workspace squares fuse into one seamless capsule (the fix - without
+; it the caps float alone with nothing to visually connect to).
+[module/i3]
+type = internal/i3
+format = <label-state> <label-mode>
+format-background = ${colors.surface0}
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-unfocused = ${self.ws-label}
+label-visible = ${self.ws-label}
+label-urgent = ${self.ws-label}
+; Each workspace state pops its own accent color against the shared
+; surface0 capsule background - matching the real archcraft-i3wm config's
+; label-focused/-unfocused/-visible/-urgent split exactly (blue/
+; unchanged/green/red there too, just using this rice's own token names).
+label-focused-font = 3
+label-focused-foreground = ${colors.base}
+label-focused-background = ${colors.blue}
+label-focused-padding = 3
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.text}
+label-unfocused-background = ${colors.surface0}
+label-unfocused-padding = 2
+label-visible-font = 3
+label-visible-foreground = ${colors.base}
+label-visible-background = ${colors.green}
+label-visible-padding = 2
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 2
+
+[module/date-icon]
+type = custom/text
+format = <label>
+format-background = ${colors.surface0}
+label = "%{A1:gnome-calendar &:}  %{A}"
+label-font = 1
+label-foreground = ${colors.peach}
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-background = ${colors.surface0}
+label = "%{A1:gnome-calendar &:}%date%  %time% %{A}"
+label-font = 3
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+label = " 󰃟 %percentage%% "
+label-foreground = ${colors.yellow}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "  %percentage%% "
+label-muted = " muted "
+label-volume-foreground = ${colors.green}
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}  %ifname% %{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.sky}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+label-charging = "  %percentage%% "
+label-discharging = "  %percentage%% "
+label-full = " Full "
+label-charging-foreground = ${colors.peach}
+label-discharging-foreground = ${colors.peach}
+label-full-foreground = ${colors.peach}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "  %percentage_used%% "
+label-foreground = ${colors.yellow}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "  %percentage%% "
+label-foreground = ${colors.green}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+format-background = ${colors.surface0}
+tray-background = ${colors.surface0}
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/brenda-square.ini" <<'EOF'
+; Brenda - flat, individually-colored two-part widgets: every widget is a
+; vivid-colored icon chip immediately followed by its own cream ("mbg")
+; value chip, separated from the NEXT widget by a real gap - each widget
+; gets its own distinct hue (yellow/green/orange/blue/lime/red) rather
+; than one accent reused everywhere. Workspaces get a genuine Pac-Man
+; theme: focused = Pac-Man glyph (orange), occupied/urgent = ghost glyph
+; (purple), empty = a plain moon/dot (blue-gray) - all sharing one light
+; cream chip background. Modeled directly on github.com/gh0stzk/dotfiles'
+; real "brenda" rice (config/bspwm/rices/brenda/{config,modules}.ini,
+; read from a full local clone). An Everforest-adjacent dark-olive palette
+; (bg=#2d353b, fg warm cream) - distinct from every other palette in this
+; rice's theme set. One of the source's own icon choices (a battery-
+; charging "plug" glyph, U+E0B7) rendered as an unrelated crescent shape
+; when render-tested in this rice's actual Nerd Font build, so charging
+; reuses this rice's own already-verified battery icon instead of a new,
+; unverified one.
+[colors]
+base   = #2D353B
+mantle = #2D353B
+surface0 = #F8F5E4
+surface1 = #F8F5E4
+text   = #D3C6AA
+subtext = #859289
+red    = #E67E80
+green  = #A7C080
+yellow = #DBBC7F
+blue   = #7FBBB3
+purple = #D699B6
+orange = #E69875
+lime   = #B9C244
+; darker text-safe variants for use on the light cream ("surface0") chip -
+; the plain orange/purple/red above stay vivid for use as CHIP
+; BACKGROUNDS (with dark text on top), where the lighter tone is correct;
+; these are for text/icons drawn directly on that same light chip, which
+; the vivid tones don't have enough contrast for.
+orange-dark = #A8501F
+purple-dark = #96406B
+red-dark    = #B33440
+green-dark  = #3E6E2E
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep tray sep date-icon date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep date-icon date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+format-background = ${colors.surface0}
+index-sort = true
+wrapping-scroll = false
+label-focused = " 󰮯 "
+label-focused-foreground = ${colors.orange-dark}
+label-focused-padding = 1
+label-unfocused = " 󰊠 "
+label-unfocused-foreground = ${colors.purple-dark}
+label-unfocused-padding = 1
+label-urgent = " 󰊠 "
+label-urgent-foreground = ${colors.red-dark}
+label-urgent-padding = 1
+
+[module/date-icon]
+type = custom/text
+format = <label>
+format-background = ${colors.blue}
+label = "  "
+label-foreground = ${colors.base}
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-background = ${colors.surface0}
+label = "%{A1:gnome-calendar &:} %date%  %time% %{A}"
+label-foreground = ${colors.base}
+
+[module/backlight-icon]
+type = custom/text
+format = <label>
+format-background = ${colors.yellow}
+label = " 󰃟 "
+label-foreground = ${colors.base}
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-background = ${colors.surface0}
+label = " %percentage%% "
+label-foreground = ${colors.base}
+
+[module/pulseaudio-icon]
+type = internal/pulseaudio
+format-volume = <label-volume>
+format-muted = <label-muted>
+format-volume-background = ${colors.orange}
+format-muted-background = ${colors.orange}
+label-volume = "  "
+label-volume-foreground = ${colors.base}
+label-muted = "  "
+label-muted-foreground = ${colors.base}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-background = ${colors.surface0}
+format-muted-background = ${colors.surface0}
+label-volume = " %percentage%% "
+label-muted = " muted "
+label-volume-foreground = ${colors.base}
+label-muted-foreground = ${colors.base}
+
+[module/network-icon]
+type = custom/text
+format = <label>
+format-background = ${colors.green}
+label = "  "
+label-foreground = ${colors.base}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-background = ${colors.surface0}
+label-connected = "%{A1:nm-connection-editor &:}  %ifname% %{A}"
+label-connected-foreground = ${colors.base}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-background = ${colors.surface0}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+label-connected-foreground = ${colors.base}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.green-dark}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.red-dark}
+
+[module/battery-icon]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-background = ${colors.yellow}
+format-discharging-background = ${colors.yellow}
+format-full-background = ${colors.yellow}
+label-charging = "  "
+label-discharging = "  "
+label-full = "  "
+label-charging-foreground = ${colors.base}
+label-discharging-foreground = ${colors.base}
+label-full-foreground = ${colors.base}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-background = ${colors.surface0}
+format-discharging-background = ${colors.surface0}
+format-full-background = ${colors.surface0}
+label-charging = " %percentage%% "
+label-discharging = " %percentage%% "
+label-full = " Full "
+label-charging-foreground = ${colors.base}
+label-discharging-foreground = ${colors.base}
+label-full-foreground = ${colors.base}
+
+[module/memory-icon]
+type = custom/text
+format = <label>
+format-background = ${colors.blue}
+label = "  "
+label-foreground = ${colors.base}
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-background = ${colors.surface0}
+label = " %percentage_used%% "
+label-foreground = ${colors.base}
+
+[module/cpu-icon]
+type = custom/text
+format = <label>
+format-background = ${colors.red}
+label = "  "
+label-foreground = ${colors.base}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-background = ${colors.surface0}
+label = " %percentage%% "
+label-foreground = ${colors.base}
+
+; Tray specifically uses the theme's own dark base, not the light cream
+; surface0 every other widget's value-chip uses - most tray icons
+; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
+; dark bar and become invisible against a light chip (caught via direct
+; feedback, not assumed).
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.base}
+format-background = ${colors.base}
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/catppuccin-mocha-square.ini" <<'EOF'
+[colors]
+base     = #1e1e2e
+mantle   = #181825
+surface0 = #313244
+surface1 = #45475a
+text     = #cdd6f4
+subtext  = #a6adc8
+mauve    = #cba6f7
+lavender = #b4befe
+blue     = #89b4fa
+sky      = #89dceb
+green    = #a6e3a1
+teal     = #94e2d5
+yellow   = #f9e2af
+peach    = #fab387
+red      = #f38ba8
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 1
+padding-right = 0
+module-margin = 0
+; font-1 is a slightly larger slot for the powerline separator glyphs so the
+; rounded caps render full-height instead of looking clipped/short next to
+; the regular text baseline.
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+underline-size = 2
+overline-size = 2
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+; the only instance that actually owns the X11 systray (single-owner across
+; every polybar instance, regardless of which bar config asks for it) - also
+; the only one carrying the battery widget. polybar-launch.sh launches this
+; bar name on whichever output xrandr reports as primary. Clock is the very
+; last segment, farthest right.
+modules-right = tray-cap tray backlight pulseaudio network-wired network-wireless bluetooth caffeine dnd battery memory cpu date-icon date
+
+[bar/top-secondary]
+inherit = bar/base
+; same as top-primary minus tray/battery - without this split every extra
+; monitor showed a permanently empty tray slot since only one instance can
+; ever win the X11 tray selection.
+modules-right = backlight pulseaudio network-wired network-wireless memory cpu date-icon date
+
+; --- powerline separators ---------------------------------------------------
+; Each is a plain glyph rendered in the color of the segment being LEFT
+; (content-foreground) over the background of the segment being ENTERED
+; (content-background) - that's what makes the rounded cap look like it
+; belongs to both neighbours and reads as one continuous capsule chain.
+; All of them point the same direction because the whole chain flows left to
+; right; only the fg/bg pair changes per transition.
+[module/tray-cap]
+type = custom/text
+format = <label>
+label = "  "
+label-background = ${colors.mauve}
+label-underline = ${colors.mauve}
+label-overline = ${colors.mauve}
+
+[module/i3]
+type = internal/i3
+format = <label-state> <label-mode>
+index-sort = true
+wrapping-scroll = false
+; The real centering culprit: label-focused/unfocused/urgent default to
+; "%icon% %name%" - since no ws-icon-N is configured, %icon% renders empty
+; but the literal space between it and %name% is still there, permanently
+; skewing the visible digit right of center. ws-label pins content to just
+; the index, removing that invisible leading space entirely.
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-unfocused = ${self.ws-label}
+label-urgent = ${self.ws-label}
+; font-2 (index 3) is the plain, unpatched JetBrains Mono - kept as a minor
+; extra safety margin against Nerd Font glyph-metrics quirks (nerd-fonts#991)
+; on top of the ws-label fix above. No fill/background here either - polybar
+; has no way to draw a rounded rectangle around dynamic per-item text, so a
+; filled box always renders as a hard square; underline+overline avoids that
+; entirely instead of just trying to soften it.
+label-focused-font = 3
+label-focused-foreground = ${colors.mauve}
+label-focused-underline = ${colors.mauve}
+label-focused-overline = ${colors.mauve}
+label-focused-padding = 3
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 2
+label-urgent-font = 3
+label-urgent-foreground = ${colors.red}
+label-urgent-underline = ${colors.red}
+label-urgent-overline = ${colors.red}
+label-urgent-padding = 2
+
+[module/date-icon]
+type = custom/text
+format = <label>
+label = "%{A1:gnome-calendar &:}    %{A}"
+label-font = 1
+label-foreground = ${colors.base}
+format-background = ${colors.lavender}
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:gnome-calendar &:}  %date%  %time%  %{A}"
+label-font = 3
+label-foreground = ${colors.base}
+format-background = ${colors.lavender}
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+label = "  󰃟 %percentage%% "
+label-foreground = ${colors.base}
+format-background = ${colors.sky}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "   %percentage%% "
+label-muted = "   muted "
+label-volume-foreground = ${colors.base}
+label-muted-foreground = ${colors.base}
+format-volume-background = ${colors.mauve}
+format-muted-background = ${colors.mauve}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label. They
+; share one segment color/slot since at most one of them is ever visible.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}   %ifname% %{A}"
+label-connected-foreground = ${colors.base}
+format-connected-background = ${colors.blue}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}   %essid% %{A}%{A}"
+label-connected-foreground = ${colors.base}
+format-connected-background = ${colors.blue}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.base}
+format-background = ${colors.teal}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.base}
+format-background = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.base}
+format-background = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+label-charging = "   %percentage%% "
+label-discharging = "   %percentage%% "
+label-full = "   Full "
+label-charging-foreground = ${colors.base}
+label-discharging-foreground = ${colors.base}
+label-full-foreground = ${colors.base}
+format-charging-background = ${colors.peach}
+format-discharging-background = ${colors.peach}
+format-full-background = ${colors.peach}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "   %percentage_used%% "
+label-foreground = ${colors.base}
+format-background = ${colors.yellow}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "   %percentage%% "
+label-foreground = ${colors.base}
+format-background = ${colors.green}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.surface0}
+; polybar's tray module has no true 4-sided border - format-underline/
+; format-overline (top+bottom accent lines) is the closest it can draw to a
+; frame. format-background is ALSO needed (not just tray-background, which
+; per the docs only colors the individual icons, not the space around them)
+; for a solid, cohesive pill instead of a transparent gap with framed icons.
+format-background = ${colors.surface0}
+format-underline = ${colors.mauve}
+format-overline = ${colors.mauve}
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/cristina-square.ini" <<'EOF'
+; Cristina - individually-colored pill capsules: each quantifiable widget
+; gets its OWN rounded-cap bracket pair (U+E0B6/U+E0B4, same glyph family
+; as Mocha/Archcraft/Aline) in its own distinct hue, with a real gap
+; between each pill instead of a shared group background or a continuous
+; connected chain - a genuine third variation on the same bracket-glyph
+; idea already used elsewhere in this rice's set. Non-quantifiable
+; widgets (battery, bluetooth, caffeine, dnd) stay fully plain/unbracketed
+; with just a colored icon prefix, matching the source's own real mixed
+; treatment exactly (its battery module has no background at all, while
+; its filesystem/cpu/memory/pulseaudio/network/date modules each get
+; their own individual bracket pair colored to match that widget's icon).
+; Modeled directly on github.com/gh0stzk/dotfiles' real "cristina" rice
+; (config/bspwm/rices/cristina/{config,modules}.ini, read from a full
+; local clone). A Rosé-Pine-Moon-adjacent dark purple-navy palette
+; (bg=#232136, fg pale lavender). Workspaces stay plain digits directly
+; on the bar's own background (no chip at all) - matching the source's
+; own unbracketed workspace treatment - rather than porting its literal
+; per-number app-category icon set (folder/code/gamepad/etc, ending in a
+; literal toilet emoji for workspace 9), which is too specific to the
+; original author's own workflow to carry meaning here.
+[colors]
+base   = #232136
+mantle = #232136
+surface0 = #39374A
+text   = #E0DEF4
+subtext = #908CAA
+red    = #EA6F91
+green  = #9BCED7
+yellow = #F1CA93
+blue   = #34738E
+purple = #C3A5E6
+orange = #F08641
+indigo = #6C77BB
+lime   = #8EC07C
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+
+; --- bracket pairs -------------------------------------------------------
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 2
+label-focused-foreground = ${colors.lime}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 2
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 2
+label-urgent-foreground = ${colors.purple}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+format-prefix-foreground = ${colors.indigo}
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.green}
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.blue}
+label-volume = "%percentage%%"
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.orange}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.orange}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+format-prefix-foreground = ${colors.purple}
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/cynthia-square.ini" <<'EOF'
+; Cynthia - deliberately monochrome and minimal: a near-black bar where
+; only the workspace state colors (blue/green/red) carry any real hue at
+; all - every other widget is plain icon+text directly on the bar's own
+; background, with only a FEW widgets (workspace, cpu+memory together,
+; network) wrapped in a single dark-gray bracket capsule (bi/bd =
+; U+E0B6/U+E0B4) rather than a rainbow of individually-colored ones like
+; this rice's own Cristina theme, or a shared accent like Archcraft.
+; Modeled directly on github.com/gh0stzk/dotfiles' real "cynthia" rice
+; (config/bspwm/rices/cynthia/{config,modules}.ini, read from a full
+; local clone) - workspace numbers reuse the same circled-digit icon
+; style as this rice's own Aline theme (ws-icon-N, verified render-tested
+; there already), but here EVERY state (focused/occupied/urgent) keeps
+; the same per-number icon and only changes color, rather than Aline's
+; "unique icon only when empty" split. The source actually ships this
+; rice as TWO separate bars (a top bar for workspaces/system stats, a
+; bottom bar for media/weather/date) - consolidated into this rice's
+; usual single top bar instead, since a real second bar is a structural
+; change to the launch/gaps setup affecting every theme, not something
+; to introduce for just one of them.
+[colors]
+base   = #181616
+mantle = #181616
+surface0 = #242121
+surface1 = #242121
+text   = #C5C9C5
+subtext = #708491
+red    = #E46876
+green  = #87A987
+blue   = #7FB4CA
+purple = #938AA9
+yellow = #E6C384
+orange = #E57C46
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = memory cpu sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = memory cpu sep network-wired network-wireless sep backlight sep pulseaudio sep date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+format-background = ${colors.surface0}
+index-sort = true
+wrapping-scroll = false
+ws-icon-0 = 1;󰬺
+ws-icon-1 = 2;󰬻
+ws-icon-2 = 3;󰬼
+ws-icon-3 = 4;󰬽
+ws-icon-4 = 5;󰬾
+ws-icon-5 = 6;󰬿
+ws-icon-6 = 7;󰭀
+ws-icon-7 = 8;󰭁
+ws-icon-8 = 9;󰭂
+ws-icon-default = "♟"
+label-focused = %icon%
+label-focused-foreground = ${colors.blue}
+label-focused-font = 2
+label-focused-padding = 1
+label-unfocused = %icon%
+label-unfocused-foreground = ${colors.green}
+label-unfocused-font = 2
+label-unfocused-padding = 1
+label-urgent = %icon%
+label-urgent-foreground = ${colors.red}
+label-urgent-font = 2
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+label-volume = "%percentage%%"
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-background = ${colors.surface0}
+format-connected-prefix = " "
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-background = ${colors.surface0}
+format-connected-prefix = " "
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/daniela-square.ini" <<'EOF'
+; Daniela - flat text-label widgets: instead of an icon glyph, each
+; widget's own prefix is a literal colored WORD ("CPU", "RAM", "NET",
+; "VOL", "BAT") with a plain, unstyled value next to it - no background
+; anywhere, no divider between widgets, each label just its own color
+; directly on the bar. Genuinely different from every icon-based theme in
+; this rice's set. Modeled directly on github.com/gh0stzk/dotfiles' real
+; "daniela" rice (config/bspwm/rices/daniela/{config,modules}.ini, read
+; from a full local clone): its own cpu_bar/memory_bar/etc modules
+; literally set format-prefix to the word "CPU"/"RAM" (font-1, colored),
+; confirmed by reading the actual module bodies rather than guessing from
+; the screenshot alone. The source's own color palette turned out to be
+; Catppuccin Mocha's exact hex values reused wholesale (bg=#181825,
+; fg=#cdd6f4, same red/blue/green/yellow/purple as this rice's own
+; catppuccin-mocha.ini) - porting it as-is would make two themes in this
+; set look color-identical, so this port keeps daniela's real STRUCTURE
+; (word-prefix, fully flat, no backgrounds) but uses a fresh Tokyo-Night-
+; adjacent palette instead, distinct from every other theme here.
+[colors]
+base   = #1A1B26
+mantle = #1A1B26
+surface0 = #31323C
+text   = #C0CAF5
+subtext = #565F89
+red    = #F7768E
+green  = #9ECE6A
+yellow = #E0AF68
+blue   = #7AA2F7
+purple = #BB9AF7
+cyan   = #7DCFFF
+orange = #FF9E64
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 1
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight pulseaudio network-wired network-wireless bluetooth caffeine dnd battery memory cpu tray date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio network-wired network-wireless memory cpu date
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 2
+label-focused-foreground = ${colors.blue}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 2
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 2
+label-urgent-foreground = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+format-prefix-foreground = ${colors.orange}
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "BRT "
+format-prefix-font = 1
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = "VOL "
+format-volume-prefix-font = 1
+format-volume-prefix-foreground = ${colors.purple}
+label-volume = "%percentage%%"
+label-muted = "muted"
+label-muted-foreground = ${colors.red}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = "NET "
+format-connected-prefix-font = 1
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = "NET "
+format-connected-prefix-font = 1
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.cyan}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = "BAT "
+format-charging-prefix-font = 1
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-prefix = "BAT "
+format-discharging-prefix-font = 1
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-prefix = "BAT "
+format-full-prefix-font = 1
+format-full-prefix-foreground = ${colors.green}
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = "RAM "
+format-prefix-font = 1
+format-prefix-foreground = ${colors.purple}
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = "CPU "
+format-prefix-font = 1
+format-prefix-foreground = ${colors.blue}
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/dracula-square.ini" <<'EOF'
+; Dracula - flat, minimal, no powerline pills anywhere. Modeled directly on
+; the ACTUAL github.com/dracula/i3 port (confirmed by reading its real
+; config, not assumed): that setup is i3bar/i3status-based, not polybar,
+; and renders almost everything as plain statusline text - the workspace
+; switcher is the only element that ever gets a filled background, and
+; only for the FOCUSED state; every other widget is just colored text
+; separated by a plain "|" divider in the muted "Current Line" tone
+; (#44475a), which is also i3status's own real separator color in that
+; config. Ported to polybar (this rice's bar of choice throughout) rather
+; than switching to i3bar/i3status, keeping every widget this rice already
+; has (tray, caffeine, DND, etc. - none of which exist in the plain
+; i3status world) but restyled to match that flat philosophy instead of
+; Catppuccin Mocha's segmented powerline-pill one.
+[colors]
+base     = #282a36
+mantle   = #282a36
+surface0 = #44475a
+surface1 = #44475a
+text     = #f8f8f2
+subtext  = #6272a4
+mauve    = #bd93f9
+lavender = #ff79c6
+blue     = #6272a4
+sky      = #8be9fd
+green    = #50fa7b
+teal     = #8be9fd
+yellow   = #f1fa8c
+peach    = #ffb86c
+red      = #ff5555
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 1
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+; The tray needs SOME background to give its icons a defined, clickable
+; area - everything else here is flat text, so a small muted box (Current
+; Line, not an accent) reads as "a container", not "another pill in a
+; powerline chain" the way Mocha's mauve tray-cap did.
+modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain date-icon date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight sep-plain pulseaudio sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain date-icon date
+
+[module/sep-plain]
+type = custom/text
+format = <label>
+label = "|"
+label-foreground = ${colors.subtext}
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state> <label-mode>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-unfocused = ${self.ws-label}
+label-urgent = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.text}
+label-focused-background = ${colors.surface0}
+label-focused-padding = 3
+; Unfocused workspaces get NO background at all (not even the bar's own
+; color explicitly set) - just muted text directly on the bar, matching
+; the real dracula/i3 config's own inactive-workspace treatment exactly
+; (its bg is literally the bar's own background - the box is invisible
+; until focused).
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 2
+label-urgent-font = 3
+label-urgent-foreground = ${colors.text}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 2
+
+[module/date-icon]
+type = custom/text
+format = <label>
+label = "%{A1:gnome-calendar &:}  %{A}"
+label-font = 1
+label-foreground = ${colors.mauve}
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label-font = 3
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+label = " 󰃟 %percentage%%"
+label-foreground = ${colors.yellow}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "  %percentage%%"
+label-muted = "  muted"
+label-volume-foreground = ${colors.green}
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}  %ifname%%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid%%{A}%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.sky}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+label-charging = "  %percentage%%"
+label-discharging = "  %percentage%%"
+label-full = " Full"
+label-charging-foreground = ${colors.peach}
+label-discharging-foreground = ${colors.peach}
+label-full-foreground = ${colors.peach}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "  %percentage_used%%"
+label-foreground = ${colors.yellow}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "  %percentage%%"
+label-foreground = ${colors.green}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.surface0}
+format-background = ${colors.surface0}
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/emilia-square.ini" <<'EOF'
+; Emilia - individually-bracketed capsules again (like this rice's own
+; Cristina theme), but every bracket shares the SAME muted color instead
+; of a rainbow of per-widget hues - a sea of small uniform dark-gray
+; pills, each holding just one (or occasionally two related) widgets,
+; real gaps between them. Workspaces reuse the same Pac-Man/ghost/moon
+; icon set as this rice's own Brenda theme (label-focused/-occupied/
+; -urgent/-empty = U+F0BAF/U+F02A0/U+F02A0/U+F044A, confirmed identical
+; codepoints by reading both sources directly) but structured completely
+; differently: Brenda pairs a vivid icon-chip with a separate value-chip
+; for every widget, Emilia wraps each whole widget in one plain muted
+; bracket instead. Modeled directly on github.com/gh0stzk/dotfiles' real
+; "emilia" rice (config/bspwm/rices/emilia/{config,modules}.ini, read
+; from a full local clone). The source's own real palette turned out to
+; be Tokyo Night again (same exact hex values already used for this
+; rice's own Daniela theme, built earlier in this same batch) - reusing
+; it here too would make two themes look color-identical, so this port
+; uses a fresh warm copper/amber palette instead, distinct from every
+; other theme built so far.
+[colors]
+base   = #1E1A17
+mantle = #1E1A17
+surface0 = #2B241F
+surface1 = #2B241F
+text   = #E8DCC8
+subtext = #9C8F7D
+red    = #D9736A
+green  = #A8B562
+yellow = #E0A458
+blue   = #7FA5B5
+purple = #B08BBB
+orange = #D98E4A
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = backlight sep pulseaudio
+modules-center = i3
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = network-wired network-wireless sep memory sep cpu sep date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- bracket pairs -------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+format-background = ${colors.surface0}
+index-sort = true
+wrapping-scroll = false
+label-focused = "󰮯"
+label-focused-foreground = ${colors.yellow}
+label-focused-padding = 1
+label-unfocused = "󰊠"
+label-unfocused-foreground = ${colors.blue}
+label-unfocused-padding = 1
+label-urgent = "󰊠"
+label-urgent-foreground = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-background = ${colors.surface0}
+format-prefix = " "
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-background = ${colors.surface0}
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-background = ${colors.surface0}
+format-muted-background = ${colors.surface0}
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.purple}
+label-volume = "%percentage%%"
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-background = ${colors.surface0}
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-background = ${colors.surface0}
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+format-background = ${colors.surface0}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-background = ${colors.surface0}
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-background = ${colors.surface0}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-background = ${colors.surface0}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = " "
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = " "
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/h4ck3r-square.ini" <<'EOF'
+; H4ck3r - a deliberately monochrome green-on-black "matrix terminal"
+; palette: the source's own colors.ini names keys "red"/"purple"/"blue"/
+; "yellow" but EVERY one of them is actually some shade of green in hex
+; (confirmed by reading the real hex values, not the key names - e.g.
+; its own "red" is #6DDE00) - a hacker-aesthetic monochrome scheme
+; disguised as a normal multi-hue palette. This port keeps that same
+; "everything is a shade of green" idea honestly (no literal reds/blues
+; anywhere) rather than reading the key names at face value. Workspace
+; icons are a genuine reticle/skull/dot set (focused = targeting
+; reticle, occupied/urgent = skull, empty = plain dot), all sharing one
+; dark chip background. Modeled directly on github.com/gh0stzk/dotfiles'
+; real "h4ck3r" rice (config/bspwm/rices/h4ck3r/{config,modules}.ini,
+; read from a full local clone) - its own left-side network-info/VPN-
+; status/target-lock modules are custom scripts specific to that rice's
+; own security-tool workflow, not part of this rig, so left out rather
+; than faked, same call made for other themes' unportable widgets.
+[colors]
+base   = #0C1018
+mantle = #0C1018
+surface0 = #1B2333
+surface1 = #1B2333
+text   = #00FA5C
+subtext = #578A29
+green  = #00FA5C
+yellow = #76EA00
+lime   = #9CF542
+red    = #6DDE00
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+format-background = ${colors.surface0}
+index-sort = true
+wrapping-scroll = false
+label-focused = "󱓇"
+label-focused-foreground = ${colors.yellow}
+label-focused-padding = 2
+label-unfocused = "󰚌"
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 2
+label-urgent = "󰚌"
+label-urgent-foreground = ${colors.lime}
+label-urgent-padding = 2
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+label-volume = "%percentage%%"
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = " "
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.subtext}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-discharging-prefix = " "
+format-full-prefix = " "
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/hidrot-square.ini" <<'EOF'
+; Hidrot - three separate floating clusters bracketed by NEUTRAL rounded
+; caps (U+E0B6/U+E0B4, same glyph family as Mocha/Archcraft/Aline/Marisol)
+; that match each cluster's own content background rather than a vivid
+; accent - the workspace cluster, and a rainbow-icon cluster where every
+; widget gets its OWN distinct vivid icon-chip color (blue/aqua/green/
+; purple/yellow/red) against one shared neutral value-chip background,
+; confirmed by reading the source's own real per-widget files directly
+; (each sets format-prefix-background to a different accent, format-
+; background to the same neutral bg1 throughout). Modeled directly on
+; github.com/Murzchnvok/polybar-collection's real "hidrot" theme (themes/
+; hidrot/*.ini, read from a full local clone) - like its sibling "murz"
+; (this rice's own theme by the same name, later removed by request),
+; colors come from a separate, swappable colorscheme file; its three
+; bundled colorschemes (gruvbox/nord/onedark) are all already used
+; elsewhere in this rice's set, so this port uses a fresh graphite-blue
+; palette instead. The source's own background is semi-transparent - but
+; this rice's own Marisol theme already went fully transparent once and
+; had to be walked back after real feedback found it illegible against
+; an actual wallpaper, so hidrot ships at a safer ~90% opacity from the
+; start instead of repeating that mistake. Workspace state icons and the
+; system tray both get real attention up front for the same reason:
+; explicit padding and a comfortably large font on the workspace glyphs
+; (this rice's own Jan/Karla/Varinka all needed that fixed in after the
+; fact), and a dedicated dark, opaque tray backdrop independent of the
+; rest of the palette (Aline/Brenda both needed that fixed in after the
+; fact too, since most tray icons are drawn expecting a dark bar).
+[colors]
+base   = #E61B1E24
+mantle = #E61B1E24
+surface0 = #262B33
+surface1 = #262B33
+text   = #D6DCE5
+subtext = #6E7684
+green0 = #7CB88F
+purple0 = #B08FD1
+blue0  = #6E93C7
+red0   = #D9707A
+blue1  = #5E8FCC
+aqua1  = #4FB0A6
+green1 = #7BBF7E
+purple1 = #B08FD1
+yellow1 = #D9B25C
+red1   = #D9707A
+tray-bg = #14161A
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+
+[bar/top-primary]
+inherit = bar/base
+modules-center = date-icon date
+modules-right = backlight pulseaudio sep network-wired network-wireless bluetooth caffeine dnd battery memory cpu sep tray
+
+[bar/top-secondary]
+inherit = bar/base
+modules-center = date-icon date
+modules-right = backlight pulseaudio sep network-wired network-wireless memory cpu
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+format-background = ${colors.surface0}
+index-sort = true
+wrapping-scroll = false
+label-focused = "󰄰"
+label-focused-foreground = ${colors.green0}
+label-focused-font = 2
+label-focused-padding = 2
+label-unfocused = "󰄰"
+label-unfocused-foreground = ${colors.blue0}
+label-unfocused-font = 2
+label-unfocused-padding = 2
+label-urgent = "󰄰"
+label-urgent-foreground = ${colors.red0}
+label-urgent-font = 2
+label-urgent-padding = 2
+
+[module/date-icon]
+type = custom/text
+format = <label>
+format-background = ${colors.surface0}
+label = "󱑎"
+label-foreground = ${colors.green1}
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-background = ${colors.surface0}
+label = "%{A1:gnome-calendar &:} %date%  %time% %{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-background = ${colors.surface0}
+format-prefix = "󰖨 "
+format-prefix-background = ${colors.blue1}
+format-prefix-foreground = ${colors.base}
+label = " %percentage%% "
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-background = ${colors.surface0}
+format-volume-prefix = "󰕾 "
+format-volume-prefix-background = ${colors.yellow1}
+format-volume-prefix-foreground = ${colors.base}
+format-muted-background = ${colors.surface0}
+format-muted-prefix = "󰖁 "
+format-muted-prefix-background = ${colors.red1}
+format-muted-prefix-foreground = ${colors.base}
+label-volume = " %percentage%% "
+label-muted = " muted "
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-background = ${colors.surface0}
+format-connected-prefix = "󰒍 "
+format-connected-prefix-background = ${colors.green1}
+format-connected-prefix-foreground = ${colors.base}
+label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
+format-disconnected-background = ${colors.surface0}
+format-disconnected-prefix = "󰒎 "
+format-disconnected-prefix-background = ${colors.red1}
+format-disconnected-prefix-foreground = ${colors.base}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-background = ${colors.surface0}
+format-connected-prefix = "󰖩 "
+format-connected-prefix-background = ${colors.green1}
+format-connected-prefix-foreground = ${colors.base}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+format-background = ${colors.surface0}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.green0}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.red0}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-background = ${colors.surface0}
+format-charging-prefix = "󰠠 "
+format-charging-prefix-background = ${colors.aqua1}
+format-charging-prefix-foreground = ${colors.base}
+format-discharging-background = ${colors.surface0}
+format-discharging-prefix = "󰠠 "
+format-discharging-prefix-background = ${colors.blue1}
+format-discharging-prefix-foreground = ${colors.base}
+format-full-background = ${colors.surface0}
+format-full-prefix = "󰠠 "
+format-full-prefix-background = ${colors.green1}
+format-full-prefix-foreground = ${colors.base}
+label-charging = " %percentage%% "
+label-discharging = " %percentage%% "
+label-full = " Full "
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = "󰘚 "
+format-prefix-background = ${colors.green1}
+format-prefix-foreground = ${colors.base}
+label = " %percentage_used%% "
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = "󰍛 "
+format-prefix-background = ${colors.purple1}
+format-prefix-foreground = ${colors.base}
+label = " %percentage%% "
+
+; Explicit dark, opaque tray backdrop - most tray icons (Discord,
+; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
+; and this theme's own bar background is only ~90% opaque, not a fully
+; reliable backdrop by itself.
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.tray-bg}
+format-background = ${colors.tray-bg}
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/isabel-square.ini" <<'EOF'
+; Isabel - deliberately understated: no chip backgrounds anywhere, no
+; per-state color coding at all (focused/occupied/urgent workspaces all
+; share the SAME plain foreground color - only the icon SHAPE tells them
+; apart, confirmed by reading the source's own [module/bspwm] block,
+; which sets every state's label-*-foreground to the same ${color.fg}).
+; Standalone items are separated by a real visible vertical 3-dot bullet
+; glyph (U+F01D9, colored) instead of a plain gap or a divider line -
+; distinct from every other separator style in this rice's set. Reuses
+; the same Pac-Man/ghost/moon workspace icon family as this rice's own
+; Brenda and Emilia themes (confirmed identical codepoints, U+F0BAF/
+; U+F02A0/U+F044A, by reading isabel's own real config) - the third of
+; this batch to use it, since that really is what the source itself
+; ships - but structured completely differently again: no chip, no
+; bracket, no state color, just the bare icon on the bar. Modeled
+; directly on github.com/gh0stzk/dotfiles' real "isabel" rice (config/
+; bspwm/rices/isabel/{config,modules}.ini, read from a full local
+; clone). The source's own palette turned out to be an Atom-One-Dark-
+; adjacent scheme, already close to this rice's own Archcraft theme, so
+; this port uses a fresh teal/mint dark palette instead to stay visually
+; distinct.
+[colors]
+base   = #10181A
+mantle = #10181A
+surface0 = #282F31
+text   = #A8C5C0
+subtext = #5C7B76
+teal   = #4FD6BE
+green  = #7FBF8F
+yellow = #D6B35C
+red    = #D67F7F
+blue   = #5FA8C7
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight dots pulseaudio dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight dots pulseaudio dots network-wired network-wireless dots memory dots cpu dots date
+
+[module/dots]
+type = custom/text
+format = <label>
+label = " 󰇙 "
+label-foreground = ${colors.teal}
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+label-focused = "󰮯"
+label-focused-padding = 1
+label-unfocused = "󰊠"
+label-unfocused-padding = 1
+label-urgent = "󰊠"
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+label-volume = "%percentage%%"
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = " "
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-discharging-prefix = " "
+format-full-prefix = " "
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/jan-square.ini" <<'EOF'
+; Jan - a genuine Synthwave '84-adjacent neon palette: deep navy-purple
+; background, hot-pink/electric-blue/neon-green/neon-yellow accents, no
+; muted tones anywhere. The vivid high-contrast direction this rice
+; considered early on (before settling on Archcraft/Nord/Dracula) shows
+; up for real here, sourced rather than invented. Reuses the same
+; circled-digit workspace icon family as this rice's own Aline/Cynthia
+; themes (ws-icon-N, already verified rendering), but the focused state
+; wraps its icon in literal square brackets ("[icon]", confirmed by
+; reading the source's own label-focused = "[%icon%]") - a small but
+; genuine detail distinct from either of those. Modeled directly on
+; github.com/gh0stzk/dotfiles' real "jan" rice (config/bspwm/rices/jan/
+; {config,modules}.ini, read from a full local clone). One of the
+; source's own separator glyphs (U+F7C6) rendered fully blank when
+; render-tested in this rice's actual Nerd Font build, so a plain gap is
+; used instead, matching the same fix applied for other themes' missing
+; glyphs in this batch.
+; The source's own bg carries an alpha channel too (E6, ~90% opaque) -
+; a subtle transparency this port matches rather than a flat opaque fill.
+[colors]
+base   = #E6212A4C
+mantle = #E6212A4C
+surface0 = #14192E
+text   = #27FBFE
+subtext = #6B7BB0
+pink   = #FB007A
+magenta = #F200F4
+blue   = #19BFFE
+green  = #00FF00
+lime   = #8DF202
+yellow = #F2ED00
+orange = #DB330A
+purple = #6800D2
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-icon-0 = 1;󰬺
+ws-icon-1 = 2;󰬻
+ws-icon-2 = 3;󰬼
+ws-icon-3 = 4;󰬽
+ws-icon-4 = 5;󰬾
+ws-icon-5 = 6;󰬿
+ws-icon-6 = 7;󰭀
+ws-icon-7 = 8;󰭁
+ws-icon-8 = 9;󰭂
+ws-icon-default = "♟"
+label-focused = "[%icon%]"
+label-focused-foreground = ${colors.pink}
+label-focused-font = 2
+label-unfocused = %icon%
+label-unfocused-foreground = ${colors.lime}
+label-unfocused-font = 2
+label-urgent = %icon%
+label-urgent-foreground = ${colors.orange}
+label-urgent-font = 2
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+format-prefix-foreground = ${colors.blue}
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.blue}
+label-volume = "%percentage%%"
+label-muted = "muted"
+label-muted-foreground = ${colors.pink}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.pink}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.pink}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.pink}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+format-prefix-foreground = ${colors.pink}
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/karla-square.ini" <<'EOF'
+; Karla - vivid magenta/purple/electric-blue palette, widgets separated
+; by a plain "|" pipe divider (an actual ASCII pipe, not a Nerd Font
+; glyph - confirmed from the source's own [module/sep], `label = "|"`)
+; rather than any powerline shape - the simplest divider style in this
+; rice's whole theme set. Reuses the same targeting-reticle focused-
+; workspace icon as this rice's own H4ck3r theme (U+F14C7, already
+; verified rendering there), but on a vivid rather than monochrome
+; palette, and with no color distinction between focused/unfocused
+; (matching the source's own [module/bspwm], which sets both to the same
+; plain foreground). Modeled directly on github.com/gh0stzk/dotfiles'
+; real "karla" rice (config/bspwm/rices/karla/{config,modules}.ini, read
+; from a full local clone) - the source actually ships this rice as
+; THREE separate bars (system stats, media/battery/network, and a
+; third bar just for centered workspaces), consolidated here into this
+; rice's usual single top bar for the same reason Cynthia's two bars
+; were: a real second or third bar is a structural change to the launch
+; setup affecting every theme, not a per-theme decision.
+; The source's own bg carries an alpha channel too (D9, ~85% opaque) -
+; a subtle transparency this port matches rather than a flat opaque fill.
+[colors]
+base   = #D90E1113
+mantle = #D90E1113
+surface0 = #26292B
+text   = #AFB1DB
+subtext = #6272A4
+red    = #E7034A
+pink   = #F05393
+purple = #7A44E3
+blue   = #4856D4
+cyan   = #7DF0F0
+green  = #0FD94F
+yellow = #F7F23F
+orange = #F98860
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = " | "
+label-foreground = ${colors.subtext}
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = "󱓇"
+label-focused-foreground = ${colors.pink}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-foreground = ${colors.text}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-foreground = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+format-prefix-foreground = ${colors.purple}
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.blue}
+label-volume = "%percentage%%"
+label-muted = "muted"
+label-muted-foreground = ${colors.red}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.cyan}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+format-prefix-foreground = ${colors.purple}
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+format-prefix-foreground = ${colors.pink}
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/marisol-square.ini" <<'EOF'
+; Marisol - one shared dark-gray chip wraps the whole workspace cluster
+; (format-level background, no bracket caps at all) - a 4th distinct
+; structural treatment of the same Pac-Man/ghost workspace icon family
+; already used by this rice's own Brenda (2-part icon+value chips),
+; Emilia (individual mb-brackets per widget) and reused again here
+; (confirmed identical codepoints, U+F0BAF/U+F02A0, by reading marisol's
+; own real config) - genuinely the source's own shared default icon set
+; across many of its rices, not a coincidence on this port's part.
+; Modeled directly on github.com/gh0stzk/dotfiles' real "marisol" rice
+; (config/bspwm/rices/marisol/{config,modules}.ini, read from a full
+; local clone). The source's own palette turned out to be the official
+; Dracula theme's exact hex values (bg=#282a36, fg=#f8f8f2, same reds/
+; purples/greens as this rice's own catppuccin-adjacent Dracula theme) -
+; reusing it here would make two themes look color-identical, so this
+; port uses a fresh warm coral/salmon palette instead. The source's own
+; bar background is ${color.trans} - fully transparent (alpha 00), not
+; its opaque "bg" - only the workspace's own grey chip and individual
+; widget colors are ever visible, floating directly over the wallpaper.
+; A first pass ported that literally (alpha 00) - but real-world feedback
+; against an actual (light) wallpaper found the theme's own light text
+; unreadable with nothing behind it at all, since a fully transparent bar
+; inherits whatever's on the desktop rather than anything this theme
+; controls. Kept mostly-transparent (still see-through, still distinct
+; from every fully-opaque theme in this set) but backed by enough of its
+; own dark fill (alpha E6, ~90% opaque) that text and icons stay legible
+; regardless of wallpaper - readability over literal source fidelity.
+[colors]
+base   = #E6241C1C
+mantle = #E6241C1C
+surface0 = #332727
+surface1 = #332727
+text   = #F5E6E0
+subtext = #A8827C
+red    = #E8604C
+pink   = #E68A9E
+yellow = #E8B84C
+blue   = #6FA8C7
+green  = #7FBF8F
+purple = #B98FC7
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; Rounded-cap brackets around the workspace cluster (requested directly:
+; "would be nice if the brown background around virtual desktop indicator
+; had rounded corners") - the same U+E0B6/U+E0B4 half-circle pair Mocha's
+; own separators and this rice's Archcraft/Aline/Cynthia use, foreground
+; matching the workspace chip's own background so the caps and the
+; content between them fuse into one seamless rounded pill instead of a
+; flat-edged rectangle.
+[module/i3]
+type = internal/i3
+format = <label-state>
+format-background = ${colors.surface0}
+index-sort = true
+wrapping-scroll = false
+label-focused = "󰮯"
+label-focused-foreground = ${colors.yellow}
+label-focused-padding = 1
+label-unfocused = "󰊠"
+label-unfocused-foreground = ${colors.blue}
+label-unfocused-padding = 1
+label-urgent = "󰊠"
+label-urgent-foreground = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.purple}
+label-volume = "%percentage%%"
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+label = "%percentage%%"
+
+; Explicit dark, opaque tray backdrop - most tray icons (Discord,
+; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
+; and this theme's own bar background is only ~90% opaque, not a fully
+; reliable backdrop by itself.
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.surface0}
+format-background = ${colors.surface0}
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/nord-square.ini" <<'EOF'
+; Nord - grouped flat "islands" with real gaps between groups, no dividers
+; within a group. Modeled on the actual layout style seen in stav121/
+; i3wm-themer's own theme screenshots (github.com/stav121/i3wm-themer,
+; themes/screenshots/*.png - fetched and looked at directly, not just
+; described) and Jfeatherstone/i3-themes' Bebop theme (same - the real
+; bebop_busy.png screenshot, not a text summary of it): related stats
+; (volume/network/bluetooth, battery/memory/cpu) sit together in one
+; shared-background block with no separator between them, icons alone
+; carrying the color, then a real empty gap - not a divider glyph, not
+; another color transition - before the next block starts. Genuinely
+; different from this rice's other 2 themes: Mocha's segments are all
+; physically CONNECTED by powerline arrows into one continuous ribbon,
+; Dracula has NO backgrounds anywhere except the focused workspace: Nord
+; sits in between - grouped flat blocks, gaps, no arrows. Colors are the
+; official Nord palette (nordtheme.com).
+[colors]
+base     = #2e3440
+mantle   = #2e3440
+surface0 = #3b4252
+surface1 = #434c5e
+text     = #eceff4
+subtext  = #d8dee9
+mauve    = #b48ead
+lavender = #81a1c1
+blue     = #5e81ac
+sky      = #88c0d0
+green    = #a3be8c
+teal     = #8fbcbb
+yellow   = #ebcb8b
+peach    = #d08770
+red      = #bf616a
+; lighter text-safe variant of red for the DND label - the plain red
+; above is used as a chip background (fine as-is), but its own hex is
+; too close in luminance to the dark surface0 chip when used as text.
+red-light = #E098A0
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+; 4 grouped blocks (system stats / power-adjacent / tray / clock), each a
+; single shared-background island with its own widgets packed tight inside
+; (no divider between them - only the icon color tells them apart), a real
+; empty gap-nord module between islands instead of a colored separator.
+modules-right = backlight pulseaudio network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gap-nord tray gap-nord date-icon date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio network-wired network-wireless gap-nord memory cpu gap-nord date-icon date
+
+[module/gap-nord]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state> <label-mode>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-unfocused = ${self.ws-label}
+label-urgent = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.text}
+label-focused-background = ${colors.surface0}
+label-focused-padding = 3
+; Unfocused workspaces get NO background at all - just muted text directly
+; on the bar, same restrained treatment the i3wm-themer/Bebop screenshots
+; use for inactive workspace numbers (a flat number, not a colored pill).
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 2
+label-urgent-font = 3
+label-urgent-foreground = ${colors.text}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 2
+
+[module/date-icon]
+type = custom/text
+format = <label>
+label = "%{A1:gnome-calendar &:} 󰃰 %{A}"
+label-font = 1
+label-foreground = ${colors.lavender}
+format-background = ${colors.surface0}
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:gnome-calendar &:}%date%  %time% %{A}"
+label-font = 3
+label-foreground = ${colors.text}
+format-background = ${colors.surface0}
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+label = " 󰃟 %percentage%% "
+label-foreground = ${colors.yellow}
+format-background = ${colors.surface0}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "  %percentage%% "
+label-muted = " muted "
+label-volume-foreground = ${colors.green}
+label-muted-foreground = ${colors.subtext}
+format-volume-background = ${colors.surface0}
+format-muted-background = ${colors.surface0}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}  %ifname% %{A}"
+label-connected-foreground = ${colors.sky}
+format-connected-background = ${colors.surface0}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}"
+label-connected-foreground = ${colors.sky}
+format-connected-background = ${colors.surface0}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.sky}
+format-background = ${colors.surface0}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+format-background = ${colors.surface0}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red-light}
+format-background = ${colors.surface0}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+label-charging = "  %percentage%% "
+label-discharging = "  %percentage%% "
+label-full = " Full "
+label-charging-foreground = ${colors.peach}
+label-discharging-foreground = ${colors.peach}
+label-full-foreground = ${colors.peach}
+format-charging-background = ${colors.surface0}
+format-discharging-background = ${colors.surface0}
+format-full-background = ${colors.surface0}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "  %percentage_used%% "
+label-foreground = ${colors.yellow}
+format-background = ${colors.surface0}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "  %percentage%% "
+label-foreground = ${colors.green}
+format-background = ${colors.surface0}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.surface0}
+format-background = ${colors.surface0}
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/pamela-square.ini" <<'EOF'
+; Pamela - a 5th distinct treatment of the same Pac-Man/ghost workspace
+; icon family this rice's own Brenda/Emilia/Isabel/Marisol themes already
+; use (confirmed identical codepoints again by reading pamela's own real
+; config) - here with NO chip background at all, but WITH per-state color
+; (yellow focused, blue occupied/urgent), splitting the difference
+; between Isabel's fully-plain no-color treatment and the others' boxed
+; ones. Modeled directly on github.com/gh0stzk/dotfiles' real "pamela"
+; rice (config/bspwm/rices/pamela/{config,modules}.ini, read from a full
+; local clone) - the source actually ships this rice as SIX separate
+; bars (launcher, workspaces, media, system stats, date, and a sixth for
+; tray/weather/updates), by far the most bar-split rice in the whole
+; collection, consolidated here into this rice's usual single bar for
+; the same structural reason as every other multi-bar rice in this batch.
+; A vivid indigo-navy/periwinkle/coral palette, genuinely its own. The
+; source's own bar actually gets its background from a SEPARATE color key
+; (bg-alt = #BF1D1F28, ~75% opaque) rather than the plain "bg" key this
+; port originally used - a distinct, slightly darker navy, semi-
+; transparent rather than solid. Corrected to match after re-checking the
+; source directly.
+[colors]
+base   = #BF1D1F28
+mantle = #BF1D1F28
+surface0 = #3D435C
+surface1 = #3D435C
+text   = #FDFDFD
+subtext = #8C8C8C
+red    = #F37F97
+purple = #C574DD
+blue   = #8897F4
+cyan   = #79E6F3
+green  = #5ADECD
+yellow = #F2A272
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+label-focused = "󰮯"
+label-focused-foreground = ${colors.yellow}
+label-focused-padding = 1
+label-unfocused = "󰊠"
+label-unfocused-foreground = ${colors.blue}
+label-unfocused-padding = 1
+label-urgent = "󰊠"
+label-urgent-foreground = ${colors.blue}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.purple}
+label-volume = "%percentage%%"
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.cyan}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/silvia-square.ini" <<'EOF'
+; Silvia - the official Gruvbox Dark palette, used as-is (unlike several
+; other themes in this batch, this rice's real colors don't clash with
+; anything already in this set - confirmed by checking the live themes
+; directory before building). Workspace icons are a concentric-rings/dot
+; pair (focused = target rings, occupied/urgent = plain ring, empty = a
+; smaller dot), separated from other standalone items by the same
+; vertical 3-dot bullet glyph this rice's own Isabel theme already uses
+; (U+F01D9, confirmed identical by reading silvia's own real config).
+; Modeled directly on github.com/gh0stzk/dotfiles' real "silvia" rice
+; (config/bspwm/rices/silvia/{config,modules}.ini, read from a full
+; local clone).
+[colors]
+base   = #3C3836
+mantle = #3C3836
+surface0 = #504945
+surface1 = #504945
+text   = #EBDBB2
+subtext = #928374
+red    = #CC241D
+; official Gruvbox "bright" variants of red/blue - the muted/dark base
+; tones above didn't have enough contrast against this theme's own dark
+; background when used as text (only fine as chip backgrounds, which
+; nothing here does with them).
+red-light = #FB4934
+pink   = #D3869B
+purple = #B16286
+blue   = #458588
+blue-light = #83A598
+cyan   = #689D6A
+green  = #98971A
+lime   = #8EC07C
+yellow = #D79921
+orange = #D65D0E
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight dots pulseaudio dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight dots pulseaudio dots network-wired network-wireless dots memory dots cpu dots date
+
+[module/dots]
+type = custom/text
+format = <label>
+label = " 󰇙 "
+label-foreground = ${colors.orange}
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+label-focused = "󰺕"
+label-focused-foreground = ${colors.lime}
+label-focused-padding = 1
+label-unfocused = "󰀚"
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = "󰀚"
+label-urgent-foreground = ${colors.red-light}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+format-prefix-foreground = ${colors.blue-light}
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.pink}
+label-volume = "%percentage%%"
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.cyan}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red-light}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/varinka-square.ini" <<'EOF'
+; Varinka - a genuine near-monochrome grayscale palette: reading the
+; source's own colors.ini, keys named "red"/"purple"/"blue"/"cyan"/
+; "green"/"yellow" are ALL just different shades of gray in hex (e.g. its
+; own "red" is #dee2e6, a light gray) - only pink and orange are real
+; colors. Workspaces use literal LETTER glyphs (A, B, C, D, E, F) instead
+; of numbers - confirmed by reading and render-testing the source's own
+; ws-icon-N codepoints (U+F0AEE..U+F0AF3), a genuinely distinctive detail
+; among every other workspace treatment in this rice's set. Modeled
+; directly on github.com/gh0stzk/dotfiles' real "varinka" rice (config/
+; bspwm/rices/varinka/{config,modules}.ini, read from a full local
+; clone).
+; The source's own bg carries an alpha channel too (FA, ~98% opaque) -
+; barely transparent, but matched for fidelity rather than flattened.
+[colors]
+base   = #FA212529
+mantle = #FA212529
+surface0 = #343A40
+surface1 = #343A40
+text   = #F8F9FA
+subtext = #6C757D
+grey   = #ADB5BD
+pink   = #DC5BBC
+orange = #DE8658
+green  = #ADB5BD
+blue   = #495057
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-icon-0 = 1;󰫮
+ws-icon-1 = 2;󰫯
+ws-icon-2 = 3;󰫰
+ws-icon-3 = 4;󰫱
+ws-icon-4 = 5;󰫲
+ws-icon-5 = 6;󰫳
+ws-icon-default = "♟"
+label-focused = %icon%
+label-focused-foreground = ${colors.text}
+label-focused-font = 2
+label-unfocused = %icon%
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-font = 2
+label-urgent = %icon%
+label-urgent-foreground = ${colors.pink}
+label-urgent-font = 2
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+label-volume = "%percentage%%"
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = " "
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.pink}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-discharging-prefix = " "
+format-full-prefix = " "
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/yael-square.ini" <<'EOF'
+; Yael - a vivid IBM-Carbon-adjacent dark palette (near-black background,
+; hot-pink/electric-blue/turquoise/mint accents, confirmed by reading the
+; source's real colors.ini rather than the earlier thumbnail alone).
+; Focused workspace gets a solid blue chip with inverted (background-
+; colored) text - the source's own real label-focused-background/
+; -foreground pair - while unfocused stays plain indigo text with no
+; chip. Modeled directly on github.com/gh0stzk/dotfiles' real "yael"
+; rice (config/bspwm/rices/yael/{config,modules}.ini, read from a full
+; local clone). The source's own per-workspace icons are app-category
+; glyphs (code/folder/browser/controller/heart/terminal/etc, one per
+; number) too specific to the original author's own workflow to carry
+; real meaning here, so plain digits are used instead - the same call
+; made for this rice's own Cristina theme, which had the identical
+; app-icon pattern.
+[colors]
+base   = #161616
+mantle = #161616
+surface0 = #262626
+surface1 = #262626
+text   = #FFFFFF
+subtext = #8C8C8C
+red    = #EE5396
+purple = #FF7EB6
+blue   = #33B1FF
+cyan   = #3DDBD9
+green  = #42BE65
+yellow = #FFE97B
+indigo = #82CFFF
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 2
+label-focused-padding = 2
+label-focused-foreground = ${colors.base}
+label-focused-background = ${colors.blue}
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 2
+label-unfocused-padding = 2
+label-unfocused-foreground = ${colors.indigo}
+label-urgent = ${self.ws-label}
+label-urgent-font = 2
+label-urgent-padding = 2
+label-urgent-foreground = ${colors.red}
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " "
+format-prefix-foreground = ${colors.cyan}
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = "%percentage%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.purple}
+label-volume = "%percentage%%"
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.cyan}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " "
+format-prefix-foreground = ${colors.purple}
+label = "%percentage_used%%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " "
+format-prefix-foreground = ${colors.red}
+label = "%percentage%%"
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/z0mbi3-square.ini" <<'EOF'
+; Z0mbi3 - a Nord-adjacent but genuinely distinct dark navy palette
+; (background #0d0f18, periwinkle foreground #a5b6cf - different hex from
+; the official Nord values this rice's own Nord theme already uses),
+; workspace states as subtle blue-gray shade steps rather than a bright
+; accent (focused #8ea6c4, occupied #6e8db4, empty #434c5e - read
+; directly from the source's own real eww.scss). Modeled on github.com/
+; gh0stzk/dotfiles' real "z0mbi3" rice - the repo maintainer's own
+; namesake rice - but like Andrea, this one is EWW-based (bar/eww.yuck +
+; bar/eww.scss), not polybar, and its real layout is a VERTICAL sidebar
+; (`:orientation "v"` on its own launcher/workspace widgets, confirmed by
+; reading the source directly) rather than a horizontal top bar at all -
+; architecturally different from every other theme in this rice, which
+; is built around a single horizontal top bar. This port keeps the
+; source's real colors and workspace-state treatment but lays them out
+; horizontally, the same simplification applied to every other multi-bar
+; or off-position rice in this batch.
+[colors]
+base   = #0D0F18
+mantle = #0D0F18
+surface0 = #1C1E27
+surface1 = #1C1E27
+text   = #A5B6CF
+subtext = #6E8DB4
+red    = #DD6777
+green  = #90CEAA
+yellow = #ECD3A0
+blue   = #86AAEC
+magenta = #C296EB
+cyan   = #93CEE9
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+
+[module/sep]
+type = custom/text
+format = <label>
+label = "  "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+format-background = ${colors.surface0}
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 2
+label-focused-foreground = ${colors.text}
+label-focused-padding = 2
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 2
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 2
+label-urgent = ${self.ws-label}
+label-urgent-font = 2
+label-urgent-foreground = ${colors.red}
+label-urgent-padding = 2
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-background = ${colors.surface0}
+format-prefix = " "
+format-prefix-foreground = ${colors.blue}
+label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+
+[module/backlight]
+type = internal/backlight
+card = intel_backlight
+enable-scroll = true
+format = <label>
+format-background = ${colors.surface0}
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = " %percentage%% "
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-background = ${colors.surface0}
+format-muted-background = ${colors.surface0}
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.magenta}
+label-volume = " %percentage%% "
+label-muted = " muted "
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-background = ${colors.surface0}
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected-background = ${colors.surface0}
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.green}
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.cyan}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-background = ${colors.surface0}
+format-charging-prefix = " "
+format-charging-prefix-foreground = ${colors.yellow}
+format-discharging-background = ${colors.surface0}
+format-discharging-prefix = " "
+format-discharging-prefix-foreground = ${colors.yellow}
+format-full-background = ${colors.surface0}
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.green}
+label-charging = " %percentage%% "
+label-discharging = " %percentage%% "
+label-full = " Full "
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = " "
+label = " %percentage_used%% "
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = " "
+label = " %percentage%% "
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.surface0}
+format-background = ${colors.surface0}
+
+[settings]
+screenchange-reload = true
+EOF
+
+
 cat > "$CONF/polybar/themes/hidrot.ini" <<'EOF'
 ; Hidrot - three separate floating clusters bracketed by NEUTRAL rounded
 ; caps (U+E0B6/U+E0B4, same glyph family as Mocha/Archcraft/Aline/Marisol)
@@ -8235,6 +12535,2359 @@ element selected {
 }
 EOF
 
+cat > "$CONF/rofi/themes/aline-square.rasi" <<'EOF'
+* {
+    base:     #FAF4EDff;
+    mantle:   #FAF4EDff;
+    text:     #575279ff;
+    subtext:  #9893A5ff;
+    mauve:    #2E5D66ff;
+    surface0: #F2E9E1ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/aline-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #FAF4EDff;
+    mantle:   #FAF4EDff;
+    text:     #575279ff;
+    subtext:  #9893A5ff;
+    mauve:    #2E5D66ff;
+    surface0: #F2E9E1ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/archcraft-square.rasi" <<'EOF'
+* {
+    base:     #1E222Aff;
+    mantle:   #1E222Aff;
+    text:     #C8CCD4ff;
+    subtext:  #727C91ff;
+    mauve:    #C678DDff;
+    surface0: #292E39ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/archcraft-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #1E222Aff;
+    mantle:   #1E222Aff;
+    text:     #C8CCD4ff;
+    subtext:  #727C91ff;
+    mauve:    #C678DDff;
+    surface0: #292E39ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/brenda-square.rasi" <<'EOF'
+* {
+    base:     #2D353Bff;
+    mantle:   #2D353Bff;
+    text:     #D3C6AAff;
+    subtext:  #859289ff;
+    mauve:    #E69875ff;
+    surface0: #3D454Bff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/brenda-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #2D353Bff;
+    mantle:   #2D353Bff;
+    text:     #D3C6AAff;
+    subtext:  #859289ff;
+    mauve:    #E69875ff;
+    surface0: #3D454Bff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/catppuccin-mocha-square.rasi" <<'EOF'
+* {
+    base:     #1e1e2eff;
+    mantle:   #181825ff;
+    text:     #cdd6f4ff;
+    subtext:  #a6adc8ff;
+    mauve:    #cba6f7ff;
+    surface0: #313244ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/catppuccin-mocha-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #1e1e2eff;
+    mantle:   #181825ff;
+    text:     #cdd6f4ff;
+    subtext:  #a6adc8ff;
+    mauve:    #cba6f7ff;
+    surface0: #313244ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/cristina-square.rasi" <<'EOF'
+* {
+    base:     #232136ff;
+    mantle:   #232136ff;
+    text:     #E0DEF4ff;
+    subtext:  #908CAAff;
+    mauve:    #8EC07Cff;
+    surface0: #39374Aff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/cristina-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #232136ff;
+    mantle:   #232136ff;
+    text:     #E0DEF4ff;
+    subtext:  #908CAAff;
+    mauve:    #8EC07Cff;
+    surface0: #39374Aff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/cynthia-square.rasi" <<'EOF'
+* {
+    base:     #181616ff;
+    mantle:   #181616ff;
+    text:     #C5C9C5ff;
+    subtext:  #708491ff;
+    mauve:    #7FB4CAff;
+    surface0: #242121ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/cynthia-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #181616ff;
+    mantle:   #181616ff;
+    text:     #C5C9C5ff;
+    subtext:  #708491ff;
+    mauve:    #7FB4CAff;
+    surface0: #242121ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/daniela-square.rasi" <<'EOF'
+* {
+    base:     #1A1B26ff;
+    mantle:   #1A1B26ff;
+    text:     #C0CAF5ff;
+    subtext:  #565F89ff;
+    mauve:    #7AA2F7ff;
+    surface0: #31323Cff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/daniela-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #1A1B26ff;
+    mantle:   #1A1B26ff;
+    text:     #C0CAF5ff;
+    subtext:  #565F89ff;
+    mauve:    #7AA2F7ff;
+    surface0: #31323Cff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/dracula-square.rasi" <<'EOF'
+* {
+    base:     #282A36ff;
+    mantle:   #282A36ff;
+    text:     #F8F8F2ff;
+    subtext:  #6272A4ff;
+    mauve:    #BD93F9ff;
+    surface0: #44475Aff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/dracula-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #282A36ff;
+    mantle:   #282A36ff;
+    text:     #F8F8F2ff;
+    subtext:  #6272A4ff;
+    mauve:    #BD93F9ff;
+    surface0: #44475Aff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/emilia-square.rasi" <<'EOF'
+* {
+    base:     #1E1A17ff;
+    mantle:   #1E1A17ff;
+    text:     #E8DCC8ff;
+    subtext:  #9C8F7Dff;
+    mauve:    #E0A458ff;
+    surface0: #2B241Fff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/emilia-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #1E1A17ff;
+    mantle:   #1E1A17ff;
+    text:     #E8DCC8ff;
+    subtext:  #9C8F7Dff;
+    mauve:    #E0A458ff;
+    surface0: #2B241Fff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/h4ck3r-square.rasi" <<'EOF'
+* {
+    base:     #0C1018ff;
+    mantle:   #0C1018ff;
+    text:     #00FA5Cff;
+    subtext:  #578A29ff;
+    mauve:    #76EA00ff;
+    surface0: #1B2333ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/h4ck3r-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #0C1018ff;
+    mantle:   #0C1018ff;
+    text:     #00FA5Cff;
+    subtext:  #578A29ff;
+    mauve:    #76EA00ff;
+    surface0: #1B2333ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/hidrot-square.rasi" <<'EOF'
+* {
+    base:     #1B1E24ff;
+    mantle:   #1B1E24ff;
+    text:     #D6DCE5ff;
+    subtext:  #6E7684ff;
+    mauve:    #7CB88Fff;
+    surface0: #262B33ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/hidrot-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #1B1E24ff;
+    mantle:   #1B1E24ff;
+    text:     #D6DCE5ff;
+    subtext:  #6E7684ff;
+    mauve:    #7CB88Fff;
+    surface0: #262B33ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/isabel-square.rasi" <<'EOF'
+* {
+    base:     #10181Aff;
+    mantle:   #10181Aff;
+    text:     #A8C5C0ff;
+    subtext:  #5C7B76ff;
+    mauve:    #4FD6BEff;
+    surface0: #282F31ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/isabel-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #10181Aff;
+    mantle:   #10181Aff;
+    text:     #A8C5C0ff;
+    subtext:  #5C7B76ff;
+    mauve:    #4FD6BEff;
+    surface0: #282F31ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/jan-square.rasi" <<'EOF'
+* {
+    base:     #212A4Cff;
+    mantle:   #212A4Cff;
+    text:     #27FBFEff;
+    subtext:  #6B7BB0ff;
+    mauve:    #FB007Aff;
+    surface0: #14192Eff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/jan-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #212A4Cff;
+    mantle:   #212A4Cff;
+    text:     #27FBFEff;
+    subtext:  #6B7BB0ff;
+    mauve:    #FB007Aff;
+    surface0: #14192Eff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/karla-square.rasi" <<'EOF'
+* {
+    base:     #0E1113ff;
+    mantle:   #0E1113ff;
+    text:     #AFB1DBff;
+    subtext:  #6272A4ff;
+    mauve:    #F05393ff;
+    surface0: #26292Bff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/karla-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #0E1113ff;
+    mantle:   #0E1113ff;
+    text:     #AFB1DBff;
+    subtext:  #6272A4ff;
+    mauve:    #F05393ff;
+    surface0: #26292Bff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/marisol-square.rasi" <<'EOF'
+* {
+    base:     #241C1Cff;
+    mantle:   #241C1Cff;
+    text:     #F5E6E0ff;
+    subtext:  #A8827Cff;
+    mauve:    #E8B84Cff;
+    surface0: #332727ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/marisol-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #241C1Cff;
+    mantle:   #241C1Cff;
+    text:     #F5E6E0ff;
+    subtext:  #A8827Cff;
+    mauve:    #E8B84Cff;
+    surface0: #332727ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/nord-square.rasi" <<'EOF'
+* {
+    base:     #2E3440ff;
+    mantle:   #2E3440ff;
+    text:     #ECEFF4ff;
+    subtext:  #D8DEE9ff;
+    mauve:    #B48EADff;
+    surface0: #3B4252ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/nord-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #2E3440ff;
+    mantle:   #2E3440ff;
+    text:     #ECEFF4ff;
+    subtext:  #D8DEE9ff;
+    mauve:    #B48EADff;
+    surface0: #3B4252ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/pamela-square.rasi" <<'EOF'
+* {
+    base:     #1D1F28ff;
+    mantle:   #1D1F28ff;
+    text:     #FDFDFDff;
+    subtext:  #8C8C8Cff;
+    mauve:    #F2A272ff;
+    surface0: #3D435Cff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/pamela-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #1D1F28ff;
+    mantle:   #1D1F28ff;
+    text:     #FDFDFDff;
+    subtext:  #8C8C8Cff;
+    mauve:    #F2A272ff;
+    surface0: #3D435Cff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/silvia-square.rasi" <<'EOF'
+* {
+    base:     #3C3836ff;
+    mantle:   #3C3836ff;
+    text:     #EBDBB2ff;
+    subtext:  #928374ff;
+    mauve:    #8EC07Cff;
+    surface0: #504945ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/silvia-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #3C3836ff;
+    mantle:   #3C3836ff;
+    text:     #EBDBB2ff;
+    subtext:  #928374ff;
+    mauve:    #8EC07Cff;
+    surface0: #504945ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/varinka-square.rasi" <<'EOF'
+* {
+    base:     #212529ff;
+    mantle:   #212529ff;
+    text:     #F8F9FAff;
+    subtext:  #6C757Dff;
+    mauve:    #DC5BBCff;
+    surface0: #343A40ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/varinka-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #212529ff;
+    mantle:   #212529ff;
+    text:     #F8F9FAff;
+    subtext:  #6C757Dff;
+    mauve:    #DC5BBCff;
+    surface0: #343A40ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/yael-square.rasi" <<'EOF'
+* {
+    base:     #161616ff;
+    mantle:   #161616ff;
+    text:     #FFFFFFff;
+    subtext:  #8C8C8Cff;
+    mauve:    #33B1FFff;
+    surface0: #262626ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/yael-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #161616ff;
+    mantle:   #161616ff;
+    text:     #FFFFFFff;
+    subtext:  #8C8C8Cff;
+    mauve:    #33B1FFff;
+    surface0: #262626ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/z0mbi3-square.rasi" <<'EOF'
+* {
+    base:     #0D0F18ff;
+    mantle:   #0D0F18ff;
+    text:     #A5B6CFff;
+    subtext:  #6E8DB4ff;
+    mauve:    #86AAECff;
+    surface0: #1C1E27ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 8;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+
+cat > "$CONF/rofi/themes/z0mbi3-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #0D0F18ff;
+    mantle:   #0D0F18ff;
+    text:     #A5B6CFff;
+    subtext:  #6E8DB4ff;
+    mauve:    #86AAECff;
+    surface0: #1C1E27ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+
 cp "$CONF/rofi/themes/catppuccin-mocha.rasi" "$CONF/rofi/current.rasi"
 cp "$CONF/rofi/themes/catppuccin-mocha-powermenu.rasi" "$CONF/rofi/current-powermenu.rasi"
 
@@ -8855,6 +15508,554 @@ color14 #93CEE9
 color7  #6E8DB4
 color15 #A5B6CF
 EOF
+
+cat > "$CONF/kitty/themes/aline-square.conf" <<'EOF'
+foreground              #575279
+background              #FAF4ED
+selection_foreground    #FAF4ED
+selection_background    #575279
+cursor                  #2E5D66
+cursor_text_color       #FAF4ED
+
+color0  #F2E9E1
+color8  #9893A5
+color1  #B4637A
+color9  #B4637A
+color2  #286983
+color10 #286983
+color3  #A15E15
+color11 #A15E15
+color4  #2E5D66
+color12 #2E5D66
+color5  #2E5D66
+color13 #2E5D66
+color6  #2E7480
+color14 #2E7480
+color7  #9893A5
+color15 #575279
+EOF
+
+cat > "$CONF/kitty/themes/archcraft-square.conf" <<'EOF'
+foreground              #C8CCD4
+background              #1E222A
+selection_foreground    #1E222A
+selection_background    #C8CCD4
+cursor                  #C678DD
+cursor_text_color       #1E222A
+
+color0  #292E39
+color8  #727C91
+color1  #E06C75
+color9  #E06C75
+color2  #98C379
+color10 #98C379
+color3  #E5C07B
+color11 #E5C07B
+color4  #61AFEF
+color12 #61AFEF
+color5  #C678DD
+color13 #C678DD
+color6  #56B6C2
+color14 #56B6C2
+color7  #727C91
+color15 #C8CCD4
+EOF
+
+cat > "$CONF/kitty/themes/brenda-square.conf" <<'EOF'
+foreground              #D3C6AA
+background              #2D353B
+selection_foreground    #2D353B
+selection_background    #D3C6AA
+cursor                  #E69875
+cursor_text_color       #2D353B
+
+color0  #3D454B
+color8  #859289
+color1  #E67E80
+color9  #E67E80
+color2  #A7C080
+color10 #A7C080
+color3  #DBBC7F
+color11 #DBBC7F
+color4  #7FBBB3
+color12 #7FBBB3
+color5  #D699B6
+color13 #D699B6
+color6  #B9C244
+color14 #B9C244
+color7  #859289
+color15 #D3C6AA
+EOF
+
+cat > "$CONF/kitty/themes/catppuccin-mocha-square.conf" <<'EOF'
+# Catppuccin Mocha
+foreground              #CDD6F4
+background              #1E1E2E
+selection_foreground    #1E1E2E
+selection_background    #F5E0DC
+cursor                  #F5E0DC
+cursor_text_color       #1E1E2E
+
+color0  #45475A
+color8  #585B70
+color1  #F38BA8
+color9  #F38BA8
+color2  #A6E3A1
+color10 #A6E3A1
+color3  #F9E2AF
+color11 #F9E2AF
+color4  #89B4FA
+color12 #89B4FA
+color5  #F5C2E7
+color13 #F5C2E7
+color6  #94E2D5
+color14 #94E2D5
+color7  #BAC2DE
+color15 #A6ADC8
+EOF
+
+cat > "$CONF/kitty/themes/cristina-square.conf" <<'EOF'
+foreground              #E0DEF4
+background              #232136
+selection_foreground    #232136
+selection_background    #E0DEF4
+cursor                  #8EC07C
+cursor_text_color       #232136
+
+color0  #232136
+color8  #908CAA
+color1  #EA6F91
+color9  #EA6F91
+color2  #9BCED7
+color10 #9BCED7
+color3  #F1CA93
+color11 #F1CA93
+color4  #34738E
+color12 #34738E
+color5  #C3A5E6
+color13 #C3A5E6
+color6  #8EC07C
+color14 #8EC07C
+color7  #908CAA
+color15 #E0DEF4
+EOF
+
+cat > "$CONF/kitty/themes/cynthia-square.conf" <<'EOF'
+foreground              #C5C9C5
+background              #181616
+selection_foreground    #181616
+selection_background    #C5C9C5
+cursor                  #7FB4CA
+cursor_text_color       #181616
+
+color0  #242121
+color8  #708491
+color1  #E46876
+color9  #E46876
+color2  #87A987
+color10 #87A987
+color3  #E6C384
+color11 #E6C384
+color4  #7FB4CA
+color12 #7FB4CA
+color5  #938AA9
+color13 #938AA9
+color6  #7FB4CA
+color14 #7FB4CA
+color7  #708491
+color15 #C5C9C5
+EOF
+
+cat > "$CONF/kitty/themes/daniela-square.conf" <<'EOF'
+foreground              #C0CAF5
+background              #1A1B26
+selection_foreground    #1A1B26
+selection_background    #C0CAF5
+cursor                  #7AA2F7
+cursor_text_color       #1A1B26
+
+color0  #1A1B26
+color8  #565F89
+color1  #F7768E
+color9  #F7768E
+color2  #9ECE6A
+color10 #9ECE6A
+color3  #E0AF68
+color11 #E0AF68
+color4  #7AA2F7
+color12 #7AA2F7
+color5  #BB9AF7
+color13 #BB9AF7
+color6  #7DCFFF
+color14 #7DCFFF
+color7  #565F89
+color15 #C0CAF5
+EOF
+
+cat > "$CONF/kitty/themes/dracula-square.conf" <<'EOF'
+foreground              #F8F8F2
+background              #282A36
+selection_foreground    #282A36
+selection_background    #F8F8F2
+cursor                  #BD93F9
+cursor_text_color       #282A36
+
+color0  #44475A
+color8  #6272A4
+color1  #FF5555
+color9  #FF5555
+color2  #50FA7B
+color10 #50FA7B
+color3  #F1FA8C
+color11 #F1FA8C
+color4  #6272A4
+color12 #6272A4
+color5  #BD93F9
+color13 #BD93F9
+color6  #8BE9FD
+color14 #8BE9FD
+color7  #6272A4
+color15 #F8F8F2
+EOF
+
+cat > "$CONF/kitty/themes/emilia-square.conf" <<'EOF'
+foreground              #E8DCC8
+background              #1E1A17
+selection_foreground    #1E1A17
+selection_background    #E8DCC8
+cursor                  #E0A458
+cursor_text_color       #1E1A17
+
+color0  #2B241F
+color8  #9C8F7D
+color1  #D9736A
+color9  #D9736A
+color2  #A8B562
+color10 #A8B562
+color3  #E0A458
+color11 #E0A458
+color4  #7FA5B5
+color12 #7FA5B5
+color5  #B08BBB
+color13 #B08BBB
+color6  #7FA5B5
+color14 #7FA5B5
+color7  #9C8F7D
+color15 #E8DCC8
+EOF
+
+cat > "$CONF/kitty/themes/h4ck3r-square.conf" <<'EOF'
+foreground              #00FA5C
+background              #0C1018
+selection_foreground    #0C1018
+selection_background    #00FA5C
+cursor                  #76EA00
+cursor_text_color       #0C1018
+
+color0  #1B2333
+color8  #578A29
+color1  #6DDE00
+color9  #6DDE00
+color2  #00FA5C
+color10 #00FA5C
+color3  #76EA00
+color11 #76EA00
+color4  #9CF542
+color12 #9CF542
+color5  #00FA5C
+color13 #00FA5C
+color6  #9CF542
+color14 #9CF542
+color7  #578A29
+color15 #00FA5C
+EOF
+
+cat > "$CONF/kitty/themes/hidrot-square.conf" <<'EOF'
+foreground              #D6DCE5
+background              #1B1E24
+selection_foreground    #1B1E24
+selection_background    #D6DCE5
+cursor                  #7CB88F
+cursor_text_color       #1B1E24
+
+color0  #262B33
+color8  #6E7684
+color1  #D9707A
+color9  #D9707A
+color2  #7BBF7E
+color10 #7BBF7E
+color3  #D9B25C
+color11 #D9B25C
+color4  #5E8FCC
+color12 #5E8FCC
+color5  #B08FD1
+color13 #B08FD1
+color6  #4FB0A6
+color14 #4FB0A6
+color7  #6E7684
+color15 #D6DCE5
+EOF
+
+cat > "$CONF/kitty/themes/isabel-square.conf" <<'EOF'
+foreground              #A8C5C0
+background              #10181A
+selection_foreground    #10181A
+selection_background    #A8C5C0
+cursor                  #4FD6BE
+cursor_text_color       #10181A
+
+color0  #10181A
+color8  #5C7B76
+color1  #D67F7F
+color9  #D67F7F
+color2  #7FBF8F
+color10 #7FBF8F
+color3  #D6B35C
+color11 #D6B35C
+color4  #5FA8C7
+color12 #5FA8C7
+color5  #5FA8C7
+color13 #5FA8C7
+color6  #4FD6BE
+color14 #4FD6BE
+color7  #5C7B76
+color15 #A8C5C0
+EOF
+
+cat > "$CONF/kitty/themes/jan-square.conf" <<'EOF'
+foreground              #27FBFE
+background              #212A4C
+selection_foreground    #212A4C
+selection_background    #27FBFE
+cursor                  #FB007A
+cursor_text_color       #212A4C
+
+color0  #212A4C
+color8  #6B7BB0
+color1  #FB007A
+color9  #FB007A
+color2  #00FF00
+color10 #00FF00
+color3  #F2ED00
+color11 #F2ED00
+color4  #19BFFE
+color12 #19BFFE
+color5  #6800D2
+color13 #6800D2
+color6  #8DF202
+color14 #8DF202
+color7  #6B7BB0
+color15 #27FBFE
+EOF
+
+cat > "$CONF/kitty/themes/karla-square.conf" <<'EOF'
+foreground              #AFB1DB
+background              #0E1113
+selection_foreground    #0E1113
+selection_background    #AFB1DB
+cursor                  #F05393
+cursor_text_color       #0E1113
+
+color0  #0E1113
+color8  #6272A4
+color1  #E7034A
+color9  #E7034A
+color2  #0FD94F
+color10 #0FD94F
+color3  #F7F23F
+color11 #F7F23F
+color4  #4856D4
+color12 #4856D4
+color5  #7A44E3
+color13 #7A44E3
+color6  #7DF0F0
+color14 #7DF0F0
+color7  #6272A4
+color15 #AFB1DB
+EOF
+
+cat > "$CONF/kitty/themes/marisol-square.conf" <<'EOF'
+foreground              #F5E6E0
+background              #241C1C
+selection_foreground    #241C1C
+selection_background    #F5E6E0
+cursor                  #E8B84C
+cursor_text_color       #241C1C
+
+color0  #332727
+color8  #A8827C
+color1  #E8604C
+color9  #E8604C
+color2  #7FBF8F
+color10 #7FBF8F
+color3  #E8B84C
+color11 #E8B84C
+color4  #6FA8C7
+color12 #6FA8C7
+color5  #B98FC7
+color13 #B98FC7
+color6  #6FA8C7
+color14 #6FA8C7
+color7  #A8827C
+color15 #F5E6E0
+EOF
+
+cat > "$CONF/kitty/themes/nord-square.conf" <<'EOF'
+foreground              #ECEFF4
+background              #2E3440
+selection_foreground    #2E3440
+selection_background    #ECEFF4
+cursor                  #B48EAD
+cursor_text_color       #2E3440
+
+color0  #3B4252
+color8  #D8DEE9
+color1  #BF616A
+color9  #E098A0
+color2  #A3BE8C
+color10 #A3BE8C
+color3  #EBCB8B
+color11 #EBCB8B
+color4  #5E81AC
+color12 #5E81AC
+color5  #B48EAD
+color13 #B48EAD
+color6  #8FBCBB
+color14 #8FBCBB
+color7  #D8DEE9
+color15 #ECEFF4
+EOF
+
+cat > "$CONF/kitty/themes/pamela-square.conf" <<'EOF'
+foreground              #FDFDFD
+background              #1D1F28
+selection_foreground    #1D1F28
+selection_background    #FDFDFD
+cursor                  #F2A272
+cursor_text_color       #1D1F28
+
+color0  #3D435C
+color8  #8C8C8C
+color1  #F37F97
+color9  #F37F97
+color2  #5ADECD
+color10 #5ADECD
+color3  #F2A272
+color11 #F2A272
+color4  #8897F4
+color12 #8897F4
+color5  #C574DD
+color13 #C574DD
+color6  #79E6F3
+color14 #79E6F3
+color7  #8C8C8C
+color15 #FDFDFD
+EOF
+
+cat > "$CONF/kitty/themes/silvia-square.conf" <<'EOF'
+foreground              #EBDBB2
+background              #3C3836
+selection_foreground    #3C3836
+selection_background    #EBDBB2
+cursor                  #8EC07C
+cursor_text_color       #3C3836
+
+color0  #504945
+color8  #928374
+color1  #CC241D
+color9  #FB4934
+color2  #98971A
+color10 #98971A
+color3  #D79921
+color11 #D79921
+color4  #458588
+color12 #83A598
+color5  #B16286
+color13 #B16286
+color6  #689D6A
+color14 #689D6A
+color7  #928374
+color15 #EBDBB2
+EOF
+
+cat > "$CONF/kitty/themes/varinka-square.conf" <<'EOF'
+foreground              #F8F9FA
+background              #212529
+selection_foreground    #212529
+selection_background    #F8F9FA
+cursor                  #DC5BBC
+cursor_text_color       #212529
+
+color0  #343A40
+color8  #6C757D
+color1  #DC5BBC
+color9  #DC5BBC
+color2  #ADB5BD
+color10 #ADB5BD
+color3  #DE8658
+color11 #DE8658
+color4  #495057
+color12 #495057
+color5  #DC5BBC
+color13 #DC5BBC
+color6  #495057
+color14 #495057
+color7  #6C757D
+color15 #F8F9FA
+EOF
+
+cat > "$CONF/kitty/themes/yael-square.conf" <<'EOF'
+foreground              #FFFFFF
+background              #161616
+selection_foreground    #161616
+selection_background    #FFFFFF
+cursor                  #33B1FF
+cursor_text_color       #161616
+
+color0  #262626
+color8  #8C8C8C
+color1  #EE5396
+color9  #EE5396
+color2  #42BE65
+color10 #42BE65
+color3  #FFE97B
+color11 #FFE97B
+color4  #33B1FF
+color12 #33B1FF
+color5  #FF7EB6
+color13 #FF7EB6
+color6  #3DDBD9
+color14 #3DDBD9
+color7  #8C8C8C
+color15 #FFFFFF
+EOF
+
+cat > "$CONF/kitty/themes/z0mbi3-square.conf" <<'EOF'
+foreground              #A5B6CF
+background              #0D0F18
+selection_foreground    #0D0F18
+selection_background    #A5B6CF
+cursor                  #86AAEC
+cursor_text_color       #0D0F18
+
+color0  #1C1E27
+color8  #6E8DB4
+color1  #DD6777
+color9  #DD6777
+color2  #90CEAA
+color10 #90CEAA
+color3  #ECD3A0
+color11 #ECD3A0
+color4  #86AAEC
+color12 #86AAEC
+color5  #C296EB
+color13 #C296EB
+color6  #93CEE9
+color14 #93CEE9
+color7  #6E8DB4
+color15 #A5B6CF
+EOF
+
 
 cp "$CONF/kitty/themes/catppuccin-mocha.conf" "$CONF/kitty/current.conf"
 
