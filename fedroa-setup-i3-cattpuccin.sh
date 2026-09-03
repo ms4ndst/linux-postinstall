@@ -281,6 +281,14 @@ bindsym XF86AudioPlay exec --no-startup-id playerctl play-pause
 bindsym XF86AudioNext exec --no-startup-id playerctl next
 bindsym XF86AudioPrev exec --no-startup-id playerctl previous
 
+# --- AI assistant key ---
+# This laptop's dedicated assistant key doesn't send a bare XF86Assistant -
+# confirmed via `xev`, it fires Super_L+Shift_L+XF86Assistant together as
+# one burst every time, so the modifiers here have to match that exactly
+# rather than binding XF86Assistant alone (which would require it to be
+# pressed with no modifiers held, which this hardware never actually does).
+bindsym $mod+shift+XF86Assistant exec --no-startup-id claude-desktop-unofficial
+
 # --- focus / movement ---
 bindsym $mod+h focus left
 bindsym $mod+j focus down
