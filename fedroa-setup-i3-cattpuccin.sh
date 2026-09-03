@@ -10284,7 +10284,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -10396,7 +10396,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -10508,7 +10508,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -10620,7 +10620,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -10732,7 +10732,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -10844,7 +10844,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -10956,7 +10956,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -11068,7 +11068,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -11180,7 +11180,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -11292,7 +11292,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -11404,7 +11404,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -11516,7 +11516,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -11628,7 +11628,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -11740,7 +11740,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -11852,7 +11852,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -11964,7 +11964,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -12076,7 +12076,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -12188,7 +12188,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -12300,7 +12300,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -12412,7 +12412,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -12524,7 +12524,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -12574,7 +12574,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -12686,7 +12686,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -12798,7 +12798,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -12910,7 +12910,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -13022,7 +13022,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -13134,7 +13134,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -13246,7 +13246,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -13358,7 +13358,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -13470,7 +13470,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -13582,7 +13582,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -13694,7 +13694,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -13806,7 +13806,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -13918,7 +13918,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -14030,7 +14030,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -14142,7 +14142,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -14254,7 +14254,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -14366,7 +14366,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -14478,7 +14478,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -14590,7 +14590,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -14702,7 +14702,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
@@ -14814,7 +14814,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 8;
+    lines: 12;
     padding: 8px 0;
 }
 
