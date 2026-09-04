@@ -16713,6 +16713,5588 @@ EOF
 cp "$CONF/kitty/themes/catppuccin-mocha.conf" "$CONF/kitty/current.conf"
 
 # ----------------------------------------------------------------------------
+# 6f. Starship prompt theming - matches the shell prompt (powerline segments)
+#     to whichever desktop theme is active, the same way kitty/rofi already
+#     do. Only relevant if Chris Titus mybash (installed by the separate
+#     post-install-fedora.sh script, not this one) is actually in use - its
+#     setup.sh points ~/.config/starship.toml at a fixed Nord-colored config
+#     via a symlink into ~/.local/share/mybash/starship.toml, completely
+#     independent of kitty's own ANSI palette, which is exactly why
+#     switching desktop themes never used to touch the prompt at all.
+#
+#     Colors are derived from each theme's own already-generated kitty
+#     palette (color0/4/5/6/8 - reusing resolved colors instead of a third
+#     copy of every accent-fallback chain): the format string's six segment
+#     colors are the base background lightened (or, on aline, the one light
+#     theme, darkened - confirmed via each color's own relative luminance,
+#     not assumed dark) in three steps for the neutral username/directory/
+#     git segments, then that theme's own cyan/magenta/blue accents for the
+#     language-icon/docker/time segments - the same six-color escalating
+#     progression the original Nord-based config already used, just re-
+#     derived per theme instead of fixed.
+#
+#     Written unconditionally, like the Jabra/MX-Anywhere hardware fixes
+#     elsewhere in this script - harmless if mybash/starship was never
+#     installed (the files just sit unused), ready the moment it is.
+# ----------------------------------------------------------------------------
+log "Writing per-theme starship prompt configs..."
+mkdir -p "$CONF/starship/themes"
+
+cat > "$CONF/starship/themes/aline.toml" <<'EOF'
+format = """
+[](#FAF4ED)\
+$python\
+$username\
+[](bg:#DCD7D1 fg:#FAF4ED)\
+$directory\
+[](fg:#DCD7D1 bg:#BEB9B4)\
+$git_branch\
+$git_status\
+[](fg:#BEB9B4 bg:#2E7480)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#2E7480 bg:#2E5D66)\
+$docker_context\
+[](fg:#2E5D66 bg:#2E5D66)\
+$time\
+[ ](fg:#2E5D66)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#FAF4ED"
+style_root = "bg:#FAF4ED"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#DCD7D1"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#2E5D66"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#BEB9B4"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#BEB9B4"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#FAF4ED"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#2E5D66"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/aline-square.toml" <<'EOF'
+format = """
+[](#FAF4ED)\
+$python\
+$username\
+[](bg:#DCD7D1 fg:#FAF4ED)\
+$directory\
+[](fg:#DCD7D1 bg:#BEB9B4)\
+$git_branch\
+$git_status\
+[](fg:#BEB9B4 bg:#2E7480)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#2E7480 bg:#2E5D66)\
+$docker_context\
+[](fg:#2E5D66 bg:#2E5D66)\
+$time\
+[ ](fg:#2E5D66)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#FAF4ED"
+style_root = "bg:#FAF4ED"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#DCD7D1"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#2E5D66"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#BEB9B4"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#BEB9B4"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#FAF4ED"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#2E7480"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#2E5D66"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/archcraft.toml" <<'EOF'
+format = """
+[](#1E222A)\
+$python\
+$username\
+[](bg:#393D44 fg:#1E222A)\
+$directory\
+[](fg:#393D44 bg:#54575D)\
+$git_branch\
+$git_status\
+[](fg:#54575D bg:#56B6C2)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#56B6C2 bg:#C678DD)\
+$docker_context\
+[](fg:#C678DD bg:#61AFEF)\
+$time\
+[ ](fg:#61AFEF)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1E222A"
+style_root = "bg:#1E222A"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#393D44"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#C678DD"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#54575D"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#54575D"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1E222A"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#61AFEF"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/archcraft-square.toml" <<'EOF'
+format = """
+[](#1E222A)\
+$python\
+$username\
+[](bg:#393D44 fg:#1E222A)\
+$directory\
+[](fg:#393D44 bg:#54575D)\
+$git_branch\
+$git_status\
+[](fg:#54575D bg:#56B6C2)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#56B6C2 bg:#C678DD)\
+$docker_context\
+[](fg:#C678DD bg:#61AFEF)\
+$time\
+[ ](fg:#61AFEF)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1E222A"
+style_root = "bg:#1E222A"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#393D44"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#C678DD"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#54575D"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#54575D"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1E222A"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#56B6C2"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#61AFEF"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/brenda.toml" <<'EOF'
+format = """
+[](#2D353B)\
+$python\
+$username\
+[](bg:#464D53 fg:#2D353B)\
+$directory\
+[](fg:#464D53 bg:#5F656A)\
+$git_branch\
+$git_status\
+[](fg:#5F656A bg:#B9C244)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#B9C244 bg:#D699B6)\
+$docker_context\
+[](fg:#D699B6 bg:#7FBBB3)\
+$time\
+[ ](fg:#7FBBB3)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#2D353B"
+style_root = "bg:#2D353B"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#464D53"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#D699B6"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#5F656A"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#5F656A"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#2D353B"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7FBBB3"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/brenda-square.toml" <<'EOF'
+format = """
+[](#2D353B)\
+$python\
+$username\
+[](bg:#464D53 fg:#2D353B)\
+$directory\
+[](fg:#464D53 bg:#5F656A)\
+$git_branch\
+$git_status\
+[](fg:#5F656A bg:#B9C244)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#B9C244 bg:#D699B6)\
+$docker_context\
+[](fg:#D699B6 bg:#7FBBB3)\
+$time\
+[ ](fg:#7FBBB3)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#2D353B"
+style_root = "bg:#2D353B"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#464D53"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#D699B6"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#5F656A"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#5F656A"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#2D353B"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7FBBB3"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/catppuccin-mocha.toml" <<'EOF'
+format = """
+[](#1E1E2E)\
+$python\
+$username\
+[](bg:#393947 fg:#1E1E2E)\
+$directory\
+[](fg:#393947 bg:#545460)\
+$git_branch\
+$git_status\
+[](fg:#545460 bg:#94E2D5)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#94E2D5 bg:#F5C2E7)\
+$docker_context\
+[](fg:#F5C2E7 bg:#89B4FA)\
+$time\
+[ ](fg:#89B4FA)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1E1E2E"
+style_root = "bg:#1E1E2E"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#393947"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#F5C2E7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#545460"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#545460"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1E1E2E"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#89B4FA"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/catppuccin-mocha-square.toml" <<'EOF'
+format = """
+[](#1E1E2E)\
+$python\
+$username\
+[](bg:#393947 fg:#1E1E2E)\
+$directory\
+[](fg:#393947 bg:#545460)\
+$git_branch\
+$git_status\
+[](fg:#545460 bg:#94E2D5)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#94E2D5 bg:#F5C2E7)\
+$docker_context\
+[](fg:#F5C2E7 bg:#89B4FA)\
+$time\
+[ ](fg:#89B4FA)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1E1E2E"
+style_root = "bg:#1E1E2E"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#393947"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#F5C2E7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#545460"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#545460"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1E1E2E"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#94E2D5"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#89B4FA"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/cristina.toml" <<'EOF'
+format = """
+[](#232136)\
+$python\
+$username\
+[](bg:#3D3C4E fg:#232136)\
+$directory\
+[](fg:#3D3C4E bg:#585666)\
+$git_branch\
+$git_status\
+[](fg:#585666 bg:#8EC07C)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8EC07C bg:#C3A5E6)\
+$docker_context\
+[](fg:#C3A5E6 bg:#34738E)\
+$time\
+[ ](fg:#34738E)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#232136"
+style_root = "bg:#232136"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3D3C4E"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#C3A5E6"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#585666"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#585666"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#232136"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#34738E"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/cristina-square.toml" <<'EOF'
+format = """
+[](#232136)\
+$python\
+$username\
+[](bg:#3D3C4E fg:#232136)\
+$directory\
+[](fg:#3D3C4E bg:#585666)\
+$git_branch\
+$git_status\
+[](fg:#585666 bg:#8EC07C)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8EC07C bg:#C3A5E6)\
+$docker_context\
+[](fg:#C3A5E6 bg:#34738E)\
+$time\
+[ ](fg:#34738E)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#232136"
+style_root = "bg:#232136"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3D3C4E"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#C3A5E6"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#585666"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#585666"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#232136"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#34738E"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/cynthia.toml" <<'EOF'
+format = """
+[](#181616)\
+$python\
+$username\
+[](bg:#343232 fg:#181616)\
+$directory\
+[](fg:#343232 bg:#4F4E4E)\
+$git_branch\
+$git_status\
+[](fg:#4F4E4E bg:#7FB4CA)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#7FB4CA bg:#938AA9)\
+$docker_context\
+[](fg:#938AA9 bg:#7FB4CA)\
+$time\
+[ ](fg:#7FB4CA)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#181616"
+style_root = "bg:#181616"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#343232"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#938AA9"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#4F4E4E"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#4F4E4E"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#181616"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7FB4CA"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/cynthia-square.toml" <<'EOF'
+format = """
+[](#181616)\
+$python\
+$username\
+[](bg:#343232 fg:#181616)\
+$directory\
+[](fg:#343232 bg:#4F4E4E)\
+$git_branch\
+$git_status\
+[](fg:#4F4E4E bg:#7FB4CA)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#7FB4CA bg:#938AA9)\
+$docker_context\
+[](fg:#938AA9 bg:#7FB4CA)\
+$time\
+[ ](fg:#7FB4CA)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#181616"
+style_root = "bg:#181616"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#343232"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#938AA9"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#4F4E4E"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#4F4E4E"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#181616"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#7FB4CA"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7FB4CA"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/daniela.toml" <<'EOF'
+format = """
+[](#1A1B26)\
+$python\
+$username\
+[](bg:#353640 fg:#1A1B26)\
+$directory\
+[](fg:#353640 bg:#51525A)\
+$git_branch\
+$git_status\
+[](fg:#51525A bg:#7DCFFF)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#7DCFFF bg:#BB9AF7)\
+$docker_context\
+[](fg:#BB9AF7 bg:#7AA2F7)\
+$time\
+[ ](fg:#7AA2F7)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1A1B26"
+style_root = "bg:#1A1B26"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#353640"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#BB9AF7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#51525A"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#51525A"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1A1B26"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7AA2F7"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/daniela-square.toml" <<'EOF'
+format = """
+[](#1A1B26)\
+$python\
+$username\
+[](bg:#353640 fg:#1A1B26)\
+$directory\
+[](fg:#353640 bg:#51525A)\
+$git_branch\
+$git_status\
+[](fg:#51525A bg:#7DCFFF)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#7DCFFF bg:#BB9AF7)\
+$docker_context\
+[](fg:#BB9AF7 bg:#7AA2F7)\
+$time\
+[ ](fg:#7AA2F7)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1A1B26"
+style_root = "bg:#1A1B26"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#353640"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#BB9AF7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#51525A"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#51525A"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1A1B26"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#7DCFFF"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7AA2F7"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/dracula.toml" <<'EOF'
+format = """
+[](#282A36)\
+$python\
+$username\
+[](bg:#42444E fg:#282A36)\
+$directory\
+[](fg:#42444E bg:#5C5D66)\
+$git_branch\
+$git_status\
+[](fg:#5C5D66 bg:#8BE9FD)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8BE9FD bg:#BD93F9)\
+$docker_context\
+[](fg:#BD93F9 bg:#6272A4)\
+$time\
+[ ](fg:#6272A4)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#282A36"
+style_root = "bg:#282A36"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#42444E"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#BD93F9"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#5C5D66"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#5C5D66"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282A36"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#6272A4"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/dracula-square.toml" <<'EOF'
+format = """
+[](#282A36)\
+$python\
+$username\
+[](bg:#42444E fg:#282A36)\
+$directory\
+[](fg:#42444E bg:#5C5D66)\
+$git_branch\
+$git_status\
+[](fg:#5C5D66 bg:#8BE9FD)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8BE9FD bg:#BD93F9)\
+$docker_context\
+[](fg:#BD93F9 bg:#6272A4)\
+$time\
+[ ](fg:#6272A4)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#282A36"
+style_root = "bg:#282A36"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#42444E"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#BD93F9"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#5C5D66"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#5C5D66"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282A36"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#6272A4"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/emilia.toml" <<'EOF'
+format = """
+[](#1E1A17)\
+$python\
+$username\
+[](bg:#393533 fg:#1E1A17)\
+$directory\
+[](fg:#393533 bg:#54514F)\
+$git_branch\
+$git_status\
+[](fg:#54514F bg:#7FA5B5)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#7FA5B5 bg:#B08BBB)\
+$docker_context\
+[](fg:#B08BBB bg:#7FA5B5)\
+$time\
+[ ](fg:#7FA5B5)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1E1A17"
+style_root = "bg:#1E1A17"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#393533"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B08BBB"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#54514F"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#54514F"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1E1A17"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7FA5B5"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/emilia-square.toml" <<'EOF'
+format = """
+[](#1E1A17)\
+$python\
+$username\
+[](bg:#393533 fg:#1E1A17)\
+$directory\
+[](fg:#393533 bg:#54514F)\
+$git_branch\
+$git_status\
+[](fg:#54514F bg:#7FA5B5)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#7FA5B5 bg:#B08BBB)\
+$docker_context\
+[](fg:#B08BBB bg:#7FA5B5)\
+$time\
+[ ](fg:#7FA5B5)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1E1A17"
+style_root = "bg:#1E1A17"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#393533"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B08BBB"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#54514F"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#54514F"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1E1A17"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#7FA5B5"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7FA5B5"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/h4ck3r.toml" <<'EOF'
+format = """
+[](#0C1018)\
+$python\
+$username\
+[](bg:#292D34 fg:#0C1018)\
+$directory\
+[](fg:#292D34 bg:#46494F)\
+$git_branch\
+$git_status\
+[](fg:#46494F bg:#9CF542)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#9CF542 bg:#00FA5C)\
+$docker_context\
+[](fg:#00FA5C bg:#9CF542)\
+$time\
+[ ](fg:#9CF542)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#0C1018"
+style_root = "bg:#0C1018"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#292D34"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#00FA5C"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#46494F"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#46494F"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#0C1018"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#9CF542"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/h4ck3r-square.toml" <<'EOF'
+format = """
+[](#0C1018)\
+$python\
+$username\
+[](bg:#292D34 fg:#0C1018)\
+$directory\
+[](fg:#292D34 bg:#46494F)\
+$git_branch\
+$git_status\
+[](fg:#46494F bg:#9CF542)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#9CF542 bg:#00FA5C)\
+$docker_context\
+[](fg:#00FA5C bg:#9CF542)\
+$time\
+[ ](fg:#9CF542)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#0C1018"
+style_root = "bg:#0C1018"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#292D34"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#00FA5C"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#46494F"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#46494F"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#0C1018"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#9CF542"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#9CF542"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/hidrot.toml" <<'EOF'
+format = """
+[](#1B1E24)\
+$python\
+$username\
+[](bg:#36393E fg:#1B1E24)\
+$directory\
+[](fg:#36393E bg:#525459)\
+$git_branch\
+$git_status\
+[](fg:#525459 bg:#4FB0A6)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#4FB0A6 bg:#B08FD1)\
+$docker_context\
+[](fg:#B08FD1 bg:#5E8FCC)\
+$time\
+[ ](fg:#5E8FCC)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1B1E24"
+style_root = "bg:#1B1E24"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#36393E"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B08FD1"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#525459"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#525459"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1B1E24"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#5E8FCC"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/hidrot-square.toml" <<'EOF'
+format = """
+[](#1B1E24)\
+$python\
+$username\
+[](bg:#36393E fg:#1B1E24)\
+$directory\
+[](fg:#36393E bg:#525459)\
+$git_branch\
+$git_status\
+[](fg:#525459 bg:#4FB0A6)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#4FB0A6 bg:#B08FD1)\
+$docker_context\
+[](fg:#B08FD1 bg:#5E8FCC)\
+$time\
+[ ](fg:#5E8FCC)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1B1E24"
+style_root = "bg:#1B1E24"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#36393E"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B08FD1"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#525459"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#525459"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1B1E24"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#4FB0A6"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#5E8FCC"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/isabel.toml" <<'EOF'
+format = """
+[](#10181A)\
+$python\
+$username\
+[](bg:#2D3435 fg:#10181A)\
+$directory\
+[](fg:#2D3435 bg:#494F51)\
+$git_branch\
+$git_status\
+[](fg:#494F51 bg:#4FD6BE)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#4FD6BE bg:#5FA8C7)\
+$docker_context\
+[](fg:#5FA8C7 bg:#5FA8C7)\
+$time\
+[ ](fg:#5FA8C7)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#10181A"
+style_root = "bg:#10181A"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#2D3435"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#5FA8C7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#494F51"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#494F51"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#10181A"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#5FA8C7"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/isabel-square.toml" <<'EOF'
+format = """
+[](#10181A)\
+$python\
+$username\
+[](bg:#2D3435 fg:#10181A)\
+$directory\
+[](fg:#2D3435 bg:#494F51)\
+$git_branch\
+$git_status\
+[](fg:#494F51 bg:#4FD6BE)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#4FD6BE bg:#5FA8C7)\
+$docker_context\
+[](fg:#5FA8C7 bg:#5FA8C7)\
+$time\
+[ ](fg:#5FA8C7)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#10181A"
+style_root = "bg:#10181A"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#2D3435"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#5FA8C7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#494F51"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#494F51"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#10181A"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#4FD6BE"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#5FA8C7"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/jan.toml" <<'EOF'
+format = """
+[](#212A4C)\
+$python\
+$username\
+[](bg:#3C4461 fg:#212A4C)\
+$directory\
+[](fg:#3C4461 bg:#565D77)\
+$git_branch\
+$git_status\
+[](fg:#565D77 bg:#8DF202)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8DF202 bg:#6800D2)\
+$docker_context\
+[](fg:#6800D2 bg:#19BFFE)\
+$time\
+[ ](fg:#19BFFE)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#212A4C"
+style_root = "bg:#212A4C"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C4461"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#6800D2"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#565D77"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#565D77"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#212A4C"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#19BFFE"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/jan-square.toml" <<'EOF'
+format = """
+[](#212A4C)\
+$python\
+$username\
+[](bg:#3C4461 fg:#212A4C)\
+$directory\
+[](fg:#3C4461 bg:#565D77)\
+$git_branch\
+$git_status\
+[](fg:#565D77 bg:#8DF202)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8DF202 bg:#6800D2)\
+$docker_context\
+[](fg:#6800D2 bg:#19BFFE)\
+$time\
+[ ](fg:#19BFFE)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#212A4C"
+style_root = "bg:#212A4C"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C4461"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#6800D2"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#565D77"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#565D77"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#212A4C"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8DF202"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#19BFFE"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/karla.toml" <<'EOF'
+format = """
+[](#0E1113)\
+$python\
+$username\
+[](bg:#2B2E2F fg:#0E1113)\
+$directory\
+[](fg:#2B2E2F bg:#484A4C)\
+$git_branch\
+$git_status\
+[](fg:#484A4C bg:#7DF0F0)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#7DF0F0 bg:#7A44E3)\
+$docker_context\
+[](fg:#7A44E3 bg:#4856D4)\
+$time\
+[ ](fg:#4856D4)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#0E1113"
+style_root = "bg:#0E1113"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#2B2E2F"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#7A44E3"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#484A4C"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#484A4C"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#0E1113"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#4856D4"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/karla-square.toml" <<'EOF'
+format = """
+[](#0E1113)\
+$python\
+$username\
+[](bg:#2B2E2F fg:#0E1113)\
+$directory\
+[](fg:#2B2E2F bg:#484A4C)\
+$git_branch\
+$git_status\
+[](fg:#484A4C bg:#7DF0F0)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#7DF0F0 bg:#7A44E3)\
+$docker_context\
+[](fg:#7A44E3 bg:#4856D4)\
+$time\
+[ ](fg:#4856D4)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#0E1113"
+style_root = "bg:#0E1113"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#2B2E2F"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#7A44E3"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#484A4C"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#484A4C"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#0E1113"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#7DF0F0"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#4856D4"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/marisol.toml" <<'EOF'
+format = """
+[](#241C1C)\
+$python\
+$username\
+[](bg:#3E3737 fg:#241C1C)\
+$directory\
+[](fg:#3E3737 bg:#595252)\
+$git_branch\
+$git_status\
+[](fg:#595252 bg:#6FA8C7)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#6FA8C7 bg:#B98FC7)\
+$docker_context\
+[](fg:#B98FC7 bg:#6FA8C7)\
+$time\
+[ ](fg:#6FA8C7)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#241C1C"
+style_root = "bg:#241C1C"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3E3737"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B98FC7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#595252"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#595252"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#241C1C"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#6FA8C7"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/marisol-square.toml" <<'EOF'
+format = """
+[](#241C1C)\
+$python\
+$username\
+[](bg:#3E3737 fg:#241C1C)\
+$directory\
+[](fg:#3E3737 bg:#595252)\
+$git_branch\
+$git_status\
+[](fg:#595252 bg:#6FA8C7)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#6FA8C7 bg:#B98FC7)\
+$docker_context\
+[](fg:#B98FC7 bg:#6FA8C7)\
+$time\
+[ ](fg:#6FA8C7)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#241C1C"
+style_root = "bg:#241C1C"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3E3737"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B98FC7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#595252"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#595252"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#241C1C"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#6FA8C7"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#6FA8C7"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/nord.toml" <<'EOF'
+format = """
+[](#2E3440)\
+$python\
+$username\
+[](bg:#474C57 fg:#2E3440)\
+$directory\
+[](fg:#474C57 bg:#60656E)\
+$git_branch\
+$git_status\
+[](fg:#60656E bg:#8FBCBB)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8FBCBB bg:#B48EAD)\
+$docker_context\
+[](fg:#B48EAD bg:#5E81AC)\
+$time\
+[ ](fg:#5E81AC)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#2E3440"
+style_root = "bg:#2E3440"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#474C57"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B48EAD"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#60656E"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#60656E"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#2E3440"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#5E81AC"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/nord-square.toml" <<'EOF'
+format = """
+[](#2E3440)\
+$python\
+$username\
+[](bg:#474C57 fg:#2E3440)\
+$directory\
+[](fg:#474C57 bg:#60656E)\
+$git_branch\
+$git_status\
+[](fg:#60656E bg:#8FBCBB)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8FBCBB bg:#B48EAD)\
+$docker_context\
+[](fg:#B48EAD bg:#5E81AC)\
+$time\
+[ ](fg:#5E81AC)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#2E3440"
+style_root = "bg:#2E3440"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#474C57"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B48EAD"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#60656E"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#60656E"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#2E3440"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#5E81AC"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/pamela.toml" <<'EOF'
+format = """
+[](#1D1F28)\
+$python\
+$username\
+[](bg:#383A42 fg:#1D1F28)\
+$directory\
+[](fg:#383A42 bg:#53555C)\
+$git_branch\
+$git_status\
+[](fg:#53555C bg:#79E6F3)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#79E6F3 bg:#C574DD)\
+$docker_context\
+[](fg:#C574DD bg:#8897F4)\
+$time\
+[ ](fg:#8897F4)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1D1F28"
+style_root = "bg:#1D1F28"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#383A42"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#C574DD"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#53555C"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#53555C"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1D1F28"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#8897F4"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/pamela-square.toml" <<'EOF'
+format = """
+[](#1D1F28)\
+$python\
+$username\
+[](bg:#383A42 fg:#1D1F28)\
+$directory\
+[](fg:#383A42 bg:#53555C)\
+$git_branch\
+$git_status\
+[](fg:#53555C bg:#79E6F3)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#79E6F3 bg:#C574DD)\
+$docker_context\
+[](fg:#C574DD bg:#8897F4)\
+$time\
+[ ](fg:#8897F4)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1D1F28"
+style_root = "bg:#1D1F28"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#383A42"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#C574DD"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#53555C"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#53555C"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1D1F28"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#79E6F3"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#8897F4"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/silvia.toml" <<'EOF'
+format = """
+[](#3C3836)\
+$python\
+$username\
+[](bg:#53504E fg:#3C3836)\
+$directory\
+[](fg:#53504E bg:#6B6866)\
+$git_branch\
+$git_status\
+[](fg:#6B6866 bg:#689D6A)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#689D6A bg:#B16286)\
+$docker_context\
+[](fg:#B16286 bg:#458588)\
+$time\
+[ ](fg:#458588)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#3C3836"
+style_root = "bg:#3C3836"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#53504E"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B16286"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#6B6866"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#6B6866"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#3C3836"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#458588"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/silvia-square.toml" <<'EOF'
+format = """
+[](#3C3836)\
+$python\
+$username\
+[](bg:#53504E fg:#3C3836)\
+$directory\
+[](fg:#53504E bg:#6B6866)\
+$git_branch\
+$git_status\
+[](fg:#6B6866 bg:#689D6A)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#689D6A bg:#B16286)\
+$docker_context\
+[](fg:#B16286 bg:#458588)\
+$time\
+[ ](fg:#458588)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#3C3836"
+style_root = "bg:#3C3836"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#53504E"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B16286"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#6B6866"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#6B6866"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#3C3836"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#689D6A"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#458588"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/varinka.toml" <<'EOF'
+format = """
+[](#212529)\
+$python\
+$username\
+[](bg:#3C3F43 fg:#212529)\
+$directory\
+[](fg:#3C3F43 bg:#56595C)\
+$git_branch\
+$git_status\
+[](fg:#56595C bg:#495057)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#495057 bg:#DC5BBC)\
+$docker_context\
+[](fg:#DC5BBC bg:#495057)\
+$time\
+[ ](fg:#495057)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#212529"
+style_root = "bg:#212529"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C3F43"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#DC5BBC"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#56595C"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#56595C"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#212529"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#495057"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/varinka-square.toml" <<'EOF'
+format = """
+[](#212529)\
+$python\
+$username\
+[](bg:#3C3F43 fg:#212529)\
+$directory\
+[](fg:#3C3F43 bg:#56595C)\
+$git_branch\
+$git_status\
+[](fg:#56595C bg:#495057)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#495057 bg:#DC5BBC)\
+$docker_context\
+[](fg:#DC5BBC bg:#495057)\
+$time\
+[ ](fg:#495057)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#212529"
+style_root = "bg:#212529"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C3F43"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#DC5BBC"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#56595C"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#56595C"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#212529"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#495057"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#495057"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/yael.toml" <<'EOF'
+format = """
+[](#161616)\
+$python\
+$username\
+[](bg:#323232 fg:#161616)\
+$directory\
+[](fg:#323232 bg:#4E4E4E)\
+$git_branch\
+$git_status\
+[](fg:#4E4E4E bg:#3DDBD9)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#3DDBD9 bg:#FF7EB6)\
+$docker_context\
+[](fg:#FF7EB6 bg:#33B1FF)\
+$time\
+[ ](fg:#33B1FF)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#161616"
+style_root = "bg:#161616"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#323232"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#FF7EB6"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#4E4E4E"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#4E4E4E"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#161616"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#33B1FF"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/yael-square.toml" <<'EOF'
+format = """
+[](#161616)\
+$python\
+$username\
+[](bg:#323232 fg:#161616)\
+$directory\
+[](fg:#323232 bg:#4E4E4E)\
+$git_branch\
+$git_status\
+[](fg:#4E4E4E bg:#3DDBD9)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#3DDBD9 bg:#FF7EB6)\
+$docker_context\
+[](fg:#FF7EB6 bg:#33B1FF)\
+$time\
+[ ](fg:#33B1FF)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#161616"
+style_root = "bg:#161616"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#323232"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#FF7EB6"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#4E4E4E"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#4E4E4E"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#161616"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#3DDBD9"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#33B1FF"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/z0mbi3.toml" <<'EOF'
+format = """
+[](#0D0F18)\
+$python\
+$username\
+[](bg:#2A2C34 fg:#0D0F18)\
+$directory\
+[](fg:#2A2C34 bg:#47494F)\
+$git_branch\
+$git_status\
+[](fg:#47494F bg:#93CEE9)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#93CEE9 bg:#C296EB)\
+$docker_context\
+[](fg:#C296EB bg:#86AAEC)\
+$time\
+[ ](fg:#86AAEC)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#0D0F18"
+style_root = "bg:#0D0F18"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#2A2C34"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#C296EB"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#47494F"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#47494F"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#0D0F18"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#86AAEC"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/z0mbi3-square.toml" <<'EOF'
+format = """
+[](#0D0F18)\
+$python\
+$username\
+[](bg:#2A2C34 fg:#0D0F18)\
+$directory\
+[](fg:#2A2C34 bg:#47494F)\
+$git_branch\
+$git_status\
+[](fg:#47494F bg:#93CEE9)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#93CEE9 bg:#C296EB)\
+$docker_context\
+[](fg:#C296EB bg:#86AAEC)\
+$time\
+[ ](fg:#86AAEC)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#0D0F18"
+style_root = "bg:#0D0F18"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#2A2C34"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#C296EB"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#47494F"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#47494F"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#0D0F18"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#93CEE9"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#86AAEC"
+format = '[ $time ]($style)'
+EOF
+
+# mybash's setup.sh leaves ~/.config/starship.toml as a symlink into its
+# own installed copy - remove that specifically (not a plain file, which
+# a re-run of this script should just overwrite normally) before seeding
+# the current theme, so this rice's own copy becomes the one Starship
+# actually reads rather than silently writing through the symlink into
+# mybash's own directory.
+[ -L "$HOME/.config/starship.toml" ] && rm "$HOME/.config/starship.toml"
+cp "$CONF/starship/themes/catppuccin-mocha.toml" "$HOME/.config/starship.toml"
+
+
+# ----------------------------------------------------------------------------
 # 9b. flameshot
 # ----------------------------------------------------------------------------
 # Flameshot >=14 defaults to capturing via the XDG desktop portal's
@@ -17315,13 +22897,13 @@ log "Writing polybar theme switcher script..."
 cat > "$BIN/polybar-theme.sh" <<'EOF'
 #!/usr/bin/env bash
 # Lists available themes (~/.config/polybar/themes/*.ini) via rofi and, on
-# selection, applies matching polybar + rofi + kitty themes together, so
-# one pick retints the whole desktop instead of just the bar. Each of the
-# three is its own COMPLETE, standalone config (a polybar config.ini, a
-# rofi .rasi pair, a kitty color .conf) generated from the same underlying
-# palette per theme name - not a shared [colors] fragment three different
-# tools each interpret slightly differently - applied with a plain file
-# copy, no splicing to keep in sync.
+# selection, applies matching polybar + rofi + kitty + starship themes
+# together, so one pick retints the whole desktop instead of just the bar.
+# Each is its own COMPLETE, standalone config (a polybar config.ini, a rofi
+# .rasi pair, a kitty color .conf, a starship prompt .toml) generated from
+# the same underlying palette per theme name - not a shared [colors]
+# fragment different tools each interpret slightly differently - applied
+# with a plain file copy, no splicing to keep in sync.
 #
 # Usage:
 #   polybar-theme.sh          # prompts via rofi
@@ -17335,6 +22917,8 @@ ROFI_CURRENT="$HOME/.config/rofi/current.rasi"
 ROFI_POWERMENU_CURRENT="$HOME/.config/rofi/current-powermenu.rasi"
 KITTY_THEMES_DIR="$HOME/.config/kitty/themes"
 KITTY_CURRENT="$HOME/.config/kitty/current.conf"
+STARSHIP_THEMES_DIR="$HOME/.config/starship/themes"
+STARSHIP_CURRENT="$HOME/.config/starship.toml"
 
 mapfile -t THEME_FILES < <(find "$POLY_THEMES_DIR" -maxdepth 1 -name '*.ini' 2>/dev/null | sort)
 if [ "${#THEME_FILES[@]}" -eq 0 ]; then
@@ -17357,6 +22941,7 @@ POLY_FILE="$POLY_THEMES_DIR/$CHOSEN.ini"
 ROFI_FILE="$ROFI_THEMES_DIR/$CHOSEN.rasi"
 ROFI_POWERMENU_FILE="$ROFI_THEMES_DIR/$CHOSEN-powermenu.rasi"
 KITTY_FILE="$KITTY_THEMES_DIR/$CHOSEN.conf"
+STARSHIP_FILE="$STARSHIP_THEMES_DIR/$CHOSEN.toml"
 
 if [ ! -f "$POLY_FILE" ]; then
   notify-send "Desktop Theme" "No such theme: $CHOSEN"
@@ -17398,6 +22983,16 @@ if [ -f "$KITTY_FILE" ]; then
   done
 else
   notify-send "Desktop Theme" "No kitty theme for $CHOSEN, keeping previous"
+fi
+
+if [ -f "$STARSHIP_FILE" ]; then
+  cp "$STARSHIP_FILE" "$STARSHIP_CURRENT"
+  # No live-retint step needed here unlike kitty above - starship re-reads
+  # its config fresh on every single prompt draw (it's just a program the
+  # shell re-invokes each time), so the very next prompt in any already-
+  # open shell already picks this up with no socket/signal of its own.
+else
+  notify-send "Desktop Theme" "No starship theme for $CHOSEN, keeping previous"
 fi
 
 notify-send "Desktop Theme" "Switched to $CHOSEN"
