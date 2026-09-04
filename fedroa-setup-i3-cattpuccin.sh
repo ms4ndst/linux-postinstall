@@ -86,7 +86,8 @@ sudo dnf install -y \
   brightnessctl playerctl numlockx dex-autostart autorandr arandr xdotool \
   solaar solaar-udev \
   pipx \
-  jetbrains-mono-fonts
+  jetbrains-mono-fonts \
+  plymouth-plugin-script
 
 # network-manager-applet/pasystray/blueman/udiskie are still installed above -
 # their tray-icon *applets* (nm-applet, pasystray, blueman-applet) are
@@ -139,19 +140,33 @@ fi
 
 # ----------------------------------------------------------------------------
 # 2b. Plymouth boot theme (Catppuccin Mocha) - themes the LUKS decrypt prompt
-#     and boot splash, not just the desktop session. Uses the real, official
-#     catppuccin/plymouth theme (github.com/catppuccin/plymouth) rather than
-#     a hand-built one: its bundled catppuccin-mocha flavor already matches
-#     this rice's palette exactly (background 0x1e1e2e is the same Mocha
-#     base used everywhere else) and ships a tested two-step module config,
-#     which is a standard Plymouth module already present on Fedora - no new
-#     package dependency beyond git (already in the dnf list above).
+#     and boot splash, not just the desktop session. Built in the style of
+#     Omarchy's own Plymouth theme (github.com/basecamp/omarchy, MIT) rather
+#     than a plain colored splash: a big pixel-art wordmark, a lock icon +
+#     bordered password-entry box with a dot per keystroke, and a fake-
+#     progress bar that eases toward ~70% during LUKS decryption (which
+#     reports no real progress of its own) before real boot progress takes
+#     over - all driven by Plymouth's "script" module (plymouth-plugin-
+#     script, added to the dnf list above), not the simpler "two-step"
+#     module Fedora's own stock themes use.
 #
-#     This can't be applied by heredoc like the text configs above because
-#     its assets are binary PNGs, so - same pattern as the Nerd Font
-#     download - it's a runtime git clone wrapped in best-effort error
-#     handling: a network hiccup here shouldn't abort the rest of the script
-#     any more than a font download failure should.
+#     Omarchy's actual template assets (bullet/entry/lock/progress bar+box
+#     images, and its .script animation logic) are reused verbatim below -
+#     MIT-licensed, so a permitted, credited reuse - but NOT its "OMARCHY"
+#     wordmark or its font: that font's glyph set only covers the letters
+#     in the word "omarchy" and nothing else (confirmed by inspecting its
+#     cmap table), so it can't render anything else. The wordmark here is
+#     generated fresh instead - JetBrainsMono ExtraBold rendered small,
+#     alpha-thresholded to kill anti-aliasing, then upscaled with nearest-
+#     neighbor - the same hard-pixel-edge technique Omarchy's own font
+#     produces, applied to different text in a different font so nothing
+#     is copied, only the *look*. Every UI element (bullet/entry/lock/
+#     progress bar) is recolored to this rice's Mocha text color (#cdd6f4)
+#     via ImageMagick, exactly how Omarchy's own theme-switcher does it;
+#     the background is Mocha base (#1e1e2e). All assets are embedded
+#     below as base64 (a few KB total) rather than downloaded at setup
+#     time - there's no upstream release to track the way the Nerd Font
+#     download has, so there's nothing to fetch over the network here.
 #
 #     To revert to the stock boot splash later:
 #       sudo plymouth-set-default-theme -R bgrt
@@ -159,15 +174,360 @@ fi
 if [ ! -d /usr/share/plymouth/themes/catppuccin-mocha ]; then
   log "Installing Catppuccin Mocha Plymouth (boot splash / LUKS prompt) theme..."
   TMPPLYMOUTH="$(mktemp -d)"
-  if git clone --depth 1 https://github.com/catppuccin/plymouth "$TMPPLYMOUTH" >/dev/null 2>&1; then
-    if sudo cp -r "$TMPPLYMOUTH/themes/catppuccin-mocha" /usr/share/plymouth/themes/catppuccin-mocha \
-        && sudo plymouth-set-default-theme -R catppuccin-mocha; then
-      log "Plymouth theme set to catppuccin-mocha (reboot to see it on the LUKS decrypt screen)."
-    else
-      warn "Plymouth theme install/activation failed; boot splash left on its current theme. Revert/retry manually: sudo plymouth-set-default-theme -R bgrt"
-    fi
+
+  cat > "$TMPPLYMOUTH/catppuccin-mocha.plymouth" <<'PLYMOUTHEOF'
+[Plymouth Theme]
+Name=catppuccin-mocha
+Description=Catppuccin Mocha splash screen with an animated password entry, in the style of Omarchy's own boot theme.
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/catppuccin-mocha
+ScriptFile=/usr/share/plymouth/themes/catppuccin-mocha/catppuccin-mocha.script
+ConsoleLogBackgroundColor=0x1e1e2e
+MonospaceFont=Noto Sans 11
+Font=Noto Sans 11
+PLYMOUTHEOF
+
+  cat > "$TMPPLYMOUTH/catppuccin-mocha.script" <<'SCRIPTEOF'
+# Omarchy Plymouth Theme Script
+
+Window.SetBackgroundTopColor(0.118, 0.118, 0.180);
+Window.SetBackgroundBottomColor(0.118, 0.118, 0.180);
+
+logo.image = Image("logo.png");
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetX(Window.GetWidth() / 2 - logo.image.GetWidth() / 2);
+logo.sprite.SetY(Window.GetHeight() / 2 - logo.image.GetHeight() / 2);
+logo.sprite.SetOpacity(1);
+
+# Use these to adjust the progress bar timing
+global.fake_progress_limit = 0.7;  # Target percentage for fake progress (0.0 to 1.0)
+global.fake_progress_duration = 15.0;  # Duration in seconds to reach limit
+
+# Progress bar animation variables
+global.animation_frame = 0;
+global.fake_progress = 0.0;
+global.real_progress = 0.0;
+global.fake_progress_active = 0;
+global.fake_progress_start_time = 0.0;  # Track when fake progress started
+global.password_shown = 0;  # Track if password dialog has been shown
+global.max_progress = 0.0;  # Track the maximum progress reached to prevent backwards movement
+
+fun refresh_callback() {
+  global.animation_frame++;
+
+  # Animate fake progress to limit over time with easing
+  if (global.fake_progress_active == 1) {
+    # Calculate elapsed time since start
+    elapsed_time = global.animation_frame / 50.0;  # Convert frames to seconds (50 FPS)
+
+    # Calculate linear progress ratio (0 to 1) based on time
+    time_ratio = elapsed_time / global.fake_progress_duration;
+    if (time_ratio > 1.0) time_ratio = 1.0;
+
+    # Apply easing curve: ease-out quadratic
+    # Formula: 1 - (1 - x)^2
+    eased_ratio = 1 - ((1 - time_ratio) * (1 - time_ratio));
+
+    # Calculate fake progress based on eased ratio
+    global.fake_progress = eased_ratio * global.fake_progress_limit;
+
+    # Update progress bar with fake progress
+    update_progress_bar(global.fake_progress);
+  }
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);
+
+#----------------------------------------- Helper Functions --------------------------------
+
+fun update_progress_bar(progress) {
+  # Only update if progress is moving forward
+  if (progress > global.max_progress) {
+    global.max_progress = progress;
+
+    width = Math.Int(progress_bar.original_image.GetWidth() * progress);
+    if (width < 1) width = 1;  # Ensure minimum width of 1 pixel
+
+    progress_bar.image = progress_bar.original_image.Scale(width, progress_bar.original_image.GetHeight());
+    progress_bar.sprite.SetImage(progress_bar.image);
+  }
+}
+
+fun show_progress_bar() {
+  progress_box.sprite.SetOpacity(1);
+  progress_bar.sprite.SetOpacity(1);
+}
+
+fun hide_progress_bar() {
+  progress_box.sprite.SetOpacity(0);
+  progress_bar.sprite.SetOpacity(0);
+}
+
+fun show_password_dialog() {
+  lock.sprite.SetOpacity(1);
+  entry.sprite.SetOpacity(1);
+}
+
+fun hide_password_dialog() {
+  lock.sprite.SetOpacity(0);
+  entry.sprite.SetOpacity(0);
+
+  for (index = 0; bullet.sprites[index]; index++) {
+    bullet.sprites[index].SetOpacity(0);
+  }
+}
+
+fun start_fake_progress() {
+  global.fake_progress_active = 1;
+
+  # Reset fake progress
+  global.animation_frame = 0;
+  global.max_progress = 0.0;
+  global.fake_progress = 0.0;
+  global.fake_progress_start_time = 0.0;
+}
+
+fun stop_fake_progress() {
+  global.fake_progress_active = 0;
+}
+
+#----------------------------------------- Dialogue --------------------------------
+
+lock.image = Image("lock.png");
+entry.image = Image("entry.png");
+bullet.image = Image("bullet.png");
+
+entry.sprite = Sprite(entry.image);
+entry.x = Window.GetWidth() / 2 - entry.image.GetWidth() / 2;
+entry.y = logo.sprite.GetY() + logo.image.GetHeight() + 40;
+entry.sprite.SetPosition(entry.x, entry.y, 10001);
+entry.sprite.SetOpacity(0);
+
+# Scale lock to be slightly shorter than entry field height
+# Original lock is 84x96, entry height determines scale
+lock_height = entry.image.GetHeight() * 0.8;
+lock_scale = lock_height / 96;
+lock_width = 84 * lock_scale;
+
+scaled_lock = lock.image.Scale(lock_width, lock_height);
+lock.sprite = Sprite(scaled_lock);
+lock.x = entry.x - lock_width - 15;
+lock.y = entry.y + entry.image.GetHeight() / 2 - lock_height / 2;
+lock.sprite.SetPosition(lock.x, lock.y, 10001);
+lock.sprite.SetOpacity(0);
+
+# Bullet array
+bullet.sprites = [];
+
+fun display_normal_callback() {
+  hide_password_dialog();
+
+  # Get current mode
+  mode = Plymouth.GetMode();
+
+  # Only show progress bar for boot and resume modes
+  if ((mode == "boot" || mode == "resume") && global.password_shown == 1) {
+    show_progress_bar();
+    start_fake_progress();
+  }
+}
+
+fun display_password_callback(prompt, bullets) {
+  global.password_shown = 1;  # Mark that password dialog has been shown
+
+  # Stop fake progress when password dialog appears
+  stop_fake_progress();
+  hide_progress_bar();
+  show_password_dialog();
+
+  # Clear all bullets first
+  for (index = 0; bullet.sprites[index]; index++) {
+    bullet.sprites[index].SetOpacity(0);
+  }
+
+  # Create and show bullets for current password (max 21)
+  max_bullets = 21;
+  bullets_to_show = bullets;
+  if (bullets_to_show > max_bullets) {
+    bullets_to_show = max_bullets;
+  }
+
+  for (index = 0; index < bullets_to_show; index++) {
+    if (!bullet.sprites[index]) {
+      # Scale bullet image to 7x7 pixels
+      scaled_bullet = bullet.image.Scale(7, 7);
+      bullet.sprites[index] = Sprite(scaled_bullet);
+      bullet.x = entry.x + 20 + index * (7 + 5);
+      bullet.y = entry.y + entry.image.GetHeight() / 2 - 3.5;
+      bullet.sprites[index].SetPosition(bullet.x, bullet.y, 10002);
+    }
+
+    bullet.sprites[index].SetOpacity(1);
+  }
+}
+
+Plymouth.SetDisplayNormalFunction(display_normal_callback);
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+
+#----------------------------------------- Progress Bar --------------------------------
+
+progress_box.image = Image("progress_box.png");
+progress_box.sprite = Sprite(progress_box.image);
+
+progress_box.x = Window.GetWidth() / 2 - progress_box.image.GetWidth() / 2;
+progress_box.y = entry.y + entry.image.GetHeight() / 2 - progress_box.image.GetHeight() / 2;
+progress_box.sprite.SetPosition(progress_box.x, progress_box.y, 0);
+progress_box.sprite.SetOpacity(0);
+
+progress_bar.original_image = Image("progress_bar.png");
+progress_bar.sprite = Sprite();
+progress_bar.image = progress_bar.original_image.Scale(1, progress_bar.original_image.GetHeight());
+
+progress_bar.x = Window.GetWidth() / 2 - progress_bar.original_image.GetWidth() / 2;
+progress_bar.y = progress_box.y + (progress_box.image.GetHeight() - progress_bar.original_image.GetHeight()) / 2;
+progress_bar.sprite.SetPosition(progress_bar.x, progress_bar.y, 1);
+progress_bar.sprite.SetOpacity(0);
+
+fun progress_callback(duration, progress) {
+  # Track when fake progress starts
+  # Needed because duration and progress freeze during drive decryption
+  if (global.fake_progress_start_time == 0.0) {
+    global.fake_progress_start_time = duration;
+  }
+
+  global.real_progress = progress;
+
+  # Use real progress once its unfrozen and exceeds fake progress
+  if (duration > global.fake_progress_start_time && progress > global.fake_progress) {
+    stop_fake_progress();
+    update_progress_bar(progress);
+  }
+}
+
+Plymouth.SetBootProgressFunction(progress_callback);
+
+#----------------------------------------- Message --------------------------------
+
+message_sprite = Sprite();
+message_sprite.SetPosition(10, 10, 10000);
+
+fun display_message_callback(text) {
+  message = Image.Text(text, 1, 1, 1);
+  message_sprite.SetImage(message);
+  message_sprite.SetOpacity(1);
+}
+
+fun hide_message_callback(text) {
+  message_sprite.SetOpacity(0);
+}
+
+Plymouth.SetDisplayMessageFunction(display_message_callback);
+Plymouth.SetHideMessageFunction(hide_message_callback);
+SCRIPTEOF
+
+  base64 -d > "$TMPPLYMOUTH/bullet.png" <<'B64EOF'
+iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOBAMAAADtZjDiAAAAIGNIUk0AAHomAACAhAAA+gAAAIDo
+AAB1MAAA6mAAADqYAAAXcJy6UTwAAAAkUExURc3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W
+9M3W9P///1tQ9skAAAAKdFJOUwAaiNX5WvL+1Pi2UgdyAAAAAWJLR0QLH9fEwAAAAAd0SU1FB+oJ
+BAwZKrDY/sgAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjYtMDktMDRUMTI6MjM6NTQrMDA6MDCGuJGg
+AAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI2LTA5LTA0VDEyOjIzOjU0KzAwOjAw9+UpHAAAACh0RVh0
+ZGF0ZTp0aW1lc3RhbXAAMjAyNi0wOS0wNFQxMjoyNTo0MiswMDowMAKUTSAAAABDSURBVAjXY2Bg
+VHYxEmBgYAhbtWpVKgMDa9WqVauWBzCIrQKBRAYtML2IoQtMr2DwAtMrofQSuDhMHUwfzByYuVB7
+AECVLwrIOLMnAAAAAElFTkSuQmCC
+B64EOF
+
+  base64 -d > "$TMPPLYMOUTH/entry.png" <<'B64EOF'
+iVBORw0KGgoAAAANSUhEUgAAAR4AAAAwBAMAAAA1NggXAAAAIGNIUk0AAHomAACAhAAA+gAAAIDo
+AAB1MAAA6mAAADqYAAAXcJy6UTwAAAAPUExURc3W9M3W9M3W9M3W9P///zoVMFEAAAADdFJOUyiV
+Db6v0WQAAAABYktHRASPaNlRAAAAB3RJTUUH6gkEDBkqsNj+yAAAACV0RVh0ZGF0ZTpjcmVhdGUA
+MjAyNi0wOS0wNFQxMjoyMzo1NCswMDowMIa4kaAAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjYtMDkt
+MDRUMTI6MjM6NTQrMDA6MDD35SkcAAAAKHRFWHRkYXRlOnRpbWVzdGFtcAAyMDI2LTA5LTA0VDEy
+OjI1OjQyKzAwOjAwApRNIAAAAFxJREFUWMPt2UEVgDAMRMHgAIgCcNBX/956pgJIDrMK5u31x3F1
+2hk5O21EVl/y2Yi83z57eHh4eHh4eHh4eHh4eHgajIeHh4eHh4fnD091Ith7QXVC2XpKs960AMBz
+eeQ4rySWAAAAAElFTkSuQmCC
+B64EOF
+
+  base64 -d > "$TMPPLYMOUTH/lock.png" <<'B64EOF'
+iVBORw0KGgoAAAANSUhEUgAAAFQAAABgCAMAAAC0XqVIAAAAIGNIUk0AAHomAACAhAAA+gAAAIDo
+AAB1MAAA6mAAADqYAAAXcJy6UTwAAAFNUExURc3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W
+9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W
+9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W
+9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W
+9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W
+9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W9M3W
+9M3W9M3W9M3W9M3W9M3W9P///wWUAcQAAABtdFJOUwACLlqAnq+7C12s7Sic9CGo/gZ798pF71f6
+RyPyB82FrnlVRMRRteFMMbIRq50DFPtr3A3AQgj4t0FAb+IBlZm5YcU70SrgIF6m1PAKg93z8QTP
+aN46lgzqNvw5okgeECRWZstuQ7ifKclNsBIPqNYOAAAAAWJLR0RuIg9RFwAAAAlwSFlzAAALEwAA
+CxMBAJqcGAAAAAd0SU1FB+oJBAwZKrDY/sgAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjYtMDktMDRU
+MTI6MjM6NTQrMDA6MDCGuJGgAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI2LTA5LTA0VDEyOjIzOjU0
+KzAwOjAw9+UpHAAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNi0wOS0wNFQxMjoyNTo0MiswMDow
+MAKUTSAAAAKeSURBVFjD7dhXV/JAEIDhVVQsWAARUVTsYkEFbETsKBi7Yu8FFJj/f+sRlUyAZBeY
+m88vc8ub5+QEzK7LGH+qqk01tXVmc11tjam6SuAC7tQ3NDYBmqbGhvoKSUtzCxRMS7OlArK1zQpF
+x9rWWiZps7eD5rTbbWXdpgN0x1HGzXY4gTPOjlLNThfPBHB1lmaarHwTwGoqxewSuM/svXaJm91u
+MRPA3S1q9vSKmgC9PYJoX+EX7ekfGBwc6PcU/iT6xExL/gMdGs790G3DQ/mPVexPdkR91eiY+uOx
+UfXnIyKmV33N+ER+MDGuLrwC6KTqiilfYeGbUiWTfHN6Bl/g8RVrfB7czExz0Vnc+wPFo4AfV7Nc
+NIjzOa1qDldBnjm/gOpF7W4RZQvzHHQJ30JIuwvhbomDSqhdDmt34WUUShx0BbWreuEqClc46Bpq
+1/XCdRSucdAN1G7qhZso3OCgW6iN6IURFG5x0G3U7uiFOyjcNlAD/YfRQDS265RlGe+h3LLO4E2M
+VZZl524sql4n9vZlIBh5f08xvQcU5Ncc5Nbr0CGVCXD4s1pYjuhMgKPsNuj4hNIEODlmjJ3SmgCn
+jIXPqNGzMItTmwBxZqdH7SxGj8aYmR41qzdkNBM00L+Fus7jFxfxc7H/gwXRy6vvt+TVJR16ffP7
+Pr+5JkNvlZXnlgy9U9A7MvReQe/J0AcFfTBQAzXQ/wd9VNBHMvRJQZ/IULOCiuySBNeo6K8ZFakF
+Uddz9uAn/Cy0nAqv+y+vb2+vL2Lt39uhGGgpaIIeTbAkPZpUHZgSjcTe6dF3xj6ozQ/GWIoaTX29
+e9K0Zjr7jsz4Cajc+DM/51aEqj93QpYhewLpDDrtSjkIRHCk8s7lIlIyEaxgEkkpdzD+CVjoSax0
+GuV9AAAAAElFTkSuQmCC
+B64EOF
+
+  base64 -d > "$TMPPLYMOUTH/logo.png" <<'B64EOF'
+iVBORw0KGgoAAAANSUhEUgAAAxAAAACoCAYAAABwiAh4AAAFA0lEQVR4nO3dwW3cMBBA0TjIxQWl
+mRToZlyQj845AbL6iCwMuXqvAFteci18EOC8fAOAJ/T+9vF55c//+ev15cqfD7Cq79MPAAAA7ENA
+AAAAmYAAAAAyAQEAAGQCAgAAyAQEAACQCQgAACB7ufqebM6Zvmfc/lib/bG36fWbdvf98+zrf/f1
+PevZ98fVdt9/q6+/EwgAACATEAAAQCYgAACATEAAAACZgAAAADIBAQAAZAICAADIfkw/AMBdnb2n
+fPV7wne/h/1qz77+nGN/3NvR+k+vrxMIAAAgExAAAEAmIAAAgExAAAAAmYAAAAAyAQEAAGQCAgAA
+yMyBAAB4MqvPEWBvTiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMgEBAAAkAkIAAAgW34OhHuK7836
+88jV++PoHvVp0/e8r/75PPvfP73+q5v++6f3B1zJCQQAAJAJCAAAIBMQAABAJiAAAIBMQAAAAJmA
+AAAAMgEBAABk43Mgpu9pBviXs/+f3AN/ren3x9Hvt/73Zn9cy+c3ywkEAACQCQgAACATEAAAQCYg
+AACATEAAAACZgAAAADIBAQAAZONzIAAAYCd3n/PhBAIAAMgEBAAAkAkIAAAgExAAAEAmIAAAgExA
+AAAAmYAAAAAycyAAAGAjR3MmjuZUnOUEAgAAyAQEAACQCQgAACATEAAAQCYgAACATEAAAACZgAAA
+ADIBAQAAZAICAADIBAQAAJAJCAAAIBMQAABAJiAAAIBMQAAAAJmAAAAAsh/TD/D+9vE5/QyTfv56
+fZl+hpXZH/YHwIru/n56dt6/jzmBAAAAMgEBAABkAgIAAMgEBAAAkAkIAAAgExAAAEAmIAAAgGx8
+DgQAwFe7+5yG3ecY7L5+R5//7n+fEwgAACATEAAAQCYgAACATEAAAACZgAAAADIBAQAAZAICAADI
+zIEAAIAncjRn4uycECcQAABAJiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMgEBAAAkJkDwdbO3mMM
+ACvyfmNlTiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMgEBAAAkAkIAAAgG58D4Z5jHrE/APgfZ98f
+728fn1/3NOzG+j/mBAIAAMgEBAAAkAkIAAAgExAAAEAmIAAAgExAAAAAmYAAAACy8TkQAAD86WgO
+we5zksxZ2JsTCAAAIBMQAABAJiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMjMgQAA+MvRnAVzDNjZ
+2TkjTiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMgEBAAAkAkIAAAgMwcC4D+5Bx6YcvYe/7tb/fNZ
+/f3iBAIAAMgEBAAAkAkIAAAgExAAAEAmIAAAgExAAAAAmYAAAAAycyBY2ur3IE9b/R7rq9kf93Z2
+/Y++P/YXj9g/3JkTCAAAIBMQAABAJiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMjMgQDY1PQckN3v
+wV/9+Y5Mrz9rO9rfV++f3b9fPOYEAgAAyAQEAACQCQgAACATEAAAQCYgAACATEAAAACZgAAAADJz
+IAAWtfs9/7vPiZi2+/rfnf0/y/fnnKP96QQCAADIBAQAAJAJCAAAIBMQAABAJiAAAIBMQAAAAJmA
+AAAAMnMgAC7iHvLH7n5Pvv3BpKPvl/05a/X/j04gAACATEAAAACZgAAAADIBAQAAZAICAADIBAQA
+AJAJCAAAIPsNkKzjPs4xlakAAAAASUVORK5CYII=
+B64EOF
+
+  base64 -d > "$TMPPLYMOUTH/progress_bar.png" <<'B64EOF'
+iVBORw0KGgoAAAANSUhEUgAAASwAAAAKAQMAAAA0MfGpAAAAIGNIUk0AAHomAACAhAAA+gAAAIDo
+AAB1MAAA6mAAADqYAAAXcJy6UTwAAAAGUExURc3W9P///wcemb4AAAABYktHRAH/Ai3eAAAAB3RJ
+TUUH6gkEDBkqsNj+yAAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyNi0wOS0wNFQxMjoyMzo1NCswMDow
+MIa4kaAAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjYtMDktMDRUMTI6MjM6NTQrMDA6MDD35SkcAAAA
+KHRFWHRkYXRlOnRpbWVzdGFtcAAyMDI2LTA5LTA0VDEyOjI1OjQyKzAwOjAwApRNIAAAAA1JREFU
+GNNjYBgFAw8AAYYAASpFXpwAAAAASUVORK5CYII=
+B64EOF
+
+  base64 -d > "$TMPPLYMOUTH/progress_box.png" <<'B64EOF'
+iVBORw0KGgoAAAANSUhEUgAAASwAAAAKAQMAAAA0MfGpAAAAIGNIUk0AAHomAACAhAAA+gAAAIDo
+AAB1MAAA6mAAADqYAAAXcJy6UTwAAAAGUExURSkuQv///8qWyvAAAAABYktHRAH/Ai3eAAAAB3RJ
+TUUH6QcEFy0fdJZJQgAAAA1JREFUGNNjYBgFAw8AAYYAASpFXpwAAAAldEVYdGRhdGU6Y3JlYXRl
+ADIwMjUtMDctMDRUMjM6NDU6MzErMDA6MDD7tkoMAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI1LTA3
+LTA0VDIzOjQ1OjMxKzAwOjAwiuvysAAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNS0wNy0wNFQy
+Mzo0NTozMSswMDowMN3+028AAAAASUVORK5CYII=
+B64EOF
+
+  if sudo cp -r "$TMPPLYMOUTH" /usr/share/plymouth/themes/catppuccin-mocha \
+      && sudo plymouth-set-default-theme -R catppuccin-mocha; then
+    log "Plymouth theme set to catppuccin-mocha (reboot to see it on the LUKS decrypt screen)."
   else
-    warn "Plymouth theme clone failed (network issue?); boot splash left untouched. Retry manually later: git clone https://github.com/catppuccin/plymouth"
+    warn "Plymouth theme install/activation failed; boot splash left on its current theme. Revert/retry manually: sudo plymouth-set-default-theme -R bgrt"
   fi
   rm -rf "$TMPPLYMOUTH"
 else
@@ -432,9 +792,21 @@ shadow = true;
 shadow-radius = 18;
 shadow-opacity = 0.55;
 shadow-color = "#11111b";
+# window_type = 'menu' here fixes a third variant of the same underlying
+# problem as rounded-corners-exclude/blur-background-exclude below: picom's
+# own synthetic shadow doesn't line up with a Chrome/Edge context menu's
+# real shape, leaving a visible gap - not a solid halo, but a shadow
+# gradient that fades, jumps back to the page's own plain background for a
+# few pixels, then only THEN reaches the menu's actual edge. Confirmed via
+# pixel-sampling a straight (non-corner) edge of a live menu screenshot,
+# which is what told shadow apart from blur/corner-radius here - all three
+# effects produce a visually similar "border" but with different pixel
+# signatures, and this rule was the one of the three that had never been
+# extended to cover menus at all.
 shadow-exclude = [
   "class_g = 'Polybar'",
-  "class_g = 'i3-frame'"
+  "class_g = 'i3-frame'",
+  "window_type = 'menu'"
 ];
 
 fading = true;
@@ -483,8 +855,19 @@ blur: {
   method = "dual_kawase";
   strength = 6;
 }
+# window_type = 'menu' here fixes a second, separate artifact from the
+# rounded-corner one above: a stray colored strip bleeding along the edge
+# of Chrome/Edge right-click menus, most visible at a corner. Confirmed via
+# a live screenshot + pixel sampling that the strip's color matched
+# whatever was directly behind/beside the menu window (wallpaper, an
+# adjacent window) rather than anything in the menu's own theme - i.e. the
+# background blur was sampling past the menu's actual rounded-corner clip
+# boundary and smearing in nearby pixels. blur, not corner-radius, was the
+# actual source this time; excluding the menu from background blur (not
+# just from the rounded-corners clip) removes the sampling entirely.
 blur-background-exclude = [
-  "class_g = 'Polybar'"
+  "class_g = 'Polybar'",
+  "window_type = 'menu'"
 ];
 
 active-opacity = 1.0;
