@@ -926,10 +926,7 @@ padding-right = 0
 module-margin = 0
 ; font-1 is a slightly larger slot for the powerline separator glyphs so the
 ; rounded caps render full-height instead of looking clipped/short next to
-; the regular text baseline. font-2 is the plain, unpatched JetBrains Mono -
-; some Nerd Font patched builds have broken/asymmetric advance widths on
-; ordinary glyphs (polybar#484, referencing nerd-fonts#991), which throws off
-; centering on digit-only labels; this sidesteps it for the modules that use it.
+; the regular text baseline.
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
@@ -944,38 +941,27 @@ inherit = bar/base
 ; every polybar instance, regardless of which bar config asks for it) - also
 ; the only one carrying the battery widget. polybar-launch.sh launches this
 ; bar name on whichever output xrandr reports as primary. Clock is the very
-; last segment, farthest right; the tray sits at the very left of the right-
-; hand group, bookended by a thin mauve "cap" so it reads as a closed
-; container instead of trailing off.
-modules-right = sep-base-mauve-cap tray-cap sep-mauve-cap-surface0 tray sep-surface0-sky @@SKY_WIDGET@@ sep-sky-mauve pulseaudio sep-mauve-blue network-wired network-wireless sep-blue-teal bluetooth @@PRIMARY_MID@@ memory sep-yellow-green cpu sep-green-lavender date-icon date
+; last segment, farthest right.
+modules-right = sep-base-mauve-cap tray-cap sep-mauve-cap-surface0 tray sep-surface0-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-teal bluetooth sep-teal-green caffeine sep-green-red dnd sep-red-peach battery sep-peach-yellow memory sep-yellow-green cpu sep-green-lavender date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-; same as top-primary minus tray/battery/bluetooth - without this split every
-; extra monitor showed a permanently empty tray slot since only one instance
-; can ever win the X11 tray selection, and a second bluetooth radio reading
-; would just be a duplicate of the primary bar's.
-modules-right = sep-base-sky @@SKY_WIDGET@@ sep-sky-mauve pulseaudio sep-mauve-blue network-wired network-wireless sep-blue-yellow memory sep-yellow-green cpu sep-green-lavender date-icon date
+; same as top-primary minus tray/battery - without this split every extra
+; monitor showed a permanently empty tray slot since only one instance can
+; ever win the X11 tray selection.
+modules-right = sep-base-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-yellow memory sep-yellow-green cpu sep-green-lavender date-icon date
 
 ; --- powerline separators ---------------------------------------------------
 ; Each is a plain glyph rendered in the color of the segment being LEFT
-; (label-foreground) over the background of the segment being ENTERED
-; (label-background) - that's what makes the rounded cap look like it
-; belongs to both neighbours and reads as one continuous capsule chain. All
-; of them point the same direction because the whole chain flows left to
-; right; only the fg/bg pair changes per transition. The placeholder tokens
-; below get substituted with the actual Nerd Font glyphs after this heredoc
-; (search this script for SEP=$'\uXXXX') because literal Private-Use-Area
-; characters don't survive being embedded directly in script-authoring
-; tools - injecting them via bash's ANSI-C quoting is the reliable path.
-;
-; sep-base-mauve-cap/tray-cap/sep-mauve-cap-surface0 also carry a mauve
-; label-underline/overline so the tray's own frame lines (below) continue
-; unbroken through the cap instead of stopping right at its own boundary.
+; (content-foreground) over the background of the segment being ENTERED
+; (content-background) - that's what makes the rounded cap look like it
+; belongs to both neighbours and reads as one continuous capsule chain.
+; All of them point the same direction because the whole chain flows left to
+; right; only the fg/bg pair changes per transition.
 [module/sep-base-mauve-cap]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.base}
 label-background = ${colors.mauve}
@@ -993,7 +979,7 @@ label-overline = ${colors.mauve}
 [module/sep-mauve-cap-surface0]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.mauve}
 label-background = ${colors.surface0}
@@ -1003,7 +989,7 @@ label-overline = ${colors.mauve}
 [module/sep-surface0-sky]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.surface0}
 label-background = ${colors.sky}
@@ -1013,7 +999,7 @@ label-overline = ${colors.mauve}
 [module/sep-base-sky]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.base}
 label-background = ${colors.sky}
@@ -1021,7 +1007,7 @@ label-background = ${colors.sky}
 [module/sep-sky-mauve]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.sky}
 label-background = ${colors.mauve}
@@ -1029,55 +1015,47 @@ label-background = ${colors.mauve}
 [module/sep-mauve-blue]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.mauve}
+label-background = ${colors.blue}
+
+[module/sep-mauve-teal]
+type = custom/text
+format = <label>
+label = ""
+label-font = 2
+label-foreground = ${colors.mauve}
+label-background = ${colors.teal}
+
+[module/sep-teal-blue]
+type = custom/text
+format = <label>
+label = ""
+label-font = 2
+label-foreground = ${colors.teal}
 label-background = ${colors.blue}
 
 [module/sep-blue-teal]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.blue}
 label-background = ${colors.teal}
 
-[module/sep-teal-peach]
-type = custom/text
-format = <label>
-label = "@@SEP@@"
-label-font = 2
-label-foreground = ${colors.teal}
-label-background = ${colors.peach}
-
 [module/sep-teal-green]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.teal}
 label-background = ${colors.green}
 
-[module/sep-green-peach]
-type = custom/text
-format = <label>
-label = "@@SEP@@"
-label-font = 2
-label-foreground = ${colors.green}
-label-background = ${colors.peach}
-
-[module/sep-green-yellow]
-type = custom/text
-format = <label>
-label = "@@SEP@@"
-label-font = 2
-label-foreground = ${colors.green}
-label-background = ${colors.yellow}
-
 [module/sep-green-red]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.green}
 label-background = ${colors.red}
@@ -1085,31 +1063,15 @@ label-background = ${colors.red}
 [module/sep-red-peach]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.red}
 label-background = ${colors.peach}
 
-[module/sep-red-yellow]
-type = custom/text
-format = <label>
-label = "@@SEP@@"
-label-font = 2
-label-foreground = ${colors.red}
-label-background = ${colors.yellow}
-
-[module/sep-teal-yellow]
-type = custom/text
-format = <label>
-label = "@@SEP@@"
-label-font = 2
-label-foreground = ${colors.teal}
-label-background = ${colors.yellow}
-
 [module/sep-peach-yellow]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.peach}
 label-background = ${colors.yellow}
@@ -1117,7 +1079,7 @@ label-background = ${colors.yellow}
 [module/sep-blue-yellow]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.blue}
 label-background = ${colors.yellow}
@@ -1125,7 +1087,7 @@ label-background = ${colors.yellow}
 [module/sep-yellow-green]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.yellow}
 label-background = ${colors.green}
@@ -1133,7 +1095,7 @@ label-background = ${colors.green}
 [module/sep-green-lavender]
 type = custom/text
 format = <label>
-label = "@@SEP@@"
+label = ""
 label-font = 2
 label-foreground = ${colors.green}
 label-background = ${colors.lavender}
@@ -1144,21 +1106,21 @@ type = internal/i3
 format = <label-state> <label-mode>
 index-sort = true
 wrapping-scroll = false
-; The real centering culprit on workspace numbers: label-focused/unfocused/
-; urgent default to "%icon% %name%" - since no ws-icon-N is configured,
-; %icon% renders empty but the literal space between it and %name% is still
-; there, permanently skewing the visible digit right of center. ws-label
-; pins content to just the index, removing that invisible leading space.
+; The real centering culprit: label-focused/unfocused/urgent default to
+; "%icon% %name%" - since no ws-icon-N is configured, %icon% renders empty
+; but the literal space between it and %name% is still there, permanently
+; skewing the visible digit right of center. ws-label pins content to just
+; the index, removing that invisible leading space entirely.
 ws-label = %index%
 label-focused = ${self.ws-label}
 label-unfocused = ${self.ws-label}
 label-urgent = ${self.ws-label}
-; font-2 (index 3, see bar/base) is the plain, unpatched font - a further
-; safety margin against the Nerd Font glyph-metrics quirk above. No fill/
-; background here either - polybar has no way to draw a rounded rectangle
-; around dynamic per-item text, so a filled box always renders as a hard
-; square; underline+overline avoids that entirely instead of trying to
-; soften it.
+; font-2 (index 3) is the plain, unpatched JetBrains Mono - kept as a minor
+; extra safety margin against Nerd Font glyph-metrics quirks (nerd-fonts#991)
+; on top of the ws-label fix above. No fill/background here either - polybar
+; has no way to draw a rounded rectangle around dynamic per-item text, so a
+; filled box always renders as a hard square; underline+overline avoids that
+; entirely instead of just trying to soften it.
 label-focused-font = 3
 label-focused-foreground = ${colors.mauve}
 label-focused-underline = ${colors.mauve}
@@ -1173,14 +1135,10 @@ label-urgent-underline = ${colors.red}
 label-urgent-overline = ${colors.red}
 label-urgent-padding = 2
 
-; Split into its own module (icon on the normal-size font) from the date
-; module (text on the plain font) rather than mixing both fonts in one
-; label - polybar's per-glyph font fallback can pick the WRONG font-N for a
-; glyph missing from the label's primary font, rendering it clipped/broken.
 [module/date-icon]
 type = custom/text
 format = <label>
-label = "%{A1:gnome-calendar &:}  @@ICO_CLOCK@@ %{A}"
+label = "%{A1:gnome-calendar &:}    %{A}"
 label-font = 1
 label-foreground = ${colors.base}
 format-background = ${colors.lavender}
@@ -1195,28 +1153,19 @@ label-font = 3
 label-foreground = ${colors.base}
 format-background = ${colors.lavender}
 
-; Only referenced in modules-right (as @@SKY_WIDGET@@) when no backlight
-; device was found - see @@SKY_WIDGET@@ substitution below.
-[module/xkeyboard]
-type = internal/xkeyboard
-blacklist-0 = num lock
-label-layout = "  @@ICO_KB@@ %layout% "
-label-layout-foreground = ${colors.base}
-format-background = ${colors.sky}
-
 [module/backlight]
 type = internal/backlight
-card = @@BACKLIGHT_CARD@@
+card = intel_backlight
 enable-scroll = true
 format = <label>
-label = "  @@ICO_BACKLIGHT@@ %percentage%% "
+label = "  󰃟 %percentage%% "
 label-foreground = ${colors.base}
 format-background = ${colors.sky}
 
 [module/pulseaudio]
 type = internal/pulseaudio
-label-volume = "  @@ICO_VOL@@ %percentage%% "
-label-muted = "  @@ICO_MUTE@@ muted "
+label-volume = "   %percentage%% "
+label-muted = "   muted "
 label-volume-foreground = ${colors.base}
 label-muted-foreground = ${colors.base}
 format-volume-background = ${colors.mauve}
@@ -1226,15 +1175,19 @@ format-muted-background = ${colors.mauve}
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label. They
 ; share one segment color/slot since at most one of them is ever visible.
-; click-left/click-right as plain config keys are silently ignored by
-; internal/network (confirmed against polybar/polybar#1617/#273) - the
-; actual mechanism is wrapping the label content in inline %{A...} action
-; tags instead, which is what's used below.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.base}
+format-background = ${colors.teal}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
 interval = 3
-label-connected = "%{A1:nm-connection-editor &:}  @@ICO_WIRED@@ %ifname% %{A}"
+label-connected = "%{A1:nm-connection-editor &:}   %ifname% %{A}"
 label-connected-foreground = ${colors.base}
 format-connected-background = ${colors.blue}
 format-disconnected =
@@ -1243,14 +1196,11 @@ format-disconnected =
 type = internal/network
 interface-type = wireless
 interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  @@ICO_WIFI@@ %essid% %{A}%{A}"
+label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}   %essid% %{A}%{A}"
 label-connected-foreground = ${colors.base}
 format-connected-background = ${colors.blue}
 format-disconnected =
 
-; polybar has no native bluetooth module - this polls bluetoothctl via the
-; helper script (section 6b below) instead. click-left DOES work here since
-; custom/script honors it directly (unlike internal/network above).
 [module/bluetooth]
 type = custom/script
 exec = ~/.local/bin/polybar-bluetooth.sh
@@ -1260,9 +1210,6 @@ format = <label>
 label-foreground = ${colors.base}
 format-background = ${colors.teal}
 
-; "Caffeine" toggle - no packaged equivalent exists for Fedora (checked both
-; dnf and Flathub). click-left toggles idle/lock/sleep inhibition (section
-; 6c below); click-right forces the screensaver/lock to activate right now.
 [module/caffeine]
 type = custom/script
 exec = ~/.local/bin/polybar-caffeine.sh
@@ -1273,7 +1220,6 @@ format = <label>
 label-foreground = ${colors.base}
 format-background = ${colors.green}
 
-; Do Not Disturb toggle - pauses/resumes dunst via dunstctl.
 [module/dnd]
 type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
@@ -1285,11 +1231,11 @@ format-background = ${colors.red}
 
 [module/battery]
 type = internal/battery
-battery = @@BATTERY_NAME@@
-adapter = @@AC_NAME@@
-label-charging = "  @@ICO_BATT@@ %percentage%% "
-label-discharging = "  @@ICO_BATT@@ %percentage%% "
-label-full = "  @@ICO_BATT@@ Full "
+battery = BAT0
+adapter = AC
+label-charging = "   %percentage%% "
+label-discharging = "   %percentage%% "
+label-full = "   Full "
 label-charging-foreground = ${colors.base}
 label-discharging-foreground = ${colors.base}
 label-full-foreground = ${colors.base}
@@ -1300,14 +1246,14 @@ format-full-background = ${colors.peach}
 [module/memory]
 type = internal/memory
 interval = 2
-label = "  @@ICO_MEM@@ %percentage_used%% "
+label = "   %percentage_used%% "
 label-foreground = ${colors.base}
 format-background = ${colors.yellow}
 
 [module/cpu]
 type = internal/cpu
 interval = 2
-label = "  @@ICO_CPU@@ %percentage%% "
+label = "   %percentage%% "
 label-foreground = ${colors.base}
 format-background = ${colors.green}
 
@@ -1318,10 +1264,9 @@ tray-padding = 6
 tray-background = ${colors.surface0}
 ; polybar's tray module has no true 4-sided border - format-underline/
 ; format-overline (top+bottom accent lines) is the closest it can draw to a
-; frame, continued unbroken from the cap modules above. format-background is
-; ALSO needed (not just tray-background, which per the docs only colors the
-; individual icons, not the space around them) for a solid, cohesive pill
-; instead of a transparent gap with framed icons.
+; frame. format-background is ALSO needed (not just tray-background, which
+; per the docs only colors the individual icons, not the space around them)
+; for a solid, cohesive pill instead of a transparent gap with framed icons.
 format-background = ${colors.surface0}
 format-underline = ${colors.mauve}
 format-overline = ${colors.mauve}
@@ -1587,11 +1532,11 @@ inherit = bar/base
 ; area - everything else here is flat text, so a small muted box (Current
 ; Line, not an accent) reads as "a container", not "another pill in a
 ; powerline chain" the way Mocha's mauve tray-cap did.
-modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain date-icon date
+modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep-plain pulseaudio sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain date-icon date
+modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain date-icon date
 
 [module/sep-plain]
 type = custom/text
@@ -1660,6 +1605,13 @@ label-muted-foreground = ${colors.subtext}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.green}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -1794,11 +1746,11 @@ inherit = bar/base
 ; single shared-background island with its own widgets packed tight inside
 ; (no divider between them - only the icon color tells them apart), a real
 ; empty gap-nord module between islands instead of a colored separator.
-modules-right = backlight pulseaudio network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gap-nord tray gap-nord date-icon date
+modules-right = backlight pulseaudio media network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gap-nord tray gap-nord date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio network-wired network-wireless gap-nord memory cpu gap-nord date-icon date
+modules-right = backlight pulseaudio media network-wired network-wireless gap-nord memory cpu gap-nord date-icon date
 
 [module/gap-nord]
 type = custom/text
@@ -1869,6 +1821,13 @@ format-muted-background = ${colors.surface0}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.green}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -2027,11 +1986,11 @@ inherit = bar/base
 ; since it's primary-only. Every widget on the right is plain/unfilled,
 ; dot-separated, with one final LD/RD-bracketed group for the clock.
 modules-left = LD i3 RD dot LD tray RD
-modules-right = backlight dot pulseaudio dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot LD date-icon date RD
+modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot LD date-icon date RD
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dot pulseaudio dot network-wired network-wireless dot memory dot cpu dot LD date-icon date RD
+modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot memory dot cpu dot LD date-icon date RD
 
 [module/LD]
 type = custom/text
@@ -2125,6 +2084,13 @@ label-muted-foreground = ${colors.subtext}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.green}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -2269,11 +2235,11 @@ modules-center = bi date bd
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bi backlight pulseaudio bd sep bi network-wired network-wireless bd sep bi bluetooth caffeine dnd bd sep bi battery memory cpu bd sep bi-tray tray bd-tray
+modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless bd sep bi bluetooth caffeine dnd bd sep bi battery memory cpu bd sep bi-tray tray bd-tray
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bi backlight pulseaudio bd sep bi network-wired network-wireless bd sep bi memory cpu bd
+modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless bd sep bi memory cpu bd
 
 [module/bi]
 type = custom/text
@@ -2379,6 +2345,14 @@ label-muted-foreground = ${colors.red}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.teal}
+format-background = ${colors.surface0}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -2528,11 +2502,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep tray sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep tray sep date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep date-icon date
 
 [module/sep]
 type = custom/text
@@ -2618,6 +2592,14 @@ label-foreground = ${colors.base}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.base}
+format-background = ${colors.surface0}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -2790,11 +2772,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bli backlight bld sep voli pulseaudio vold sep neti network-wired network-wireless netd sep bluetooth sep caffeine sep dnd sep battery sep memi memory memd sep cpi cpu cpd sep tray sep dti date dtd
+modules-right = bli backlight bld sep voli pulseaudio vold sep media sep neti network-wired network-wireless netd sep bluetooth sep caffeine sep dnd sep battery sep memi memory memd sep cpi cpu cpd sep tray sep dti date dtd
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bli backlight bld sep voli pulseaudio vold sep neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep dti date dtd
+modules-right = bli backlight bld sep voli pulseaudio vold sep media sep neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep dti date dtd
 
 ; --- bracket pairs -------------------------------------------------------
 [module/sep]
@@ -2947,6 +2929,13 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.blue}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -3078,11 +3067,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bi memory cpu bd sep bi network-wired network-wireless bd sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep tray sep date
+modules-right = bi memory cpu bd sep bi network-wired network-wireless bd sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bi memory cpu bd sep bi network-wired network-wireless bd sep backlight sep pulseaudio sep date
+modules-right = bi memory cpu bd sep bi network-wired network-wireless bd sep backlight sep pulseaudio sep media sep date
 
 [module/bi]
 type = custom/text
@@ -3161,6 +3150,12 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -3288,11 +3283,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio network-wired network-wireless bluetooth caffeine dnd battery memory cpu tray date
+modules-right = backlight pulseaudio media network-wired network-wireless bluetooth caffeine dnd battery memory cpu tray date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio network-wired network-wireless memory cpu date
+modules-right = backlight pulseaudio media network-wired network-wireless memory cpu date
 
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
@@ -3345,6 +3340,13 @@ label-muted-foreground = ${colors.red}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -3478,7 +3480,7 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = bli backlight bld sep voli pulseaudio vold
+modules-left = bli backlight bld sep voli pulseaudio vold sep media
 modules-center = bi i3 bd
 
 [bar/top-primary]
@@ -3720,6 +3722,14 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format-background = ${colors.surface0}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -3854,11 +3864,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -3908,6 +3918,12 @@ label-muted-foreground = ${colors.subtext}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -4030,11 +4046,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots network-wired network-wireless dots memory dots cpu dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots date
 
 [module/dots]
 type = custom/text
@@ -4080,6 +4096,12 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -4202,11 +4224,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -4268,6 +4290,13 @@ label-muted-foreground = ${colors.pink}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.blue}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -4400,11 +4429,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -4458,6 +4487,13 @@ label-muted-foreground = ${colors.red}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.blue}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -4597,11 +4633,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -4673,6 +4709,13 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -4808,11 +4851,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -4862,6 +4905,13 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -4993,11 +5043,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots network-wired network-wireless dots memory dots cpu dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots date
 
 [module/dots]
 type = custom/text
@@ -5049,6 +5099,13 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.pink}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -5165,18 +5222,18 @@ padding-left = 2
 padding-right = 2
 module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
-font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-1 = "JetBrainsMono Nerd Font:size=16;5"
 font-2 = "JetBrains Mono:size=10;2"
 modules-left = i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -5231,6 +5288,12 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -5350,11 +5413,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -5410,6 +5473,13 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -5539,11 +5609,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -5603,6 +5673,14 @@ label-muted = " muted "
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.magenta}
+format-background = ${colors.surface0}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -5762,11 +5840,11 @@ modules-center = date
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu sep tray
+modules-right = backlight pulseaudio media sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu sep tray
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio sep network-wired network-wireless sep memory cpu
+modules-right = backlight pulseaudio media sep network-wired network-wireless sep memory cpu
 
 [module/sep]
 type = custom/text
@@ -5837,6 +5915,14 @@ label-muted-foreground = ${colors.red}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.teal}
+format-background = ${colors.surface0}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -6000,11 +6086,11 @@ inherit = bar/base
 ; since it's primary-only. Every widget on the right is plain/unfilled,
 ; dot-separated, with one final LD/RD-bracketed group for the clock.
 modules-left = i3 dot tray
-modules-right = backlight dot pulseaudio dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot date-icon date
+modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dot pulseaudio dot network-wired network-wireless dot memory dot cpu dot date-icon date
+modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot memory dot cpu dot date-icon date
 
 [module/dot]
 type = custom/text
@@ -6084,6 +6170,13 @@ label-muted-foreground = ${colors.subtext}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.green}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -6218,11 +6311,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep tray sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep tray sep date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep date-icon date
 
 [module/sep]
 type = custom/text
@@ -6308,6 +6401,14 @@ label-foreground = ${colors.base}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.base}
+format-background = ${colors.surface0}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -6472,14 +6573,14 @@ inherit = bar/base
 ; the only one carrying the battery widget. polybar-launch.sh launches this
 ; bar name on whichever output xrandr reports as primary. Clock is the very
 ; last segment, farthest right.
-modules-right = tray-cap tray backlight pulseaudio network-wired network-wireless bluetooth caffeine dnd battery memory cpu date-icon date
+modules-right = tray-cap tray backlight pulseaudio media network-wired network-wireless bluetooth caffeine dnd battery memory cpu date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
 ; same as top-primary minus tray/battery - without this split every extra
 ; monitor showed a permanently empty tray slot since only one instance can
 ; ever win the X11 tray selection.
-modules-right = backlight pulseaudio network-wired network-wireless memory cpu date-icon date
+modules-right = backlight pulseaudio media network-wired network-wireless memory cpu date-icon date
 
 ; --- powerline separators ---------------------------------------------------
 ; Each is a plain glyph rendered in the color of the segment being LEFT
@@ -6570,6 +6671,14 @@ format-muted-background = ${colors.mauve}
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label. They
 ; share one segment color/slot since at most one of them is ever visible.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.base}
+format-background = ${colors.teal}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -6716,11 +6825,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 ; --- bracket pairs -------------------------------------------------------
 [module/sep]
@@ -6775,6 +6884,13 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.blue}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -6906,11 +7022,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = memory cpu sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep tray sep date
+modules-right = memory cpu sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = memory cpu sep network-wired network-wireless sep backlight sep pulseaudio sep date
+modules-right = memory cpu sep network-wired network-wireless sep backlight sep pulseaudio sep media sep date
 
 [module/sep]
 type = custom/text
@@ -6973,6 +7089,12 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -7100,11 +7222,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio network-wired network-wireless bluetooth caffeine dnd battery memory cpu tray date
+modules-right = backlight pulseaudio media network-wired network-wireless bluetooth caffeine dnd battery memory cpu tray date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio network-wired network-wireless memory cpu date
+modules-right = backlight pulseaudio media network-wired network-wireless memory cpu date
 
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
@@ -7157,6 +7279,13 @@ label-muted-foreground = ${colors.red}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -7297,11 +7426,11 @@ inherit = bar/base
 ; area - everything else here is flat text, so a small muted box (Current
 ; Line, not an accent) reads as "a container", not "another pill in a
 ; powerline chain" the way Mocha's mauve tray-cap did.
-modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain date-icon date
+modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep-plain pulseaudio sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain date-icon date
+modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain date-icon date
 
 [module/sep-plain]
 type = custom/text
@@ -7370,6 +7499,13 @@ label-muted-foreground = ${colors.subtext}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.green}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -7491,7 +7627,7 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = backlight sep pulseaudio
+modules-left = backlight sep pulseaudio sep media
 modules-center = i3
 
 [bar/top-primary]
@@ -7555,6 +7691,14 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format-background = ${colors.surface0}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -7689,11 +7833,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -7743,6 +7887,12 @@ label-muted-foreground = ${colors.subtext}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -7878,12 +8028,12 @@ modules-left = i3
 [bar/top-primary]
 inherit = bar/base
 modules-center = date-icon date
-modules-right = backlight pulseaudio sep network-wired network-wireless bluetooth caffeine dnd battery memory cpu sep tray
+modules-right = backlight pulseaudio media sep network-wired network-wireless bluetooth caffeine dnd battery memory cpu sep tray
 
 [bar/top-secondary]
 inherit = bar/base
 modules-center = date-icon date
-modules-right = backlight pulseaudio sep network-wired network-wireless memory cpu
+modules-right = backlight pulseaudio media sep network-wired network-wireless memory cpu
 
 [module/sep]
 type = custom/text
@@ -7952,6 +8102,14 @@ label-muted = " muted "
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.yellow1}
+format-background = ${colors.surface0}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -8109,11 +8267,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots network-wired network-wireless dots memory dots cpu dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots date
 
 [module/dots]
 type = custom/text
@@ -8159,6 +8317,12 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -8281,11 +8445,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -8347,6 +8511,13 @@ label-muted-foreground = ${colors.pink}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.blue}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -8479,11 +8650,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -8537,6 +8708,13 @@ label-muted-foreground = ${colors.red}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.blue}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -8676,11 +8854,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -8737,6 +8915,13 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -8879,11 +9064,11 @@ inherit = bar/base
 ; single shared-background island with its own widgets packed tight inside
 ; (no divider between them - only the icon color tells them apart), a real
 ; empty gap-nord module between islands instead of a colored separator.
-modules-right = backlight pulseaudio network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gap-nord tray gap-nord date-icon date
+modules-right = backlight pulseaudio media network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gap-nord tray gap-nord date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio network-wired network-wireless gap-nord memory cpu gap-nord date-icon date
+modules-right = backlight pulseaudio media network-wired network-wireless gap-nord memory cpu gap-nord date-icon date
 
 [module/gap-nord]
 type = custom/text
@@ -8954,6 +9139,13 @@ format-muted-background = ${colors.surface0}
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.green}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -9091,11 +9283,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -9145,6 +9337,13 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -9276,11 +9475,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots network-wired network-wireless dots memory dots cpu dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots date
 
 [module/dots]
 type = custom/text
@@ -9332,6 +9531,13 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.pink}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -9448,18 +9654,18 @@ padding-left = 2
 padding-right = 2
 module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
-font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-1 = "JetBrainsMono Nerd Font:size=16;5"
 font-2 = "JetBrains Mono:size=10;2"
 modules-left = i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -9514,6 +9720,12 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -9633,11 +9845,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -9693,6 +9905,13 @@ label-muted = "muted"
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -9822,11 +10041,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
 
 [module/sep]
 type = custom/text
@@ -9886,6 +10105,14 @@ label-muted = " muted "
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.magenta}
+format-background = ${colors.surface0}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -10041,12 +10268,12 @@ modules-left = bi i3 bd
 [bar/top-primary]
 inherit = bar/base
 modules-center = bi date-icon date bd
-modules-right = bi backlight pulseaudio bd sep bi network-wired network-wireless bluetooth caffeine dnd battery memory cpu bd sep tray
+modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless bluetooth caffeine dnd battery memory cpu bd sep tray
 
 [bar/top-secondary]
 inherit = bar/base
 modules-center = bi date-icon date bd
-modules-right = bi backlight pulseaudio bd sep bi network-wired network-wireless memory cpu bd
+modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless memory cpu bd
 
 [module/bi]
 type = custom/text
@@ -10129,6 +10356,14 @@ label-muted = " muted "
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
 ; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.yellow1}
+format-background = ${colors.surface0}
+format = <label>
+
 [module/network-wired]
 type = internal/network
 interface-type = wired
@@ -10398,6 +10633,33 @@ printf '  @@ICO_COFFEE@@ %s ' "$STATE"
 EOF
 chmod +x "$BIN/polybar-caffeine.sh"
 sed -i "s/@@ICO_COFFEE@@/$ICO_COFFEE/" "$BIN/polybar-caffeine.sh"
+
+log "Writing polybar media-control widget script..."
+cat > "$BIN/polybar-media.sh" <<'EOF'
+#!/usr/bin/env bash
+# polybar custom/script module: playerctl-based media control (prev/play-pause/next).
+# Empty output entirely when no MPRIS player is active/found - the module then
+# takes no bar space at all, matching the wired/wireless network widgets' own
+# hide-when-idle behavior (format-disconnected left blank) rather than showing
+# dead controls with nothing to control. Three separately-clickable icons in
+# one label via inline %{A...} action tags, the same technique already used
+# for the wifi widget's click-to-open/toggle actions (module-level
+# click-left/right only gives two click zones total, not three independently
+# positioned ones). Every literal % below is doubled (%%) because this is a
+# printf format string - printf treats a bare % as its own format specifier,
+# which collides with polybar's own %{...} action-tag syntax otherwise.
+status=$(playerctl status 2>/dev/null)
+[ -z "$status" ] && exit 0
+
+if [ "$status" = "Playing" ]; then
+  icon=""
+else
+  icon=""
+fi
+
+printf '%%{A1:playerctl previous:}%%{A}  %%{A1:playerctl play-pause:}%s%%{A}  %%{A1:playerctl next:}%%{A}' "$icon"
+EOF
+chmod +x "$BIN/polybar-media.sh"
 
 log "Writing Do Not Disturb toggle + polybar widget scripts..."
 cat > "$BIN/dnd-toggle.sh" <<'EOF'
