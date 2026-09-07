@@ -1,0 +1,530 @@
+/* Structural template for generate-gtk-themes.py - originally this
+ * machine's own hand-built "Cattish-Mocha" GTK4 theme (a separate,
+ * personal project, not part of this repo), bundled here as a plain CSS
+ * file so the generator is self-contained and reproducible on any machine
+ * rather than depending on ~/.themes/Cattish-Mocha existing. Fixed two
+ * real bugs inherited from that source before bundling: `-gtk-icon-effect`
+ * and `!important` are both invalid in GTK4 CSS (see this repo's own
+ * README note on the subject) - GTK doesn't error on them, it silently
+ * drops the whole containing declaration, which had quietly voided the
+ * file-dialog background override this theme relies on for portal file
+ * choosers (Flameshot, etc.).
+ *
+ * Cattish-Mocha — GTK4 theme
+ * Palette: Catppuccin Mocha
+ * https://catppuccin.com
+ *
+ * Minimal, flat styling built on top of the standard Adwaita named
+ * colors so third-party widgets/CSS that reference @theme_* colors
+ * still pick up the Catppuccin palette. No gradients, 1px borders, small
+ * radii — matches the gnome-shell, GTK2, and GTK3 variants in this
+ * theme.
+ *
+ * Note: most GTK4 apps use libadwaita, which layers its own
+ * stylesheet on top and mostly ignores a named theme's CSS (beyond
+ * light/dark preference and, on newer libadwaita, an accent color).
+ * This file still styles plain GTK4 apps that don't use libadwaita,
+ * and any libadwaita widgets/classes it doesn't override itself.
+ */
+
+@define-color theme_fg_color #cdd6f4;
+@define-color theme_text_color #cdd6f4;
+@define-color theme_bg_color #11111b;
+@define-color theme_base_color #1e1e2e;
+
+@define-color theme_selected_bg_color #cba6f7;
+@define-color theme_selected_fg_color #cdd6f4;
+
+@define-color theme_tooltip_bg_color #1e1e2e;
+@define-color theme_tooltip_fg_color #cdd6f4;
+
+@define-color insensitive_bg_color #11111b;
+@define-color insensitive_fg_color #585b70;
+@define-color insensitive_base_color #11111b;
+
+@define-color theme_unfocused_fg_color #cdd6f4;
+@define-color theme_unfocused_text_color #cdd6f4;
+@define-color theme_unfocused_bg_color #11111b;
+@define-color theme_unfocused_base_color #1e1e2e;
+@define-color theme_unfocused_selected_bg_color #585b70;
+@define-color theme_unfocused_selected_fg_color #cdd6f4;
+
+@define-color borders #585b70;
+@define-color unfocused_borders #313244;
+
+@define-color warning_color #f9e2af;
+@define-color error_color #f38ba8;
+@define-color success_color #a6e3a1;
+@define-color link_color #89dceb;
+@define-color visited_link_color #b4befe;
+
+/* Libadwaita's own named-color system — separate from the classic
+ * @theme_* names above. Apps built on libadwaita (most GTK4 apps,
+ * including the portal's file-chooser dialog) read these directly;
+ * if we never define them, libadwaita falls back to its own internal
+ * defaults regardless of what @theme_bg_color etc. say, which is
+ * exactly the "dialog chrome themed, but its buttons/dropdowns are
+ * unstyled white" symptom this fixes. */
+@define-color window_bg_color #11111b;
+@define-color window_fg_color #cdd6f4;
+@define-color view_bg_color #1e1e2e;
+@define-color view_fg_color #cdd6f4;
+@define-color headerbar_bg_color #1e1e2e;
+@define-color headerbar_fg_color #cdd6f4;
+@define-color headerbar_border_color #cdd6f4;
+@define-color headerbar_backdrop_color #11111b;
+@define-color headerbar_shade_color rgba(17, 17, 27, 0.36);
+@define-color sidebar_bg_color #1e1e2e;
+@define-color sidebar_fg_color #cdd6f4;
+@define-color secondary_sidebar_bg_color #1e1e2e;
+@define-color secondary_sidebar_fg_color #cdd6f4;
+@define-color popover_bg_color #1e1e2e;
+@define-color popover_fg_color #cdd6f4;
+@define-color card_bg_color rgba(205, 214, 244, 0.08);
+@define-color card_fg_color #cdd6f4;
+@define-color card_shade_color rgba(17, 17, 27, 0.36);
+@define-color dialog_bg_color #1e1e2e;
+@define-color dialog_fg_color #cdd6f4;
+@define-color shade_color rgba(17, 17, 27, 0.25);
+@define-color scrollbar_outline_color rgba(17, 17, 27, 0.5);
+@define-color accent_bg_color #cba6f7;
+@define-color accent_fg_color #cdd6f4;
+@define-color accent_color #89dceb;
+@define-color destructive_bg_color #f38ba8;
+@define-color destructive_fg_color #cdd6f4;
+@define-color destructive_color #f38ba8;
+@define-color success_bg_color #a6e3a1;
+@define-color success_fg_color #11111b;
+@define-color warning_bg_color #f9e2af;
+@define-color warning_fg_color #11111b;
+@define-color error_bg_color #f38ba8;
+@define-color error_fg_color #cdd6f4;
+
+@define-color content_view_bg #11111b;
+@define-color placeholder_text_color #585b70;
+
+/* ---------- Base ---------- */
+
+* {
+  outline-color: alpha(#89dceb, 0.5);
+  outline-offset: -2px;
+}
+
+window,
+.background {
+  background-color: @theme_bg_color;
+  color: @theme_fg_color;
+}
+
+label:disabled,
+label.dim-label {
+  color: @insensitive_fg_color;
+}
+
+/* ---------- Headerbar / titlebar ---------- */
+
+headerbar,
+.titlebar {
+  background-color: #1e1e2e;
+  color: @theme_fg_color;
+  border-bottom: 1px solid @borders;
+  box-shadow: none;
+  padding: 2px;
+  min-height: 38px;
+}
+
+headerbar:backdrop,
+.titlebar:backdrop {
+  background-color: #11111b;
+  color: @theme_unfocused_fg_color;
+}
+
+headerbar button,
+.titlebar button {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+headerbar button:hover,
+.titlebar button:hover {
+  background-color: alpha(#cdd6f4, 0.08);
+}
+
+/* Fallback server-side window decoration Mutter draws around windows
+ * that don't provide their own CSD headerbar (e.g. Electron apps like
+ * Slack, VS Code, Discord). Without this the frame stays a light
+ * default color even under a dark theme. */
+
+decoration,
+.default-decoration {
+  background-color: #1e1e2e;
+  color: @theme_fg_color;
+  box-shadow: none;
+  border-radius: 8px 8px 0 0;
+}
+
+decoration:backdrop,
+.default-decoration:backdrop {
+  background-color: #11111b;
+  color: @theme_unfocused_fg_color;
+}
+
+decoration .titlebutton,
+.default-decoration .titlebutton,
+.titlebar button.titlebutton,
+headerbar button.titlebutton {
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
+  margin: 6px 4px;
+  background-color: alpha(#cdd6f4, 0.08);
+  border: none;
+  border-radius: 9999px;
+  box-shadow: none;
+  color: @theme_fg_color;
+}
+
+decoration .titlebutton:hover,
+.default-decoration .titlebutton:hover,
+.titlebar button.titlebutton:hover,
+.titlebar button.titlebutton:checked,
+headerbar button.titlebutton:hover,
+headerbar button.titlebutton:checked {
+  border-radius: 9999px;
+  background-color: #89dceb;
+  color: #11111b;
+  border: none;
+  box-shadow: none;
+}
+
+decoration .titlebutton:active,
+.default-decoration .titlebutton:active,
+.titlebar button.titlebutton:active,
+headerbar button.titlebutton:active {
+  border-radius: 9999px;
+  background-color: #acd9a8;
+  color: #11111b;
+  border: none;
+  box-shadow: none;
+}
+
+/* Chromium/Electron apps (Slack, VS Code, Discord, ...) draw their own
+ * frame under Wayland instead of relying on the compositor, and pull
+ * its color from this specific ".solid-csd decoration" node rather
+ * than the plain "decoration" node above — it needs its own rule or
+ * it falls back to Chromium's built-in white/black default. */
+
+.solid-csd decoration {
+  background-color: #1e1e2e;
+  border: solid 1px #585b70;
+  border-radius: 0;
+  margin: 0;
+  box-shadow: none;
+  color: @theme_fg_color;
+}
+
+.solid-csd decoration:backdrop {
+  background-color: #11111b;
+  border-color: #313244;
+  color: @theme_unfocused_fg_color;
+}
+
+/* ---------- Buttons ---------- */
+
+button {
+  background-color: #1e1e2e;
+  color: @theme_fg_color;
+  border: 1px solid @borders;
+  border-radius: 6px;
+  padding: 4px 10px;
+  transition: background-color 100ms ease, border-color 100ms ease;
+}
+
+button:hover {
+  background-color: #313244;
+}
+
+button:active,
+button:checked {
+  background-color: #585b70;
+}
+
+button:disabled {
+  background-color: @insensitive_bg_color;
+  color: @insensitive_fg_color;
+  border-color: @unfocused_borders;
+}
+
+button.suggested-action {
+  background-color: #cba6f7;
+  border-color: #cba6f7;
+  color: #cdd6f4;
+}
+
+button.suggested-action:hover {
+  background-color: #cba6f7;
+}
+
+button.destructive-action {
+  background-color: #f38ba8;
+  border-color: #f38ba8;
+  color: #cdd6f4;
+}
+
+button.destructive-action:hover {
+  background-color: #fab387;
+}
+
+button.flat {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+button.flat:hover {
+  background-color: alpha(#cdd6f4, 0.08);
+}
+
+/* ---------- Entries ---------- */
+
+entry {
+  background-color: #1e1e2e;
+  color: @theme_text_color;
+  border: 1px solid @borders;
+  border-radius: 6px;
+  padding: 4px 8px;
+  caret-color: @theme_text_color;
+}
+
+entry:focus {
+  border-color: #89dceb;
+  box-shadow: inset 0 0 0 1px alpha(#89dceb, 0.4);
+}
+
+entry:disabled {
+  background-color: @insensitive_base_color;
+  color: @insensitive_fg_color;
+}
+
+entry selection {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+}
+
+/* ---------- Menus / popovers ---------- */
+
+menu,
+.menu,
+popover,
+popover.background {
+  background-color: #1e1e2e;
+  color: @theme_fg_color;
+  border: 1px solid @borders;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px 2px alpha(black, 0.35);
+  padding: 4px;
+}
+
+menuitem,
+modelbutton {
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: @theme_fg_color;
+}
+
+menuitem:hover,
+modelbutton:hover {
+  background-color: alpha(#cba6f7, 0.35);
+}
+
+separator {
+  background-color: @borders;
+  min-width: 1px;
+  min-height: 1px;
+}
+
+/* ---------- Notebook / tabs ---------- */
+
+notebook > header {
+  background-color: #11111b;
+  border-color: @borders;
+}
+
+notebook > header > tabs > tab {
+  color: @theme_unfocused_fg_color;
+  padding: 6px 12px;
+}
+
+notebook > header > tabs > tab:checked {
+  color: @theme_fg_color;
+  box-shadow: inset 0 -2px 0 0 #89dceb;
+}
+
+/* ---------- Lists / tree views / column views ---------- */
+
+list,
+treeview.view,
+columnview.view {
+  background-color: @theme_base_color;
+  color: @theme_text_color;
+}
+
+row:selected,
+treeview.view:selected,
+columnview.view:selected {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+}
+
+row:hover {
+  background-color: alpha(#cdd6f4, 0.06);
+}
+
+treeview.view header button,
+columnview header button {
+  background-color: #1e1e2e;
+  border-color: @borders;
+  border-radius: 0;
+}
+
+/* ---------- Switches, checks, radios ---------- */
+
+switch {
+  background-color: alpha(#cdd6f4, 0.18);
+  border: 1px solid @borders;
+  border-radius: 999px;
+}
+
+switch:checked {
+  background-color: #cba6f7;
+  border-color: #cba6f7;
+}
+
+switch slider {
+  background-color: #cdd6f4;
+  border-radius: 999px;
+}
+
+checkbutton check,
+radiobutton radio {
+  background-color: #1e1e2e;
+  border: 1px solid @borders;
+}
+
+checkbutton check:checked,
+radiobutton radio:checked {
+  background-color: #cba6f7;
+  border-color: #cba6f7;
+  color: #cdd6f4;
+}
+
+/* ---------- Progress / level bars ---------- */
+
+progressbar > trough {
+  background-color: alpha(#cdd6f4, 0.12);
+  border-radius: 999px;
+}
+
+progressbar > trough > progress {
+  background-color: #89dceb;
+  border-radius: 999px;
+}
+
+levelbar block.filled {
+  background-color: #a6e3a1;
+}
+
+levelbar block.empty {
+  background-color: alpha(#cdd6f4, 0.12);
+}
+
+/* ---------- Scrollbars ---------- */
+
+scrollbar {
+  background-color: transparent;
+}
+
+scrollbar slider {
+  background-color: alpha(#cdd6f4, 0.25);
+  border-radius: 999px;
+  min-width: 8px;
+  min-height: 8px;
+}
+
+scrollbar slider:hover {
+  background-color: alpha(#cdd6f4, 0.4);
+}
+
+/* ---------- Tooltips ---------- */
+
+tooltip,
+tooltip.background {
+  background-color: @theme_tooltip_bg_color;
+  color: @theme_tooltip_fg_color;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+/* ---------- Info bars / banners ---------- */
+
+infobar.info,
+infobar.question,
+banner {
+  background-color: alpha(#89dceb, 0.2);
+  color: @theme_fg_color;
+}
+
+infobar.warning {
+  background-color: alpha(#f9e2af, 0.2);
+  color: @theme_fg_color;
+}
+
+infobar.error {
+  background-color: alpha(#f38ba8, 0.25);
+  color: @theme_fg_color;
+}
+
+/* ---------- Sidebars / panes ---------- */
+
+.sidebar,
+placessidebar {
+  background-color: #11111b;
+  border-color: @borders;
+}
+
+/* ---------- Links ---------- */
+
+*:link {
+  color: @link_color;
+}
+
+*:visited {
+  color: @visited_link_color;
+}
+
+/* ============================================================
+ * Cattish overrides — file/message dialogs (portal Save/Cancel)
+ * ============================================================
+ * The XDG desktop portal's file chooser (used by Qt apps like
+ * Flameshot with no native GTK integration) renders as a GTK4
+ * dialog whose Save/Cancel buttons are typically `.flat` — relying
+ * entirely on the dialog window's own background showing through.
+ * If GTK4's internal dialog stylesheet ever out-specifies our base
+ * "window, .background" rule for this specific dialog type, the
+ * flat buttons fall back to GTK4's built-in white/gray default
+ * instead of our theme, leaving light text on a light background.
+ * Forcing it here,, removes any doubt.
+ */
+
+window,
+.background,
+messagedialog,
+messagedialog.background,
+filechooser,
+filechooser.background {
+  background-color: #11111b;
+  color: #cdd6f4;
+}
+
+button.flat {
+  color: #cdd6f4;
+}

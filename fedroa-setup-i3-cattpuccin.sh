@@ -160,10 +160,15 @@ fi
 #     alpha-thresholded to kill anti-aliasing, then upscaled with nearest-
 #     neighbor - the same hard-pixel-edge technique Omarchy's own font
 #     produces, applied to different text in a different font so nothing
-#     is copied, only the *look*. Every UI element (bullet/entry/lock/
-#     progress bar) is recolored to this rice's Mocha text color (#cdd6f4)
-#     via ImageMagick, exactly how Omarchy's own theme-switcher does it;
-#     the background is Mocha base (#1e1e2e). All assets are embedded
+#     is copied, only the *look*. The bullet/entry/lock/progress bar are
+#     recolored to this rice's Mocha text color (#cdd6f4) via ImageMagick,
+#     exactly how Omarchy's own theme-switcher does it; the wordmark itself
+#     instead gets a left-to-right gradient across the Mocha accent
+#     palette (mauve -> pink -> red -> peach -> yellow -> green -> teal ->
+#     sky -> blue -> lavender, composited under the same letter-shape alpha
+#     mask), since a single flat color read as plain/boring next to the
+#     rest of this rice's colorful theming. The background is Mocha base
+#     (#1e1e2e). All assets are embedded
 #     below as base64 (a few KB total) rather than downloaded at setup
 #     time - there's no upstream release to track the way the Nerd Font
 #     download has, so there's nothing to fetch over the network here.
@@ -171,9 +176,8 @@ fi
 #     To revert to the stock boot splash later:
 #       sudo plymouth-set-default-theme -R bgrt
 # ----------------------------------------------------------------------------
-if [ ! -d /usr/share/plymouth/themes/catppuccin-mocha ]; then
-  log "Installing Catppuccin Mocha Plymouth (boot splash / LUKS prompt) theme..."
-  TMPPLYMOUTH="$(mktemp -d)"
+log "Installing Catppuccin Mocha Plymouth (boot splash / LUKS prompt) theme..."
+TMPPLYMOUTH="$(mktemp -d)"
 
   cat > "$TMPPLYMOUTH/catppuccin-mocha.plymouth" <<'PLYMOUTHEOF'
 [Plymouth Theme]
@@ -479,30 +483,71 @@ GuV9AAAAAElFTkSuQmCC
 B64EOF
 
   base64 -d > "$TMPPLYMOUTH/logo.png" <<'B64EOF'
-iVBORw0KGgoAAAANSUhEUgAAAxAAAACoCAYAAABwiAh4AAAFA0lEQVR4nO3dwW3cMBBA0TjIxQWl
-mRToZlyQj845AbL6iCwMuXqvAFteci18EOC8fAOAJ/T+9vF55c//+ev15cqfD7Cq79MPAAAA7ENA
-AAAAmYAAAAAyAQEAAGQCAgAAyAQEAACQCQgAACB7ufqebM6Zvmfc/lib/bG36fWbdvf98+zrf/f1
-PevZ98fVdt9/q6+/EwgAACATEAAAQCYgAACATEAAAACZgAAAADIBAQAAZAICAADIfkw/AMBdnb2n
-fPV7wne/h/1qz77+nGN/3NvR+k+vrxMIAAAgExAAAEAmIAAAgExAAAAAmYAAAAAyAQEAAGQCAgAA
-yMyBAAB4MqvPEWBvTiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMgEBAAAkAkIAAAgW34OhHuK7836
-88jV++PoHvVp0/e8r/75PPvfP73+q5v++6f3B1zJCQQAAJAJCAAAIBMQAABAJiAAAIBMQAAAAJmA
-AAAAMgEBAABk43Mgpu9pBviXs/+f3AN/ren3x9Hvt/73Zn9cy+c3ywkEAACQCQgAACATEAAAQCYg
-AACATEAAAACZgAAAADIBAQAAZONzIAAAYCd3n/PhBAIAAMgEBAAAkAkIAAAgExAAAEAmIAAAgExA
-AAAAmYAAAAAycyAAAGAjR3MmjuZUnOUEAgAAyAQEAACQCQgAACATEAAAQCYgAACATEAAAACZgAAA
-ADIBAQAAZAICAADIBAQAAJAJCAAAIBMQAABAJiAAAIBMQAAAAJmAAAAAsh/TD/D+9vE5/QyTfv56
-fZl+hpXZH/YHwIru/n56dt6/jzmBAAAAMgEBAABkAgIAAMgEBAAAkAkIAAAgExAAAEAmIAAAgGx8
-DgQAwFe7+5yG3ecY7L5+R5//7n+fEwgAACATEAAAQCYgAACATEAAAACZgAAAADIBAQAAZAICAADI
-zIEAAIAncjRn4uycECcQAABAJiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMgEBAAAkJkDwdbO3mMM
-ACvyfmNlTiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMgEBAAAkAkIAAAgG58D4Z5jHrE/APgfZ98f
-728fn1/3NOzG+j/mBAIAAMgEBAAAkAkIAAAgExAAAEAmIAAAgExAAAAAmYAAAACy8TkQAAD86WgO
-we5zksxZ2JsTCAAAIBMQAABAJiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMjMgQAA+MvRnAVzDNjZ
-2TkjTiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMgEBAAAkAkIAAAgMwcC4D+5Bx6YcvYe/7tb/fNZ
-/f3iBAIAAMgEBAAAkAkIAAAgExAAAEAmIAAAgExAAAAAmYAAAAAycyBY2ur3IE9b/R7rq9kf93Z2
-/Y++P/YXj9g/3JkTCAAAIBMQAABAJiAAAIBMQAAAAJmAAAAAMgEBAABkAgIAAMjMgQDY1PQckN3v
-wV/9+Y5Mrz9rO9rfV++f3b9fPOYEAgAAyAQEAACQCQgAACATEAAAQCYgAACATEAAAACZgAAAADJz
-IAAWtfs9/7vPiZi2+/rfnf0/y/fnnKP96QQCAADIBAQAAJAJCAAAIBMQAABAJiAAAIBMQAAAAJmA
-AAAAMnMgAC7iHvLH7n5Pvv3BpKPvl/05a/X/j04gAACATEAAAACZgAAAADIBAQAAZAICAADIBAQA
-AJAJCAAAIPsNkKzjPs4xlakAAAAASUVORK5CYII=
+iVBORw0KGgoAAAANSUhEUgAAAxAAAACoEAYAAAAgGNQ7AAAAIGNIUk0AAHomAACAhAAA+gAAAIDo
+AAB1MAAA6mAAADqYAAAXcJy6UTwAAAAGYktHRP///////wlY99wAAAAHdElNRQfqCQcKFjIyFKkN
+AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI2LTA5LTA3VDEwOjIyOjQwKzAwOjAwGAvfqgAAACV0RVh0
+ZGF0ZTptb2RpZnkAMjAyNi0wOS0wN1QxMDoyMjo0MCswMDowMGlWZxYAAAAodEVYdGRhdGU6dGlt
+ZXN0YW1wADIwMjYtMDktMDdUMTA6MjI6NDkrMDA6MDCr2wMaAAAAEGNhTnYAAABOAAAAqAAAAAAA
+AAAASyGaQwAADRpJREFUeNrt23+spNVdx/HPee7M3fIjW9iYLtJkCaBFKkpJaGtNaxExKVoi2ko0
+RoPRVGywpWoQLJWisPysscRWaghpaEVTQru1SSuVQlMaG6XVUgxtlXVBfhXYttlll3t39945/rFL
+jBqVvXPCYZjX65/N/jH3fp9nnnPmTt455Z57brllaSnwX/1LHi/rk/xpPpNXJvXSemtOSfLhfD7f
+l2RXljNO8gd5a76aDD9a7q1XJcMPDb+Tk5KF3x7OmmxJxh9ZeNnk9cn4vNGNkx3J4pdG35x8OVm8
+Y+G+yb3J+KdGV05WktE7Fp6enJ2MTho21XuSYan8TD0tKUeWT+eGJL+SN2Zrkm15Mocn9QO5PScm
+uTQfyylJbqp35vuT+kR25JDeN4+DVvLSHJlkVN5V/jApi7ml3JlkXP4styVZyBnlrCSrubV+OKm7
+61frR5I8ufrx1V9IsnX11JVbknx573v2bknyhT0/sfymJJ/d8ydL707qZ5d/Y/nNSe7Y86Wlv03y
+d3u37Plikq/tO3bf+Ul9eHXrynlJvjv5wcljSZbryXVDkmRHvpNkVH4r70mymL84MNeHyieSLOTM
+vKX3zWPNlnJPTkqyvb6//FKSp3JVfj3JzmzJjycZcliWkrw8N+SPkvL64Zz6WJK3DW+abErKTQvX
+rH5Pkn8c37DymqQ8NT5t5dakLC9eue9dSdk5Pm/lmqQ8MH58ZXdSPjUaVj6Z5JKFuye3J+XNw5Z6
+Y5IT8m/1zCSHljfkK0mW6z/lxCTbc332z3Vl+bWk7qwfzxlJJtltn5tBJY/lySRDrs/NSVmoF9TN
+SRZyVf48SeoDeSjJpPxmfjGpe8spZZRk13Dq8GCS7aPrFsZJHh3vHv1IkgcXnxwfkmTr4vmLFybZ
+uu7C8XuTbFtcPz4hySPjk8dvT/LU6IGFM5O6c3jncGSSPcO55aQkq7mu/F6S5Ok8k2TIB+pHk4zq
+BbkiyZDN9UNJSr0/D/S+eRys8pIkJcn7MslRSXk6qzkxKTuyWk5MclVqNib5dEqeTuqlGdW7ktUH
+c2guTvb+fY6oxyTLryhH1duSpeNzzOScZPf2HDc5Ltl1RY6fHPGf/3/m+BxTz0mWX5GjJrcl+w68
+/tmfN7k0o9yV5DP7f1+5cv/vLzsOzHVgvmfnzbPz83+otfcE/8MRKbk3yckZ6u8n5bUZ5dwkJ2ao
+VycZJ9mZ5B+yWm4spV6cPeWKpG7IzoVPJnVznhr9ZDJZyCOLdySrn8i2dZ9KJpuzdd0Jyeq12bru
+6GRyRx5cd20yOTqPji9J6kfr9tG3k/oD2TVckOTa7B1+NqnfyCS/m2R9Sr6RlB/OkEuSvDYL9dwk
+r8xQNyc5NCWP9L55HLSFDNmbZGMOz31Jji0b8rkkm3Jkvphkfdbl0STfzVKOS3J33ZaLk1ydu8p3
+kvpj+eBwRVIfrW8bTk3qX9Yzhr9OJpfnVQt7k8m760mjQ5P6x/U1w8NJ/Vw9e+HKpC7momFnUs+t
+f1VOT3JzvlLuSHJ/nshbkqxmksUkL8vh+eckx2ZD7jww191JXpqX1Id73zzWrrw625Mk78z9SZKL
+cl+SlLOz/33dnVGS1PPyuiSpHyvvTZLJ3+Rfk2TlwuGtSbLvvOH2JNn3+WE5SfZdPGxIkr03DOuS
+ZN/3lq8nycpkuCxJJm8ohyTJ5Oxyc5LU4w58D707G5Mkp+TbSZJ35OtJUi7eP1d+rj6UJDksK73v
+HQftW9mXSZIb8608k9RL8lB2Jbk+j+eZpG7LclaTcm425pCkbMxpOToZRuWi8qpk4Y35Qs5KxleX
+9Tk/Gb99OL1clixuK7+c65LFJ8uvlvcl42uGM3N5Mr6zvLxckIyuKl/LzyfD63J5Xp2U0/PTZVNS
+LiubcliSXVlNTepN9YksJbkk/55dSX1/HsszSb6Zpep5478Zeg8AAAAAAAC8+AgQAAAAAABAcwIE
+AAAAAADQnAABAAAAAAA0J0AAAAAAAADNCRAAAAAAAEBzAgQAAAAAANDcaP8/tfYeBGZXKb0n6Mv+
+AWtn/+g9AfNs3tffvLP/9NX7/lv/s63388N8s3/Qk/2vL+t/rZyAAAAAAAAAmhMgAAAAAACA5gQI
+AAAAAACgOQECAAAAAABoToAAAAAAAACaEyAAAAAAAIDmBAgAAAAAAKC5Ue8BAADg+Vdr399fSu87
+MNt6v3/Mtt7Pj/UPs8v+AfNr2vU/v+vXCQgAAAAAAKA5AQIAAAAAAGhOgAAAAAAAAJoTIAAAAAAA
+gOYECAAAAAAAoDkBAgAAAAAAaE6AAAAAAAAAmhv1HgAAAAAA+P/UOt3rS+l9BcD8cQICAAAAAABo
+ToAAAAAAAACaEyAAAAAAAIDmBAgAAAAAAKA5AQIAAAAAAGhOgAAAAAAAAJoTIAAAAAAAgOZGvQd4
+cSil9wRAL9Y/sFazvn/U2nuC2Tbt/fP8zDfv/2yb9/XPdOb9/Z/3/QNg9jgBAQAAAAAANCdAAAAA
+AAAAzQkQAAAAAABAcwIEAAAAAADQnAABAAAAAAA0J0AAAAAAAADNCRAAAAAAAEBzo94DvDCU0nsC
+AIDZ0vvvp1p73wFYu97rp7dpr9/6h/ll/2CWef6YT05AAAAAAAAAzQkQAAAAAABAcwIEAAAAAADQ
+nAABAAAAAAA0J0AAAAAAAADNCRAAAAAAAEBzAgQAAAAAANDcqPcAAAAAAAC8mJUy3etr7X0FrI0T
+EAAAAAAAQHMCBAAAAAAA0JwAAQAAAAAANCdAAAAAAAAAzQkQAAAAAABAcwIEAAAAAADQnAABAAAA
+AAA0N+o9AAAAAAAAvHjVOt3rS+l9BWvlBAQAAAAAANCcAAEAAAAAADQnQAAAAAAAAM0JEAAAAAAA
+QHMCBAAAAAAA0JwAAQAAAAAANCdAAAAAAAAAzQkQAAAAAABAcwIEAAAAAADQnAABAAAAAAA0J0AA
+AAAAAADNCRAAAAAAAEBzAgQAAAAAANCcAAEAAAAAADQnQAAAAAAAAM2Neg/wwlBr7wnoqZTeEzDL
+7B/zzf4BAADPne9PMLt8/2VtnIAAAAAAAACaEyAAAAAAAIDmBAgAAAAAAKA5AQIAAAAAAGhOgAAA
+AAAAAJoTIAAAAAAAgOYECAAAAAAAoLlR7wEAAAAAeC5q7T0BPZXSe4L5Zv31Ne3z7/3rxQkIAAAA
+AACgOQECAAAAAABoToAAAAAAAACaEyAAAAAAAIDmBAgAAAAAAKA5AQIAAAAAAGhOgAAAAAAAAJob
+9R4AAAAAAAD439Q63etL6TW5ExAAAAAAAEBzAgQAAAAAANCcAAEAAAAAADQnQAAAAAAAAM0JEAAA
+AAAAQHMCBAAAAAAA0JwAAQAAAAAANDfqPQDAfCul9wQAAAA8F76/ARwsJyAAAAAAAIDmBAgAAAAA
+AKA5AQIAAAAAAGhOgAAAAAAAAJoTIAAAAAAAgOYECAAAAAAAoDkBAgAAAAAAaG7Ue4AXhlJ6TwDM
+KvsHAADwfOn9/aPW3ncA6MX6Z22cgAAAAAAAAJoTIAAAAAAAgOYECAAAAAAAoDkBAgAAAAAAaE6A
+AAAAAAAAmhMgAAAAAACA5gQIAAAAAACguVHvAQAAAADgha/W6V5fSu8rmG/Tvn/AWjgBAQAAAAAA
+NCdAAAAAAAAAzQkQAAAAAABAcwIEAAAAAADQnAABAAAAAAA0J0AAAAAAAADNCRAAAAAAAEBzo94D
+AAAAADALSpnu9bX2vgKA+TTt/rv2/d8JCAAAAAAAoDkBAgAAAAAAaE6AAAAAAAAAmhMgAAAAAACA
+5gQIAAAAAACgOQECAAAAAABoToAAAAAAAACaG/UeAACAeVRr7wkAAJ5f0/79U0rvK2CWeX6m4/vL
+WjkBAQAAAAAANCdAAAAAAAAAzQkQAAAAAABAcwIEAAAAAADQnAABAAAAAAA0J0AAAAAAAADNCRAA
+AAAAAEBzo94DAMy2WntPwCwrpfcE9GT/gPnVe/1P+/nTe35gdtl/AOaNExAAAAAAAEBzAgQAAAAA
+ANCcAAEAAAAAADQnQAAAAAAAAM0JEAAAAAAAQHMCBAAAAAAA0JwAAQAAAAAANDfqPQAAAMyfUnpP
+MNvXX2vvK5ht7l9f877+gbWbdv+e9f3H5xfMIicgAAAAAACA5gQIAAAAAACgOQECAAAAAABoToAA
+AAAAAACaEyAAAAAAAIDmBAgAAAAAAKA5AQIAAAAAAGhu1HsAAACYPaX0nmC+TXv/a+19Bcwy6x/6
+sf8zz3z+0NPa908nIAAAAAAAgOYECAAAAAAAoDkBAgAAAAAAaE6AAAAAAAAAmhMgAAAAAACA5gQI
+AAAAAACgOQECAAAAAABobtR7AAAAOHil9J6AWTbt81Nr7ytgGvYPYF5N+/ll/2Se+ftxrZyAAAAA
+AAAAmhMgAAAAAACA5gQIAAAAAACgOQECAAAAAABoToAAAAAAAACaEyAAAAAAAIDmBAgAAAAAAKC5
+/wB+iUl4PjHaZgAAAABJRU5ErkJggg==
 B64EOF
 
   base64 -d > "$TMPPLYMOUTH/progress_bar.png" <<'B64EOF'
@@ -523,16 +568,20 @@ LTA0VDIzOjQ1OjMxKzAwOjAwiuvysAAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNS0wNy0wNFQy
 Mzo0NTozMSswMDowMN3+028AAAAASUVORK5CYII=
 B64EOF
 
-  if sudo cp -r "$TMPPLYMOUTH" /usr/share/plymouth/themes/catppuccin-mocha \
-      && sudo plymouth-set-default-theme -R catppuccin-mocha; then
-    log "Plymouth theme set to catppuccin-mocha (reboot to see it on the LUKS decrypt screen)."
-  else
-    warn "Plymouth theme install/activation failed; boot splash left on its current theme. Revert/retry manually: sudo plymouth-set-default-theme -R bgrt"
-  fi
-  rm -rf "$TMPPLYMOUTH"
+# Always overwrite rather than skip-if-exists (this rice's usual
+# convention everywhere else) - re-running after an asset/script change
+# used to silently no-op forever once the theme directory existed once,
+# which is exactly what made a wordmark recolor invisible until someone
+# noticed and asked how to force a reinstall. sudo rm + cp -r instead of
+# cp -rT since -T isn't available in all cp versions this might run on.
+sudo rm -rf /usr/share/plymouth/themes/catppuccin-mocha
+if sudo cp -r "$TMPPLYMOUTH" /usr/share/plymouth/themes/catppuccin-mocha \
+    && sudo plymouth-set-default-theme -R catppuccin-mocha; then
+  log "Plymouth theme set to catppuccin-mocha (reboot to see it on the LUKS decrypt screen)."
 else
-  log "Catppuccin Mocha Plymouth theme already installed, skipping."
+  warn "Plymouth theme install/activation failed; boot splash left on its current theme. Revert/retry manually: sudo plymouth-set-default-theme -R bgrt"
 fi
+rm -rf "$TMPPLYMOUTH"
 
 # ----------------------------------------------------------------------------
 # 3. Catppuccin Mocha palette (used across every config below)
@@ -588,7 +637,7 @@ for_window [class="^copyq$"] floating enable, resize set 450 500, move position 
 for_window [class="^Cliamp$"] floating enable, resize set 700 500, move position center
 for_window [class="^AppMenuTask$"] floating enable, resize set 600 400, move position center
 for_window [class="^KeybindingsHelp$"] floating enable, resize set 950 850, move position center
-for_window [class="^Evolution-alarm-notify$"] floating enable, resize set 450 350, move position center
+for_window [class="^UpdatesTask$"] floating enable, resize set 1000 550, move position center
 for_window [class="^gnome-calendar$"] floating enable, resize set 700 550, move position center
 for_window [class="^System-config-printer\.py$"] floating enable, resize set 750 550, move position center
 for_window [class="^Screensaver$"] fullscreen enable
@@ -664,6 +713,17 @@ bindsym $mod+ctrl+h focus output left
 bindsym $mod+ctrl+l focus output right
 bindsym $mod+ctrl+shift+h move workspace to output left
 bindsym $mod+ctrl+shift+l move workspace to output right
+
+# --- split / layout ---
+# h/v/l are already taken above (focus-left, copyq, lock), so these use free
+# keys instead of i3's own h/v defaults. Sets the split direction for the
+# NEXT window opened in the focused container - not a drag-and-drop tile
+# picker - so e.g. two terminals stacked with a third beside them is: open
+# terminal 1, $mod+v, open terminal 2 (stacks below), focus that column,
+# $mod+b, open terminal 3 (appears beside the column).
+bindsym $mod+v split v
+bindsym $mod+b split h
+bindsym $mod+t layout toggle split
 
 bindsym $mod+f fullscreen toggle
 bindsym $mod+shift+f floating toggle
@@ -751,6 +811,18 @@ exec --no-startup-id udiskie --tray
 exec --no-startup-id gammastep
 exec --no-startup-id nitrogen --restore
 exec --no-startup-id dunst
+# Evolution's own calendar/task reminder popup (evolution-alarm-notify) is
+# disabled entirely (autostart Hidden=true + `systemctl --user mask
+# evolution-alarm-notify.service` - masking, not just disabling, since it's
+# a D-Bus-activatable service and would otherwise still get launched the
+# moment anything talks to its bus name regardless of systemd enablement)
+# because it's a GTK window fixed to Catppuccin Mocha with no way to follow
+# this rice's active theme. This polls the same real calendar data via the
+# same EDataServer/ECal API evolution-alarm-notify itself uses and fires a
+# themed dunst notification instead - dunst already tracks the active
+# theme, and its own DND pause state already suppresses these the same way
+# it suppresses everything else, no separate toggle needed.
+exec --no-startup-id python3 ~/.local/bin/calendar-reminder-daemon.py
 exec --no-startup-id numlockx on
 # Runs any other installed app's ~/.config/autostart .desktop entries (tray
 # apps, sync clients, etc.) - bare i3 has no XDG autostart support of its own.
@@ -942,14 +1014,14 @@ inherit = bar/base
 ; the only one carrying the battery widget. polybar-launch.sh launches this
 ; bar name on whichever output xrandr reports as primary. Clock is the very
 ; last segment, farthest right.
-modules-right = sep-base-mauve-cap tray-cap sep-mauve-cap-surface0 tray sep-surface0-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-teal bluetooth sep-teal-green caffeine sep-green-red dnd sep-red-peach battery sep-peach-yellow memory sep-yellow-green cpu sep-green-lavender date-icon date
+modules-right = sep-base-mauve-cap tray-cap sep-mauve-cap-surface0 tray sep-surface0-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-teal bluetooth sep-teal-green caffeine sep-green-red dnd sep-red-peach battery sep-peach-yellow memory sep-yellow-green cpu sep-green-yellow updates sep-yellow-lavender layout sep-yellow-lavender date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
 ; same as top-primary minus tray/battery - without this split every extra
 ; monitor showed a permanently empty tray slot since only one instance can
 ; ever win the X11 tray selection.
-modules-right = sep-base-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-yellow memory sep-yellow-green cpu sep-green-lavender date-icon date
+modules-right = sep-base-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-yellow memory sep-yellow-green cpu sep-green-yellow updates sep-yellow-lavender date-icon date
 
 ; --- powerline separators ---------------------------------------------------
 ; Each is a plain glyph rendered in the color of the segment being LEFT
@@ -1100,6 +1172,22 @@ label-font = 2
 label-foreground = ${colors.green}
 label-background = ${colors.lavender}
 
+[module/sep-green-yellow]
+type = custom/text
+format = <label>
+label = ""
+label-font = 2
+label-foreground = ${colors.green}
+label-background = ${colors.yellow}
+
+[module/sep-yellow-lavender]
+type = custom/text
+format = <label>
+label = ""
+label-font = 2
+label-foreground = ${colors.yellow}
+label-background = ${colors.lavender}
+
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
 type = internal/i3
@@ -1138,7 +1226,7 @@ label-urgent-padding = 2
 [module/date-icon]
 type = custom/text
 format = <label>
-label = "%{A1:gnome-calendar &:}    %{A}"
+label = "%{A1:GTK_THEME=Rice-catppuccin-mocha gnome-calendar &:}    %{A}"
 label-font = 1
 label-foreground = ${colors.base}
 format-background = ${colors.lavender}
@@ -1148,7 +1236,7 @@ type = internal/date
 interval = 1
 date = %Y-%m-%d
 time = %H:%M
-label = "%{A1:gnome-calendar &:}  %date%  %time%  %{A}"
+label = "%{A1:GTK_THEME=Rice-catppuccin-mocha gnome-calendar &:}  %date%  %time%  %{A}"
 label-font = 3
 label-foreground = ${colors.base}
 format-background = ${colors.lavender}
@@ -1181,6 +1269,15 @@ exec = ~/.local/bin/polybar-media.sh
 interval = 1
 label-foreground = ${colors.base}
 format-background = ${colors.teal}
+format = <label>
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.base}
+format-background = ${colors.yellow}
 format = <label>
 
 [module/network-wired]
@@ -1257,6 +1354,12 @@ label = "   %percentage%% "
 label-foreground = ${colors.base}
 format-background = ${colors.green}
 
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -1298,6 +1401,10 @@ ICO_BACKLIGHT=$'󰃟'    # nf-md-brightness_6 (supplementary plane codepoint)
 ICO_COFFEE=$''      # nf-fa-coffee
 ICO_BELL=$''      # nf-fa-bell
 ICO_BELL_OFF=$''  # nf-fa-bell-slash
+ICO_SPLIT_H=$'󰯌'   # nf-md-view_split_vertical (vertical divider -> side-by-side panes = i3 splith)
+ICO_SPLIT_V=$'󰯋'   # nf-md-view_split_horizontal (horizontal divider -> stacked panes = i3 splitv)
+ICO_STACKING=$'󰕪'  # nf-md-view_agenda (i3 "stacked" layout)
+ICO_TABBED=$'󰓩'    # nf-md-tab (i3 "tabbed" layout)
 
 if [ -n "$BATTERY_NAME" ]; then
   PRIMARY_MID="sep-teal-green caffeine sep-green-red dnd sep-red-peach battery sep-peach-yellow"
@@ -1532,11 +1639,11 @@ inherit = bar/base
 ; area - everything else here is flat text, so a small muted box (Current
 ; Line, not an accent) reads as "a container", not "another pill in a
 ; powerline chain" the way Mocha's mauve tray-cap did.
-modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain date-icon date
+modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain updates sep-plain layout sep-plain date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain date-icon date
+modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain updates sep-plain date-icon date
 
 [module/sep-plain]
 type = custom/text
@@ -1574,7 +1681,7 @@ label-urgent-padding = 2
 [module/date-icon]
 type = custom/text
 format = <label>
-label = "%{A1:gnome-calendar &:}  %{A}"
+label = "%{A1:GTK_THEME=Rice-dracula gnome-calendar &:}  %{A}"
 label-font = 1
 label-foreground = ${colors.mauve}
 
@@ -1583,7 +1690,7 @@ type = internal/date
 interval = 1
 date = %Y-%m-%d
 time = %H:%M
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-dracula gnome-calendar &:}%date%  %time%%{A}"
 label-font = 3
 label-foreground = ${colors.text}
 
@@ -1676,6 +1783,20 @@ interval = 2
 label = "  %percentage%%"
 label-foreground = ${colors.green}
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -1746,11 +1867,11 @@ inherit = bar/base
 ; single shared-background island with its own widgets packed tight inside
 ; (no divider between them - only the icon color tells them apart), a real
 ; empty gap-nord module between islands instead of a colored separator.
-modules-right = backlight pulseaudio media network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gap-nord tray gap-nord date-icon date
+modules-right = backlight pulseaudio media network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu updates gap-nord layout gap-nord tray gap-nord date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media network-wired network-wireless gap-nord memory cpu gap-nord date-icon date
+modules-right = backlight pulseaudio media network-wired network-wireless gap-nord memory cpu updates gap-nord date-icon date
 
 [module/gap-nord]
 type = custom/text
@@ -1785,7 +1906,7 @@ label-urgent-padding = 2
 [module/date-icon]
 type = custom/text
 format = <label>
-label = "%{A1:gnome-calendar &:} 󰃰 %{A}"
+label = "%{A1:GTK_THEME=Rice-nord gnome-calendar &:} 󰃰 %{A}"
 label-font = 1
 label-foreground = ${colors.lavender}
 format-background = ${colors.surface0}
@@ -1795,7 +1916,7 @@ type = internal/date
 interval = 1
 date = %Y-%m-%d
 time = %H:%M
-label = "%{A1:gnome-calendar &:}%date%  %time% %{A}"
+label = "%{A1:GTK_THEME=Rice-nord gnome-calendar &:}%date%  %time% %{A}"
 label-font = 3
 label-foreground = ${colors.text}
 format-background = ${colors.surface0}
@@ -1902,6 +2023,20 @@ label = "  %percentage%% "
 label-foreground = ${colors.green}
 format-background = ${colors.surface0}
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -1986,11 +2121,11 @@ inherit = bar/base
 ; since it's primary-only. Every widget on the right is plain/unfilled,
 ; dot-separated, with one final LD/RD-bracketed group for the clock.
 modules-left = LD i3 RD dot LD tray RD
-modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot LD date-icon date RD
+modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot updates dot layout dot LD date-icon date RD
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot memory dot cpu dot LD date-icon date RD
+modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot memory dot cpu dot updates dot LD date-icon date RD
 
 [module/LD]
 type = custom/text
@@ -2052,7 +2187,7 @@ label-urgent-padding = 2
 type = custom/text
 format = <label>
 format-background = ${colors.surface0}
-label = "%{A1:gnome-calendar &:}  %{A}"
+label = "%{A1:GTK_THEME=Rice-archcraft gnome-calendar &:}  %{A}"
 label-font = 1
 label-foreground = ${colors.peach}
 
@@ -2062,7 +2197,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-background = ${colors.surface0}
-label = "%{A1:gnome-calendar &:}%date%  %time% %{A}"
+label = "%{A1:GTK_THEME=Rice-archcraft gnome-calendar &:}%date%  %time% %{A}"
 label-font = 3
 label-foreground = ${colors.text}
 
@@ -2155,6 +2290,20 @@ interval = 2
 label = "  %percentage%% "
 label-foreground = ${colors.green}
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -2235,11 +2384,11 @@ modules-center = bi date bd
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless bd sep bi bluetooth caffeine dnd bd sep bi battery memory cpu bd sep bi-tray tray bd-tray
+modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless bd sep bi bluetooth caffeine dnd bd sep bi battery memory cpu updates layout bd sep bi-tray tray bd-tray
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless bd sep bi memory cpu bd
+modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless bd sep bi memory cpu updates bd
 
 [module/bi]
 type = custom/text
@@ -2319,7 +2468,7 @@ time = %H:%M
 format-background = ${colors.surface0}
 format-prefix = " "
 format-prefix-foreground = ${colors.text}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-aline gnome-calendar &:}%date%  %time%%{A}"
 label-font = 3
 
 [module/backlight]
@@ -2432,6 +2581,21 @@ format-prefix = " "
 format-prefix-foreground = ${colors.text}
 label = " %percentage%% "
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format-background = ${colors.surface0}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -2502,11 +2666,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep tray sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep updates sep layout sep tray sep date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep updates sep date-icon date
 
 [module/sep]
 type = custom/text
@@ -2543,7 +2707,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-background = ${colors.surface0}
-label = "%{A1:gnome-calendar &:} %date%  %time% %{A}"
+label = "%{A1:GTK_THEME=Rice-brenda gnome-calendar &:} %date%  %time% %{A}"
 label-foreground = ${colors.base}
 
 [module/backlight-icon]
@@ -2707,6 +2871,21 @@ label-foreground = ${colors.base}
 ; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
 ; dark bar and become invisible against a light chip (caught via direct
 ; feedback, not assumed).
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.base}
+format-background = ${colors.surface0}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -2772,11 +2951,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bli backlight bld sep voli pulseaudio vold sep media sep neti network-wired network-wireless netd sep bluetooth sep caffeine sep dnd sep battery sep memi memory memd sep cpi cpu cpd sep tray sep dti date dtd
+modules-right = bli backlight bld sep voli pulseaudio vold sep media sep neti network-wired network-wireless netd sep bluetooth sep caffeine sep dnd sep battery sep memi memory memd sep cpi cpu cpd sep updates sep layout sep tray sep dti date dtd
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bli backlight bld sep voli pulseaudio vold sep media sep neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep dti date dtd
+modules-right = bli backlight bld sep voli pulseaudio vold sep media sep neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep updates sep dti date dtd
 
 ; --- bracket pairs -------------------------------------------------------
 [module/sep]
@@ -2908,7 +3087,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.indigo}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-cristina gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -3006,6 +3185,20 @@ format-prefix = " "
 format-prefix-foreground = ${colors.yellow}
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -3067,11 +3260,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bi memory cpu bd sep bi network-wired network-wireless bd sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep tray sep date
+modules-right = bi memory cpu bd sep bi network-wired network-wireless bd sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bi memory cpu bd sep bi network-wired network-wireless bd sep backlight sep pulseaudio sep media sep date
+modules-right = bi memory cpu bd sep bi network-wired network-wireless bd sep backlight sep pulseaudio sep media sep updates sep date
 
 [module/bi]
 type = custom/text
@@ -3130,7 +3323,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-cynthia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -3224,6 +3417,19 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -3283,11 +3489,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media network-wired network-wireless bluetooth caffeine dnd battery memory cpu tray date
+modules-right = backlight pulseaudio media network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout tray date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media network-wired network-wireless memory cpu date
+modules-right = backlight pulseaudio media network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
@@ -3316,7 +3522,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.orange}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-daniela gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -3425,6 +3631,20 @@ format-prefix-font = 1
 format-prefix-foreground = ${colors.blue}
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -3485,11 +3705,11 @@ modules-center = bi i3 bd
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = neti network-wired network-wireless netd sep bti bluetooth btd sep cafi caffeine cafd sep dndi dnd dndd sep bati battery batd sep memi memory memd sep cpi cpu cpd sep tray sep dti date dtd
+modules-right = neti network-wired network-wireless netd sep bti bluetooth btd sep cafi caffeine cafd sep dndi dnd dndd sep bati battery batd sep memi memory memd sep cpi cpu cpd sep updates sep layout sep tray sep dti date dtd
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep dti date dtd
+modules-right = neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep updates sep dti date dtd
 
 [module/bi]
 type = custom/text
@@ -3698,7 +3918,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-background = ${colors.surface0}
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-emilia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -3808,6 +4028,21 @@ format-background = ${colors.surface0}
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format-background = ${colors.surface0}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -3864,11 +4099,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -3898,7 +4133,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-h4ck3r gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -3986,6 +4221,19 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -4046,11 +4294,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -4077,7 +4325,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-isabel gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -4163,6 +4411,19 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -4224,11 +4485,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -4268,7 +4529,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.blue}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-jan gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -4367,6 +4628,20 @@ format-prefix = " "
 format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -4429,11 +4704,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -4465,7 +4740,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.purple}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-karla gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -4565,6 +4840,20 @@ format-prefix = " "
 format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -4633,11 +4922,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -4688,7 +4977,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-marisol gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -4788,6 +5077,20 @@ label = "%percentage%%"
 ; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
 ; and this theme's own bar background is only ~90% opaque, not a fully
 ; reliable backdrop by itself.
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -4851,11 +5154,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -4884,7 +5187,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-pamela gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -4981,6 +5284,20 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -5043,11 +5360,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -5078,7 +5395,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.blue-light}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-silvia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -5175,6 +5492,20 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -5229,11 +5560,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -5269,7 +5600,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-varinka gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -5356,6 +5687,19 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -5413,11 +5757,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -5452,7 +5796,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.cyan}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-yael gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -5551,6 +5895,20 @@ format-prefix = " "
 format-prefix-foreground = ${colors.red}
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -5609,11 +5967,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -5649,7 +6007,7 @@ time = %H:%M
 format-background = ${colors.surface0}
 format-prefix = " "
 format-prefix-foreground = ${colors.blue}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-z0mbi3 gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -5760,6 +6118,21 @@ format-background = ${colors.surface0}
 format-prefix = " "
 label = " %percentage%% "
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format-background = ${colors.surface0}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -5840,11 +6213,11 @@ modules-center = date
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu sep tray
+modules-right = backlight pulseaudio media sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu updates sep layout sep tray
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media sep network-wired network-wireless sep memory cpu
+modules-right = backlight pulseaudio media sep network-wired network-wireless sep memory cpu updates
 
 [module/sep]
 type = custom/text
@@ -5889,7 +6262,7 @@ time = %H:%M
 format-background = ${colors.surface0}
 format-prefix = " "
 format-prefix-foreground = ${colors.text}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-aline gnome-calendar &:}%date%  %time%%{A}"
 label-font = 3
 
 [module/backlight]
@@ -6002,6 +6375,21 @@ format-prefix = " "
 format-prefix-foreground = ${colors.text}
 label = " %percentage%% "
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format-background = ${colors.surface0}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -6086,11 +6474,11 @@ inherit = bar/base
 ; since it's primary-only. Every widget on the right is plain/unfilled,
 ; dot-separated, with one final LD/RD-bracketed group for the clock.
 modules-left = i3 dot tray
-modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot date-icon date
+modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot updates dot layout dot date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot memory dot cpu dot date-icon date
+modules-right = backlight dot pulseaudio dot media dot network-wired network-wireless dot memory dot cpu dot updates dot date-icon date
 
 [module/dot]
 type = custom/text
@@ -6138,7 +6526,7 @@ label-urgent-padding = 2
 type = custom/text
 format = <label>
 format-background = ${colors.surface0}
-label = "%{A1:gnome-calendar &:}  %{A}"
+label = "%{A1:GTK_THEME=Rice-archcraft gnome-calendar &:}  %{A}"
 label-font = 1
 label-foreground = ${colors.peach}
 
@@ -6148,7 +6536,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-background = ${colors.surface0}
-label = "%{A1:gnome-calendar &:}%date%  %time% %{A}"
+label = "%{A1:GTK_THEME=Rice-archcraft gnome-calendar &:}%date%  %time% %{A}"
 label-font = 3
 label-foreground = ${colors.text}
 
@@ -6241,6 +6629,20 @@ interval = 2
 label = "  %percentage%% "
 label-foreground = ${colors.green}
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -6311,11 +6713,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep tray sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep updates sep layout sep tray sep date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep updates sep date-icon date
 
 [module/sep]
 type = custom/text
@@ -6352,7 +6754,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-background = ${colors.surface0}
-label = "%{A1:gnome-calendar &:} %date%  %time% %{A}"
+label = "%{A1:GTK_THEME=Rice-brenda gnome-calendar &:} %date%  %time% %{A}"
 label-foreground = ${colors.base}
 
 [module/backlight-icon]
@@ -6516,6 +6918,21 @@ label-foreground = ${colors.base}
 ; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
 ; dark bar and become invisible against a light chip (caught via direct
 ; feedback, not assumed).
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.base}
+format-background = ${colors.surface0}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -6573,14 +6990,14 @@ inherit = bar/base
 ; the only one carrying the battery widget. polybar-launch.sh launches this
 ; bar name on whichever output xrandr reports as primary. Clock is the very
 ; last segment, farthest right.
-modules-right = tray-cap tray backlight pulseaudio media network-wired network-wireless bluetooth caffeine dnd battery memory cpu date-icon date
+modules-right = tray-cap tray backlight pulseaudio media network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
 ; same as top-primary minus tray/battery - without this split every extra
 ; monitor showed a permanently empty tray slot since only one instance can
 ; ever win the X11 tray selection.
-modules-right = backlight pulseaudio media network-wired network-wireless memory cpu date-icon date
+modules-right = backlight pulseaudio media network-wired network-wireless memory cpu updates date-icon date
 
 ; --- powerline separators ---------------------------------------------------
 ; Each is a plain glyph rendered in the color of the segment being LEFT
@@ -6634,7 +7051,7 @@ label-urgent-padding = 2
 [module/date-icon]
 type = custom/text
 format = <label>
-label = "%{A1:gnome-calendar &:}    %{A}"
+label = "%{A1:GTK_THEME=Rice-catppuccin-mocha gnome-calendar &:}    %{A}"
 label-font = 1
 label-foreground = ${colors.base}
 format-background = ${colors.lavender}
@@ -6644,7 +7061,7 @@ type = internal/date
 interval = 1
 date = %Y-%m-%d
 time = %H:%M
-label = "%{A1:gnome-calendar &:}  %date%  %time%  %{A}"
+label = "%{A1:GTK_THEME=Rice-catppuccin-mocha gnome-calendar &:}  %date%  %time%  %{A}"
 label-font = 3
 label-foreground = ${colors.base}
 format-background = ${colors.lavender}
@@ -6677,6 +7094,15 @@ exec = ~/.local/bin/polybar-media.sh
 interval = 1
 label-foreground = ${colors.base}
 format-background = ${colors.teal}
+format = <label>
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.base}
+format-background = ${colors.yellow}
 format = <label>
 
 [module/network-wired]
@@ -6753,6 +7179,12 @@ label = "   %percentage%% "
 label-foreground = ${colors.base}
 format-background = ${colors.green}
 
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -6825,11 +7257,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 ; --- bracket pairs -------------------------------------------------------
 [module/sep]
@@ -6863,7 +7295,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.indigo}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-cristina gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -6961,6 +7393,20 @@ format-prefix = " "
 format-prefix-foreground = ${colors.yellow}
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -7022,11 +7468,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = memory cpu sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep tray sep date
+modules-right = memory cpu sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = memory cpu sep network-wired network-wireless sep backlight sep pulseaudio sep media sep date
+modules-right = memory cpu sep network-wired network-wireless sep backlight sep pulseaudio sep media sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -7069,7 +7515,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-cynthia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -7163,6 +7609,19 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -7222,11 +7681,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media network-wired network-wireless bluetooth caffeine dnd battery memory cpu tray date
+modules-right = backlight pulseaudio media network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout tray date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media network-wired network-wireless memory cpu date
+modules-right = backlight pulseaudio media network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
@@ -7255,7 +7714,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.orange}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-daniela gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -7364,6 +7823,20 @@ format-prefix-font = 1
 format-prefix-foreground = ${colors.blue}
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -7426,11 +7899,11 @@ inherit = bar/base
 ; area - everything else here is flat text, so a small muted box (Current
 ; Line, not an accent) reads as "a container", not "another pill in a
 ; powerline chain" the way Mocha's mauve tray-cap did.
-modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain date-icon date
+modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain updates sep-plain layout sep-plain date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain date-icon date
+modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain updates sep-plain date-icon date
 
 [module/sep-plain]
 type = custom/text
@@ -7468,7 +7941,7 @@ label-urgent-padding = 2
 [module/date-icon]
 type = custom/text
 format = <label>
-label = "%{A1:gnome-calendar &:}  %{A}"
+label = "%{A1:GTK_THEME=Rice-dracula gnome-calendar &:}  %{A}"
 label-font = 1
 label-foreground = ${colors.mauve}
 
@@ -7477,7 +7950,7 @@ type = internal/date
 interval = 1
 date = %Y-%m-%d
 time = %H:%M
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-dracula gnome-calendar &:}%date%  %time%%{A}"
 label-font = 3
 label-foreground = ${colors.text}
 
@@ -7570,6 +8043,20 @@ interval = 2
 label = "  %percentage%%"
 label-foreground = ${colors.green}
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -7632,11 +8119,11 @@ modules-center = i3
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = network-wired network-wireless sep memory sep cpu sep date
+modules-right = network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -7667,7 +8154,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-background = ${colors.surface0}
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-emilia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -7777,6 +8264,21 @@ format-background = ${colors.surface0}
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format-background = ${colors.surface0}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -7833,11 +8335,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -7867,7 +8369,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-h4ck3r gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -7955,6 +8457,19 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -8028,12 +8543,12 @@ modules-left = i3
 [bar/top-primary]
 inherit = bar/base
 modules-center = date-icon date
-modules-right = backlight pulseaudio media sep network-wired network-wireless bluetooth caffeine dnd battery memory cpu sep tray
+modules-right = backlight pulseaudio media sep network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates sep layout sep tray
 
 [bar/top-secondary]
 inherit = bar/base
 modules-center = date-icon date
-modules-right = backlight pulseaudio media sep network-wired network-wireless memory cpu
+modules-right = backlight pulseaudio media sep network-wired network-wireless memory cpu updates
 
 [module/sep]
 type = custom/text
@@ -8073,7 +8588,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-background = ${colors.surface0}
-label = "%{A1:gnome-calendar &:} %date%  %time% %{A}"
+label = "%{A1:GTK_THEME=Rice-hidrot gnome-calendar &:} %date%  %time% %{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -8205,6 +8720,21 @@ label = " %percentage%% "
 ; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
 ; and this theme's own bar background is only ~90% opaque, not a fully
 ; reliable backdrop by itself.
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow1}
+format-background = ${colors.surface0}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -8267,11 +8797,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -8298,7 +8828,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-isabel gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -8384,6 +8914,19 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -8445,11 +8988,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -8489,7 +9032,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.blue}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-jan gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -8588,6 +9131,20 @@ format-prefix = " "
 format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -8650,11 +9207,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -8686,7 +9243,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.purple}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-karla gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -8786,6 +9343,20 @@ format-prefix = " "
 format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -8854,11 +9425,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -8894,7 +9465,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-marisol gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -8994,6 +9565,20 @@ label = "%percentage%%"
 ; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
 ; and this theme's own bar background is only ~90% opaque, not a fully
 ; reliable backdrop by itself.
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -9064,11 +9649,11 @@ inherit = bar/base
 ; single shared-background island with its own widgets packed tight inside
 ; (no divider between them - only the icon color tells them apart), a real
 ; empty gap-nord module between islands instead of a colored separator.
-modules-right = backlight pulseaudio media network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gap-nord tray gap-nord date-icon date
+modules-right = backlight pulseaudio media network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu updates gap-nord layout gap-nord tray gap-nord date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media network-wired network-wireless gap-nord memory cpu gap-nord date-icon date
+modules-right = backlight pulseaudio media network-wired network-wireless gap-nord memory cpu updates gap-nord date-icon date
 
 [module/gap-nord]
 type = custom/text
@@ -9103,7 +9688,7 @@ label-urgent-padding = 2
 [module/date-icon]
 type = custom/text
 format = <label>
-label = "%{A1:gnome-calendar &:} 󰃰 %{A}"
+label = "%{A1:GTK_THEME=Rice-nord gnome-calendar &:} 󰃰 %{A}"
 label-font = 1
 label-foreground = ${colors.lavender}
 format-background = ${colors.surface0}
@@ -9113,7 +9698,7 @@ type = internal/date
 interval = 1
 date = %Y-%m-%d
 time = %H:%M
-label = "%{A1:gnome-calendar &:}%date%  %time% %{A}"
+label = "%{A1:GTK_THEME=Rice-nord gnome-calendar &:}%date%  %time% %{A}"
 label-font = 3
 label-foreground = ${colors.text}
 format-background = ${colors.surface0}
@@ -9220,6 +9805,20 @@ label = "  %percentage%% "
 label-foreground = ${colors.green}
 format-background = ${colors.surface0}
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -9283,11 +9882,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -9316,7 +9915,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-pamela gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -9413,6 +10012,20 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -9475,11 +10088,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots date
+modules-right = backlight dots pulseaudio dots media dots network-wired network-wireless dots memory dots cpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -9510,7 +10123,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.blue-light}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-silvia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -9607,6 +10220,20 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -9661,11 +10288,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -9701,7 +10328,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-varinka gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -9788,6 +10415,19 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -9845,11 +10485,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -9884,7 +10524,7 @@ date = %Y-%m-%d
 time = %H:%M
 format-prefix = " "
 format-prefix-foreground = ${colors.cyan}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-yael gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -9983,6 +10623,20 @@ format-prefix = " "
 format-prefix-foreground = ${colors.red}
 label = "%percentage%%"
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -10041,11 +10695,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep date
+modules-right = backlight sep pulseaudio sep media sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -10081,7 +10735,7 @@ time = %H:%M
 format-background = ${colors.surface0}
 format-prefix = " "
 format-prefix-foreground = ${colors.blue}
-label = "%{A1:gnome-calendar &:}%date%  %time%%{A}"
+label = "%{A1:GTK_THEME=Rice-z0mbi3 gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -10192,6 +10846,21 @@ format-background = ${colors.surface0}
 format-prefix = " "
 label = " %percentage%% "
 
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow}
+format-background = ${colors.surface0}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -10268,12 +10937,12 @@ modules-left = bi i3 bd
 [bar/top-primary]
 inherit = bar/base
 modules-center = bi date-icon date bd
-modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless bluetooth caffeine dnd battery memory cpu bd sep tray
+modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout bd sep tray
 
 [bar/top-secondary]
 inherit = bar/base
 modules-center = bi date-icon date bd
-modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless memory cpu bd
+modules-right = bi backlight pulseaudio media bd sep bi network-wired network-wireless memory cpu updates bd
 
 [module/bi]
 type = custom/text
@@ -10327,7 +10996,7 @@ interval = 1
 date = %Y-%m-%d
 time = %H:%M
 format-background = ${colors.surface0}
-label = "%{A1:gnome-calendar &:} %date%  %time% %{A}"
+label = "%{A1:GTK_THEME=Rice-hidrot gnome-calendar &:} %date%  %time% %{A}"
 
 [module/backlight]
 type = internal/backlight
@@ -10459,6 +11128,21 @@ label = " %percentage%% "
 ; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
 ; and this theme's own bar background is only ~90% opaque, not a fully
 ; reliable backdrop by itself.
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e sudo dnf upgrade &
+label-foreground = ${colors.yellow1}
+format-background = ${colors.surface0}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+
 [module/tray]
 type = internal/tray
 tray-spacing = 8
@@ -10661,6 +11345,36 @@ printf '%%{A1:playerctl previous:}%%{A}  %%{A1:playerctl play-pause:}%s%%{A} 
 EOF
 chmod +x "$BIN/polybar-media.sh"
 
+log "Writing polybar software-updates widget script..."
+cat > "$BIN/polybar-updates.sh" <<'EOF'
+#!/usr/bin/env bash
+# polybar custom/script module (tail=true): shows a count of pending dnf
+# package updates, including "0" when there are none - always visible
+# rather than hiding when idle, unlike the media/network widgets elsewhere
+# in this rice. Loops and sleeps internally instead of relying on polybar's
+# own `interval` scheduling for a script this infrequent - confirmed
+# empirically (clean restart, no stale process) that polybar does NOT
+# execute an interval-based custom/script's first run immediately at bar
+# startup the way it does for short-interval widgets elsewhere in this
+# rice; with a large interval (900s) nothing appeared for the full 15
+# minutes. tail=true hands timing control to the script itself instead:
+# check immediately on startup, print, sleep, repeat - polybar just
+# displays whatever line the script most recently printed.
+#
+# Counts only real "name.arch  version  repo" lines - dnf's own "Upgrades"
+# section header would otherwise be miscounted as one extra package by a
+# naive line count. Relies on Fedora's own dnf-makecache.timer (enabled by
+# default) to keep repo metadata fresh in the background, so this just
+# reads whatever that cache last had rather than forcing a slow network
+# refresh itself.
+while true; do
+  count=$(timeout 10 dnf check-update -q 2>/dev/null | grep -cE '^\S+\.(x86_64|noarch|i686|aarch64|s390x|ppc64le)[[:space:]]')
+  printf ' %s\n' "${count:-0}"
+  sleep 900
+done
+EOF
+chmod +x "$BIN/polybar-updates.sh"
+
 log "Writing Do Not Disturb toggle + polybar widget scripts..."
 cat > "$BIN/dnd-toggle.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -10668,22 +11382,17 @@ cat > "$BIN/dnd-toggle.sh" <<'EOF'
 # sent after wouldn't show - that's the whole point of pausing) rather than
 # after, so the confirmation is actually visible either way.
 #
-# dunst's own pause only covers standard desktop notifications (the
-# freedesktop Notifications D-Bus interface) - GNOME Calendar/Evolution's
-# reminder popups are a separate mechanism entirely (evolution-alarm-notify,
-# its own dedicated window, not a desktop notification), so this also flips
-# its notify-enable-display/notify-enable-audio gsettings in lockstep to
-# actually cover both.
+# Calendar/task reminders go through dunst too (~/.local/bin/calendar-
+# reminder-daemon.py fires them as regular notify-send notifications,
+# replacing evolution-alarm-notify's own separate GTK popup window, which
+# is disabled entirely) so dunst's own pause state is already the single
+# thing that needs toggling - no separate gsettings flip needed anymore.
 if [ "$(dunstctl is-paused)" = "true" ]; then
   dunstctl set-paused false
-  gsettings set org.gnome.evolution-data-server.calendar notify-enable-display true
-  gsettings set org.gnome.evolution-data-server.calendar notify-enable-audio true
   notify-send -h string:x-dunst-stack-tag:dnd "Do Not Disturb: off" "Notifications resumed"
 else
   notify-send -h string:x-dunst-stack-tag:dnd "Do Not Disturb: on" "Notifications silenced until toggled off"
   dunstctl set-paused true
-  gsettings set org.gnome.evolution-data-server.calendar notify-enable-display false
-  gsettings set org.gnome.evolution-data-server.calendar notify-enable-audio false
 fi
 EOF
 chmod +x "$BIN/dnd-toggle.sh"
@@ -10700,6 +11409,38 @@ fi
 EOF
 chmod +x "$BIN/polybar-dnd.sh"
 sed -i "s/@@ICO_BELL_OFF@@/$ICO_BELL_OFF/; s/@@ICO_BELL@@/$ICO_BELL/" "$BIN/polybar-dnd.sh"
+
+log "Writing polybar split-layout indicator script..."
+cat > "$BIN/polybar-layout.sh" <<'EOF'
+#!/usr/bin/env bash
+# polybar custom/script module: shows the focused container's current split
+# direction - i.e. what direction the NEXT window opened there will go,
+# set via Mod+v/Mod+b (see i3 config) - not visible anywhere else in i3
+# itself, since split direction has no on-screen effect until a new window
+# is actually opened (unlike fullscreen/floating, which are immediately
+# visible on their own). Also shows stacked/tabbed if the container is in
+# one of those layouts (Mod+t cycles split h/v; stacked/tabbed reachable via
+# i3-msg directly, no dedicated keybinding in this rice).
+#
+# Polled on a short interval (like caffeine/dnd above) rather than an
+# `i3-msg -t subscribe` event loop - simpler, no long-running subprocess to
+# manage, and split-direction changes don't need sub-second responsiveness.
+layout=$(i3-msg -t get_tree 2>/dev/null | jq -r '
+  def emit(pl):
+    ( {f: .focused, l: pl} ),
+    ( .layout as $mylayout | ((.nodes // []) + (.floating_nodes // []))[]? | emit($mylayout) );
+  [emit(null)] | map(select(.f == true)) | .[0].l // "splith"
+')
+
+case "$layout" in
+  splitv)  printf '@@ICO_SPLIT_V@@\n' ;;
+  stacked) printf '@@ICO_STACKING@@\n' ;;
+  tabbed)  printf '@@ICO_TABBED@@\n' ;;
+  *)       printf '@@ICO_SPLIT_H@@\n' ;;
+esac
+EOF
+chmod +x "$BIN/polybar-layout.sh"
+sed -i "s/@@ICO_SPLIT_H@@/$ICO_SPLIT_H/; s/@@ICO_SPLIT_V@@/$ICO_SPLIT_V/; s/@@ICO_STACKING@@/$ICO_STACKING/; s/@@ICO_TABBED@@/$ICO_TABBED/" "$BIN/polybar-layout.sh"
 
 log "Writing MX Anywhere 3S scroll-fix script..."
 cat > "$BIN/fix-mx-scroll.sh" <<'EOF'
@@ -10724,6 +11465,158 @@ for _ in $(seq 1 10); do
 done
 EOF
 chmod +x "$BIN/fix-mx-scroll.sh"
+log "Writing calendar reminder daemon (replaces evolution-alarm-notify's own popup)..."
+cat > "$BIN/calendar-reminder-daemon.py" <<'EOF'
+#!/usr/bin/env python3
+"""Calendar reminder daemon.
+
+Polls every enabled evolution-data-server calendar for VALARM reminders
+that just became due and fires a themed dunst notification for each,
+instead of evolution-alarm-notify's own GTK popup window - which is fixed
+to Catppuccin Mocha regardless of the active desktop theme (GTK apps in
+this rice aren't part of the per-theme switcher the way polybar/rofi/
+kitty/starship/dunst are - building 21 full GTK themes to cover it was
+judged out of proportion to the payoff), and whose window this rice's own
+setup disables (autostart Hidden=true + `systemctl --user mask
+evolution-alarm-notify.service`) so it never appears at all. Routing
+through dunst instead means calendar reminders automatically pick up
+whichever theme is currently active (dunst is themed the same way as
+kitty/rofi/starship) and automatically respect Do Not Disturb (dunst's own
+pause state already suppresses every notify-send call while DND is on -
+no separate gsettings toggle needed the way the old popup required).
+
+Uses the real EDataServer/ECal GObject Introspection API (the same one
+evolution-alarm-notify itself is built on) to enumerate calendars and
+expand recurring events correctly, rather than re-parsing raw .ics data -
+confirmed working against this machine's real calendars (Google, Exchange/
+visma.com, local) before writing this, including reading each VALARM's
+actual TRIGGER duration (e.g. "10 minutes before"), not a hardcoded lead
+time, so a reminder set for a specific event keeps firing at the time that
+event's own alarm actually specifies.
+"""
+import gi
+gi.require_version("EDataServer", "1.2")
+gi.require_version("ECal", "2.0")
+gi.require_version("ICalGLib", "3.0")
+from gi.repository import EDataServer, ECal, ICalGLib
+
+import json
+import os
+import subprocess
+import sys
+import time
+
+STATE_FILE = os.path.expanduser("~/.cache/calendar-reminder-notified.json")
+POLL_INTERVAL = 30  # seconds between polls
+LOOKBACK = 120  # seconds - catches alarms that became due since the last poll, with margin
+INSTANCE_WINDOW = 14 * 24 * 3600  # how far ahead to expand recurring instances (14 days)
+STATE_MAX_AGE = 3 * 24 * 3600  # prune notified-keys older than this
+
+
+def load_notified():
+    try:
+        with open(STATE_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_notified(notified):
+    now = time.time()
+    pruned = {k: v for k, v in notified.items() if now - v < STATE_MAX_AGE}
+    try:
+        os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(pruned, f)
+    except Exception:
+        pass
+    return pruned
+
+
+def notify(summary, location, start_ts):
+    when = time.strftime("%H:%M", time.localtime(start_ts))
+    body = when if not location else f"{when} — {location}"
+    subprocess.run(
+        [
+            "notify-send", "-a", "Calendar", "-i", "x-office-calendar",
+            "-u", "normal", "-h", "string:x-dunst-stack-tag:calendar-reminder",
+            summary, body,
+        ],
+        check=False,
+    )
+
+
+def find_due(sources, now):
+    due = []
+    window_end = now + INSTANCE_WINDOW
+
+    def instance_cb(icalcomp, instance_start, instance_end, user_data, cancellable):
+        start_ts = instance_start.as_timet() if instance_start else None
+        if start_ts is None:
+            return True
+        uid = icalcomp.get_uid()
+        idx = 0
+        va = icalcomp.get_first_component(ICalGLib.ComponentKind.VALARM_COMPONENT)
+        while va:
+            trigger_prop = va.get_first_property(ICalGLib.PropertyKind.TRIGGER_PROPERTY)
+            if trigger_prop:
+                trig = trigger_prop.get_trigger()
+                dur = trig.get_duration()
+                if dur:
+                    notify_at = start_ts + dur.as_int()
+                    if now - LOOKBACK <= notify_at <= now:
+                        key = f"{uid}:{int(start_ts)}:{idx}"
+                        summary_prop = icalcomp.get_first_property(ICalGLib.PropertyKind.SUMMARY_PROPERTY)
+                        location_prop = icalcomp.get_first_property(ICalGLib.PropertyKind.LOCATION_PROPERTY)
+                        due.append((
+                            key,
+                            summary_prop.get_summary() if summary_prop else "(untitled event)",
+                            location_prop.get_location() if location_prop else None,
+                            start_ts,
+                        ))
+            idx += 1
+            va = icalcomp.get_next_component(ICalGLib.ComponentKind.VALARM_COMPONENT)
+        return True
+
+    for src in sources:
+        try:
+            client = ECal.Client.connect_sync(src, ECal.ClientSourceType.EVENTS, 5, None)
+            client.generate_instances_sync(int(now - LOOKBACK), int(window_end), None, instance_cb, None)
+        except Exception as e:
+            print(f"calendar-reminder-daemon: skipping {src.get_display_name()}: {e}", file=sys.stderr)
+
+    return due
+
+
+def main():
+    notified = load_notified()
+    while True:
+        try:
+            registry = EDataServer.SourceRegistry.new_sync(None)
+            sources = [
+                s for s in registry.list_sources(EDataServer.SOURCE_EXTENSION_CALENDAR)
+                if s.get_enabled()
+            ]
+            now = time.time()
+            due = find_due(sources, now)
+            fired = False
+            for key, summary, location, start_ts in due:
+                if key in notified:
+                    continue
+                notify(summary, location, start_ts)
+                notified[key] = now
+                fired = True
+            if fired:
+                notified = save_notified(notified)
+        except Exception as e:
+            print(f"calendar-reminder-daemon: error: {e}", file=sys.stderr)
+        time.sleep(POLL_INTERVAL)
+
+
+if __name__ == "__main__":
+    main()
+EOF
+chmod +x "$BIN/calendar-reminder-daemon.py"
 
 # ----------------------------------------------------------------------------
 # 6d. Disable the redundant tray applets' own autostart entries
@@ -10747,6 +11640,25 @@ Type=Application
 Hidden=true
 EOF
 done
+
+# evolution-alarm-notify's own reminder popup is always Catppuccin Mocha
+# regardless of the active desktop theme and isn't covered by this rice's
+# theme switcher (GTK apps aren't themed per-theme here - see
+# calendar-reminder-daemon.py above for the rationale). Same Hidden=true
+# autostart override as above, but evolution-alarm-notify is ALSO
+# D-Bus-activatable (BusName=org.gnome.Evolution-alarm-notify in its own
+# systemd --user unit), which bypasses a plain autostart Hidden=true the
+# moment anything touches its D-Bus name - `systemctl --user mask` is
+# needed in addition to actually stop it from ever running.
+log "Disabling evolution-alarm-notify's own popup (calendar-reminder-daemon.py replaces it)..."
+cat > "$CONF/autostart/org.gnome.Evolution-alarm-notify.desktop" <<EOF
+[Desktop Entry]
+Name=Evolution Alarm Notify
+Exec=evolution-alarm-notify
+Type=Application
+Hidden=true
+EOF
+systemctl --user mask evolution-alarm-notify.service >/dev/null 2>&1 || warn "Could not mask evolution-alarm-notify.service - its D-Bus-activated popup may still appear."
 
 # ----------------------------------------------------------------------------
 # 6e. snixembed (StatusNotifierItem -> legacy XEmbed tray proxy)
@@ -22296,6 +23208,1412 @@ cp "$CONF/starship/themes/catppuccin-mocha.toml" "$HOME/.config/starship.toml"
 
 # ----------------------------------------------------------------------------
 # 9b. flameshot
+
+# ----------------------------------------------------------------------------
+# 8b. dunst per-theme configs - reachable from ~/.local/bin/polybar-theme.sh
+# ----------------------------------------------------------------------------
+# Same palette-per-theme-name approach as rofi/kitty/starship above: each
+# file here is a complete standalone dunstrc (not a shared [colors]
+# fragment), generated from that theme's own already-resolved kitty ANSI
+# colors (background/foreground/color5/color1/color0/color8), reused rather
+# than re-parsed from the polybar .ini a second time. Radius 10 for the base
+# variant, 0 for -square, matching the rofi/polybar corner-radius precedent.
+log "Writing dunst per-theme configs..."
+mkdir -p "$CONF/dunst/themes"
+cat > "$CONF/dunst/themes/aline-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#2E5D66"
+corner_radius = 0
+background = "#FAF4ED"
+foreground = "#575279"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#F2E9E1"
+
+[urgency_low]
+background = "#FAF4ED"
+foreground = "#9893A5"
+frame_color = "#F2E9E1"
+timeout = 4
+
+[urgency_normal]
+background = "#FAF4ED"
+foreground = "#575279"
+frame_color = "#2E5D66"
+timeout = 6
+
+[urgency_critical]
+background = "#FAF4ED"
+foreground = "#B4637A"
+frame_color = "#B4637A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/aline.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#2E5D66"
+corner_radius = 10
+background = "#FAF4ED"
+foreground = "#575279"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#F2E9E1"
+
+[urgency_low]
+background = "#FAF4ED"
+foreground = "#9893A5"
+frame_color = "#F2E9E1"
+timeout = 4
+
+[urgency_normal]
+background = "#FAF4ED"
+foreground = "#575279"
+frame_color = "#2E5D66"
+timeout = 6
+
+[urgency_critical]
+background = "#FAF4ED"
+foreground = "#B4637A"
+frame_color = "#B4637A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/archcraft-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#C678DD"
+corner_radius = 0
+background = "#1E222A"
+foreground = "#C8CCD4"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#292E39"
+
+[urgency_low]
+background = "#1E222A"
+foreground = "#727C91"
+frame_color = "#292E39"
+timeout = 4
+
+[urgency_normal]
+background = "#1E222A"
+foreground = "#C8CCD4"
+frame_color = "#C678DD"
+timeout = 6
+
+[urgency_critical]
+background = "#1E222A"
+foreground = "#E06C75"
+frame_color = "#E06C75"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/archcraft.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#C678DD"
+corner_radius = 10
+background = "#1E222A"
+foreground = "#C8CCD4"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#292E39"
+
+[urgency_low]
+background = "#1E222A"
+foreground = "#727C91"
+frame_color = "#292E39"
+timeout = 4
+
+[urgency_normal]
+background = "#1E222A"
+foreground = "#C8CCD4"
+frame_color = "#C678DD"
+timeout = 6
+
+[urgency_critical]
+background = "#1E222A"
+foreground = "#E06C75"
+frame_color = "#E06C75"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/brenda-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#D699B6"
+corner_radius = 0
+background = "#2D353B"
+foreground = "#D3C6AA"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3D454B"
+
+[urgency_low]
+background = "#2D353B"
+foreground = "#859289"
+frame_color = "#3D454B"
+timeout = 4
+
+[urgency_normal]
+background = "#2D353B"
+foreground = "#D3C6AA"
+frame_color = "#D699B6"
+timeout = 6
+
+[urgency_critical]
+background = "#2D353B"
+foreground = "#E67E80"
+frame_color = "#E67E80"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/brenda.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#D699B6"
+corner_radius = 10
+background = "#2D353B"
+foreground = "#D3C6AA"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3D454B"
+
+[urgency_low]
+background = "#2D353B"
+foreground = "#859289"
+frame_color = "#3D454B"
+timeout = 4
+
+[urgency_normal]
+background = "#2D353B"
+foreground = "#D3C6AA"
+frame_color = "#D699B6"
+timeout = 6
+
+[urgency_critical]
+background = "#2D353B"
+foreground = "#E67E80"
+frame_color = "#E67E80"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/catppuccin-mocha-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#F5C2E7"
+corner_radius = 0
+background = "#1E1E2E"
+foreground = "#CDD6F4"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#45475A"
+
+[urgency_low]
+background = "#1E1E2E"
+foreground = "#585B70"
+frame_color = "#45475A"
+timeout = 4
+
+[urgency_normal]
+background = "#1E1E2E"
+foreground = "#CDD6F4"
+frame_color = "#F5C2E7"
+timeout = 6
+
+[urgency_critical]
+background = "#1E1E2E"
+foreground = "#F38BA8"
+frame_color = "#F38BA8"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/catppuccin-mocha.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#F5C2E7"
+corner_radius = 10
+background = "#1E1E2E"
+foreground = "#CDD6F4"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#45475A"
+
+[urgency_low]
+background = "#1E1E2E"
+foreground = "#585B70"
+frame_color = "#45475A"
+timeout = 4
+
+[urgency_normal]
+background = "#1E1E2E"
+foreground = "#CDD6F4"
+frame_color = "#F5C2E7"
+timeout = 6
+
+[urgency_critical]
+background = "#1E1E2E"
+foreground = "#F38BA8"
+frame_color = "#F38BA8"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/cristina-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#C3A5E6"
+corner_radius = 0
+background = "#232136"
+foreground = "#E0DEF4"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#232136"
+
+[urgency_low]
+background = "#232136"
+foreground = "#908CAA"
+frame_color = "#232136"
+timeout = 4
+
+[urgency_normal]
+background = "#232136"
+foreground = "#E0DEF4"
+frame_color = "#C3A5E6"
+timeout = 6
+
+[urgency_critical]
+background = "#232136"
+foreground = "#EA6F91"
+frame_color = "#EA6F91"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/cristina.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#C3A5E6"
+corner_radius = 10
+background = "#232136"
+foreground = "#E0DEF4"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#232136"
+
+[urgency_low]
+background = "#232136"
+foreground = "#908CAA"
+frame_color = "#232136"
+timeout = 4
+
+[urgency_normal]
+background = "#232136"
+foreground = "#E0DEF4"
+frame_color = "#C3A5E6"
+timeout = 6
+
+[urgency_critical]
+background = "#232136"
+foreground = "#EA6F91"
+frame_color = "#EA6F91"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/cynthia-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#938AA9"
+corner_radius = 0
+background = "#181616"
+foreground = "#C5C9C5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#242121"
+
+[urgency_low]
+background = "#181616"
+foreground = "#708491"
+frame_color = "#242121"
+timeout = 4
+
+[urgency_normal]
+background = "#181616"
+foreground = "#C5C9C5"
+frame_color = "#938AA9"
+timeout = 6
+
+[urgency_critical]
+background = "#181616"
+foreground = "#E46876"
+frame_color = "#E46876"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/cynthia.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#938AA9"
+corner_radius = 10
+background = "#181616"
+foreground = "#C5C9C5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#242121"
+
+[urgency_low]
+background = "#181616"
+foreground = "#708491"
+frame_color = "#242121"
+timeout = 4
+
+[urgency_normal]
+background = "#181616"
+foreground = "#C5C9C5"
+frame_color = "#938AA9"
+timeout = 6
+
+[urgency_critical]
+background = "#181616"
+foreground = "#E46876"
+frame_color = "#E46876"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/daniela-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#BB9AF7"
+corner_radius = 0
+background = "#1A1B26"
+foreground = "#C0CAF5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#1A1B26"
+
+[urgency_low]
+background = "#1A1B26"
+foreground = "#565F89"
+frame_color = "#1A1B26"
+timeout = 4
+
+[urgency_normal]
+background = "#1A1B26"
+foreground = "#C0CAF5"
+frame_color = "#BB9AF7"
+timeout = 6
+
+[urgency_critical]
+background = "#1A1B26"
+foreground = "#F7768E"
+frame_color = "#F7768E"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/daniela.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#BB9AF7"
+corner_radius = 10
+background = "#1A1B26"
+foreground = "#C0CAF5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#1A1B26"
+
+[urgency_low]
+background = "#1A1B26"
+foreground = "#565F89"
+frame_color = "#1A1B26"
+timeout = 4
+
+[urgency_normal]
+background = "#1A1B26"
+foreground = "#C0CAF5"
+frame_color = "#BB9AF7"
+timeout = 6
+
+[urgency_critical]
+background = "#1A1B26"
+foreground = "#F7768E"
+frame_color = "#F7768E"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/dracula-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#BD93F9"
+corner_radius = 0
+background = "#282A36"
+foreground = "#F8F8F2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#44475A"
+
+[urgency_low]
+background = "#282A36"
+foreground = "#6272A4"
+frame_color = "#44475A"
+timeout = 4
+
+[urgency_normal]
+background = "#282A36"
+foreground = "#F8F8F2"
+frame_color = "#BD93F9"
+timeout = 6
+
+[urgency_critical]
+background = "#282A36"
+foreground = "#FF5555"
+frame_color = "#FF5555"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/dracula.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#BD93F9"
+corner_radius = 10
+background = "#282A36"
+foreground = "#F8F8F2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#44475A"
+
+[urgency_low]
+background = "#282A36"
+foreground = "#6272A4"
+frame_color = "#44475A"
+timeout = 4
+
+[urgency_normal]
+background = "#282A36"
+foreground = "#F8F8F2"
+frame_color = "#BD93F9"
+timeout = 6
+
+[urgency_critical]
+background = "#282A36"
+foreground = "#FF5555"
+frame_color = "#FF5555"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/emilia-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B08BBB"
+corner_radius = 0
+background = "#1E1A17"
+foreground = "#E8DCC8"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#2B241F"
+
+[urgency_low]
+background = "#1E1A17"
+foreground = "#9C8F7D"
+frame_color = "#2B241F"
+timeout = 4
+
+[urgency_normal]
+background = "#1E1A17"
+foreground = "#E8DCC8"
+frame_color = "#B08BBB"
+timeout = 6
+
+[urgency_critical]
+background = "#1E1A17"
+foreground = "#D9736A"
+frame_color = "#D9736A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/emilia.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B08BBB"
+corner_radius = 10
+background = "#1E1A17"
+foreground = "#E8DCC8"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#2B241F"
+
+[urgency_low]
+background = "#1E1A17"
+foreground = "#9C8F7D"
+frame_color = "#2B241F"
+timeout = 4
+
+[urgency_normal]
+background = "#1E1A17"
+foreground = "#E8DCC8"
+frame_color = "#B08BBB"
+timeout = 6
+
+[urgency_critical]
+background = "#1E1A17"
+foreground = "#D9736A"
+frame_color = "#D9736A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/h4ck3r-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#00FA5C"
+corner_radius = 0
+background = "#0C1018"
+foreground = "#00FA5C"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#1B2333"
+
+[urgency_low]
+background = "#0C1018"
+foreground = "#578A29"
+frame_color = "#1B2333"
+timeout = 4
+
+[urgency_normal]
+background = "#0C1018"
+foreground = "#00FA5C"
+frame_color = "#00FA5C"
+timeout = 6
+
+[urgency_critical]
+background = "#0C1018"
+foreground = "#6DDE00"
+frame_color = "#6DDE00"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/h4ck3r.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#00FA5C"
+corner_radius = 10
+background = "#0C1018"
+foreground = "#00FA5C"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#1B2333"
+
+[urgency_low]
+background = "#0C1018"
+foreground = "#578A29"
+frame_color = "#1B2333"
+timeout = 4
+
+[urgency_normal]
+background = "#0C1018"
+foreground = "#00FA5C"
+frame_color = "#00FA5C"
+timeout = 6
+
+[urgency_critical]
+background = "#0C1018"
+foreground = "#6DDE00"
+frame_color = "#6DDE00"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/hidrot-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B08FD1"
+corner_radius = 0
+background = "#1B1E24"
+foreground = "#D6DCE5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#262B33"
+
+[urgency_low]
+background = "#1B1E24"
+foreground = "#6E7684"
+frame_color = "#262B33"
+timeout = 4
+
+[urgency_normal]
+background = "#1B1E24"
+foreground = "#D6DCE5"
+frame_color = "#B08FD1"
+timeout = 6
+
+[urgency_critical]
+background = "#1B1E24"
+foreground = "#D9707A"
+frame_color = "#D9707A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/hidrot.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B08FD1"
+corner_radius = 10
+background = "#1B1E24"
+foreground = "#D6DCE5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#262B33"
+
+[urgency_low]
+background = "#1B1E24"
+foreground = "#6E7684"
+frame_color = "#262B33"
+timeout = 4
+
+[urgency_normal]
+background = "#1B1E24"
+foreground = "#D6DCE5"
+frame_color = "#B08FD1"
+timeout = 6
+
+[urgency_critical]
+background = "#1B1E24"
+foreground = "#D9707A"
+frame_color = "#D9707A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/isabel-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#5FA8C7"
+corner_radius = 0
+background = "#10181A"
+foreground = "#A8C5C0"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#10181A"
+
+[urgency_low]
+background = "#10181A"
+foreground = "#5C7B76"
+frame_color = "#10181A"
+timeout = 4
+
+[urgency_normal]
+background = "#10181A"
+foreground = "#A8C5C0"
+frame_color = "#5FA8C7"
+timeout = 6
+
+[urgency_critical]
+background = "#10181A"
+foreground = "#D67F7F"
+frame_color = "#D67F7F"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/isabel.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#5FA8C7"
+corner_radius = 10
+background = "#10181A"
+foreground = "#A8C5C0"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#10181A"
+
+[urgency_low]
+background = "#10181A"
+foreground = "#5C7B76"
+frame_color = "#10181A"
+timeout = 4
+
+[urgency_normal]
+background = "#10181A"
+foreground = "#A8C5C0"
+frame_color = "#5FA8C7"
+timeout = 6
+
+[urgency_critical]
+background = "#10181A"
+foreground = "#D67F7F"
+frame_color = "#D67F7F"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/jan-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#6800D2"
+corner_radius = 0
+background = "#212A4C"
+foreground = "#27FBFE"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#212A4C"
+
+[urgency_low]
+background = "#212A4C"
+foreground = "#6B7BB0"
+frame_color = "#212A4C"
+timeout = 4
+
+[urgency_normal]
+background = "#212A4C"
+foreground = "#27FBFE"
+frame_color = "#6800D2"
+timeout = 6
+
+[urgency_critical]
+background = "#212A4C"
+foreground = "#FB007A"
+frame_color = "#FB007A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/jan.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#6800D2"
+corner_radius = 10
+background = "#212A4C"
+foreground = "#27FBFE"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#212A4C"
+
+[urgency_low]
+background = "#212A4C"
+foreground = "#6B7BB0"
+frame_color = "#212A4C"
+timeout = 4
+
+[urgency_normal]
+background = "#212A4C"
+foreground = "#27FBFE"
+frame_color = "#6800D2"
+timeout = 6
+
+[urgency_critical]
+background = "#212A4C"
+foreground = "#FB007A"
+frame_color = "#FB007A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/karla-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#7A44E3"
+corner_radius = 0
+background = "#0E1113"
+foreground = "#AFB1DB"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#0E1113"
+
+[urgency_low]
+background = "#0E1113"
+foreground = "#6272A4"
+frame_color = "#0E1113"
+timeout = 4
+
+[urgency_normal]
+background = "#0E1113"
+foreground = "#AFB1DB"
+frame_color = "#7A44E3"
+timeout = 6
+
+[urgency_critical]
+background = "#0E1113"
+foreground = "#E7034A"
+frame_color = "#E7034A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/karla.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#7A44E3"
+corner_radius = 10
+background = "#0E1113"
+foreground = "#AFB1DB"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#0E1113"
+
+[urgency_low]
+background = "#0E1113"
+foreground = "#6272A4"
+frame_color = "#0E1113"
+timeout = 4
+
+[urgency_normal]
+background = "#0E1113"
+foreground = "#AFB1DB"
+frame_color = "#7A44E3"
+timeout = 6
+
+[urgency_critical]
+background = "#0E1113"
+foreground = "#E7034A"
+frame_color = "#E7034A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/marisol-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B98FC7"
+corner_radius = 0
+background = "#241C1C"
+foreground = "#F5E6E0"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#332727"
+
+[urgency_low]
+background = "#241C1C"
+foreground = "#A8827C"
+frame_color = "#332727"
+timeout = 4
+
+[urgency_normal]
+background = "#241C1C"
+foreground = "#F5E6E0"
+frame_color = "#B98FC7"
+timeout = 6
+
+[urgency_critical]
+background = "#241C1C"
+foreground = "#E8604C"
+frame_color = "#E8604C"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/marisol.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B98FC7"
+corner_radius = 10
+background = "#241C1C"
+foreground = "#F5E6E0"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#332727"
+
+[urgency_low]
+background = "#241C1C"
+foreground = "#A8827C"
+frame_color = "#332727"
+timeout = 4
+
+[urgency_normal]
+background = "#241C1C"
+foreground = "#F5E6E0"
+frame_color = "#B98FC7"
+timeout = 6
+
+[urgency_critical]
+background = "#241C1C"
+foreground = "#E8604C"
+frame_color = "#E8604C"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/nord-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B48EAD"
+corner_radius = 0
+background = "#2E3440"
+foreground = "#ECEFF4"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3B4252"
+
+[urgency_low]
+background = "#2E3440"
+foreground = "#D8DEE9"
+frame_color = "#3B4252"
+timeout = 4
+
+[urgency_normal]
+background = "#2E3440"
+foreground = "#ECEFF4"
+frame_color = "#B48EAD"
+timeout = 6
+
+[urgency_critical]
+background = "#2E3440"
+foreground = "#BF616A"
+frame_color = "#BF616A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/nord.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B48EAD"
+corner_radius = 10
+background = "#2E3440"
+foreground = "#ECEFF4"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3B4252"
+
+[urgency_low]
+background = "#2E3440"
+foreground = "#D8DEE9"
+frame_color = "#3B4252"
+timeout = 4
+
+[urgency_normal]
+background = "#2E3440"
+foreground = "#ECEFF4"
+frame_color = "#B48EAD"
+timeout = 6
+
+[urgency_critical]
+background = "#2E3440"
+foreground = "#BF616A"
+frame_color = "#BF616A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/pamela-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#C574DD"
+corner_radius = 0
+background = "#1D1F28"
+foreground = "#FDFDFD"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3D435C"
+
+[urgency_low]
+background = "#1D1F28"
+foreground = "#8C8C8C"
+frame_color = "#3D435C"
+timeout = 4
+
+[urgency_normal]
+background = "#1D1F28"
+foreground = "#FDFDFD"
+frame_color = "#C574DD"
+timeout = 6
+
+[urgency_critical]
+background = "#1D1F28"
+foreground = "#F37F97"
+frame_color = "#F37F97"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/pamela.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#C574DD"
+corner_radius = 10
+background = "#1D1F28"
+foreground = "#FDFDFD"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3D435C"
+
+[urgency_low]
+background = "#1D1F28"
+foreground = "#8C8C8C"
+frame_color = "#3D435C"
+timeout = 4
+
+[urgency_normal]
+background = "#1D1F28"
+foreground = "#FDFDFD"
+frame_color = "#C574DD"
+timeout = 6
+
+[urgency_critical]
+background = "#1D1F28"
+foreground = "#F37F97"
+frame_color = "#F37F97"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/silvia-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B16286"
+corner_radius = 0
+background = "#3C3836"
+foreground = "#EBDBB2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#504945"
+
+[urgency_low]
+background = "#3C3836"
+foreground = "#928374"
+frame_color = "#504945"
+timeout = 4
+
+[urgency_normal]
+background = "#3C3836"
+foreground = "#EBDBB2"
+frame_color = "#B16286"
+timeout = 6
+
+[urgency_critical]
+background = "#3C3836"
+foreground = "#CC241D"
+frame_color = "#CC241D"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/silvia.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B16286"
+corner_radius = 10
+background = "#3C3836"
+foreground = "#EBDBB2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#504945"
+
+[urgency_low]
+background = "#3C3836"
+foreground = "#928374"
+frame_color = "#504945"
+timeout = 4
+
+[urgency_normal]
+background = "#3C3836"
+foreground = "#EBDBB2"
+frame_color = "#B16286"
+timeout = 6
+
+[urgency_critical]
+background = "#3C3836"
+foreground = "#CC241D"
+frame_color = "#CC241D"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/varinka-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#DC5BBC"
+corner_radius = 0
+background = "#212529"
+foreground = "#F8F9FA"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#343A40"
+
+[urgency_low]
+background = "#212529"
+foreground = "#6C757D"
+frame_color = "#343A40"
+timeout = 4
+
+[urgency_normal]
+background = "#212529"
+foreground = "#F8F9FA"
+frame_color = "#DC5BBC"
+timeout = 6
+
+[urgency_critical]
+background = "#212529"
+foreground = "#DC5BBC"
+frame_color = "#DC5BBC"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/varinka.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#DC5BBC"
+corner_radius = 10
+background = "#212529"
+foreground = "#F8F9FA"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#343A40"
+
+[urgency_low]
+background = "#212529"
+foreground = "#6C757D"
+frame_color = "#343A40"
+timeout = 4
+
+[urgency_normal]
+background = "#212529"
+foreground = "#F8F9FA"
+frame_color = "#DC5BBC"
+timeout = 6
+
+[urgency_critical]
+background = "#212529"
+foreground = "#DC5BBC"
+frame_color = "#DC5BBC"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/yael-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#FF7EB6"
+corner_radius = 0
+background = "#161616"
+foreground = "#FFFFFF"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#262626"
+
+[urgency_low]
+background = "#161616"
+foreground = "#8C8C8C"
+frame_color = "#262626"
+timeout = 4
+
+[urgency_normal]
+background = "#161616"
+foreground = "#FFFFFF"
+frame_color = "#FF7EB6"
+timeout = 6
+
+[urgency_critical]
+background = "#161616"
+foreground = "#EE5396"
+frame_color = "#EE5396"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/yael.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#FF7EB6"
+corner_radius = 10
+background = "#161616"
+foreground = "#FFFFFF"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#262626"
+
+[urgency_low]
+background = "#161616"
+foreground = "#8C8C8C"
+frame_color = "#262626"
+timeout = 4
+
+[urgency_normal]
+background = "#161616"
+foreground = "#FFFFFF"
+frame_color = "#FF7EB6"
+timeout = 6
+
+[urgency_critical]
+background = "#161616"
+foreground = "#EE5396"
+frame_color = "#EE5396"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/z0mbi3-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#C296EB"
+corner_radius = 0
+background = "#0D0F18"
+foreground = "#A5B6CF"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#1C1E27"
+
+[urgency_low]
+background = "#0D0F18"
+foreground = "#6E8DB4"
+frame_color = "#1C1E27"
+timeout = 4
+
+[urgency_normal]
+background = "#0D0F18"
+foreground = "#A5B6CF"
+frame_color = "#C296EB"
+timeout = 6
+
+[urgency_critical]
+background = "#0D0F18"
+foreground = "#DD6777"
+frame_color = "#DD6777"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/z0mbi3.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#C296EB"
+corner_radius = 10
+background = "#0D0F18"
+foreground = "#A5B6CF"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#1C1E27"
+
+[urgency_low]
+background = "#0D0F18"
+foreground = "#6E8DB4"
+frame_color = "#1C1E27"
+timeout = 4
+
+[urgency_normal]
+background = "#0D0F18"
+foreground = "#A5B6CF"
+frame_color = "#C296EB"
+timeout = 6
+
+[urgency_critical]
+background = "#0D0F18"
+foreground = "#DD6777"
+frame_color = "#DD6777"
+timeout = 0
+EOF
+
+# dunst has no config-reload-on-file-change of its own the way starship
+# does (it reads dunstrc once at startup, unlike starship which re-reads
+# every prompt) - seed the default here same as rofi/kitty/starship above,
+# and ~/.local/bin/polybar-theme.sh's own `dunstctl reload` is what makes a
+# later theme switch pick up a new dunstrc without restarting the process.
+cp "$CONF/dunst/themes/catppuccin-mocha.dunstrc" "$CONF/dunst/dunstrc"
+
 # ----------------------------------------------------------------------------
 # Flameshot >=14 defaults to capturing via the XDG desktop portal's
 # org.freedesktop.portal.Screenshot interface, which nothing implements on a
@@ -22791,6 +25109,7 @@ set -euo pipefail
 
 LOGO="$HOME/.config/screensaver/logo.txt"
 FONT="/usr/share/fonts/truetype/nerd-fonts/JetBrainsMonoNerdFont-Bold.ttf"
+FEDORA_SVG="/usr/share/fedora-logos/fedora_logo.svg"
 
 if ! command -v magick >/dev/null 2>&1; then
   echo "ImageMagick (magick) is not installed." >&2
@@ -22804,7 +25123,7 @@ mkdir -p "$(dirname "$LOGO")"
 
 INPUT="${1:-}"
 if [ -z "$INPUT" ]; then
-  read -r -p "Screensaver text (or a path to an image): " INPUT
+  read -r -p "Screensaver text, a path to an image, or 'reset' for the Fedora default: " INPUT
 fi
 if [ -z "$INPUT" ]; then
   echo "Nothing entered, leaving $LOGO unchanged." >&2
@@ -22836,7 +25155,24 @@ to_block_art() {
     }'
 }
 
-if [ -f "$INPUT" ]; then
+if [ "$(printf '%s' "$INPUT" | tr '[:upper:]' '[:lower:]')" = "reset" ]; then
+  # Reset mode - regenerates the exact same Fedora block-art logo
+  # screensaver.sh itself lazily creates on first run (identical magick
+  # pipeline against the real Fedora SVG, reusing this script's own
+  # to_block_art rather than a second copy), so picking this is
+  # indistinguishable from having never customized the logo at all.
+  if [ -f "$FEDORA_SVG" ]; then
+    magick -background none "$FEDORA_SVG" -auto-orient \
+      -alpha extract -alpha off -bordercolor black -border 1 -trim +repage \
+      -resize 80x52 -threshold 50% -negate -compress none pbm:- 2>/dev/null \
+      | to_block_art >"$LOGO"
+  fi
+  # Same fallback screensaver.sh itself uses if the Fedora SVG isn't
+  # installed (non-Fedora system) or the pipeline above produced nothing.
+  if [ ! -s "$LOGO" ]; then
+    command -v fastfetch >/dev/null 2>&1 && fastfetch --logo Fedora -s none >"$LOGO"
+  fi
+elif [ -f "$INPUT" ]; then
   # Image mode. Real transparency (an icon/logo on a clear background) is
   # the mask if present - dark pixels are already threshold-negated
   # correctly the same way the Fedora SVG is in screensaver.sh. Otherwise
@@ -22897,13 +25233,14 @@ log "Writing polybar theme switcher script..."
 cat > "$BIN/polybar-theme.sh" <<'EOF'
 #!/usr/bin/env bash
 # Lists available themes (~/.config/polybar/themes/*.ini) via rofi and, on
-# selection, applies matching polybar + rofi + kitty + starship themes
-# together, so one pick retints the whole desktop instead of just the bar.
-# Each is its own COMPLETE, standalone config (a polybar config.ini, a rofi
-# .rasi pair, a kitty color .conf, a starship prompt .toml) generated from
-# the same underlying palette per theme name - not a shared [colors]
-# fragment different tools each interpret slightly differently - applied
-# with a plain file copy, no splicing to keep in sync.
+# selection, applies matching polybar + rofi + kitty + starship + dunst
+# themes together, so one pick retints the whole desktop instead of just
+# the bar. Each is its own COMPLETE, standalone config (a polybar
+# config.ini, a rofi .rasi pair, a kitty color .conf, a starship prompt
+# .toml, a dunst dunstrc) generated from the same underlying palette per
+# theme name - not a shared [colors] fragment different tools each
+# interpret slightly differently - applied with a plain file copy, no
+# splicing to keep in sync.
 #
 # Usage:
 #   polybar-theme.sh          # prompts via rofi
@@ -22919,6 +25256,8 @@ KITTY_THEMES_DIR="$HOME/.config/kitty/themes"
 KITTY_CURRENT="$HOME/.config/kitty/current.conf"
 STARSHIP_THEMES_DIR="$HOME/.config/starship/themes"
 STARSHIP_CURRENT="$HOME/.config/starship.toml"
+DUNST_THEMES_DIR="$HOME/.config/dunst/themes"
+DUNST_CURRENT="$HOME/.config/dunst/dunstrc"
 
 mapfile -t THEME_FILES < <(find "$POLY_THEMES_DIR" -maxdepth 1 -name '*.ini' 2>/dev/null | sort)
 if [ "${#THEME_FILES[@]}" -eq 0 ]; then
@@ -22942,6 +25281,7 @@ ROFI_FILE="$ROFI_THEMES_DIR/$CHOSEN.rasi"
 ROFI_POWERMENU_FILE="$ROFI_THEMES_DIR/$CHOSEN-powermenu.rasi"
 KITTY_FILE="$KITTY_THEMES_DIR/$CHOSEN.conf"
 STARSHIP_FILE="$STARSHIP_THEMES_DIR/$CHOSEN.toml"
+DUNST_FILE="$DUNST_THEMES_DIR/$CHOSEN.dunstrc"
 
 if [ ! -f "$POLY_FILE" ]; then
   notify-send "Desktop Theme" "No such theme: $CHOSEN"
@@ -22995,9 +25335,90 @@ else
   notify-send "Desktop Theme" "No starship theme for $CHOSEN, keeping previous"
 fi
 
+if [ -f "$DUNST_FILE" ]; then
+  cp "$DUNST_FILE" "$DUNST_CURRENT"
+  dunstctl reload >/dev/null 2>&1 || true
+else
+  notify-send "Desktop Theme" "No dunst theme for $CHOSEN, keeping previous"
+fi
+
 notify-send "Desktop Theme" "Switched to $CHOSEN"
 EOF
 chmod +x "$BIN/polybar-theme.sh"
+
+# ----------------------------------------------------------------------------
+# 11d2. Keybinding cheat sheet (Mod+alt+space -> Keybinding Help) - printed in
+#       a floating kitty window, dismissed on any keypress.
+# ----------------------------------------------------------------------------
+log "Writing keybinding cheat sheet script..."
+cat > "$BIN/keybindings-help.sh" <<'EOF'
+#!/usr/bin/env bash
+# Prints this rice's keybinding cheat sheet (same content as the README's
+# "Keybinding Cheat Sheet" table) in a floating kitty window, Catppuccin
+# Mocha-colored. Dismisses on any keypress. Reachable from the app menu
+# (Mod+alt+space -> Keybinding Help) and standalone.
+MAUVE=$'\033[38;2;203;166;247m'
+TEXT=$'\033[38;2;205;214;244m'
+SUBTEXT=$'\033[38;2;166;173;200m'
+RESET=$'\033[0m'
+
+# binding|action - same rows as the README cheat sheet table, kept in sync
+# by hand (this is a small, curated display list, not something parsed out
+# of i3/config, same shape as app-menu.sh's own LABELS/COMMANDS).
+ROWS=(
+  "Mod+Return|Open kitty"
+  "Mod+space / Mod+shift+space|Rofi app launcher (drun) / run launcher"
+  "Mod+e|File manager (pcmanfm)"
+  "Mod+shift+w|Wallpaper picker (nitrogen)"
+  "Mod+p|Printer setup"
+  "Mod+c|Toggle caffeine (inhibit screen-lock/sleep)"
+  "Mod+n|Toggle Do Not Disturb"
+  "Mod+Escape|Block-art screensaver, on demand"
+  "Mod+l|Lock screen"
+  "Mod+shift+p|Power menu"
+  "Mod+shift+v|Clipboard history (copyq)"
+  "Mod+m|CLIamp terminal music player"
+  "Mod+alt+space|App menu (this menu)"
+  "Print|Screenshot (flameshot)"
+  "Mod+shift+q|Close focused window"
+  "Mod+f|Fullscreen toggle"
+  "Mod+shift+f|Floating toggle"
+  "Mod+ctrl+space|Toggle tiling/floating focus"
+  "Mod+h/j/k/;|Focus left/down/up/right"
+  "Mod+shift+h/j/k/;|Move window left/down/up/right"
+  "Mod+v / Mod+b|Split vertical / horizontal (for next window)"
+  "Mod+t|Toggle container layout split direction"
+  "Mod+ctrl+h/l|Focus next/prev monitor"
+  "Mod+ctrl+shift+h/l|Move workspace to next/prev monitor"
+  "Mod+1..9 / Mod+shift+1..9|Switch to / move window to workspace 1-9"
+  "Mod+r|Resize mode (h/j/k/l, Return/Escape to exit)"
+  "Mod+shift+r / Mod+shift+c|Restart / reload i3"
+  "Mod+shift+e|Exit i3 (with confirm)"
+  "XF86Audio Raise/Lower/Mute Volume|Volume, with a dunst level popup"
+  "XF86MonBrightness Up/Down|Brightness, with a dunst level popup"
+  "XF86Audio Play/Next/Prev|Media control (playerctl)"
+)
+
+WIDTH=0
+for row in "${ROWS[@]}"; do
+  binding="${row%%|*}"
+  [ "${#binding}" -gt "$WIDTH" ] && WIDTH="${#binding}"
+done
+
+clear
+echo "${MAUVE}Keybinding Cheat Sheet${RESET}  ${SUBTEXT}(Mod = Super/Windows key)${RESET}"
+echo "${SUBTEXT}$(printf '%.0s─' $(seq 1 70))${RESET}"
+echo
+for row in "${ROWS[@]}"; do
+  binding="${row%%|*}"
+  action="${row#*|}"
+  printf "  ${MAUVE}%-${WIDTH}s${RESET}   ${TEXT}%s${RESET}\n" "$binding" "$action"
+done
+echo
+echo "${SUBTEXT}Press any key to close...${RESET}"
+read -r -n 1 -s
+EOF
+chmod +x "$BIN/keybindings-help.sh"
 
 # ----------------------------------------------------------------------------
 # 11e. App menu (Mod+alt+space) - Omarchy-style floating rofi menu for reaching

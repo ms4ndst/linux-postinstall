@@ -24,6 +24,7 @@ set -euo pipefail
 
 LOGO="$HOME/.config/screensaver/logo.txt"
 FONT="/usr/share/fonts/truetype/nerd-fonts/JetBrainsMonoNerdFont-Bold.ttf"
+FEDORA_SVG="/usr/share/fedora-logos/fedora_logo.svg"
 
 if ! command -v magick >/dev/null 2>&1; then
   echo "ImageMagick (magick) is not installed." >&2
@@ -37,7 +38,7 @@ mkdir -p "$(dirname "$LOGO")"
 
 INPUT="${1:-}"
 if [ -z "$INPUT" ]; then
-  read -r -p "Screensaver text (or a path to an image): " INPUT
+  read -r -p "Screensaver text, a path to an image, or 'reset' for the Fedora default: " INPUT
 fi
 if [ -z "$INPUT" ]; then
   echo "Nothing entered, leaving $LOGO unchanged." >&2
@@ -69,7 +70,24 @@ to_block_art() {
     }'
 }
 
-if [ -f "$INPUT" ]; then
+if [ "$(printf '%s' "$INPUT" | tr '[:upper:]' '[:lower:]')" = "reset" ]; then
+  # Reset mode - regenerates the exact same Fedora block-art logo
+  # screensaver.sh itself lazily creates on first run (identical magick
+  # pipeline against the real Fedora SVG, reusing this script's own
+  # to_block_art rather than a second copy), so picking this is
+  # indistinguishable from having never customized the logo at all.
+  if [ -f "$FEDORA_SVG" ]; then
+    magick -background none "$FEDORA_SVG" -auto-orient \
+      -alpha extract -alpha off -bordercolor black -border 1 -trim +repage \
+      -resize 80x52 -threshold 50% -negate -compress none pbm:- 2>/dev/null \
+      | to_block_art >"$LOGO"
+  fi
+  # Same fallback screensaver.sh itself uses if the Fedora SVG isn't
+  # installed (non-Fedora system) or the pipeline above produced nothing.
+  if [ ! -s "$LOGO" ]; then
+    command -v fastfetch >/dev/null 2>&1 && fastfetch --logo Fedora -s none >"$LOGO"
+  fi
+elif [ -f "$INPUT" ]; then
   # Image mode. Real transparency (an icon/logo on a clear background) is
   # the mask if present - dark pixels are already threshold-negated
   # correctly the same way the Fedora SVG is in screensaver.sh. Otherwise
