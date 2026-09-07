@@ -1242,11 +1242,13 @@ label-foreground = ${colors.base}
 format-background = ${colors.lavender}
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
-label = "  󰃟 %percentage%% "
+label = "  󰃟 %output%% "
 label-foreground = ${colors.base}
 format-background = ${colors.sky}
 
@@ -1695,11 +1697,13 @@ label-font = 3
 label-foreground = ${colors.text}
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
-label = " 󰃟 %percentage%%"
+label = " 󰃟 %output%%"
 label-foreground = ${colors.yellow}
 
 [module/pulseaudio]
@@ -1922,11 +1926,13 @@ label-foreground = ${colors.text}
 format-background = ${colors.surface0}
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
-label = " 󰃟 %percentage%% "
+label = " 󰃟 %output%% "
 label-foreground = ${colors.yellow}
 format-background = ${colors.surface0}
 
@@ -2202,11 +2208,13 @@ label-font = 3
 label-foreground = ${colors.text}
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
-label = " 󰃟 %percentage%% "
+label = " 󰃟 %output%% "
 label-foreground = ${colors.yellow}
 
 [module/pulseaudio]
@@ -2472,14 +2480,16 @@ label = "%{A1:GTK_THEME=Rice-aline gnome-calendar &:}%date%  %time%%{A}"
 label-font = 3
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-background = ${colors.surface0}
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = " %percentage%% "
+label = " %output%% "
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -2718,12 +2728,14 @@ label = " 󰃟 "
 label-foreground = ${colors.base}
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-background = ${colors.surface0}
-label = " %percentage%% "
+label = " %output%% "
 label-foreground = ${colors.base}
 
 [module/pulseaudio-icon]
@@ -3090,13 +3102,15 @@ format-prefix-foreground = ${colors.indigo}
 label = "%{A1:GTK_THEME=Rice-cristina gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.green}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -3326,13 +3340,15 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-cynthia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -3525,14 +3541,16 @@ format-prefix-foreground = ${colors.orange}
 label = "%{A1:GTK_THEME=Rice-daniela gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "BRT "
 format-prefix-font = 1
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -3921,14 +3939,16 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-emilia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-background = ${colors.surface0}
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -4136,12 +4156,14 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-h4ck3r gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -4328,12 +4350,14 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-isabel gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -4532,13 +4556,15 @@ format-prefix-foreground = ${colors.blue}
 label = "%{A1:GTK_THEME=Rice-jan gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -4743,13 +4769,15 @@ format-prefix-foreground = ${colors.purple}
 label = "%{A1:GTK_THEME=Rice-karla gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -4980,13 +5008,15 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-marisol gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -5190,13 +5220,15 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-pamela gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -5398,13 +5430,15 @@ format-prefix-foreground = ${colors.blue-light}
 label = "%{A1:GTK_THEME=Rice-silvia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -5603,12 +5637,14 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-varinka gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -5799,13 +5835,15 @@ format-prefix-foreground = ${colors.cyan}
 label = "%{A1:GTK_THEME=Rice-yael gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -6010,14 +6048,16 @@ format-prefix-foreground = ${colors.blue}
 label = "%{A1:GTK_THEME=Rice-z0mbi3 gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-background = ${colors.surface0}
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = " %percentage%% "
+label = " %output%% "
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -6266,14 +6306,16 @@ label = "%{A1:GTK_THEME=Rice-aline gnome-calendar &:}%date%  %time%%{A}"
 label-font = 3
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-background = ${colors.surface0}
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = " %percentage%% "
+label = " %output%% "
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -6541,11 +6583,13 @@ label-font = 3
 label-foreground = ${colors.text}
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
-label = " 󰃟 %percentage%% "
+label = " 󰃟 %output%% "
 label-foreground = ${colors.yellow}
 
 [module/pulseaudio]
@@ -6765,12 +6809,14 @@ label = " 󰃟 "
 label-foreground = ${colors.base}
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-background = ${colors.surface0}
-label = " %percentage%% "
+label = " %output%% "
 label-foreground = ${colors.base}
 
 [module/pulseaudio-icon]
@@ -7067,11 +7113,13 @@ label-foreground = ${colors.base}
 format-background = ${colors.lavender}
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
-label = "  󰃟 %percentage%% "
+label = "  󰃟 %output%% "
 label-foreground = ${colors.base}
 format-background = ${colors.sky}
 
@@ -7298,13 +7346,15 @@ format-prefix-foreground = ${colors.indigo}
 label = "%{A1:GTK_THEME=Rice-cristina gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.green}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -7518,13 +7568,15 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-cynthia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -7717,14 +7769,16 @@ format-prefix-foreground = ${colors.orange}
 label = "%{A1:GTK_THEME=Rice-daniela gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "BRT "
 format-prefix-font = 1
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -7955,11 +8009,13 @@ label-font = 3
 label-foreground = ${colors.text}
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
-label = " 󰃟 %percentage%%"
+label = " 󰃟 %output%%"
 label-foreground = ${colors.yellow}
 
 [module/pulseaudio]
@@ -8157,14 +8213,16 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-emilia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-background = ${colors.surface0}
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -8372,12 +8430,14 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-h4ck3r gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -8591,15 +8651,17 @@ format-background = ${colors.surface0}
 label = "%{A1:GTK_THEME=Rice-hidrot gnome-calendar &:} %date%  %time% %{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-background = ${colors.surface0}
 format-prefix = "󰖨 "
 format-prefix-background = ${colors.blue1}
 format-prefix-foreground = ${colors.base}
-label = " %percentage%% "
+label = " %output%% "
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -8831,12 +8893,14 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-isabel gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -9035,13 +9099,15 @@ format-prefix-foreground = ${colors.blue}
 label = "%{A1:GTK_THEME=Rice-jan gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -9246,13 +9312,15 @@ format-prefix-foreground = ${colors.purple}
 label = "%{A1:GTK_THEME=Rice-karla gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -9468,13 +9536,15 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-marisol gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -9704,11 +9774,13 @@ label-foreground = ${colors.text}
 format-background = ${colors.surface0}
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
-label = " 󰃟 %percentage%% "
+label = " 󰃟 %output%% "
 label-foreground = ${colors.yellow}
 format-background = ${colors.surface0}
 
@@ -9918,13 +9990,15 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-pamela gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -10126,13 +10200,15 @@ format-prefix-foreground = ${colors.blue-light}
 label = "%{A1:GTK_THEME=Rice-silvia gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -10331,12 +10407,14 @@ format-prefix = " "
 label = "%{A1:GTK_THEME=Rice-varinka gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -10527,13 +10605,15 @@ format-prefix-foreground = ${colors.cyan}
 label = "%{A1:GTK_THEME=Rice-yael gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = "%percentage%%"
+label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -10738,14 +10818,16 @@ format-prefix-foreground = ${colors.blue}
 label = "%{A1:GTK_THEME=Rice-z0mbi3 gnome-calendar &:}%date%  %time%%{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-background = ${colors.surface0}
 format-prefix = "󰃟 "
 format-prefix-foreground = ${colors.yellow}
-label = " %percentage%% "
+label = " %output%% "
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -10999,15 +11081,17 @@ format-background = ${colors.surface0}
 label = "%{A1:GTK_THEME=Rice-hidrot gnome-calendar &:} %date%  %time% %{A}"
 
 [module/backlight]
-type = internal/backlight
-card = intel_backlight
-enable-scroll = true
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
 format = <label>
 format-background = ${colors.surface0}
 format-prefix = "󰖨 "
 format-prefix-background = ${colors.blue1}
 format-prefix-foreground = ${colors.base}
-label = " %percentage%% "
+label = " %output%% "
 
 [module/pulseaudio]
 type = internal/pulseaudio
@@ -11167,6 +11251,17 @@ cat > "$BIN/polybar-launch.sh" <<'EOF'
 # Falls back to top-primary alone if --list-monitors comes back empty (e.g.
 # a stale X state), or if nothing is marked primary at all.
 pkill -x polybar
+# A plain SIGTERM has repeatedly failed to actually kill polybar during
+# rapid theme-switch/restart cycles (confirmed via /proc/<pid>/status - the
+# process just sits there in state S, ignoring it) - waiting on it forever
+# then hangs this whole script (and anything that calls it, e.g.
+# polybar-theme.sh). Escalate to SIGKILL after a bounded ~2s grace period
+# instead of waiting indefinitely for a graceful exit.
+for _ in $(seq 1 20); do
+  pgrep -x polybar >/dev/null || break
+  sleep 0.1
+done
+pgrep -x polybar >/dev/null && pkill -9 -x polybar
 while pgrep -x polybar >/dev/null; do sleep 0.1; done
 # picom restarts via its own separate exec_always line at the same time
 # polybar does (on both i3 reload/restart and login) - with no ordering
@@ -11199,25 +11294,26 @@ else
   done <<< "$LIST"
 fi
 
-# snixembed never actually restarts on its own on i3 restart/reload - its
-# own --fork helper deliberately exits immediately if a StatusNotifierWatcher
-# already exists (to avoid a second instance), and its source has no logic
-# at all for detecting that the X11 tray SELECTION changed owners (confirmed
-# by reading it - no _NET_SYSTEM_TRAY_S0/MANAGER handling anywhere). So when
-# the polybar instance snixembed's icons were embedded in just died above
-# and a brand new one claimed the tray, those already-registered icons are
-# orphaned with nothing to recover them - this is what actually explained
-# the tray coming back empty (or icons flashing then vanishing) after
-# Mod+shift+r, not a picom/compositor timing issue as first suspected.
-# Force-restarting snixembed here (after the new polybar/tray already
-# exists) makes every already-running SNI app notice the watcher's name
-# changed owner and re-register + re-embed fresh - confirmed this already
-# happens automatically (Slack and CopyQ both re-registered on their own)
-# the last time snixembed's binary itself was replaced mid-session.
-pkill -x snixembed
-while pgrep -x snixembed >/dev/null; do sleep 0.1; done
-snixembed --fork &
-disown
+# Only START snixembed if it isn't already running - do NOT kill+restart
+# it here on every reload/restart. An earlier version of this script force-
+# restarted snixembed every time on the theory that it'd make already-open
+# SNI apps notice the watcher's name changed owner and re-register against
+# the new polybar tray window (observed once, for Slack and CopyQ, when
+# snixembed's own binary had just been rebuilt). Live-tested this properly
+# afterwards and that doesn't generalize: forcing the restart left most
+# apps' icons (1Password, Spotify, CopyQ, chrome/Claude status icons,
+# remmina, Udiskie) permanently un-embedded as bare floating windows -
+# manually restarting each individual app didn't fix it either, and even a
+# fully clean fresh polybar+snixembed pair (no stale processes at all)
+# still failed to claim _NET_SYSTEM_TRAY_S0 afterwards, throwing internal
+# "tray: Failed to clear/reconfigure client" XCB errors - a real polybar
+# tray bug this script can't work around by restarting things faster.
+# Leaving an already-working snixembed alone avoids triggering it, at the
+# cost of reintroducing the narrower original problem (an icon that was
+# already embedded in a since-closed polybar window can stay orphaned) -
+# a smaller, rarer annoyance than breaking most of the tray on every
+# single reload.
+pgrep -x snixembed >/dev/null || { snixembed --fork & disown; }
 EOF
 chmod +x "$BIN/polybar-launch.sh"
 
@@ -11409,6 +11505,27 @@ fi
 EOF
 chmod +x "$BIN/polybar-dnd.sh"
 sed -i "s/@@ICO_BELL_OFF@@/$ICO_BELL_OFF/; s/@@ICO_BELL@@/$ICO_BELL/" "$BIN/polybar-dnd.sh"
+
+log "Writing polybar brightness widget script..."
+cat > "$BIN/polybar-backlight.sh" <<'EOF'
+#!/usr/bin/env bash
+# polybar custom/script module: shows current screen brightness and, via
+# scroll-up/scroll-down actions below, changes it - through brightnessctl,
+# not polybar's own internal/backlight module (which this replaced).
+# internal/backlight writes /sys/class/backlight/*/brightness directly,
+# which is root:root 644 on this machine even for a user in the "video"
+# group (confirmed via getfacl) - its own enable-scroll silently did
+# nothing when scrolled, unlike internal/pulseaudio's scroll (no such
+# permission issue, since PulseAudio is a user-session server, not a
+# root-owned sysfs file). brightnessctl already works around this
+# (probably via logind's D-Bus SetBrightness rather than a raw sysfs
+# write - confirmed empirically that it changes brightness successfully
+# as this user with no sudo) and is already this rice's own mechanism for
+# the XF86MonBrightness keys (osd-brightness.sh), so reusing it here
+# instead of polybar's own backlight backend actually works.
+brightnessctl -m info 2>/dev/null | cut -d, -f4 | tr -d '%'
+EOF
+chmod +x "$BIN/polybar-backlight.sh"
 
 log "Writing polybar split-layout indicator script..."
 cat > "$BIN/polybar-layout.sh" <<'EOF'
