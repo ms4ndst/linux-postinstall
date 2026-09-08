@@ -778,6 +778,29 @@ mode "resize" {
 bindsym $mod+r mode "resize"
 
 # --- autostart ---
+# GDM's i3.desktop just execs i3 directly - unlike gnome-session, nothing
+# ever imports this session's DISPLAY/XAUTHORITY into systemd --user's
+# activation environment. dbus-update-activation-environment fixes that
+# half; separately, logind isn't wiring a Desktop= property onto this
+# session (checked via `loginctl show-session <id>` - Type/Class/Active
+# are all correct, Desktop= is just absent), so graphical-session.target
+# (systemd --user) never auto-activates, and it's RefuseManualStart=yes so
+# it can't be started by hand either. Everything gated on it -
+# xdg-desktop-portal.service and its gtk backend, both
+# Requisite=graphical-session.target - then fails with "Dependency
+# failed" (see journalctl --user), which breaks org.freedesktop.portal.
+# Desktop: the D-Bus service apps without their own GTK/Qt file chooser
+# (e.g. Zed) call for the native Open File/Folder dialog, so it shows up
+# empty/broken instead of listing files. Bypass systemd's normal
+# activation for just these two: run them as their own transient units
+# (still gets a real cgroup/lifecycle, unlike a bare backgrounded
+# process) so they claim their D-Bus names directly regardless of
+# graphical-session.target's state. The busctl check keeps `i3 restart`
+# (which re-runs exec, not just exec_always) from spawning a second
+# instance on top of one that's already claimed the name.
+exec --no-startup-id dbus-update-activation-environment --systemd --all
+exec --no-startup-id sh -c 'busctl --user status org.freedesktop.portal.Desktop >/dev/null 2>&1 || systemd-run --user --unit=xdg-desktop-portal-manual --collect /usr/libexec/xdg-desktop-portal'
+exec --no-startup-id sh -c 'busctl --user status org.freedesktop.impl.portal.desktop.gtk >/dev/null 2>&1 || systemd-run --user --unit=xdg-desktop-portal-gtk-manual --collect /usr/libexec/xdg-desktop-portal-gtk'
 # exec_always re-runs on every reload ($mod+shift+c) and restart ($mod+shift+r) -
 # kill any previous instance first so picom doesn't pile up duplicates. The
 # short sleep gives the old process time to actually exit and release the X
@@ -1625,7 +1648,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 1
@@ -2110,7 +2133,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -2664,7 +2687,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -2951,7 +2974,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -3262,7 +3285,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -3493,7 +3516,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 1
@@ -3711,7 +3734,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -4107,7 +4130,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -4304,7 +4327,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -4497,7 +4520,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -4718,7 +4741,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -4938,7 +4961,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -5172,7 +5195,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -5380,7 +5403,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -5582,7 +5605,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -5781,7 +5804,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -5993,7 +6016,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -11007,7 +11030,7 @@ width = 100%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 0
+radius = 8
 padding-left = 2
 padding-right = 2
 module-margin = 0
@@ -11373,7 +11396,12 @@ log "Writing polybar bluetooth helper script..."
 cat > "$BIN/polybar-bluetooth.sh" <<'EOF'
 #!/usr/bin/env bash
 # polybar custom/script module: prints bluetooth adapter power state.
-if bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
+# `timeout` guards against bluetoothctl hanging while bluetoothd's D-Bus
+# service is still registering right after boot/login - without it, a
+# stuck first invocation left the widget completely blank (not even
+# "off") until some later poll finally got through, instead of just
+# falling back to "off" for one 5s cycle.
+if timeout 2 bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
   STATE="on"
 else
   STATE="off"

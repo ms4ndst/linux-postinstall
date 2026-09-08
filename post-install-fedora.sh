@@ -1081,6 +1081,7 @@ install_code_editors() {
     # GNOME 42 - both are listed since some Fedora releases still carry gedit.
     batch_install "Code Editors" vim-enhanced neovim emacs nano geany gnome-text-editor gedit kate
     install_vscode; install_sublime_text
+    install_zed
     install_gram
     configure_lazyvim
 }
@@ -1552,6 +1553,7 @@ install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
     install_alpaca
+    install_localai
     install_claude_code
     install_claude_desktop
     install_gemini_cli
@@ -1577,6 +1579,40 @@ install_ollama() {
 # Alpaca - native GTK4/libadwaita Ollama client, Flathub-only (no vendor
 # rpm/COPR exists), same as the Ubuntu script.
 install_alpaca() { flatpak_install_flathub com.jeffser.Alpaca "Alpaca"; }
+
+# LocalAI (https://github.com/mudler/LocalAI) - OpenAI-compatible local
+# inference server. No rpm/COPR package exists; the GitHub release ships a
+# plain, self-contained binary per arch (local-ai-<version>-linux-<amd64|
+# arm64>, no archive to extract) rather than a vendor install script, so
+# resolve the latest release via the GitHub API and drop the binary
+# straight into /usr/local/bin, same approach as install_displaylink's rpm
+# lookup above.
+install_localai() {
+    if command -v local-ai &>/dev/null; then
+        SKIPPED_PACKAGES+=("local-ai"); ((TOTAL_SKIPPED++)); log INFO "Already installed: local-ai"; return 0
+    fi
+    local arch; arch=$(uname -m)
+    case "$arch" in x86_64) arch="amd64" ;; aarch64) arch="arm64" ;; esac
+    log INFO "Looking up the latest LocalAI release ($arch)..."
+    local url
+    url=$(curl -fsSL "https://api.github.com/repos/mudler/LocalAI/releases/latest" 2>/dev/null \
+        | grep -oP '"browser_download_url":\s*"\K[^"]*linux-'"$arch"'(?=")')
+    if [ -z "$url" ]; then
+        FAILED_PACKAGES+=("local-ai"); ((TOTAL_FAILED++))
+        log WARNING "No prebuilt LocalAI release for $arch - get it from https://github.com/mudler/LocalAI/releases"; return 0
+    fi
+    local t; t=$(mktemp -d)
+    log INFO "Installing LocalAI (GitHub release binary)..."
+    if curl -fL --retry 2 -o "$t/local-ai" "$url" 2>/dev/null; then
+        chmod +x "$t/local-ai"; mv "$t/local-ai" /usr/local/bin/local-ai
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("local-ai"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: local-ai (/usr/local/bin/local-ai - run 'local-ai run' to start the server)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("local-ai"); ((TOTAL_FAILED++))
+    log WARNING "LocalAI download failed - get it from https://github.com/mudler/LocalAI/releases"; return 0
+}
 
 install_claude_code() {
     local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
@@ -1618,6 +1654,32 @@ install_claude_desktop() {
     curl -fsSL https://pkg.claude-desktop-debian.dev/rpm/claude-desktop-unofficial.repo -o /etc/yum.repos.d/claude-desktop-unofficial.repo 2>/dev/null
     pm_update
     safe_install claude-desktop-unofficial
+}
+
+# Zed (https://zed.dev) - GPU-accelerated code editor. No Fedora/COPR
+# package; the vendor's own install script is the supported Linux path
+# and drops the binary in ~/.local, so it must run as the invoking user
+# rather than root - same shape as install_opencode/install_vibe_cli above.
+install_zed() {
+    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+    local check_cmd install_cmd
+    if [ -n "$u" ]; then
+        check_cmd="su - $u -c 'command -v zed'"
+        install_cmd="su - $u -c 'curl -f https://zed.dev/install.sh | sh'"
+    else
+        check_cmd="command -v zed"
+        install_cmd="curl -f https://zed.dev/install.sh | sh"
+    fi
+    if eval "$check_cmd" &>/dev/null || command -v zed &>/dev/null; then
+        SKIPPED_PACKAGES+=("zed"); ((TOTAL_SKIPPED++)); log INFO "Already installed: zed"; return 0
+    fi
+    log INFO "Installing Zed (native installer)..."
+    if eval "$install_cmd" 2>/dev/null && { eval "$check_cmd" &>/dev/null || command -v zed &>/dev/null; }; then
+        INSTALLED_PACKAGES+=("zed"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: zed (~/.local/bin - ensure it's on your PATH)"; return 0
+    fi
+    FAILED_PACKAGES+=("zed"); ((TOTAL_FAILED++))
+    log WARNING "Zed install failed - try: curl -f https://zed.dev/install.sh | sh"; return 0
 }
 
 # Gram (https://codeberg.org/GramEditor/gram) - a Zed-editor fork (its
