@@ -83,7 +83,7 @@ sudo dnf install -y \
   vala gtk3-devel libdbusmenu-devel libdbusmenu-gtk3-devel \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq flameshot ImageMagick \
-  brightnessctl playerctl numlockx dex-autostart autorandr arandr xdotool \
+  brightnessctl playerctl numlockx dex-autostart autorandr arandr xdotool python3-xlib \
   solaar solaar-udev \
   pipx \
   jetbrains-mono-fonts \
@@ -1295,7 +1295,7 @@ format-disconnected =
 type = internal/network
 interface-type = wireless
 interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}   %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}   %essid% %{A}%{A}%{A}"
 label-connected-foreground = ${colors.base}
 format-connected-background = ${colors.blue}
 format-disconnected =
@@ -1735,7 +1735,7 @@ format-disconnected =
 type = internal/network
 interface-type = wireless
 interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid%%{A}%{A}%{A}"
 label-connected-foreground = ${colors.sky}
 format-disconnected =
 
@@ -1968,7 +1968,7 @@ format-disconnected =
 type = internal/network
 interface-type = wireless
 interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}%{A}"
 label-connected-foreground = ${colors.sky}
 format-connected-background = ${colors.surface0}
 format-disconnected =
@@ -2246,7 +2246,7 @@ format-disconnected =
 type = internal/network
 interface-type = wireless
 interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}%{A}"
 label-connected-foreground = ${colors.sky}
 format-disconnected =
 
@@ -2529,7 +2529,7 @@ interval = 3
 format-connected-background = ${colors.surface0}
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -2790,7 +2790,7 @@ type = internal/network
 interface-type = wireless
 interval = 3
 format-connected-background = ${colors.surface0}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
 label-connected-foreground = ${colors.base}
 format-disconnected =
 
@@ -3144,7 +3144,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.orange}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -3380,7 +3380,7 @@ interface-type = wireless
 interval = 3
 format-connected-background = ${colors.surface0}
 format-connected-prefix = " "
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -3588,7 +3588,7 @@ interval = 3
 format-connected-prefix = "NET "
 format-connected-prefix-font = 1
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -3987,7 +3987,7 @@ interval = 3
 format-connected-background = ${colors.surface0}
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -4194,7 +4194,7 @@ type = internal/network
 interface-type = wireless
 interval = 3
 format-connected-prefix = " "
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -4387,7 +4387,7 @@ type = internal/network
 interface-type = wireless
 interval = 3
 format-connected-prefix = " "
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -4599,7 +4599,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -4812,7 +4812,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -5050,7 +5050,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -5262,7 +5262,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -5472,7 +5472,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -5674,7 +5674,7 @@ type = internal/network
 interface-type = wireless
 interval = 3
 format-connected-prefix = " "
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -5877,7 +5877,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -6096,7 +6096,7 @@ interval = 3
 format-connected-background = ${colors.surface0}
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -6355,7 +6355,7 @@ interval = 3
 format-connected-background = ${colors.surface0}
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -6621,7 +6621,7 @@ format-disconnected =
 type = internal/network
 interface-type = wireless
 interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}%{A}"
 label-connected-foreground = ${colors.sky}
 format-disconnected =
 
@@ -6871,7 +6871,7 @@ type = internal/network
 interface-type = wireless
 interval = 3
 format-connected-background = ${colors.surface0}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
 label-connected-foreground = ${colors.base}
 format-disconnected =
 
@@ -7166,7 +7166,7 @@ format-disconnected =
 type = internal/network
 interface-type = wireless
 interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}   %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}   %essid% %{A}%{A}%{A}"
 label-connected-foreground = ${colors.base}
 format-connected-background = ${colors.blue}
 format-disconnected =
@@ -7388,7 +7388,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.orange}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -7608,7 +7608,7 @@ interface-type = wireless
 interval = 3
 format-connected-background = ${colors.surface0}
 format-connected-prefix = " "
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -7816,7 +7816,7 @@ interval = 3
 format-connected-prefix = "NET "
 format-connected-prefix-font = 1
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -8047,7 +8047,7 @@ format-disconnected =
 type = internal/network
 interface-type = wireless
 interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid%%{A}%{A}%{A}"
 label-connected-foreground = ${colors.sky}
 format-disconnected =
 
@@ -8261,7 +8261,7 @@ interval = 3
 format-connected-background = ${colors.surface0}
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -8468,7 +8468,7 @@ type = internal/network
 interface-type = wireless
 interval = 3
 format-connected-prefix = " "
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -8710,7 +8710,7 @@ format-connected-background = ${colors.surface0}
 format-connected-prefix = "󰖩 "
 format-connected-prefix-background = ${colors.green1}
 format-connected-prefix-foreground = ${colors.base}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -8930,7 +8930,7 @@ type = internal/network
 interface-type = wireless
 interval = 3
 format-connected-prefix = " "
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -9142,7 +9142,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -9355,7 +9355,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -9578,7 +9578,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -9816,7 +9816,7 @@ format-disconnected =
 type = internal/network
 interface-type = wireless
 interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}%{A}"
 label-connected-foreground = ${colors.sky}
 format-connected-background = ${colors.surface0}
 format-disconnected =
@@ -10032,7 +10032,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -10242,7 +10242,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -10444,7 +10444,7 @@ type = internal/network
 interface-type = wireless
 interval = 3
 format-connected-prefix = " "
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -10647,7 +10647,7 @@ interface-type = wireless
 interval = 3
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -10866,7 +10866,7 @@ interval = 3
 format-connected-background = ${colors.surface0}
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -11140,7 +11140,7 @@ format-connected-background = ${colors.surface0}
 format-connected-prefix = "󰖩 "
 format-connected-prefix-background = ${colors.green1}
 format-connected-prefix-foreground = ${colors.base}
-label-connected = "%{A1:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}"
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
 format-disconnected =
 
 [module/bluetooth]
@@ -11276,6 +11276,39 @@ for _ in $(seq 1 50); do
   pgrep -x picom >/dev/null && break
   sleep 0.1
 done
+# A stray, unlabeled window (no WM_CLASS - confirmed by inspecting it
+# directly with xprop) sometimes already owns the X11 tray manager
+# selection by the time polybar starts, even on a genuinely fresh boot -
+# not leftover state from a previous session, since this reproduces right
+# after a real reboot with nothing else having run yet. polybar's own
+# internal/tray module detects this and logs "Systray selection already
+# managed", then simply gives up on ever showing a tray for that run -
+# which is what actually caused the tray (and visually everything after
+# it, since polybar keeps rendering the rest of the bar fine) to look
+# empty. Not fixable by restarting polybar alone, since the same phantom
+# window just blocks the next attempt too. Query the real X11 selection
+# owner directly (python3-xlib, already installed) rather than spinning up
+# a throwaway polybar instance just to read its warning off stderr - near-
+# instant, and doesn't flash a duplicate bar on every single reload. A
+# window some other legitimate polybar instance owns always has
+# WM_CLASS="Polybar" (confirmed) - anything holding the selection without
+# that WM_CLASS is the phantom, safe to destroy outright.
+python3 - <<'PYEOF'
+from Xlib import display
+from Xlib.error import BadWindow
+d = display.Display()
+atom = d.intern_atom("_NET_SYSTEM_TRAY_S0")
+owner = d.get_selection_owner(atom)
+if owner:
+    try:
+        wm_class = owner.get_wm_class()
+    except BadWindow:
+        wm_class = None
+    if not wm_class or "Polybar" not in wm_class:
+        owner.destroy()
+        d.sync()
+PYEOF
+
 LIST="$(polybar --list-monitors 2>/dev/null)"
 if [ -z "$LIST" ]; then
   polybar -c ~/.config/polybar/config.ini top-primary &
@@ -25193,6 +25226,112 @@ if ! grep -q '.local/bin' "$HOME/.bashrc" 2>/dev/null; then
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
   log "Added ~/.local/bin to PATH in .bashrc (source it or re-login)."
 fi
+
+# ----------------------------------------------------------------------------
+# 11c2. Wi-Fi picker (rofi) - reachable by left-clicking the polybar
+#       wireless widget.
+# ----------------------------------------------------------------------------
+log "Writing Wi-Fi picker script..."
+cat > "$BIN/wifi-menu.sh" <<'EOF'
+#!/usr/bin/env bash
+# Rofi-based wifi picker - scans nearby networks and connects, unlike
+# nm-connection-editor (which only edits already-saved connection
+# profiles, and has no "browse nearby networks" view at all). Reuses
+# current.rasi, the same rofi theme ~/.local/bin/polybar-theme.sh already
+# keeps in sync with the active desktop theme, so this menu retints for
+# free instead of needing its own GTK-theming project the way
+# nm-connection-editor itself would (a real, ~6000-line, 156-color GTK3
+# stylesheet - a much bigger job for a rarely-opened settings dialog than
+# reusing rofi's own already-switchable theme here).
+set -euo pipefail
+
+ROFI_THEME="$HOME/.config/rofi/current.rasi"
+
+# Best-effort rescan - a scan already in progress (e.g. NetworkManager's
+# own periodic one) makes this fail with a harmless "Scanning not allowed
+# immediately following previous scan" error; the list below just falls
+# back to whatever NetworkManager already has cached from that scan.
+nmcli device wifi rescan >/dev/null 2>&1 || true
+
+# IN-USE/SSID/SECURITY/SIGNAL, sorted by signal descending (nmcli's own
+# default sort) - dedupe by SSID keeping the first (=strongest) row seen,
+# since the same network's multiple access points/bands all share one
+# SSID and only need one menu entry. Skip blank SSIDs (hidden networks -
+# nothing meaningful to connect to by name).
+mapfile -t ROWS < <(
+  nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL device wifi list 2>/dev/null \
+    | awk -F: '
+        $2 == "" { next }
+        !seen[$2]++ { print }
+      '
+)
+
+if [ "${#ROWS[@]}" -eq 0 ]; then
+  notify-send "Wi-Fi" "No networks found."
+  exit 0
+fi
+
+declare -A SECURITY_OF SIGNAL_OF
+MENU=""
+CONNECTED_SSID=""
+for row in "${ROWS[@]}"; do
+  IFS=':' read -r inuse ssid security signal <<< "$row"
+  SECURITY_OF["$ssid"]="$security"
+  SIGNAL_OF["$ssid"]="$signal"
+  if [ "$inuse" = "*" ]; then
+    CONNECTED_SSID="$ssid"
+    MENU+="${ssid} (connected)"$'\n'
+  elif [ -z "$security" ] || [ "$security" = "--" ]; then
+    MENU+="${ssid}"$'\n'
+  else
+    MENU+="${ssid} 󰌾"$'\n'
+  fi
+done
+
+CHOSEN_LINE="$(printf '%s' "$MENU" | rofi -dmenu -i -p "Wi-Fi" -theme "$ROFI_THEME")"
+[ -z "$CHOSEN_LINE" ] && exit 0
+
+# Strip the decorations added above to recover the real SSID for lookup.
+SSID="${CHOSEN_LINE%% 󰌾}"
+SSID="${SSID%% (connected)}"
+
+if [ "$SSID" = "$CONNECTED_SSID" ]; then
+  notify-send "Wi-Fi" "Already connected to \"$SSID\"."
+  exit 0
+fi
+
+# A saved connection profile (from a previous successful connect) already
+# has whatever credentials it needs - reuse it directly rather than
+# prompting for a password NetworkManager doesn't actually need again.
+if nmcli -t -f NAME connection show 2>/dev/null | grep -Fxq "$SSID"; then
+  if nmcli connection up "$SSID" >/dev/null 2>&1; then
+    notify-send "Wi-Fi" "Connected to \"$SSID\"."
+  else
+    notify-send "Wi-Fi" "Failed to connect to \"$SSID\"."
+  fi
+  exit 0
+fi
+
+SECURITY="${SECURITY_OF[$SSID]:-}"
+if [ -z "$SECURITY" ] || [ "$SECURITY" = "--" ]; then
+  if nmcli device wifi connect "$SSID" >/dev/null 2>&1; then
+    notify-send "Wi-Fi" "Connected to \"$SSID\"."
+  else
+    notify-send "Wi-Fi" "Failed to connect to \"$SSID\"."
+  fi
+  exit 0
+fi
+
+PASSWORD="$(rofi -dmenu -password -i -p "Password for $SSID" -theme "$ROFI_THEME")"
+[ -z "$PASSWORD" ] && exit 0
+
+if nmcli device wifi connect "$SSID" password "$PASSWORD" >/dev/null 2>&1; then
+  notify-send "Wi-Fi" "Connected to \"$SSID\"."
+else
+  notify-send "Wi-Fi" "Failed to connect to \"$SSID\" - wrong password?"
+fi
+EOF
+chmod +x "$BIN/wifi-menu.sh"
 
 # ----------------------------------------------------------------------------
 # 11d. Screensaver logo setter (text or image -> block art) - reachable from
