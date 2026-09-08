@@ -1081,6 +1081,7 @@ install_code_editors() {
     # GNOME 42 - both are listed since some Fedora releases still carry gedit.
     batch_install "Code Editors" vim-enhanced neovim emacs nano geany gnome-text-editor gedit kate
     install_vscode; install_sublime_text
+    install_gram
     configure_lazyvim
 }
 
@@ -1558,6 +1559,7 @@ install_ai_tools() {
     install_opencode
     install_cursor
     install_lmstudio
+    install_neuralinverse
 }
 
 install_ollama() {
@@ -1616,6 +1618,44 @@ install_claude_desktop() {
     curl -fsSL https://pkg.claude-desktop-debian.dev/rpm/claude-desktop-unofficial.repo -o /etc/yum.repos.d/claude-desktop-unofficial.repo 2>/dev/null
     pm_update
     safe_install claude-desktop-unofficial
+}
+
+# Gram (https://codeberg.org/GramEditor/gram) - a Zed-editor fork (its
+# changelog references upstream zed# issue numbers throughout, confirmed by
+# reading a real release's notes, not assumed from the name). Not packaged
+# for Fedora/COPR - Codeberg's own release assets include a self-contained
+# Linux tarball (gram.app/ - bin/gram, libexec/gram-editor, bundled
+# lib/*.so, share/applications/gram.desktop, share/icons/...) rather than an
+# .rpm, so the whole bundle is extracted into /opt (keeping bin/libexec/lib
+# together, since gram's own launcher finds its sibling files by a path
+# relative to itself) and only its .desktop/icons get copied into the usual
+# system locations; bin/gram is symlinked onto PATH rather than copied out
+# alone. Version pinned to the one actually tested (3.3.0) rather than
+# resolved via Codeberg's API at install time, unlike claude-desktop above.
+install_gram() {
+    if command -v gram &>/dev/null; then
+        SKIPPED_PACKAGES+=("gram"); ((TOTAL_SKIPPED++)); log INFO "Already installed: gram"; return 0
+    fi
+    log INFO "Installing Gram (editor, tarball release)..."
+    local t; t=$(mktemp -d)
+    local url="https://codeberg.org/GramEditor/gram/releases/download/3.3.0/gram-linux-x86_64-3.3.0.tar.gz"
+    if curl -fsSL --retry 2 -o "$t/gram.tar.gz" "$url" 2>/dev/null \
+        && tar -xzf "$t/gram.tar.gz" -C "$t" 2>/dev/null \
+        && [ -d "$t/gram.app" ]; then
+        rm -rf /opt/gram.app
+        mv "$t/gram.app" /opt/gram.app
+        ln -sf /opt/gram.app/bin/gram /usr/local/bin/gram
+        mkdir -p /usr/share/applications /usr/share/icons/hicolor/scalable/apps /usr/share/icons/hicolor/symbolic/apps
+        cp /opt/gram.app/share/applications/gram.desktop /usr/share/applications/gram.desktop
+        cp /opt/gram.app/share/icons/hicolor/scalable/apps/app.liten.Gram.svg /usr/share/icons/hicolor/scalable/apps/ 2>/dev/null
+        cp /opt/gram.app/share/icons/hicolor/symbolic/apps/app.liten.Gram-symbolic.svg /usr/share/icons/hicolor/symbolic/apps/ 2>/dev/null
+        command -v gtk-update-icon-cache &>/dev/null && gtk-update-icon-cache -f /usr/share/icons/hicolor &>/dev/null
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("gram"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: gram (/opt/gram.app, symlinked to /usr/local/bin/gram)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("gram"); ((TOTAL_FAILED++))
+    log WARNING "Gram download failed - get it from https://codeberg.org/GramEditor/gram/releases"; return 0
 }
 
 install_gemini_cli() {
@@ -1687,6 +1727,36 @@ install_opencode() {
     fi
     FAILED_PACKAGES+=("opencode"); ((TOTAL_FAILED++))
     log WARNING "OpenCode install failed - try: curl -fsSL https://opencode.ai/install | bash"; return 0
+}
+
+# Neural Inverse (https://github.com/NeuralInverse/neuralinverse) - AI coding
+# IDE. Not packaged for Fedora/COPR - vendor curl|bash installer is genuinely
+# non-interactive with --ide (skips the arrow-key IDE/CLI/Both selector
+# entirely, and the only interactive prompt in the installer itself - a CLI
+# terms-of-use acceptance - only triggers for CLI/Both installs, never for
+# --ide alone; confirmed by reading the installer script before using it,
+# not assumed from its docs). Installs into ~/.local/bin, same as opencode
+# above.
+install_neuralinverse() {
+    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+    local check_cmd install_cmd
+    if [ -n "$u" ]; then
+        check_cmd="su - $u -c 'command -v neuralinverse'"
+        install_cmd="su - $u -c 'curl -fsSL https://neuralinverse.com/sh | bash -s -- --ide'"
+    else
+        check_cmd="command -v neuralinverse"
+        install_cmd="curl -fsSL https://neuralinverse.com/sh | bash -s -- --ide"
+    fi
+    if eval "$check_cmd" &>/dev/null; then
+        SKIPPED_PACKAGES+=("neuralinverse"); ((TOTAL_SKIPPED++)); log INFO "Already installed: neuralinverse"; return 0
+    fi
+    log INFO "Installing Neural Inverse IDE (native installer)..."
+    if eval "$install_cmd" 2>/dev/null && eval "$check_cmd" &>/dev/null; then
+        INSTALLED_PACKAGES+=("neuralinverse"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: neuralinverse (~/.local/bin - ensure it's on your PATH)"; return 0
+    fi
+    FAILED_PACKAGES+=("neuralinverse"); ((TOTAL_FAILED++))
+    log WARNING "Neural Inverse install failed - try: curl -fsSL https://neuralinverse.com/sh | bash -s -- --ide"; return 0
 }
 
 # Cursor now ships an official yum repo (downloads.cursor.com/yumrepo),

@@ -24983,6 +24983,58 @@ EOF
 chmod +x "$BIN/lock.sh"
 
 # ----------------------------------------------------------------------------
+# 10c. DPMS-wake-after-resume fix - a systemd-sleep hook, not a user script.
+#      lock.sh (above) forces DPMS off right after starting i3lock so the
+#      screen doesn't stay lit until the idle timer would otherwise catch
+#      up; on some hardware/drivers that DPMS-off state isn't reliably
+#      cleared by resume alone, leaving the monitor stuck black even though
+#      the system is genuinely awake (keyboard backlight on, etc.) until
+#      something explicitly asserts DPMS back on. systemd-logind runs every
+#      script in /etc/systemd/system-sleep/ with two arguments (pre/post,
+#      then the sleep action) both right before AND right after suspend -
+#      this only acts on "post". Installed to /etc rather than
+#      /usr/lib/systemd/system-sleep/ (where the OS's own packaged hooks
+#      live, e.g. nvidia/displaylink) since /etc is the correct local-admin
+#      override location, mirroring the same /etc-vs-/usr split systemd
+#      unit files themselves use.
+# ----------------------------------------------------------------------------
+log "Installing DPMS-wake-after-resume systemd-sleep hook (needs sudo)..."
+sudo tee /etc/systemd/system-sleep/i3-dpms-wake > /dev/null <<'HOOKEOF'
+#!/bin/sh
+# systemd-sleep hook: forces the display back on after resume. On some
+# hardware/drivers, DPMS state set before suspend - lock.sh's own `xset
+# dpms force off`, run right after starting i3lock so the screen doesn't
+# stay lit until the idle timer would otherwise catch up - isn't reliably
+# cleared by resume alone, leaving the monitor stuck showing nothing even
+# though the system is genuinely awake (keyboard backlight on, etc.) until
+# something explicitly asserts DPMS back on. systemd-logind runs every
+# script in this directory with two arguments ($1=pre/post, $2=the sleep
+# action) both right before AND right after suspend/hibernate - this only
+# acts on "post" (after resume), not "pre".
+#
+# Runs as root (that's how systemd-sleep hooks work), so it has to reach
+# into each logged-in graphical user's own session explicitly rather than
+# just running `xset` directly - DISPLAY/XAUTHORITY aren't inherited from
+# anywhere at this point. XAUTHORITY's location varies by display manager
+# (GDM keeps it under /run/user/<uid>/gdm/, other setups use ~/.Xauthority
+# directly) - found dynamically per user rather than hardcoded to one
+# convention, since a setup script installing this shouldn't only work
+# under this one machine's specific display manager.
+case "$1" in
+  post)
+    for user in $(who | awk '{print $1}' | sort -u); do
+      uid="$(id -u "$user" 2>/dev/null)" || continue
+      xauth="$(find "/run/user/$uid" -maxdepth 3 -iname "Xauthority" 2>/dev/null | head -1)"
+      [ -z "$xauth" ] && xauth="/home/$user/.Xauthority"
+      [ -f "$xauth" ] || continue
+      su "$user" -c "DISPLAY=:0 XAUTHORITY=$xauth xset dpms force on" >/dev/null 2>&1
+    done
+    ;;
+esac
+HOOKEOF
+sudo chmod +x /etc/systemd/system-sleep/i3-dpms-wake
+
+# ----------------------------------------------------------------------------
 # 11a. Block-art screensaver (Terminal Text Effects) - Mod+Escape, and shown
 #      automatically before an idle-triggered lock (see --with-screensaver
 #      above). Inspired by Omarchy's built-in one, same underlying tool

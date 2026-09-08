@@ -866,6 +866,7 @@ install_cliamp() {
 install_code_editors() {
     batch_install "Code Editors" vim neovim emacs nano geany gedit kate
     install_vscode; install_sublime_text
+    install_gram
     configure_lazyvim
 }
 
@@ -1779,6 +1780,7 @@ install_ai_tools() {
     install_opencode
     install_cursor
     install_lmstudio
+    install_neuralinverse
 }
 
 # NOTE on tracking: these tools install outside apt (curl script, npm/native
@@ -1975,6 +1977,41 @@ install_opencode() {
     log WARNING "OpenCode install failed - try: curl -fsSL https://opencode.ai/install | bash"; return 0
 }
 
+# Neural Inverse (https://github.com/NeuralInverse/neuralinverse) - AI coding
+# IDE. It does publish a real .deb, but only described in release notes -
+# not attached as a fixed-URL GitHub release asset (files are served from
+# its own CDN, not github.com/.../releases/download/...), so there's no
+# stable URL to curl directly. The vendor curl|bash installer is genuinely
+# non-interactive with --ide (skips the arrow-key IDE/CLI/Both selector
+# entirely, and the only interactive prompt in the installer itself - a CLI
+# terms-of-use acceptance - only triggers for CLI/Both installs, never for
+# --ide alone; confirmed by reading the installer script before using it,
+# not assumed from its docs). Installs into ~/.local/bin, same as opencode
+# above.
+install_neuralinverse() {
+    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+
+    local check_cmd install_cmd
+    if [ -n "$u" ]; then
+        check_cmd="su - $u -c 'command -v neuralinverse'"
+        install_cmd="su - $u -c 'curl -fsSL https://neuralinverse.com/sh | bash -s -- --ide'"
+    else
+        check_cmd="command -v neuralinverse"
+        install_cmd="curl -fsSL https://neuralinverse.com/sh | bash -s -- --ide"
+    fi
+
+    if eval "$check_cmd" &>/dev/null; then
+        SKIPPED_PACKAGES+=("neuralinverse"); ((TOTAL_SKIPPED++)); log INFO "Already installed: neuralinverse"; return 0
+    fi
+    log INFO "Installing Neural Inverse IDE (native installer)..."
+    if eval "$install_cmd" 2>/dev/null && eval "$check_cmd" &>/dev/null; then
+        INSTALLED_PACKAGES+=("neuralinverse"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: neuralinverse (~/.local/bin - ensure it's on your PATH)"; return 0
+    fi
+    FAILED_PACKAGES+=("neuralinverse"); ((TOTAL_FAILED++))
+    log WARNING "Neural Inverse install failed - try: curl -fsSL https://neuralinverse.com/sh | bash -s -- --ide"; return 0
+}
+
 install_cursor() {
     if command -v cursor &>/dev/null || is_installed cursor; then
         SKIPPED_PACKAGES+=("cursor"); ((TOTAL_SKIPPED++)); log INFO "Already installed: cursor"; return 0
@@ -2022,6 +2059,45 @@ EOF
     rm -rf "$t"
     FAILED_PACKAGES+=("cursor"); ((TOTAL_FAILED++))
     log WARNING "Cursor download failed - get it from https://www.cursor.com/"; return 0
+}
+
+# Gram (https://codeberg.org/GramEditor/gram) - a Zed-editor fork (its
+# changelog references upstream zed# issue numbers throughout, confirmed by
+# reading a real release's notes, not assumed from the name). Not packaged
+# for Ubuntu/apt/PPA - Codeberg's own release assets include a
+# self-contained Linux tarball (gram.app/ - bin/gram, libexec/gram-editor,
+# bundled lib/*.so, share/applications/gram.desktop, share/icons/...)
+# rather than a .deb, so the whole bundle is extracted into /opt (keeping
+# bin/libexec/lib together, since gram's own launcher finds its sibling
+# files by a path relative to itself) and only its .desktop/icons get
+# copied into the usual system locations; bin/gram is symlinked onto PATH
+# rather than copied out alone, same shape as install_cursor's AppImage
+# fallback above. Version pinned to the one actually tested (3.3.0) rather
+# than resolved via Codeberg's API at install time.
+install_gram() {
+    if command -v gram &>/dev/null; then
+        SKIPPED_PACKAGES+=("gram"); ((TOTAL_SKIPPED++)); log INFO "Already installed: gram"; return 0
+    fi
+    log INFO "Installing Gram (editor, tarball release)..."
+    local t=$(mktemp -d)
+    local url="https://codeberg.org/GramEditor/gram/releases/download/3.3.0/gram-linux-x86_64-3.3.0.tar.gz"
+    if { curl -fsSL --retry 2 -o "$t/gram.tar.gz" "$url" 2>/dev/null || wget -q --tries=2 -O "$t/gram.tar.gz" "$url" 2>/dev/null; } \
+        && tar -xzf "$t/gram.tar.gz" -C "$t" 2>/dev/null \
+        && [ -d "$t/gram.app" ]; then
+        rm -rf /opt/gram.app
+        mv "$t/gram.app" /opt/gram.app
+        ln -sf /opt/gram.app/bin/gram /usr/local/bin/gram
+        mkdir -p /usr/share/applications /usr/share/icons/hicolor/scalable/apps /usr/share/icons/hicolor/symbolic/apps
+        cp /opt/gram.app/share/applications/gram.desktop /usr/share/applications/gram.desktop
+        cp /opt/gram.app/share/icons/hicolor/scalable/apps/app.liten.Gram.svg /usr/share/icons/hicolor/scalable/apps/ 2>/dev/null
+        cp /opt/gram.app/share/icons/hicolor/symbolic/apps/app.liten.Gram-symbolic.svg /usr/share/icons/hicolor/symbolic/apps/ 2>/dev/null
+        command -v gtk-update-icon-cache &>/dev/null && gtk-update-icon-cache -f /usr/share/icons/hicolor &>/dev/null
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("gram"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: gram (/opt/gram.app, symlinked to /usr/local/bin/gram)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("gram"); ((TOTAL_FAILED++))
+    log WARNING "Gram download failed - get it from https://codeberg.org/GramEditor/gram/releases"; return 0
 }
 
 # LM Studio (lmstudio.ai) - GUI desktop app for discovering/running local
