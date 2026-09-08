@@ -651,8 +651,9 @@ flatpak_install_flathub() {
 # `command -v <tool>` first, so on Omarchy those checks succeed immediately
 # and the function just logs "already installed" and returns, exactly the
 # idempotency behavior the rest of this script relies on everywhere else.
-# Ollama, Alpaca, Claude Desktop, and Cursor aren't among Omarchy's nine
-# stubs, so those still genuinely install something new even there.
+# Ollama, Alpaca, Claude Desktop, Cursor, and LM Studio aren't among
+# Omarchy's nine stubs, so those still genuinely install something new even
+# there.
 install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
@@ -663,6 +664,7 @@ install_ai_tools() {
     install_vibe_cli
     install_opencode
     install_cursor
+    install_lmstudio
 }
 
 install_ollama() {
@@ -823,6 +825,23 @@ install_cursor() {
         SKIPPED_PACKAGES+=("cursor"); ((TOTAL_SKIPPED++)); log INFO "Already installed: cursor"; return 0
     fi
     batch_install "Cursor" cursor-bin
+}
+
+# LM Studio (lmstudio.ai) - a GUI desktop app for discovering/running local
+# LLMs (GGUF models, local OpenAI-compatible API server). No official Arch
+# package or vendor repo (LM Studio ships Windows/macOS installers + a Linux
+# AppImage only), but lmstudio-bin is a well-established, actively maintained
+# AUR package wrapping that AppImage (67 votes, not flagged out-of-date as of
+# writing - confirmed via a live AUR RPC query; a similarly-named
+# "lmstudio-beta" package also exists but IS flagged out-of-date, so it's
+# deliberately not used here). Its PKGBUILD symlinks the AppImage to
+# /usr/bin/lm-studio (confirmed by reading the PKGBUILD directly), which is
+# the command this checks for.
+install_lmstudio() {
+    if command -v lm-studio &>/dev/null; then
+        SKIPPED_PACKAGES+=("lmstudio-bin"); ((TOTAL_SKIPPED++)); log INFO "Already installed: lm-studio"; return 0
+    fi
+    batch_install "LM Studio" lmstudio-bin
 }
 
 # ========== CODE EDITORS, LANGUAGES, GENERAL DEV, DEVOPS ==========

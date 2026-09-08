@@ -1557,6 +1557,7 @@ install_ai_tools() {
     install_vibe_cli
     install_opencode
     install_cursor
+    install_lmstudio
 }
 
 install_ollama() {
@@ -1708,6 +1709,14 @@ EOF
     pm_update
     safe_install cursor
 }
+
+# LM Studio (lmstudio.ai) - GUI desktop app for discovering/running local
+# LLMs (GGUF models, local OpenAI-compatible API server). No rpm/COPR exists
+# (LM Studio ships Windows/macOS installers + a Linux AppImage only) - but it
+# does have an official Flathub package (confirmed via a live Flathub API
+# search), so that's the right path here rather than hand-rolling an
+# AppImage-download wrapper.
+install_lmstudio() { flatpak_install_flathub ai.lmstudio.lm-studio "LM Studio"; }
 
 # ========== GUI TWEAKS ==========
 set_terminal_font() {

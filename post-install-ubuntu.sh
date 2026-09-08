@@ -1778,6 +1778,7 @@ install_ai_tools() {
     install_vibe_cli
     install_opencode
     install_cursor
+    install_lmstudio
 }
 
 # NOTE on tracking: these tools install outside apt (curl script, npm/native
@@ -2022,6 +2023,14 @@ EOF
     FAILED_PACKAGES+=("cursor"); ((TOTAL_FAILED++))
     log WARNING "Cursor download failed - get it from https://www.cursor.com/"; return 0
 }
+
+# LM Studio (lmstudio.ai) - GUI desktop app for discovering/running local
+# LLMs (GGUF models, local OpenAI-compatible API server). No .deb/apt repo
+# exists (LM Studio ships Windows/macOS installers + a Linux AppImage only)
+# - but it does have an official Flathub package (confirmed via a live
+# Flathub API search), so that's the right path here rather than hand-rolling
+# an AppImage-download wrapper the way install_cursor above has to.
+install_lmstudio() { flatpak_install_flathub ai.lmstudio.lm-studio "LM Studio"; }
 
 # ========== GUI TWEAKS ==========
 # Point the terminal (and the desktop's monospace font generally) at an installed
