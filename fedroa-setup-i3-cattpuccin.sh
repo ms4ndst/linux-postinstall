@@ -11781,10 +11781,15 @@ def save_notified(notified):
 def notify(summary, location, start_ts):
     when = time.strftime("%H:%M", time.localtime(start_ts))
     body = when if not location else f"{when} — {location}"
+    # Urgency "critical" (not "normal") - dunst has no clickable close
+    # button on any notification regardless of urgency, but this rice's
+    # dunstrc gives urgency_critical timeout=0 (vs. 6s for normal), so the
+    # reminder just sits there until dismissed (left-click, or any other
+    # dunst dismiss action) instead of risking being missed on a timer.
     subprocess.run(
         [
             "notify-send", "-a", "Calendar", "-i", "x-office-calendar",
-            "-u", "normal", "-h", "string:x-dunst-stack-tag:calendar-reminder",
+            "-u", "critical", "-h", "string:x-dunst-stack-tag:calendar-reminder",
             summary, body,
         ],
         check=False,
