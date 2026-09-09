@@ -833,7 +833,15 @@ exec --no-startup-id copyq
 exec --no-startup-id udiskie --tray
 exec --no-startup-id gammastep
 exec --no-startup-id nitrogen --restore
-exec --no-startup-id dunst
+# Plain `exec` (not `exec_always`) is meant to run once per session, but
+# `i3 restart` (mod+shift+r) re-runs exec lines too, not just exec_always
+# ones - confirmed the hard way: a stray second dunst instance from a prior
+# restart sat around for hours, silently losing the race for the
+# org.freedesktop.Notifications D-Bus name to the original, harmless by
+# itself but exactly the kind of duplication that can eat state/timing on
+# something less idempotent (see the calendar reminder daemon below).
+# pgrep-guard so a restart is a no-op instead of a second instance.
+exec --no-startup-id sh -c 'pgrep -x dunst >/dev/null || dunst'
 # Evolution's own calendar/task reminder popup (evolution-alarm-notify) is
 # disabled entirely (autostart Hidden=true + `systemctl --user mask
 # evolution-alarm-notify.service` - masking, not just disabling, since it's
@@ -845,7 +853,11 @@ exec --no-startup-id dunst
 # themed dunst notification instead - dunst already tracks the active
 # theme, and its own DND pause state already suppresses these the same way
 # it suppresses everything else, no separate toggle needed.
-exec --no-startup-id python3 ~/.local/bin/calendar-reminder-daemon.py
+# Same pgrep-guard as dunst above, and more important here: a duplicate
+# would mean two processes polling and writing
+# ~/.cache/calendar-reminder-notified.json at once - a real risk after
+# any i3 restart mid-session, not just a wasted process.
+exec --no-startup-id sh -c 'pgrep -f calendar-reminder-daemon.py >/dev/null || python3 ~/.local/bin/calendar-reminder-daemon.py'
 exec --no-startup-id numlockx on
 # Runs any other installed app's ~/.config/autostart .desktop entries (tray
 # apps, sync clients, etc.) - bare i3 has no XDG autostart support of its own.
@@ -11684,10 +11696,65 @@ import subprocess
 import sys
 import time
 
+
+def _local_timezone():
+    # Fallback for a genuinely floating ICalTime (get_timezone() returns
+    # None) - see floating_safe_as_timet() below for the actual bug this
+    # works around. Read /etc/localtime's symlink target rather than
+    # hardcoding a zone name, so this keeps working if the system's
+    # timezone ever changes.
+    try:
+        path = os.path.realpath("/etc/localtime")
+        name = path.split("/usr/share/zoneinfo/", 1)[1]
+        tz = ICalGLib.Timezone.get_builtin_timezone(name)
+        if tz:
+            return tz
+    except Exception:
+        pass
+    return ICalGLib.Timezone.get_utc_timezone()
+
+
+LOCAL_TZ = _local_timezone()
+
+
+def floating_safe_as_timet(ical_time):
+    # ICalTime.as_timet() (no zone argument) ALWAYS interprets the wall-
+    # clock fields as UTC - confirmed directly against a real event: its
+    # DTSTART correctly carried an attached "Europe/Stockholm" tzid
+    # (get_timezone() was NOT None) and get_hour()/get_minute() correctly
+    # read 13:40, yet as_timet() still returned 15:40 CEST. It simply
+    # never consults the attached zone. as_timet_with_zone(that same
+    # attached zone) gives the correct 13:40. This had gone unnoticed
+    # because Exchange/Google meeting invites almost always store DTSTART
+    # in real UTC already (is_utc() true), where the "always assume UTC"
+    # behavior happens to be correct by coincidence - it only breaks on
+    # events with an explicit local zone or a genuinely floating time
+    # (e.g. a quick event added via a calendar app's own popup), silently
+    # shifting every alarm by the local UTC offset (here, +2h/CEST).
+    if ical_time is None:
+        return None
+    if ical_time.is_utc():
+        return ical_time.as_timet()
+    tz = ical_time.get_timezone() or LOCAL_TZ
+    return ical_time.as_timet_with_zone(tz)
+
+
 STATE_FILE = os.path.expanduser("~/.cache/calendar-reminder-notified.json")
 POLL_INTERVAL = 30  # seconds between polls
 LOOKBACK = 120  # seconds - catches alarms that became due since the last poll, with margin
 INSTANCE_WINDOW = 14 * 24 * 3600  # how far ahead to expand recurring instances (14 days)
+# How far back generate_instances_sync's own query range has to start -
+# separate from LOOKBACK (which only gates which alarms count as "due" once
+# instances are already found). Confirmed live: at least some real events
+# (e.g. modified occurrences of a recurring meeting) silently vanish from
+# generate_instances_sync's results when the query's start time is within
+# roughly an hour of the event's own start - passed LOOKBACK's 120s here
+# instead, the query missed real alarms every single time regardless of
+# polling health (reproduced directly against this account's own real
+# calendar data, not assumed). A query starting a full day back reliably
+# finds them; LOOKBACK still does the actual narrow due/not-due filtering
+# below, so this only widens what gets *considered*, not what fires.
+QUERY_LOOKBACK = 24 * 3600
 STATE_MAX_AGE = 3 * 24 * 3600  # prune notified-keys older than this
 
 
@@ -11729,7 +11796,7 @@ def find_due(sources, now):
     window_end = now + INSTANCE_WINDOW
 
     def instance_cb(icalcomp, instance_start, instance_end, user_data, cancellable):
-        start_ts = instance_start.as_timet() if instance_start else None
+        start_ts = floating_safe_as_timet(instance_start)
         if start_ts is None:
             return True
         uid = icalcomp.get_uid()
@@ -11759,7 +11826,7 @@ def find_due(sources, now):
     for src in sources:
         try:
             client = ECal.Client.connect_sync(src, ECal.ClientSourceType.EVENTS, 5, None)
-            client.generate_instances_sync(int(now - LOOKBACK), int(window_end), None, instance_cb, None)
+            client.generate_instances_sync(int(now - QUERY_LOOKBACK), int(window_end), None, instance_cb, None)
         except Exception as e:
             print(f"calendar-reminder-daemon: skipping {src.get_display_name()}: {e}", file=sys.stderr)
 
