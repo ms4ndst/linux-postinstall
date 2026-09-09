@@ -11781,15 +11781,19 @@ def save_notified(notified):
 def notify(summary, location, start_ts):
     when = time.strftime("%H:%M", time.localtime(start_ts))
     body = when if not location else f"{when} — {location}"
-    # Urgency "critical" (not "normal") - dunst has no clickable close
-    # button on any notification regardless of urgency, but this rice's
-    # dunstrc gives urgency_critical timeout=0 (vs. 6s for normal), so the
-    # reminder just sits there until dismissed (left-click, or any other
-    # dunst dismiss action) instead of risking being missed on a timer.
+    # -t 0 (explicit infinite expire-time) forces dunst to never
+    # auto-dismiss this, independent of urgency - confirmed live: it stays
+    # displayed indefinitely with plain -u normal too. Deliberately NOT
+    # using -u critical for this: this rice's dunstrc hardcodes
+    # urgency_critical to red text/frame in every theme, which would make
+    # calendar reminders the one thing that ignores whichever theme is
+    # actually active. dunst has no clickable close button regardless of
+    # urgency - dismissal is still just clicking the notification (dunst's
+    # own default left-click action), same as any other notification.
     subprocess.run(
         [
             "notify-send", "-a", "Calendar", "-i", "x-office-calendar",
-            "-u", "critical", "-h", "string:x-dunst-stack-tag:calendar-reminder",
+            "-u", "normal", "-t", "0", "-h", "string:x-dunst-stack-tag:calendar-reminder",
             summary, body,
         ],
         check=False,
