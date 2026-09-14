@@ -4,15 +4,16 @@
 
 ![screenshot](screenshot.png)
 
-This repo ships **three independent, distro-specific scripts** — pick the one that matches your machine:
+This repo ships **four independent, distro-specific scripts** — pick the one that matches your machine:
 
 - **[`post-install-ubuntu.sh`](post-install-ubuntu.sh)** — for **Ubuntu 26.04 LTS / 26.10**, built on apt/Nala.
 - **[`post-install-fedora.sh`](post-install-fedora.sh)** — for **Fedora Workstation**, built on `dnf5`/RPM Fusion.
 - **[`post-install-arch.sh`](post-install-arch.sh)** — for **Arch Linux and [Omarchy](https://omarchy.org)**, built on `pacman` with a `yay` AUR fallback.
+- **[`post-install-opensuse.sh`](post-install-opensuse.sh)** — for **openSUSE Tumbleweed**, built on `zypper`/OBS/Packman.
 
-They share the same Catppuccin-themed menu-driven UX, the same installed/skipped/failed tracking, and the same GNOME Shell app-folder feature — but every install path (package names, repos, drivers, codecs) is re-sourced per distro rather than being a single script with `if`-branches. None of the three scripts depends on or modifies another; run whichever matches your system.
+They share the same Catppuccin-themed menu-driven UX, the same installed/skipped/failed tracking, and the same GNOME Shell app-folder feature — but every install path (package names, repos, drivers, codecs) is re-sourced per distro rather than being a single script with `if`-branches. None of the four scripts depends on or modifies another; run whichever matches your system.
 
-There's also a fourth, standalone script that isn't part of that trio: **[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh)** builds a full Catppuccin Mocha–themed **i3 tiling window manager** desktop on top of Fedora — a single-purpose rice script, not a menu-driven package browser. Run it after (or independently of) `post-install-fedora.sh`. See [i3 + Catppuccin Rice Script](#-i3--catppuccin-rice-script-fedora) below.
+There are also two standalone i3+Catppuccin rice scripts that aren't part of that quartet: **[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh)** (Fedora) and **[`opensuse-setup-i3-cattpuccin.sh`](opensuse-setup-i3-cattpuccin.sh)** (openSUSE Tumbleweed) each build a full Catppuccin Mocha–themed **i3 tiling window manager** desktop on top of their respective distro — single-purpose rice scripts, not menu-driven package browsers. Run one after (or independently of) its matching post-install script. See [i3 + Catppuccin Rice Script](#-i3--catppuccin-rice-script-fedora--opensuse) below.
 
 ---
 
@@ -105,6 +106,51 @@ There's also a fourth, standalone script that isn't part of that trio: **[`fedro
   - [⚠️ Fedora Known Limitations](#-fedora-known-limitations)
   - [⚙️ Fedora Customization](#-fedora-customization)
   - [🐛 Fedora Troubleshooting](#-fedora-troubleshooting)
+- [🦎 openSUSE Tumbleweed Post-Install Script](#-opensuse-tumbleweed-post-install-script)
+  - [🚀 openSUSE Overview](#-opensuse-overview)
+  - [✨ openSUSE Features](#-opensuse-features)
+  - [📥 openSUSE Installation](#-opensuse-installation)
+  - [🎯 openSUSE Usage](#-opensuse-usage)
+  - [🗂️ openSUSE GNOME App Folders (Super Key Groups)](#️-opensuse-gnome-app-folders-super-key-groups)
+  - [📦 openSUSE Package Categories](#-opensuse-package-categories)
+    - [openSUSE: Creative Suite](#opensuse-creative-suite)
+    - [openSUSE: Code Editors](#opensuse-code-editors)
+    - [openSUSE: Python](#opensuse-python)
+    - [openSUSE: Web Development](#opensuse-web-development)
+    - [openSUSE: Java](#opensuse-java)
+    - [openSUSE: C/C++](#opensuse-cc)
+    - [openSUSE: Go](#opensuse-go)
+    - [openSUSE: Rust](#opensuse-rust)
+    - [openSUSE: Node.js](#opensuse-nodejs)
+    - [openSUSE: PHP](#opensuse-php)
+    - [openSUSE: Ruby](#opensuse-ruby)
+    - [openSUSE: Databases](#opensuse-databases)
+    - [openSUSE: Containers & VMs](#opensuse-containers--vms)
+    - [openSUSE: Gaming](#opensuse-gaming)
+    - [openSUSE: Office & Docs](#opensuse-office--docs)
+    - [openSUSE: System Utilities](#opensuse-system-utilities)
+    - [openSUSE: General Dev Tools](#opensuse-general-dev-tools)
+    - [openSUSE: AI Tools](#opensuse-ai-tools)
+    - [openSUSE: GUI Tweaks](#opensuse-gui-tweaks)
+    - [openSUSE: Windows (Wine)](#opensuse-windows-wine)
+    - [openSUSE: Android Tools](#opensuse-android-tools)
+    - [openSUSE: Security Tools](#opensuse-security-tools)
+    - [openSUSE: .NET](#opensuse-net)
+    - [openSUSE: DevOps & Cloud](#opensuse-devops--cloud)
+    - [openSUSE: Desktop Apps](#opensuse-desktop-apps)
+    - [openSUSE: Browsers](#opensuse-browsers)
+    - [openSUSE: Communication](#opensuse-communication)
+    - [openSUSE: Drivers & Extra Repos](#opensuse-drivers--extra-repos)
+    - [openSUSE: Snapshots & Backup](#opensuse-snapshots--backup)
+    - [openSUSE: Peripherals (Logitech)](#opensuse-peripherals-logitech)
+    - [openSUSE: Printers (CUPS + HP)](#opensuse-printers-cups--hp)
+  - [🔀 openSUSE Bulk Options (A / B / C)](#-opensuse-bulk-options-a--b--c)
+  - [🔧 openSUSE Error Handling &amp; Installation Checks](#-opensuse-error-handling--installation-checks)
+  - [📊 openSUSE Installation Summary &amp; Logging](#-opensuse-installation-summary--logging)
+  - [🔒 openSUSE Security Notes](#-opensuse-security-notes)
+  - [⚠️ openSUSE Known Limitations](#-opensuse-known-limitations)
+  - [⚙️ openSUSE Customization](#-opensuse-customization)
+  - [🐛 openSUSE Troubleshooting](#-opensuse-troubleshooting)
 - [🏹 Arch Linux / Omarchy Post-Install Script](#-arch-linux--omarchy-post-install-script)
   - [🚀 Arch Overview](#-arch-overview)
   - [✨ Arch Features](#-arch-features)
@@ -151,9 +197,10 @@ There's also a fourth, standalone script that isn't part of that trio: **[`fedro
   - [⚠️ Arch Known Limitations](#-arch-known-limitations)
   - [⚙️ Arch Customization](#-arch-customization)
   - [🐛 Arch Troubleshooting](#-arch-troubleshooting)
-- [🎨 i3 + Catppuccin Rice Script (Fedora)](#-i3--catppuccin-rice-script-fedora)
+- [🎨 i3 + Catppuccin Rice Script (Fedora & openSUSE)](#-i3--catppuccin-rice-script-fedora--opensuse)
   - [🚀 i3 Script Overview](#-i3-script-overview)
   - [📦 What Gets Installed](#-what-gets-installed)
+  - [🦎 openSUSE Port: What's Actually Different](#-opensuse-port-whats-actually-different)
   - [📥 i3 Script Installation & Usage](#-i3-script-installation--usage)
   - [⌨️ Keybinding Cheat Sheet](#️-keybinding-cheat-sheet)
   - [🖥️ Multi-Monitor Setup](#️-multi-monitor-setup)
@@ -1537,6 +1584,606 @@ ls -lt /var/log/fedora_post_install_*.log | head -1 | awk '{print $NF}' | xargs 
 
 ---
 
+# 🦎 openSUSE Tumbleweed Post-Install Script
+
+### 🚀 openSUSE Overview
+
+`post-install-opensuse.sh` is a from-scratch **openSUSE Tumbleweed** port of `post-install-fedora.sh` — same Catppuccin-themed menu-driven UX, same installed/skipped/failed tracking, same GNOME app-folder feature, nearly the same category taxonomy — but every install path is re-sourced for **`zypper`** and openSUSE's own third-party layer (**OBS** in place of COPR, **Packman** in place of RPM Fusion) instead of `dnf5`. It's a separate, independent script — run whichever file matches your distro.
+
+**Tumbleweed is a rolling release, not a versioned one.** There's no `42`/`43`/`44` the way Fedora has — `/etc/os-release`'s `VERSION_ID` is a `YYYYMMDD` snapshot stamp that changes with every sync, so there's no `SUPPORTED_VERSIONS` array to check against. `check_version()` instead confirms `ID=opensuse-tumbleweed` and logs the snapshot date for the record; running on **openSUSE Leap** (same `zypper`, but a fixed-version release like Fedora, not rolling) or anything else warns and asks whether to continue, same shape as the other three scripts.
+
+On startup the script runs **`zypper dup --no-allow-vendor-change`** before anything else — not just a metadata refresh. This is Tumbleweed's own documented update path (every snapshot is effectively a new coordinated release, not an incremental patch stream), so the script syncs the whole system to the current snapshot up front rather than just calling `zypper refresh`. It then runs **`bootstrap_repos`**, which ensures the **OSS + Non-OSS** repos are enabled (a normal graphical/YaST install already has both; a minimal/JeOS image can be missing Non-OSS specifically, which Steam needs) and enables **Packman Essentials** at priority 90 — openSUSE's own documented recipe for pulling in patent-encumbered multimedia codecs without breaking dependency resolution against the rest of the system.
+
+**Key Design Decisions (how this differs from a literal 1:1 port):**
+
+- ✅ **`package_exists` does NOT use `zypper info`.** A live check during development (and [openSUSE/zypper#504](https://github.com/openSUSE/zypper/issues/504)) confirmed `zypper info` returns exit `0` even for a package that doesn't exist at all anywhere — useless as an existence probe. `zypper install --dry-run` is documented to return `ZYPPER_EXIT_INF_CAP_NOT_FOUND` (**104**) specifically when a name matches no available/installed package, so that's the actual check used.
+- ✅ **OBS instead of COPR, one project at a time.** openSUSE has no single flat COPR-style namespace — `add_obs_repo(project, label)` enables one [Open Build Service](https://build.opensuse.org) project's repo at a time (`hardware` for Solaar, `security` for pentest tools, `devel:languages:go` for lazygit, …), each individually checked against a live OBS lookup during development, degrading gracefully (same spirit as `add_copr`) if a project has no current Tumbleweed build.
+- ✅ **`opi` instead of Terra.** openSUSE has no single second-tier catch-all repo the way Fedora has Terra — **[opi](https://github.com/openSUSE/opi)** (openSUSE's own official "OBS Package Installer," packaged directly in Tumbleweed's OSS repo, no extra repo needed) is offered as the closest genuine parity item, under Drivers & Extra Repos.
+- ✅ **Snapshots are native, not bolted on.** A default Tumbleweed install already ships Btrfs, a pre-created Snapper `root` config, `snapper-zypp-plugin` taking a real pre/post snapshot pair around *every* zypper/YaST transaction, and `grub2-snapper-plugin` wired into GRUB. The new **Snapshots & Backup** category (option `29`) mostly **verifies** that's in place and fills in anything a hand-partitioned install skipped, rather than building it from scratch the way a Btrfs+Snapper setup has to be built on Fedora/Arch.
+- ✅ **Flathub is not preconfigured.** Unlike Fedora (Flathub ships enabled out of the box), Tumbleweed ships Flatpak itself but not the Flathub remote — `flatpak_install_flathub()` adds `https://dl.flathub.org/repo/flathub.flatpakrepo` itself before every Flatpak install.
+- ✅ **Two new hardware-adjacent categories carried over from the Arch script's own additions**: **Peripherals (Logitech)** (option `30`, Solaar) and **Printers (CUPS + HP)** (option `31`) are numbered identically to their equivalents in the Fedora/Arch scripts' own current menus.
+- ✅ **Genuine gaps are flagged, not papered over**: DisplayLink has no installable openSUSE package or OBS project at all (manual instructions only — see [openSUSE: Drivers & Extra Repos](#opensuse-drivers--extra-repos)); 1Password's own rpm repo deliberately blocks zypper access (AppImage fallback, per 1Password's own documented recommendation); `system-config-printer` has no confirmed openSUSE build (`yast2-printer` substituted). See [openSUSE Known Limitations](#-opensuse-known-limitations).
+- ✅ **Robust Error Handling**: same `package_exists`-before-`safe_install` safety net as the other three scripts — an unavailable package is skipped and logged, never a hard failure.
+
+---
+
+### ✨ openSUSE Features
+
+#### openSUSE Core Features
+
+| Feature                       | Description                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| **Rolling-Release Detection**  | Reads `/etc/os-release` for `ID=opensuse-tumbleweed` + the `VERSION_ID` snapshot date; no fixed version list — warns/prompts on Leap or anything else |
+| **zypper Front-End**           | `package_exists` uses `zypper install --dry-run` + exit code `104`, not `zypper info` (confirmed to return 0 for nonexistent packages) |
+| **Catppuccin-Themed Output**  | Same palette/menus/logging as the Ubuntu/Fedora/Arch scripts, auto-disabled for non-TTY / `NO_COLOR` |
+| **Interactive Menu**          | Text-based menu with 31 categories, plus Creative Suite, Security, Browsers, Communication, GUI Tweaks, GTK Themes, Drivers & Extra Repos, Snapshots & Backup, Peripherals, and Printers sub-menus |
+| **GNOME App-Folder Creation** | Identical feature to the Fedora script, `rpm -ql`-based resolution (openSUSE is RPM-based too) |
+| **OSS/Non-OSS + Packman Bootstrap** | Ensures OSS + Non-OSS are enabled and enables Packman Essentials (priority 90) automatically on first run |
+| **Rolling-Release Sync**       | Runs `zypper dup --no-allow-vendor-change` before the menu even appears — Tumbleweed's own documented update path, not just a metadata refresh |
+| **NVIDIA Driver Support**      | Opt-in open kernel modules (G06 series), pre-signed against openSUSE's own Secure Boot shim key — no MOK-enrollment reboot needed on a system that already trusts that shim |
+| **Native Btrfs+Snapper Snapshots** | Verifies/completes (rather than builds from scratch) the Snapper setup a default Tumbleweed install already ships with |
+| **`opi` Bootstrap**            | Opt-in install of openSUSE's own OBS Package Installer — the closest equivalent to Fedora's Terra repo or Arch's `yay` |
+| **Error Handling**             | Skips unavailable packages, continues installation                                              |
+| **Pre-Install Checks**        | Verifies if packages are already installed (`rpm -q`)                                            |
+| **Package Verification**      | Checks if packages exist in enabled repos before attempting (`zypper install --dry-run`)          |
+| **Installation Tracking**     | Tracks installed, skipped, and failed packages per run                                          |
+| **Summary Reporting**          | Shows detailed installation summary with the "S" command                                        |
+| **Log Saving**                 | Saves complete logs to `/var/log/opensuse_post_install_TIMESTAMP.log`                            |
+
+#### openSUSE Statistics
+
+- **Main Menu Categories:** 31 numbered items (`1`–`31`), plus Creative Suite, Security, Browsers, Communication, GUI Tweaks (with its own GTK Themes sub-sub-menu), Drivers & Extra Repos, Snapshots & Backup, Peripherals, and Printers sub-menus
+- **Package Front-End:** zypper
+- **Third-Party/Vendor Repos:** Microsoft (VS Code, Azure CLI, Edge), Brave, Vivaldi, Google Chrome, LibreWolf, Cursor, TeamViewer, Charm (glow), teams-for-linux, an unofficial Claude Desktop rpm repo — all real, zypper-compatible yum/zypper repos, each individually confirmed
+- **OBS Projects Used:** `hardware` (Solaar), `security` (pentest tooling), `devel:languages:go` (lazygit), `home:ecsos` (scrcpy — a lower-trust personal project, flagged)
+- **Packman-Sourced:** the full multimedia codec swap (ffmpeg/GStreamer/vlc-codecs)
+- **Flatpak-Only (confirmed no better source exists):** Signal, Discord, Telegram, Zen Browser, Floorp, Spotify, Bruno, Alpaca, LM Studio, IntelliJ IDEA Community — Flathub's remote is added by the script itself, since Tumbleweed doesn't preconfigure it
+- **Standalone/Vendor-Binary Fallbacks:** 1Password (AppImage — vendor blocks zypper access outright), DBeaver CE (vendor's own generic standalone rpm), Zed/Gram/CLIamp/Neural Inverse/LocalAI (vendor installer script or GitHub release binary)
+- **Native Snapshot Tooling:** Snapper + Btrfs (already default on Tumbleweed), Timeshift as the rsync-mode fallback for a non-Btrfs root
+- **Snap Usage:** 0
+- **Estimated Install Time:** 15 minutes – several hours (depending on selections; "EVERYTHING" is a long run)
+- **Estimated Disk Space:** 5–30GB+ (depending on selections)
+
+---
+
+### 📥 openSUSE Installation
+
+#### openSUSE Prerequisites
+
+- **openSUSE Tumbleweed** (the script checks for `ID=opensuse-tumbleweed`; openSUSE Leap also uses `zypper` but is a fixed-version release like Fedora, not rolling — it warns and asks whether to continue there, same as any other unsupported distro)
+- **Root access** (script must be run with `sudo`)
+- **Internet connection** (for downloading packages, third-party/OBS repos, vendor installers, and Nerd Fonts)
+- **An active GNOME desktop session** if you want app folders created, GNOME Shell extensions, or user-scoped GTK/icon themes installed — running over plain SSH with no desktop session still installs packages fine, it just skips those pieces
+- **Minimum 10GB free disk space** (more for a full/media-heavy install)
+
+#### openSUSE Quick Start
+
+```bash
+# Make the script executable
+chmod +x post-install-opensuse.sh
+
+# Run with sudo
+sudo ./post-install-opensuse.sh
+```
+
+---
+
+### 🎯 openSUSE Usage
+
+#### openSUSE Menu Navigation
+
+1. **Main Menu**: Shows all 31 categories (`0`–`31`)
+2. **Sub-Menus**: Creative Suite (option `1`) has a 6-item sub-menu (Full/Graphics/Video/Audio/Photography/Publishing); GUI Tweaks (option `19`) has an 8-item sub-menu whose GTK Themes item (`3`) opens its own further sub-menu (Nordic/Colloid/Material GNOME/Lycia); Security Tools (option `22`), Browsers (option `26`), and Communication (option `27`) each have their own sub-menu; Drivers & Extra Repos (option `28`) offers NVIDIA, `opi`, and DisplayLink as separate opt-ins; Snapshots & Backup (option `29`) has a 4-item sub-menu (Full Setup/Create Now/List/Open GUI); Peripherals (option `30`) and Printers (option `31`) each have a 2-item sub-menu
+3. **Bulk Options**: `A`, `B`, `C` (see [openSUSE Bulk Options](#-opensuse-bulk-options-a--b--c) below)
+4. **`S`** — Show Installation Summary
+5. **`0`** — Exit
+
+#### openSUSE Example Workflows
+
+##### Install an openSUSE Development Environment
+
+```bash
+sudo ./post-install-opensuse.sh
+# Select: 2 (Code Editors)   -> optionally create a "Code Editors" app folder
+# Select: 3 (Python)
+# Select: 4 (Web Development)
+# Press 0 to exit
+```
+
+##### Install openSUSE Creative Suite Tools
+
+```bash
+sudo ./post-install-opensuse.sh
+# Select: 1 (Creative Suite) -> 1 (Full)
+# -> installs Graphics & Design, Video Editing (+ Packman multimedia codecs), Audio Production, Photography, Publishing
+```
+
+##### Set Up openSUSE Container & VM Tooling
+
+```bash
+sudo ./post-install-opensuse.sh
+# Select: 13 (Containers & VMs)
+# -> installs docker/docker-compose/podman/incus, KVM/QEMU + virt-manager/GNOME Boxes, and Cockpit
+```
+
+##### Verify/Complete Native Snapshots + Enable NVIDIA
+
+```bash
+sudo ./post-install-opensuse.sh
+# Select: 29 (Snapshots & Backup) -> 1 (Full Setup)
+# -> verifies Btrfs+Snapper (already set up by the Tumbleweed installer on most systems), enables timers, takes a baseline snapshot
+# Select: 28 (Drivers & Extra Repos) -> 1 (NVIDIA Driver)
+# -> installs the open kernel modules (G06 series), pre-signed for Secure Boot
+```
+
+---
+
+### 🗂️ openSUSE GNOME App Folders (Super Key Groups)
+
+Exactly the same headline feature as the Fedora script — see [Fedora GNOME App Folders](#️-fedora-gnome-app-folders-super-key-groups) above for the full explanation (D-Bus session detection, `.desktop` resolution tiers, `NoDisplay`/`Hidden` filtering, Flatpak export-directory scanning). openSUSE is RPM-based just like Fedora, so `create_menu_category` here uses the exact same `rpm -ql`/`rpm -q --requires` resolution — only the front-end command that *installed* the package (`zypper` vs `dnf`) differs, not how `rpm` itself is queried afterward.
+
+---
+
+### 📦 openSUSE Package Categories
+
+Below is a breakdown of what each openSUSE category actually installs. **Package-name confidence note:** third-party/vendor repos, OBS projects, Packman/multimedia, drivers, browsers, communication apps, and Snapper were all individually verified against live vendor docs, openSUSE's own documentation, and a live OBS/software.opensuse.org lookup during development. The bulk of "ordinary" packages (editors, languages, system utilities) follow well-established openSUSE/SUSE naming conventions (`python3-` prefixing, `-devel` suffixes, versioned runtimes like `php8`/`java-21-openjdk`, `apache2` instead of `httpd`, `sqlite3` instead of `sqlite`) rather than a live re-check against a running system — the same `package_exists`-before-`safe_install` safety net means a wrong guess is logged "Not in repos" and skipped, not a hard failure.
+
+---
+
+#### openSUSE: Creative Suite
+
+Option `1` opens a 6-item sub-menu, same shape as Fedora's:
+
+| # | Item | Installs |
+|---|------|----------|
+| 1 | **Full** | Everything below (Graphics + Video + Audio + Photography + Publishing) |
+| 2 | **Graphics & Design** | `gimp`, `inkscape`, `krita`, `blender`, `darktable`, `pitivi`, `scribus` + `flameshot`, `ImageMagick`, `GraphicsMagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp-tools`; also binds Print Screen to Flameshot |
+| 3 | **Video Editing** | `kdenlive`, `shotcut`, `obs-studio`, `mkvtoolnix`, `mkvtoolnix-gui`, `mpv`, `vlc`, `yt-dlp`, plus the Packman multimedia-codec swap below |
+| 4 | **Audio Production** | `ardour`, `audacity`, `carla`, `hydrogen`, `guitarix`, `qjackctl`, `lsp-plugins`, `calf`, `pavucontrol`, `easytag`, `soundconverter`, [`cliamp`](https://www.cliamp.stream/) (terminal Winamp-style music player/streamer — not packaged for openSUSE, installed via its own release-binary `curl \| sh` installer into `~/.local/bin`) |
+| 5 | **Photography** | `darktable`, `rawtherapee`, `digikam`, `hugin`, `gthumb` |
+| 6 | **Publishing** | `scribus`, `fontforge`, `calibre` |
+
+**Multimedia codecs (Packman)**: requires Packman Essentials (enabled automatically by `bootstrap_repos`). openSUSE's own documented recipe (`doc.opensuse.org/documentation/tumbleweed/codecs`) is a **vendor-change dist-upgrade scoped to just Packman's overlapping packages first** — `zypper dist-upgrade --from packman-essentials --allow-vendor-change`, actively replacing the OSS-repo ffmpeg/GStreamer builds already on disk with Packman's patent-unencumbered ones — then installing `gstreamer-plugins-good/bad/ugly/libav` and `vlc-codecs` the normal way. The same "swap" concept as Fedora's `dnf swap ffmpeg-free ffmpeg`, just shaped around Packman/zypper's own vendor-change mechanics.
+
+---
+
+#### openSUSE: Code Editors
+
+**zypper packages:** `vim`, `neovim`, `emacs`, `nano`, `geany`, `gnome-text-editor`, `gedit`, `kate`
+
+**Third-party (official vendor repos):**
+
+- **Visual Studio Code** — Microsoft's official yum repo (`packages.microsoft.com/yumrepos/vscode`)
+- **Sublime Text** — Sublime HQ's own repo, which explicitly documents a `zypper addrepo -g -f` install path (not just yum/dnf)
+
+**Zed** (`zed.dev`) — no openSUSE/OBS package; installed via the vendor's own installer script as the invoking user (`~/.local/bin`).
+
+**Gram** (a Zed-editor fork, [codeberg.org/GramEditor/gram](https://codeberg.org/GramEditor/gram)) — not packaged; Codeberg's own release tarball is extracted straight into `/opt/gram.app`, symlinked to `/usr/local/bin/gram`, with its own `.desktop`/icon files copied in manually.
+
+**Bruno** — installed via Flathub (`com.usebruno.Bruno`); confirmed no rpm or OBS package exists from usebruno.com.
+
+**LazyVim + Nordic (optional prompt):** identical feature to the Fedora script — replaces `~/.config/nvim` (existing config backed up first), clones [LazyVim/starter](https://github.com/LazyVim/starter) + the [Nordic](https://github.com/AlexvZyl/nordic.nvim) theme.
+
+---
+
+#### openSUSE: Python
+
+`python3`, `python3-devel`, `python3-pip`, `python3-virtualenv`, `python3-ipython`, `python3-pipx`
+
+openSUSE names Python-ecosystem packages with a consistent `python3-` prefix (unlike Fedora's unprefixed `ipython`) — `python3` itself is already the system default, no `python-is-python3`-style shim needed.
+
+---
+
+#### openSUSE: Web Development
+
+**Web Servers:**
+
+- `nginx` — started normally (owns port 80)
+- `apache2` (openSUSE's own binary name — **not** `httpd`, that's Red Hat/Fedora's naming only) — installed for availability but not started
+- `php8-fpm`, `php8-cli`, `composer`
+
+**Node.js:** ships in Tumbleweed's own repos via the plain `nodejs`/`npm` alias packages, resolving to the current default version — no NodeSource repo needed, plus the same global npm package set (`npm-check-updates`, `nodemon`, `pm2`, `webpack`, `webpack-cli`, `eslint`, `prettier`).
+
+---
+
+#### openSUSE: Java
+
+**JDK/Build Tools:** `java-21-openjdk`, `java-21-openjdk-devel`, `gradle`, `maven`, `ant`, `junit`
+
+**IDE:** IntelliJ IDEA Community via **Flathub** (`com.jetbrains.IntelliJ-IDEA-Community`) — no openSUSE/OBS package exists, same conclusion the Fedora script reaches.
+
+---
+
+#### openSUSE: C/C++
+
+`gcc`, `gcc-c++`, `gcc-fortran`, `clang`, `cmake`, `make`, `ninja`, `ccache`, `autoconf`, `automake`, `libtool`, `m4`, `bison`, `flex`, `gettext-tools`, `pkg-config`, `cppcheck`, `valgrind`, `gdb`, `ltrace`, `strace`
+
+openSUSE's current names are `ninja` (not Fedora's `ninja-build`) and `pkg-config` (not Fedora's renamed `pkgconf-pkg-config`).
+
+---
+
+#### openSUSE: Go
+
+**zypper package:** `go` (openSUSE's official plain-alias package, resolving to the current version — confirmed available, no third-party repo needed)
+
+**Direct install fallback** (if `go` isn't in repos and `go` isn't already on `PATH`): downloads Go 1.22.5 from the official source to `/usr/local/go`, symlinked into `/usr/local/bin`.
+
+---
+
+#### openSUSE: Rust
+
+**Primary:** installs **rustup** from the official source **as the desktop user**, same as the Fedora script, so the toolchain lands in *their* `~/.cargo`.
+
+**Fallback:** distro `rust`/`cargo` packages if rustup fails or there's no sudo-invoking user.
+
+---
+
+#### openSUSE: Node.js
+
+Calls the same Node.js installer used by [openSUSE: Web Development](#opensuse-web-development) — Tumbleweed's native `nodejs`/`npm` packages, no NodeSource repo, plus the same global npm set.
+
+---
+
+#### openSUSE: PHP
+
+`php8-cli`, `php8-fpm`, `php8-devel`, `php8-mysql`, `php8-pgsql`, `php8-sqlite`, `php8-gd`, `php8-curl`, `php8-mbstring`, `php8-xml`, `php8-zip`, `composer`
+
+openSUSE versions its PHP package with a bare `php8` prefix rather than Fedora's `php-` style.
+
+---
+
+#### openSUSE: Ruby
+
+`ruby`, `ruby-devel`, `rubygem-bundler`
+
+---
+
+#### openSUSE: Databases
+
+**SQL/NoSQL:** `mariadb`, `sqlite3` (not Fedora's `sqlite`), `sqlitebrowser`, `memcached`
+
+**Valkey (Redis-compatible):** `valkey`, `valkey-compat-redis` — the same Redis-license-driven fork Fedora and Arch both moved to, plus a compat package for anything shelling out to a literal `redis-cli`/`redis-server` name.
+
+**PostgreSQL:** `postgresql-server`, `postgresql` — with an explicit `initdb` step run automatically (via `sudo -u postgres`, not `su - postgres`, to force a real shell regardless of the `postgres` account's configured login shell) if the database cluster doesn't exist yet.
+
+**GUI Client:** DBeaver CE via the **vendor's own generic standalone rpm** (`dbeaver.io/files/dbeaver-ce-latest-stable.x86_64.rpm`) rather than a package — only scattered, low-trust personal `home:` OBS projects were found, deliberately not used per this repo's "verified, not assumed" standard.
+
+---
+
+#### openSUSE: Containers & VMs
+
+**Containers:**
+
+- `docker`, `docker-compose`, `podman` — openSUSE ships **native** `docker`/`docker-compose` packages directly in its own OSS repo (unlike Fedora, which uses its own `moby-engine` build) — no separate Docker Inc. repo needed
+- If `docker` installs successfully: the invoking user is added to the `docker` group and the service is enabled/started
+- `incus` — ships **natively** in Tumbleweed's own repos (Tumbleweed's rolling nature tracks current Incus releases directly, no COPR/AUR-style side repo needed the way Fedora needed one before Incus landed there)
+
+**Virtualization (KVM/QEMU):** `qemu-kvm`, `libvirt`, `virt-install`, `virt-manager`, `virt-viewer`, `gnome-boxes`, `cockpit`, `cockpit-machines`, `cockpit-podman`. If `libvirt` installs successfully: the invoking user is added to the `libvirt` group, `libvirtd` is enabled/started, and the Virtio-Win Windows-guest drivers are installed.
+
+**Virtio-Win drivers (Windows guests):** no openSUSE/OBS package exists for this — falls back directly to the same one-shot upstream ISO download the Fedora/Arch scripts use as their own fallback (`fedorapeople.org`'s "stable-virtio" symlink — upstream Red Hat/Fedora-virt-SIG infrastructure, not a Fedora-only artifact), symlinked into `/var/lib/libvirt/images/virtio-win.iso`.
+
+> openSUSE needs **no separate multilib/32-bit-repo bootstrap step** at all — its x86_64 repos already carry the needed `-32bit` compat packages directly, the same "no extra step" situation Fedora's `.i686` multilib already has.
+
+**Docker/libvirt forwarding fix:** same iptables `DOCKER-USER`/`virbr+` systemd-unit fix as the Fedora/Arch scripts, fully package-manager-agnostic.
+
+---
+
+#### openSUSE: Gaming
+
+`steam` (from openSUSE's **Non-OSS** repo — proprietary EULA, `bootstrap_repos` already ensures Non-OSS is enabled), `lutris`, `gamemode`, `mangohud`.
+
+---
+
+#### openSUSE: Office & Docs
+
+`libreoffice`, `okular`, `evince`, `zathura`, `pandoc`
+
+---
+
+#### openSUSE: System Utilities
+
+**Process Monitoring:** `htop`, `iotop`, `sysstat`, `glances`
+
+**Network Monitoring:** `nethogs`, `iftop`, `nload`, `vnstat`, `tcpdump`, `wireshark`, `wireshark-ui-qt` (openSUSE splits the Qt GUI into its own package, the same kind of split Arch has under different names)
+
+**System Inspection:** `lsof`, `strace`, `ltrace`, `valgrind`, `gdb`
+
+**Shells & Terminal:** `tmux`, `screen`, `zsh`, `fish`, `fzf`, `ripgrep`, `tree`, `ncdu`, `rsync`, `unzip`, `bat`
+
+**Markdown:** `glow` ([charmbracelet/glow](https://github.com/charmbracelet/glow)) — no openSUSE/OBS build exists, so the script adds Charm's own yum repo (`/etc/zypp/repos.d/charm.repo`, the same generic INI recipe already proven zypper-compatible for VS Code/Brave/Azure CLI elsewhere in this script), idempotently skipped if already present.
+
+---
+
+#### openSUSE: General Dev Tools
+
+`jq`, `tig`, `subversion`, `make`, `cmake`, `autoconf`, `automake`, `bison`, `flex`, `gettext-tools`, `pkg-config`, `man`, `man-pages`, `less`, plus Bruno (Flathub, see [openSUSE: Code Editors](#opensuse-code-editors))
+
+---
+
+#### openSUSE: AI Tools
+
+Almost entirely package-manager-agnostic (vendor curl-installer scripts, npm globals, Flathub), ported near-verbatim from the Fedora script — only Cursor and IntelliJ (handled under Java) actually change:
+
+| Tool | Installation Method |
+|------|---------------------|
+| **Ollama** | Official install script |
+| **Alpaca** | Flathub (`com.jeffser.Alpaca`) |
+| **LocalAI** | GitHub release binary, resolved via the GitHub API, dropped into `/usr/local/bin` |
+| **Claude Code** | Official native installer, npm fallback |
+| **Claude Desktop** | Unofficial rpm repo ([aaddrick/claude-desktop-debian](https://github.com/aaddrick/claude-desktop-debian)) — same repo the Fedora script uses, zypper consumes the same INI file |
+| **Gemini CLI** | `npm install -g @google/gemini-cli` |
+| **Mistral Vibe CLI** | Official installer script |
+| **OpenCode** | Official native installer, npm fallback |
+| **Cursor** | Official yum repo (`downloads.cursor.com/yumrepo`) — ported unchanged from the Fedora script |
+| **LM Studio** | Flathub (`ai.lmstudio.lm-studio`) |
+| **Neural Inverse** | Official installer script |
+
+---
+
+#### openSUSE: GUI Tweaks
+
+Option `19` has its own sub-menu: **All GUI Tweaks**, **Icon Sets**, **GTK Themes**, **Cursor Themes**, **Nerd Fonts**, **Chris Titus mybash**, **GUI Tools**, **GNOME Shell Extensions** — same shape as the Fedora script's. **GTK Themes** opens a further sub-menu (All/Nordic/Colloid/Material GNOME/Lycia).
+
+**Icon Sets:**
+
+- **zypper packages** (ship directly in Tumbleweed's own repos): `papirus-icon-theme`, `breeze5-icons` (KDE Frameworks 5 naming) and `breeze-icons` (both listed, `package_exists` skips whichever isn't the real one), `adwaita-icon-theme` — no confirmed `numix-icon-theme`/`obsidian-icon-theme` package or OBS project was found (checked live during development)
+- **Built from source, straight to `/usr/share/icons`**: [Qogir](https://github.com/vinceliuice/Qogir-icon-theme), [WhiteSur](https://github.com/vinceliuice/WhiteSur-icon-theme), [Vimix](https://github.com/vinceliuice/Vimix-icon-theme) — same `$UID`-aware installer mechanism as the Fedora script
+- **Ready-made, no build step**: [Newaita](https://github.com/cbrnix/Newaita) (light + dark)
+
+**GTK Themes:** [Nordic](https://github.com/EliverLara/Nordic) and [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme) (same vinceliuice-family installer mechanism as the icon sets above), [Material GNOME](https://github.com/SakibShahariar/material-gnome-theme), and [Lycia](https://github.com/Aevstiel/Lycia-Theme) (needs `gtk2-engine-murrine` — openSUSE's own name for what Fedora calls `gtk-murrine-engine` — plus `sassc` and `gnome-themes-extra`; its interactive `install.sh` is fed "yes/no" non-interactively the same way the Fedora script does).
+
+**Cursor Themes:** `breeze5-cursors`, `breeze-cursors` (both listed, same KDE-Frameworks-5-naming reasoning as the icon sets).
+
+**Nerd Fonts:** same GitHub-release download method as the Fedora script — no confirmed native Nerd Font packages exist for openSUSE either.
+
+**GNOME Shell Extensions:** same curated set as the Fedora script (GSConnect, Window State Manager, Bluetooth Battery Meter, Auto Move Windows, User Themes, Clipboard History, Dash to Dock, Compact Quick Settings), installed via `gext`/`python3-pipx` identically.
+
+**Chris Titus mybash:** same clone + `setup.sh` flow; if this particular upstream checkout's `setup.sh` doesn't recognize `zypper`, the script falls back to a plain `.bashrc`/`starship.toml`/`fastfetch` config copy instead of failing outright.
+
+**Logiops** (Logitech HID++ driver, opt-in prompt at the end of GUI Tweaks): built from source (`cmake pkg-config systemd-devel libevdev-devel libconfig-devel glib2-devel gcc-c++`), same mechanism as the Fedora script.
+
+---
+
+#### openSUSE: Windows (Wine)
+
+`wine`, `winetricks`, `zenity` — same hand-written `winetricks.desktop` launcher as the Fedora script.
+
+---
+
+#### openSUSE: Android Tools
+
+`android-tools` (bundles adb+fastboot into one package, same as Fedora), plus `scrcpy` via the **`home:ecsos`** OBS project — a personal `home:` project, not an official/team-maintained one, the same trust-tier caveat the Fedora script's own scrcpy COPR carries. If it goes stale, swap the project name in `install_android_tools`.
+
+---
+
+#### openSUSE: Security Tools
+
+Option `22` opens the same two-variant sub-menu as the Fedora script (Full / Defensive-only), with the same "expect more skips here" caveat — several classic pentest tools aren't in Tumbleweed's own OSS repo. The `security` OBS project (confirmed to host `hashcat` specifically; `aircrack-ng`/`hydra` are also mirrored directly into `openSUSE:Factory`) is enabled once, up front, for the whole category.
+
+**Firewall:** uses `firewalld` + `firewall-config` — openSUSE's own **default** firewall manager since Leap 15.0/Tumbleweed (replacing the older SuSEfirewall2 outright) — this is the native answer here, not a swap-in the way it is for Ubuntu's `ufw`.
+
+Package sets otherwise mirror the Fedora script's Full/Defensive split closely: network scanning (`nmap`, `masscan`, `hping`, `bind-utils`), web testing (`nikto`, `sqlmap`, `gobuster`, `whatweb`, `wfuzz`), cracking/wireless (`john`, `hashcat`, `hydra`, `aircrack-ng`, `macchanger`), forensics/RE (`radare2`, `binwalk`, `sleuthkit`, `steghide`, `yara`, `perl-Image-ExifTool`), hardening (`lynis`, `chkrootkit`, `rkhunter`, `clamav`, `fail2ban`, `aide`), privacy/VPN (`openvpn`, `wireguard-tools`, `proxychains-ng`, `torsocks`, `keepassxc`, `ettercap`) — Defensive-only adds `audit`, `suricata`.
+
+---
+
+#### openSUSE: .NET
+
+**Does NOT use Microsoft's own rpm repo.** A documented, live compatibility break exists on Tumbleweed specifically: Microsoft's `dotnet-runtime-deps` still depends on the legacy `libopenssl1_0_0` soname, which Tumbleweed's rolling repos have already dropped in favor of OpenSSL 3.x only (confirmed via a live `github.com/dotnet/runtime` issue filed against Tumbleweed for exactly this). Microsoft's **own documented fallback** for this situation — the `dotnet-install.sh` script — is used as the **primary** method instead, dropping a self-contained SDK into `~/.dotnet` per-user with no system OpenSSL/ICU version coupling at all. Simpler in outcome than Fedora/Ubuntu's native packages or Arch's `[extra]` package, but for a different reason: the "easy" path here is actually broken.
+
+---
+
+#### openSUSE: DevOps & Cloud
+
+- **Docker (standalone)** — native `docker` + `docker-compose`, same distro-native choice as [openSUSE: Containers & VMs](#opensuse-containers--vms)
+- **Azure CLI** — Microsoft's official yum repo (`packages.microsoft.com/yumrepos/azure-cli`) — one of the few Microsoft repos here that Microsoft's own docs explicitly document a `zypper` tab for, not just yum/dnf
+- **lazygit** — via the **`devel:languages:go`** OBS project (openSUSE's own Go-ecosystem devel project — a comparable trust tier to an official Fedora-team COPR, not a personal `home:` project), falling back to `go install` if that project has no current build
+
+---
+
+#### openSUSE: Desktop Apps
+
+- **Spotify** — Flathub (`com.spotify.Client`); confirmed no rpm/repo exists from Spotify for any RPM distro
+- **Slack** — same scraped-from-slack.com generic `.el8` rpm as the Fedora script, plus `libXScrnSaver1` (openSUSE's name for what Fedora calls `libXss`) installed defensively first since the rpm can otherwise fail on that missing dependency. **The Fedora script's `disable_stale_slack_repo()` workaround is deliberately not ported** — that function exists there because Slack's `%post` scriptlet re-registers a stale `packagecloud.io` repo under `/etc/yum.repos.d/`, breaking future `dnf update` runs; zypper never reads `/etc/yum.repos.d/` at all (only `/etc/zypp/repos.d/`), so the same file is an inert orphan here, not a live problem.
+- **Remmina** — ships directly in Tumbleweed's own repos (`remmina`, `remmina-plugin-rdp`, `remmina-plugin-secret`), no third-party repo needed
+- **Windows App** — same standalone Flatpak-bundle-from-GitHub-releases mechanism as the Fedora script, installed into the desktop user's per-user Flatpak scope
+- **TeamViewer** — a **specific, static, openSUSE/SUSE-targeted generic rpm** (`teamviewer-suse.x86_64.rpm`) rather than an ongoing repo — simpler than Fedora's yum repo, but with no `zypper upgrade`-driven auto-update; re-running this function later picks up a new build
+- **1Password** — see below
+
+**1Password (genuine gap, flagged rather than papered over):** a live check of 1Password's own support docs and community forum during development found that 1Password's rpm repo **intentionally blocks zypper/openSUSE access** — their own docs list Fedora/RHEL and Debian/Ubuntu explicitly, and recommend the AppImage specifically *for openSUSE users*. This isn't a missing-repo situation the script can add its way around; per that same official recommendation, the AppImage is downloaded to `/opt/1Password`, symlinked to `/usr/local/bin/1password`, and wrapped with a hand-written `.desktop` file — needs `libfuse2` if it won't launch.
+
+---
+
+#### openSUSE: Browsers
+
+Option `26` opens the same All/individual sub-menu shape as the Fedora script:
+
+| Browser | Source |
+|---------|--------|
+| Brave | Official repo — Brave's own Linux install docs explicitly cover openSUSE with a zypper recipe |
+| Vivaldi | Official **openSUSE-specific** repo file (`repo.vivaldi.com/archive/vivaldi-suse.repo`) — a different URL from Fedora's own Vivaldi repo |
+| Microsoft Edge | Official yum repo |
+| Google Chrome | Self-registering official rpm |
+| LibreWolf | Official rpm repo — Fedora-targeted, but LibreWolf's own maintainers have confirmed (in a public Codeberg issue) that it installs and updates fine on openSUSE too; dedicated openSUSE support is tracked upstream but not shipped yet |
+| Zen Browser | Flathub — confirmed no vendor rpm/OBS package exists |
+| Floorp | Flathub — Ablaze's own docs point to Flathub as the Linux path |
+
+---
+
+#### openSUSE: Communication
+
+Option `27` opens a 5-item sub-menu (Zoom not included, same as the Fedora script):
+
+| App | Source |
+|-----|--------|
+| Signal | Flathub (`org.signal.Signal`) — confirmed no rpm/yum repo exists anywhere |
+| Discord | Flathub (`com.discordapp.Discord`) — no vendor repo and no confirmed-trustworthy OBS package (openSUSE has no RPM-Fusion-equivalent to try first here, unlike Fedora) |
+| Telegram Desktop | Flathub (`org.telegram.desktop`) — the community OBS projects that exist (`home:13ilya`, `home:kosht`) are personal `home:` projects, too low a trust tier to hardcode |
+| Teams (teams-for-linux) | Its own real dnf/zypper repo (`repo.teamsforlinux.de/rpm`) |
+
+---
+
+#### openSUSE: Drivers & Extra Repos
+
+| # | Item | What it does |
+|---|------|---------------|
+| 1 | **NVIDIA Driver** | Adds NVIDIA's own official openSUSE repo (`download.nvidia.com/opensuse/tumbleweed`) and installs the **open kernel-module series** (`nvidia-open-driver-G06-signed-kmp-default` + `nvidia-video-G06`/`nvidia-gl-G06`/`nvidia-compute-G06`), covering GeForce 700-series and newer including Blackwell (RTX 50). The **`-signed-`** variant is pre-signed against openSUSE's own Secure-Boot shim key — unlike Fedora's `akmod`/DKMS path, this does **not** need a manual MOK-enrollment reboot on a system that already trusts openSUSE's shim from install time; the Secure Boot check is a fallback warning only, for systems where that isn't the case. |
+| 2 | **`opi` (OBS Package Installer)** | Installs openSUSE's own official [opi](https://github.com/openSUSE/opi) tool — ships directly in Tumbleweed's OSS repo, no extra repo needed. The closest genuine parity item to Fedora's Terra repo or Arch's `yay` bootstrap; it only installs the `opi` tool itself, running `opi <name>` afterward is left to the user. |
+| 3 | **DisplayLink Driver** | **Genuine gap**: a live search during development found **no maintained, ready-to-install openSUSE package or OBS project** for the DisplayLink `evdi` kernel module + DisplayLinkManager (unlike Fedora's `displaylink-rpm` GitHub-release RPMs or Arch's actively-maintained AUR package). Installs DKMS build prerequisites (`dkms kernel-devel kernel-default-devel make gcc`) only, and prints the documented manual path ([0xcaffee.blog's write-up](https://0xcaffee.blog/posts/opensuse-tumbleweed-evdi/) and the [sinfomicien/displaylink-evdi-opensuse](https://github.com/sinfomicien/displaylink-evdi-opensuse) community project) — both rebuild against the *current* kernel and need re-running after every kernel update on a rolling release, since there's no dkms-autoinstall-on-boot package doing this automatically. |
+
+---
+
+#### openSUSE: Snapshots & Backup
+
+**New category, option `29`** — no Ubuntu-script equivalent, and a fundamentally different starting point from the Fedora/Arch scripts' own Btrfs+Snapper setups: Snapper-on-Btrfs is **native** to openSUSE. A default Tumbleweed install already ships Btrfs, a pre-created Snapper `root` config, `snapper-zypp-plugin` taking a real pre/post snapshot pair around *every* zypper/YaST transaction, the timeline/cleanup timers enabled, and `grub2-snapper-plugin` wired into GRUB's boot menu. So this category mostly **verifies** that's in place rather than building it from scratch.
+
+| # | Item | What it does |
+|---|------|---------------|
+| 1 | **Full Setup** | Detects the root filesystem; if Btrfs, verifies/creates the Snapper `root` config, enables `snapper-timeline.timer`+`snapper-cleanup.timer`, regenerates GRUB's config if `grub2-snapper-plugin` is present, and takes an initial baseline snapshot. If root isn't Btrfs (unusual for a default Tumbleweed install), falls back to installing **Timeshift** in rsync mode instead. |
+| 2 | **Create a snapshot now** | `snapper -c root create` (or `timeshift --create` on the Timeshift fallback path) |
+| 3 | **List snapshots** | `snapper -c root list` (or `timeshift --list`) |
+| 4 | **Open GUI** | Launches YaST's **native** Snapper module (`yast2 snapper` — the same YaST framework already on the system, runs fine over ncurses with no graphical session needed) or Timeshift's GUI as a fallback |
+
+---
+
+#### openSUSE: Peripherals (Logitech)
+
+**New category, option `30`** — Solaar isn't in openSUSE's own OSS repo; the `hardware` OBS project (confirmed as the current, actively-updated location) provides it. Unlike Fedora's separate `solaar-udev` package, openSUSE's `solaar` package ships its udev rules bundled directly.
+
+| # | Item | What it does |
+|---|------|---------------|
+| 1 | **Install Solaar** | Enables the `hardware` OBS repo, installs `solaar` |
+| 2 | **Fix slow scroll wheel** | Applies the confirmed MX Anywhere 3S "Scroll Wheel Resolution" HID++ fix via Solaar's CLI — fully package-manager-agnostic, identical to the Fedora/Arch scripts' own version of this fix |
+
+---
+
+#### openSUSE: Printers (CUPS + HP)
+
+| # | Item | What it does |
+|---|------|---------------|
+| 1 | **Printer Support** | Installs `cups`, `hplip`, and **`yast2-printer`** in place of `system-config-printer` — a live `software.opensuse.org` lookup during development found no maintained Tumbleweed build of `system-config-printer` (a Red-Hat-authored tool); `yast2-printer` is openSUSE's own native CUPS-configuration module, used here instead. `package_exists` still gates it, so if this specific substitution is ever wrong it's skipped rather than failing the run. |
+| 2 | **HP Proprietary Plugin** | Same `hp-plugin -i` / `/var/lib/hp/hplip.state` detection logic as the Fedora script — checks CUPS's discovered devices and USB vendor ID `03f0` before touching anything, skipped entirely if no HP device is detected. |
+
+---
+
+### 🔀 openSUSE Bulk Options (A / B / C)
+
+| Option | Runs | Notes |
+| ------ | ---- | ----- |
+| **A** | Code Editors, Python, Web Development, Java, C/C++, Go, Rust, Node.js, PHP, Ruby, .NET, General Dev Tools, AI Tools | "All Dev Tools" |
+| **B** | Creative Suite (Full) | "All Creative" |
+| **C** | Everything in A and B, plus Database Tools, Containers & VMs, Gaming, Office & Docs, System Utilities, GUI Tweaks, Windows (Wine), Android Tools, Security Tools (Full), DevOps & Cloud, Desktop Apps, Browsers, Communication | "EVERYTHING" |
+
+**App folders:** identical behavior to the Fedora script — A/B/C **auto-create** a GNOME app folder per category (no prompts); individual numbered categories *ask* first. **Drivers & Extra Repos (`28`), Snapshots & Backup (`29`), Peripherals (`30`), and Printers (`31`) are all intentionally excluded from every bulk option** — the same reasoning as Fedora (meaningful, semi-interactive opt-ins that shouldn't fire unattended during "EVERYTHING"), extended here to cover the two genuinely new native categories too.
+
+---
+
+### 🔧 openSUSE Error Handling & Installation Checks
+
+Same three-step check flow as the Fedora script (already installed? → exists in repos? → attempt install), backed by `rpm -q` / `zypper install --dry-run` (checking for exit code **104**, not a plain success/fail) / `zypper install -y` instead of `rpm -q` / `dnf info -q` / `dnf install -y`.
+
+| Function | Purpose |
+|----------|---------|
+| `is_installed(pkg)` | Checks if a package is installed via `rpm -q` |
+| `package_exists(pkg)` | Verifies a package exists via `zypper install --dry-run`, checking for exit code `104` (`zypper info` was confirmed to return `0` even for nonexistent packages, so it's deliberately not used) |
+| `bootstrap_repos` | Ensures OSS + Non-OSS are enabled, enables Packman Essentials (priority 90) — runs once, early |
+| `add_obs_repo(project, label)` | Enables one OBS project as a zypper repo, degrading gracefully (like `add_copr`) if it has no current Tumbleweed build |
+| `safe_install(pkgs...)` / `batch_install(category, pkgs...)` | Same shape as the Fedora script |
+| `create_menu_category(...)` | Same GNOME app-folder feature, `rpm -ql`-based resolution |
+| `install_nvidia_driver` | Installs the open-kernel-module NVIDIA driver, checks Secure Boot shim trust |
+| `install_opi_helper` | Opt-in install of the `opi` OBS Package Installer tool |
+| `install_snapshots_full` / `install_snapshots_btrfs` / `install_snapshots_timeshift` | Verifies/completes the native Snapper setup, or falls back to Timeshift on a non-Btrfs root |
+
+---
+
+### 📊 openSUSE Installation Summary & Logging
+
+Identical Catppuccin-themed summary/logging to the Fedora script. The only difference is the log path:
+
+```
+/var/log/opensuse_post_install_TIMESTAMP.log
+```
+
+---
+
+### 🔒 openSUSE Security Notes
+
+- **Package integrity:** zypper packages are signed by openSUSE's own keys; **OBS projects** trust each project's own owner, whose packages run maintainer scripts as root — the same trust model as a COPR/PPA (`hardware`, `security`, `devel:languages:go` are official/team-scale projects; `home:ecsos` for scrcpy is a lower-trust personal project, flagged accordingly). Third-party **yum/zypper repos** (VS Code, Brave, Vivaldi, Edge, Azure CLI, Cursor, LibreWolf, the unofficial Claude Desktop repo, Teams, Charm) pin their GPG key the same way.
+- **Remote install scripts run as root/user, trusted over HTTPS only:** Ollama, Zed, Gram, CLIamp, Claude Code, Mistral Vibe CLI, OpenCode, Neural Inverse, rustup, and Microsoft's `dotnet-install.sh` — same trust model as the Fedora script, TLS + the vendor, no independent checksum.
+- **Claude Code, Zed, Gram, CLIamp, Mistral Vibe CLI, OpenCode, Neural Inverse, rustup, and the .NET SDK** are installed **as your user** (via `su - $SUDO_USER`), not root.
+- **NVIDIA open kernel modules:** pre-signed against openSUSE's own Secure Boot shim key — genuinely less manual than Fedora's `akmod`/DKMS + MOK-enrollment dance on a system that already trusts that shim from install time.
+- **Docker/libvirt group = root-equivalent:** same caveat as the Fedora script — installing either adds your user to a group with effective root over that daemon's socket.
+- **1Password's AppImage** runs as a downloaded, self-contained binary rather than through zypper's own signature-verification chain — this is 1Password's *own documented* recommendation for openSUSE users, not a workaround this script invented, but it's worth knowing the trust model changed.
+- **No secrets handled:** the script never asks for or stores passwords/tokens, and menu input (a single character) can't reach a shell.
+
+---
+
+### ⚠️ openSUSE Known Limitations
+
+- **Package-name confidence varies by category** — see the note at the top of [openSUSE Package Categories](#-opensuse-package-categories). The "hard" categories were individually researched and verified live; the bulk of ordinary packages weren't re-checked against a live openSUSE system (none was available during development), and rely on the `package_exists` safety net instead of a pre-verified list.
+- **DisplayLink has no automated install path at all** — unlike Fedora's `displaylink-rpm` GitHub-release RPMs or Arch's actively-maintained AUR package, no maintained openSUSE package or OBS project exists. Only DKMS build prerequisites are installed automatically; the actual driver requires following a manual, kernel-version-specific process that needs re-doing after every kernel update on a rolling release.
+- **1Password's own rpm repo intentionally blocks zypper/openSUSE access** (confirmed via 1Password's own support docs and community forum — not a missing-repo situation this script failed to work around). The AppImage fallback is 1Password's own documented recommendation for openSUSE users.
+- **`system-config-printer` has no confirmed openSUSE package** — `yast2-printer` is substituted as openSUSE's native equivalent. If you specifically need `system-config-printer`'s own UI, this script doesn't provide it.
+- **Several picks use a lower-trust-tier source because no strong option exists**: `scrcpy` (a personal `home:ecsos` OBS project, not an official/team-maintained one — the same caveat class as the Fedora script's own scrcpy COPR), DBeaver CE (the vendor's own generic standalone rpm rather than a package), `lazygit` (the `devel:languages:go` OBS project, falling back to `go install`).
+- **.NET does not use Microsoft's own rpm repo on Tumbleweed** — a documented compatibility break (`dotnet-runtime-deps` needs the legacy `libopenssl1_0_0` soname Tumbleweed has already dropped) means `dotnet-install.sh` is the primary path instead, installing per-user into `~/.dotnet` rather than system-wide.
+- **Flathub is not preconfigured on Tumbleweed** (unlike Fedora) — every Flatpak install in this script adds the Flathub remote itself first, which needs a working network connection the very first time any Flatpak-based category runs.
+- **Bulk options exclude Drivers & Extra Repos, Snapshots & Backup, Peripherals, and Printers** — same reasoning as Fedora (meaningful, semi-interactive opt-ins), extended to the two new native categories.
+- **Snapshots & Backup mostly *verifies* an existing Btrfs+Snapper setup rather than building one from scratch** — a hand-partitioned or JeOS install without Btrfs falls back to Timeshift instead, which needs its own interactive first-run setup (rsync mode, destination disk) this script won't guess for you.
+
+---
+
+### ⚙️ openSUSE Customization
+
+#### Adding New Packages (openSUSE)
+
+```bash
+batch_install "Category Name" \
+    package1 \
+    package2 \
+    package3
+```
+
+**Important:** verify new packages exist in openSUSE's repos (`zypper install --dry-run <pkg>`, checking that it does **not** exit `104`) before adding them.
+
+#### Creating New Categories (openSUSE)
+
+1. Add an install function:
+   ```bash
+   install_my_category() {
+       batch_install "My Category" package1 package2
+   }
+   ```
+2. Add a menu line in `show_main_menu` (`ui_cell`).
+3. Add a case branch in `main()`:
+   ```bash
+   32) reset_tracking; install_my_category; display_summary; prompt_menu_category "My Category" "icon" "Comment" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+   ```
+4. Optionally add the new function to the `A`/`B`/`C` bulk chains in `main()`.
+
+---
+
+### 🐛 openSUSE Troubleshooting
+
+| Issue | Solution |
+| ----- | -------- |
+| **Script exits immediately** | Run with `sudo` |
+| **Package not found** | May not be in Tumbleweed's repos yet — check the package name or install manually |
+| **Dependency errors** | Run `sudo zypper dup --no-allow-vendor-change` (the rolling-release equivalent of `dnf distro-sync`) to resync against the current snapshot |
+| **NVIDIA driver installed but the module won't load** | Check Secure Boot status: `mokutil --sb-state`. If enabled and the shim trust is somehow missing, enroll it manually: `sudo mokutil --import /var/lib/shim-signed/mok/MOK.der` (path may vary) and follow the MOKManager prompt on the next reboot |
+| **App folder not created** | Same requirement as the Fedora script — needs an active GNOME desktop session as the target user |
+| **"Designed for openSUSE Tumbleweed… detected: …"** | You're on Leap or another distro. Leap uses `zypper` too but is a fixed-version release like Fedora, not rolling — expect more "Not in repos" skips than usual. Answer `y` to continue anyway. |
+
+#### Checking openSUSE Logs
+
+```bash
+# View a specific log
+cat /var/log/opensuse_post_install_*.log
+
+# Tail the most recent
+ls -lt /var/log/opensuse_post_install_*.log | head -1 | awk '{print $NF}' | xargs cat
+```
+
+---
+
 # 🏹 Arch Linux / Omarchy Post-Install Script
 
 ### 🚀 Arch Overview
@@ -2130,13 +2777,15 @@ ls -lt /var/log/arch_post_install_*.log | head -1 | awk '{print $NF}' | xargs ca
 
 ---
 
-# 🎨 i3 + Catppuccin Rice Script (Fedora)
+# 🎨 i3 + Catppuccin Rice Script (Fedora & openSUSE)
 ![screenshot](i3_screenshot.png)
 ### 🚀 i3 Script Overview
 
-[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh) is a standalone, single-purpose script — separate from `post-install-fedora.sh` above — that builds a complete **Catppuccin Mocha–themed i3 tiling window manager** desktop on Fedora: gapped tiling with always-visible borders (2px, mauve on the focused window), picom blur/shadows/rounded corners, a per-monitor powerline-style polybar status bar (with a native bluetooth widget and a modern-tray-icon proxy so apps like 1Password/Discord/OBS actually show a tray icon), rofi launcher, dunst notifications, kitty terminal, copyq clipboard history, udiskie USB automount, pcmanfm file manager, gammastep night light, nitrogen wallpaper picker, a Catppuccin GTK2/3/4 theme, and a full keybinding set covering window management, media/volume/brightness (with on-screen level popups), screenshots, locking, power, and multi-monitor control. It's meant to be run once on a fresh Fedora install (or after `post-install-fedora.sh`) to go from "bare X11" to "usable themed i3 session."
+[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh) (Fedora) and [`opensuse-setup-i3-cattpuccin.sh`](opensuse-setup-i3-cattpuccin.sh) (openSUSE Tumbleweed) are standalone, single-purpose scripts — separate from `post-install-fedora.sh`/`post-install-opensuse.sh` above — that build a complete **Catppuccin Mocha–themed i3 tiling window manager** desktop: gapped tiling with always-visible borders (2px, mauve on the focused window), picom blur/shadows/rounded corners, a per-monitor powerline-style polybar status bar (with a native bluetooth widget and a modern-tray-icon proxy so apps like 1Password/Discord/OBS actually show a tray icon), rofi launcher, dunst notifications, kitty terminal, copyq clipboard history, udiskie USB automount, pcmanfm file manager, gammastep night light, nitrogen wallpaper picker, a Catppuccin GTK2/3/4 theme, and a full keybinding set covering window management, media/volume/brightness (with on-screen level popups), screenshots, locking, power, and multi-monitor control. Each is meant to be run once on a fresh install (or after its matching post-install script) to go from "bare X11" to "usable themed i3 session."
 
-It targets **Fedora only** (checks for `dnf` at startup and aborts otherwise) and is **idempotent-ish**: safe to re-run, but it *overwrites* every config file it manages (`~/.config/i3`, `picom`, `polybar`, `rofi`, `dunst`, `kitty`, `fastfetch`, `gtk-3.0`/`gtk-4.0`, `autorandr/postswitch`) without prompting — back up your own dotfiles first if you've customized any of them. (It also drops in one `~/.config/wireplumber/wireplumber.conf.d/` file for the Jabra audio fix described below, but only that single named drop-in — it doesn't touch the rest of your WirePlumber config.)
+**The openSUSE script is a near-byte-identical port of the Fedora one** — the same author built it by taking `fedroa-setup-i3-cattpuccin.sh` and applying roughly 29 surgical, package-manager-level edits, not a redesign. Everything described in this section (all 42 polybar/rofi/kitty/starship/dunst themes, the calendar-reminder daemon, cliamp integration, the i3 config itself, every helper script) is **identical between the two** unless called out otherwise — see [openSUSE Port: What's Actually Different](#-opensuse-port-whats-actually-different) below for the complete, verified list of what changed and why. Everywhere this section says "Fedora" alone, assume openSUSE behaves the same way unless that subsection says otherwise.
+
+Each script targets **its own distro only** — the Fedora script checks for `dnf` at startup and aborts otherwise; the openSUSE script checks for `zypper`. Both are **idempotent-ish**: safe to re-run, but each *overwrites* every config file it manages (`~/.config/i3`, `picom`, `polybar`, `rofi`, `dunst`, `kitty`, `fastfetch`, `gtk-3.0`/`gtk-4.0`, `autorandr/postswitch`) without prompting — back up your own dotfiles first if you've customized any of them. (Each also drops in one `~/.config/wireplumber/wireplumber.conf.d/` file for the Jabra audio fix described below, but only that single named drop-in — it doesn't touch the rest of your WirePlumber config.)
 
 ---
 
@@ -2327,17 +2976,53 @@ sudo plymouth-set-default-theme -R bgrt
 
 ---
 
+### 🦎 openSUSE Port: What's Actually Different
+
+`opensuse-setup-i3-cattpuccin.sh` was produced by diffing it against `fedroa-setup-i3-cattpuccin.sh` directly — everything below is what that diff actually shows, not a guess. The overwhelming majority of the file (every heredoc-generated config, all 42 theme variants, the calendar-reminder daemon, every helper script) has **zero** distro dependency and is untouched. What changed is package-manager calls, a few OBS repos standing in for Fedora's COPRs, and a handful of package names/system tools that genuinely differ.
+
+**Package manager & repos:**
+
+- `dnf install` → `zypper --non-interactive install --allow-vendor-change`, with startup detection checking for `zypper` instead of `dnf`.
+- **Three OBS repos added up front**, standing in for packages Tumbleweed's default OSS repo doesn't carry: **`X11:Utilities`** (polybar), **`X11:common:Factory`** (papirus-icon-theme), **`M17N:fonts`** (jetbrains-mono-fonts) — each individually verified against `build.opensuse.org` during development, not assumed. This is the OBS equivalent of the Fedora script's own COPR-enable step.
+- A handful of package-name deltas, each individually verified rather than assumed to carry Fedora's naming straight over: `xorg-x11-server-Xorg` → `xorg-x11-server`; `xorg-x11-xinit`/`xorg-x11-xauth` → plain `xinit`/`xauth`; `network-manager-applet` → `NetworkManager-applet`; `libnotify` → `libnotify-tools` (the `notify-send` CLI ships in its own subpackage on openSUSE); `libdbusmenu-gtk3-devel` → `libdbusmenu-gtk-devel`; `dnf-utils` → `zypper-needs-restarting` (see the software-update widget below); `pipx` → `python3-pipx`.
+
+**i3lock-color — built from source, not a repo package:** Fedora uses a single well-maintained COPR (`tokariew/i3lock-color`). A live OBS search for openSUSE turned up only personal `home:` projects (`home:digitaltomm`, `home:sbradnick`, `home:bfein`) — none actively-maintained enough to depend on. So the openSUSE script **builds i3lock-color from source** ([Raymo111/i3lock-color](https://github.com/Raymo111/i3lock-color)) into `~/.local` instead, following this same script's own precedent for exactly this situation (see snixembed, built from source on both distros). `lock.sh` calls it by the **absolute path** `$HOME/.local/bin/i3lock` rather than a bare `i3lock` — i3's own `exec` environment doesn't get the `~/.local/bin` PATH prepend an interactive shell's `.bashrc` would give it. Detection of which build actually succeeded is via a marker file (`~/.local/state/i3lock-color-built`) rather than an `rpm -q` package check, since there's no package here to query either way; falls back to plain `i3lock -c <color>` if the source build failed.
+
+**`dex-autostart` → systemd's own `xdg-autostart-generator`:** openSUSE doesn't package `dex`/`dex-autostart` under any name at all (checked `openSUSE:Factory` directly — the only "dex" hit there is `dex-oidc`, an unrelated OAuth2/OIDC server). Rather than chase down a third-party OBS build of a small shim, the i3 config's autostart line becomes `systemctl --user set-environment XDG_CURRENT_DESKTOP=i3; systemctl --user daemon-reload; systemctl --user start xdg-desktop-autostart.target` — `systemd-xdg-autostart-generator` ships as part of `systemd` itself (no extra package needed) and reads the exact same `~/.config/autostart`/`/etc/xdg/autostart` `.desktop` files, respecting the same `OnlyShowIn`/`NotShowIn` spec `dex` checks, just gated behind `$XDG_CURRENT_DESKTOP` in systemd's own environment rather than a CLI flag. Functionally equivalent — the `nm-applet`/`pasystray`/`blueman` `Hidden=true` autostart overrides documented above still apply the same way, since this generator reads the same override files.
+
+**Software-updates widget — `zypper` instead of `dnf`:** the polybar pending-updates count now runs `zypper --non-interactive --no-refresh lu` and counts lines starting `v |` (zypper's own documented output format), the `zypper` equivalent of the Fedora widget's `dnf check-update` line count. `--no-refresh` is deliberate — Tumbleweed has no background metadata-cache timer the way Fedora's `dnf-makecache.timer` is, so the widget reads whatever zypper last cached rather than forcing a network round-trip every 900 seconds. Note this is a same-package-version-bump count only; it won't reflect the add/remove/vendor-swap changes an actual `zypper dup` can make.
+
+**`software-update.sh` — `zypper dup`, not `zypper up`:** clicking the widget runs `sudo zypper dup --no-allow-vendor-change` rather than a plain upgrade — Tumbleweed's own documented recommendation for a rolling release, since every snapshot can add/drop/vendor-swap packages in ways a conservative `zypper up` won't pick up. `--no-allow-vendor-change` is the commonly-recommended middle ground: it keeps `dup`'s full add/remove/upgrade behavior but still blocks a package silently jumping to a different vendor/repo than the one it was installed from (e.g. one of the three OBS repos added above). The reboot-required check afterward uses **`zypper-needs-restarting`** — a genuine, deliberate compatibility shim package with the same command name, same `-r`/`--reboothint` flag, and the same inverted exit-code semantics (1 = reboot required) as Fedora's `dnf-utils` `needs-restarting -r`, confirmed against its actual source/man page rather than assumed just because the name matched.
+
+**Distro branding (screensaver, Plymouth) — a genuine, deliberate/accidental split:**
+
+- The **block-art screensaver** (`Mod+Escape`, and automatically before every lock) correctly renders the **openSUSE geeko**: it reads `/usr/share/icons/hicolor/scalable/apps/distributor-logo.svg` (openSUSE's branding-package SVG, present by default — the generic `distributor-logo.svg` filename, not a Fedora-style `fedora_logo.svg`) instead of Fedora's logo, and falls back to `fastfetch --logo openSUSE` instead of `fastfetch --logo Fedora` if ImageMagick or the SVG is missing. `set-screensaver-text.sh reset` regenerates this same openSUSE block-art logo.
+- The **Plymouth boot theme** (LUKS decrypt screen) is a completely different mechanism — its wordmark is a pre-rendered PNG asset embedded as base64 in the script at build time, not something generated live from a distro SVG the way the screensaver's logo is. That embedding is **byte-identical between the two scripts** (confirmed — this specific region produced zero diff output), so **the openSUSE rice's boot splash still displays a "FEDORA" wordmark**, carried over unchanged from the original asset. This is a real, verified inconsistency in the current port, not a stylistic choice — if it bothers you, the fix is regenerating `logo.png` with different source text using the same JetBrainsMono-ExtraBold-rendered-then-thresholded technique described in the Plymouth section above, then re-embedding it as base64 in `opensuse-setup-i3-cattpuccin.sh`.
+
+**Rollback safety net — same mechanism, different starting point:** the pre-run Btrfs+Snapper check still takes a `snapper -c root create --type single` snapshot before touching anything, but on openSUSE this "root" Snapper config normally **already exists** out of the box (openSUSE has shipped Btrfs-plus-Snapper-by-default for longer than Fedora has — Fedora's own later Btrfs-by-default rollout was itself modeled on this same openSUSE workflow), so this step is more often a no-op confirmation than first-time setup. Still best-effort and never blocks the rest of the script.
+
+**Login/session picker — no fixed display manager:** unlike Fedora Workstation's fixed GDM, openSUSE doesn't fix one login manager. GDM puts the session picker behind the gear icon next to the password field (same as Fedora); **SDDM** (openSUSE's own default KDE Plasma pattern) has a session dropdown directly on the login form instead; a plain `startx`/`.xinitrc` setup skips a session picker entirely. The `xdg-desktop-portal` / `graphical-session.target` gap this rice works around in its `exec` block (a plain i3 session never activates that target on its own, so the portal and the autostart-generator pass above both need manual transient-unit nudges) was diagnosed against GDM specifically and not independently re-verified under SDDM; the fix itself is generic ("these two units aren't started automatically, so start them by hand") and doesn't depend on which display manager caused the gap.
+
+**Genuinely unchanged, worth confirming explicitly:** the "Caffeine" toggle (no packaged equivalent on either distro's repos or Flathub), snixembed (built from source on both — not packaged for either distro), the Catppuccin GTK2/3/4 theme (not packaged for either — same GitHub-release download), Zed/Gram/CLIamp/Nerd Font downloads (vendor installers, not distro packages), the Jabra/MX-Anywhere-3S hardware fixes, and every polybar/rofi/kitty/starship/dunst theme file are all byte-for-byte identical between the two scripts.
+
+---
+
 ### 📥 i3 Script Installation & Usage
 
 ```bash
+# Fedora
 chmod +x fedroa-setup-i3-cattpuccin.sh
 sudo ./fedroa-setup-i3-cattpuccin.sh
+
+# openSUSE Tumbleweed
+chmod +x opensuse-setup-i3-cattpuccin.sh
+sudo ./opensuse-setup-i3-cattpuccin.sh
 ```
 
 After it finishes:
 
 1. Log out.
-2. At the GDM login screen, click the gear icon next to the password field and select **i3** (installing the `i3` package registers the session automatically).
+2. Pick **i3** as the session (installing the `i3` package registers it automatically). Where that picker lives depends on your display manager: on Fedora Workstation's fixed **GDM**, click the gear icon next to the password field. openSUSE doesn't fix one display manager the same way — GDM (if you picked the GNOME pattern) works the same as Fedora's; **SDDM** (openSUSE's own default KDE Plasma pattern) has a session dropdown directly on the login form instead; a plain `startx`/`.xinitrc` setup skips a picker entirely. See [openSUSE Port: What's Actually Different](#-opensuse-port-whats-actually-different) above for the one caveat this affects (the `graphical-session.target` workaround was diagnosed against GDM specifically, not independently re-verified under SDDM).
 3. First login looks bare for a couple of seconds until picom/polybar spawn. If polybar doesn't appear, run `polybar -c ~/.config/polybar/config.ini top-primary` from a kitty terminal (`Mod+Return`) to see errors directly.
 4. Brightness keys need the `video` group membership added above — log out/in (or reboot) once for that to take effect.
 5. For multi-monitor, see [Multi-Monitor Setup](#️-multi-monitor-setup) below.
@@ -2383,7 +3068,7 @@ After it finishes:
 | `XF86Audio{Play,Next,Prev}` | Media control via `playerctl` |
 | `Mod+shift+XF86Assistant` | Launch Claude Desktop (hardware AI-assistant key, if your keyboard has one) |
 
-Several polybar widgets are clickable too: left-click the wifi widget opens `wifi-menu.sh` (see below) to scan and connect, middle-click opens `nm-connection-editor` for advanced/saved-connection editing, right-click toggles the wifi radio on/off; left-click the ethernet widget opens `nm-connection-editor` (no scanning concept applies to a wired link, so it stays the primary action there); left-click the bluetooth widget opens `blueman-manager`, and left-click the clock opens `gnome-calendar` — all open as small centered floating windows (`for_window` rules in the generated i3 config) instead of tiling full-height. The same treatment applies to `system-config-printer` (`Mod+p`). Calendar/task reminders no longer open a separate floating window at all — `~/.local/bin/calendar-reminder-daemon.py` fires them as themed dunst notifications instead (see "Desktop-wide theming" below), and Evolution's own reminder popup is disabled. The caffeine widget (`Mod+c`) is left-click to toggle, right-click to trigger the screensaver/lock immediately. The Do Not Disturb widget (`Mod+n`) is left-click to toggle. The media control widget (right after volume) is three separate click zones — previous, play/pause, next — and disappears entirely when nothing is playing. The software-updates widget (right after cpu) is left-click to open `sudo dnf upgrade` in its own floating, centered terminal; unlike the widgets above, it always stays visible, showing "0" rather than disappearing when there's nothing pending.
+Several polybar widgets are clickable too: left-click the wifi widget opens `wifi-menu.sh` (see below) to scan and connect, middle-click opens `nm-connection-editor` for advanced/saved-connection editing, right-click toggles the wifi radio on/off; left-click the ethernet widget opens `nm-connection-editor` (no scanning concept applies to a wired link, so it stays the primary action there); left-click the bluetooth widget opens `blueman-manager`, and left-click the clock opens `gnome-calendar` — all open as small centered floating windows (`for_window` rules in the generated i3 config) instead of tiling full-height. The same treatment applies to `system-config-printer` (`Mod+p`). Calendar/task reminders no longer open a separate floating window at all — `~/.local/bin/calendar-reminder-daemon.py` fires them as themed dunst notifications instead (see "Desktop-wide theming" below), and Evolution's own reminder popup is disabled. The caffeine widget (`Mod+c`) is left-click to toggle, right-click to trigger the screensaver/lock immediately. The Do Not Disturb widget (`Mod+n`) is left-click to toggle. The media control widget (right after volume) is three separate click zones — previous, play/pause, next — and disappears entirely when nothing is playing. The software-updates widget (right after cpu) is left-click to open `sudo dnf upgrade` (Fedora) or `sudo zypper dup --no-allow-vendor-change` (openSUSE — see the port-differences subsection above) in its own floating, centered terminal; unlike the widgets above, it always stays visible, showing "0" rather than disappearing when there's nothing pending.
 
 ---
 
@@ -2405,7 +3090,7 @@ Separately, a stray unlabeled window (no `WM_CLASS` at all — confirmed by insp
 
 ### 🛟 Rollback Safety Net
 
-Before touching anything, the script checks for **Btrfs + an existing snapper `root` config** (which Fedora's Btrfs-by-default installer sets up automatically on recent releases). If found, it takes a snapshot (`snapper -c root create --type single`) and prints the exact rollback command:
+Before touching anything, the script checks for **Btrfs + an existing snapper `root` config** (which Fedora's Btrfs-by-default installer sets up automatically on recent releases; on openSUSE this config normally **already exists out of the box** — Tumbleweed has shipped Btrfs-plus-Snapper-by-default for even longer than Fedora has, so this step is more often a confirmation than first-time setup there). If found, it takes a snapshot (`snapper -c root create --type single`) and prints the exact rollback command:
 
 ```bash
 sudo snapper -c root undochange <snapshot-number>..0
@@ -2419,12 +3104,14 @@ This is best-effort and never blocks the rest of the script — if snapper isn't
 
 - **Systray is single-owner.** Only one polybar instance can ever hold the X11 systray selection — this is an inherent X11 protocol limit, not a bug. The script routes around it by only asking the primary-output bar (`top-primary`) for the `tray` module at all; secondary outputs use `top-secondary`, which never requests one, so you don't see an empty/broken tray slot on the other monitors.
 - **Idle-lock timing is fixed.** `xset s 1800 dpms 1800 3600 5400` shows the block-art screensaver then locks the screen (via `xss-lock`) at 30 minutes idle, with the display standing by/suspending/powering off at 30/60/90 minutes as a fallback (the lock itself force-blanks the display immediately, regardless of these DPMS timers — see "Block-art screensaver" above) — edit that line in the generated `~/.config/i3/config` if you want different timings.
-- **`dex-autostart -a -e i3` runs third-party autostart entries** (from `~/.config/autostart` and `/etc/xdg/autostart`) alongside the script's own explicit `exec` lines. `nm-applet`/`pasystray`/`blueman` all ship their own such entries, which is exactly why they're overridden with `Hidden=true` (see "What Gets Installed" above) rather than just leaving their `exec` lines out — omitting the `exec` line alone wouldn't have stopped `dex-autostart` from bringing them back anyway. If some *other* package ever ships an autostart `.desktop` entry for one of the apps this script's widgets already replace, without an `OnlyShowIn=` restriction excluding i3, you'd see a duplicate icon until you add the same `Hidden=true` override for it. (`lxqt-policykit`'s own autostart entry is `OnlyShowIn=LXQt;`, so it's never double-launched — the script's explicit `exec` is the only thing that starts it under i3.)
+- **`dex-autostart -a -e i3` (Fedora) / `systemd-xdg-autostart-generator` (openSUSE, see the port-differences subsection above) runs third-party autostart entries** (from `~/.config/autostart` and `/etc/xdg/autostart`) alongside the script's own explicit `exec` lines. `nm-applet`/`pasystray`/`blueman` all ship their own such entries, which is exactly why they're overridden with `Hidden=true` (see "What Gets Installed" above) rather than just leaving their `exec` lines out — omitting the `exec` line alone wouldn't have stopped either autostart mechanism from bringing them back anyway. If some *other* package ever ships an autostart `.desktop` entry for one of the apps this script's widgets already replace, without an `OnlyShowIn=` restriction excluding i3, you'd see a duplicate icon until you add the same `Hidden=true` override for it. (`lxqt-policykit`'s own autostart entry is `OnlyShowIn=LXQt;`, so it's never double-launched — the script's explicit `exec` is the only thing that starts it under i3, on either distro.)
 - **Gaps and borders are always visible by design**, not i3's defaults. `smart_gaps`/`smart_borders`/`hide_edge_borders smart` all hide things specifically when there's only one window or gaps are present — which made a single-window workspace look inconsistent with a multi-window one. The script omits/changes those directives so gaps (8px inner / 2px outer) and the 2px border always render the same regardless of window count; edit `gaps inner`/`gaps outer` in the generated `~/.config/i3/config` if 8/2 isn't to your taste.
 - **A window that already requested `border=none` before the script last ran keeps that state until it's closed and reopened** (or you run `i3-msg '[title=".*"] border pixel 2'` once to force it retroactively) — border mode is decided at window-creation time, not continuously re-evaluated, so re-running the script (or just editing `hide_edge_borders`) doesn't retroactively fix windows that were already open.
-- **`snixembed` isn't packaged for Fedora** and is built from source (see "What Gets Installed" above) — best-effort like the Nerd Font download; a failed build (network issue, missing/renamed dependency) just logs a warning. Without it, apps that only support the modern StatusNotifierItem tray protocol (1Password, Discord, OBS, etc.) simply won't show a tray icon at all, though everything else in this script works fine regardless.
+- **`snixembed` isn't packaged for Fedora or openSUSE** and is built from source on both (see "What Gets Installed" above) — best-effort like the Nerd Font download; a failed build (network issue, missing/renamed dependency) just logs a warning. Without it, apps that only support the modern StatusNotifierItem tray protocol (1Password, Discord, OBS, etc.) simply won't show a tray icon at all, though everything else in this script works fine regardless.
 - **No backlight device found** (common on desktops, or laptops where the monitor itself controls brightness) makes the script show the keyboard-layout widget in that polybar slot instead of the brightness widget — both are always defined in the generated config either way.
-- **`polkit-gnome` was removed from Fedora 41+** (upstream stopped shipping it); the script uses **`lxqt-policykit`** instead, which provides the same authentication-agent role via `/usr/libexec/lxqt-policykit-agent`.
+- **`polkit-gnome` was removed from Fedora 41+** (upstream stopped shipping it), and has no confirmed openSUSE package either; both scripts use **`lxqt-policykit`** instead, which provides the same authentication-agent role via `/usr/libexec/lxqt-policykit-agent`.
+- **The openSUSE port's Plymouth boot-splash wordmark still reads "FEDORA"** — a real, verified leftover from the port rather than a deliberate choice; see [openSUSE Port: What's Actually Different](#-opensuse-port-whats-actually-different) above for why and how to fix it.
+- **openSUSE's i3lock-color is a from-source build, not a repo package** — a failed build silently falls back to plain `i3lock` (no colorized ring/greeter text). Re-run the script to retry the build, or check `~/.local/state/i3lock-color-built` to see whether it succeeded last time.
 - **NVIDIA users:** picom defaults to the `glx` backend (comment in `~/.config/picom/picom.conf` notes this is tuned for Mesa/Intel/AMD) — switch it to `xrender` if you see tearing or flicker on the proprietary NVIDIA driver.
 - **`fade-exclude = ["override_redirect = true"]` in picom.conf skips fade animations for every override-redirect window**, not just `i3lock` — that's the only property `i3lock` exposes to target it (no conventional `WM_CLASS`, confirmed from its own source), so other override-redirect windows (dropdown menus, tooltips, dunst notifications) lose their fade-in/out too as a side effect. Remove that one line from `fade-exclude` if you'd rather have those fade and accept the lock-screen flicker back.
 - **Browser right-click context menus (Chrome/Edge/Chromium) showed a white artifact bleeding around their rounded corners.** picom's own `corner-radius = 10` clips every window into a rounded rect, and `detect-rounded-corners = true` is supposed to skip windows that already draw their own rounding — but that detection doesn't work for these menus, so picom's synthetic rounding disagreed with the menu's own native corner shape (real alpha transparency, not a square window), leaving stray white pixels where the two didn't line up. Confirmed via a live X11 property query (not guessed): the menu window reports `override_redirect = true` with no `WM_CLASS` at all (same shape as `i3lock`'s own window, above) and `_NET_WM_WINDOW_TYPE_MENU` — the latter is specific enough to add `"window_type = 'menu'"` to `rounded-corners-exclude` without also catching dunst notifications (which report `_NET_WM_WINDOW_TYPE_NOTIFICATION`/`UTILITY`, confirmed distinct via the same kind of query) or anything else override-redirect.
