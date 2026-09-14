@@ -112,6 +112,17 @@ sudo zypper --non-interactive addrepo -f \
 sudo zypper --non-interactive addrepo -f \
   https://download.opensuse.org/repositories/M17N:fonts/openSUSE_Tumbleweed/M17N:fonts.repo \
   || warn "Could not add the M17N:fonts OBS repo - jetbrains-mono-fonts install below will likely fail; add it manually from https://build.opensuse.org/project/show/M17N:fonts"
+# copyq has no maintained package anywhere else on openSUSE (checked live -
+# not in the default repo, not in any curated OBS project) - only a
+# personal home:lukho:copyq project builds it at all, a lower trust tier
+# than the three curated Factory/fonts projects above. Added anyway since
+# copyq is wired into this rice's own keybindings/config below (not just a
+# nice-to-have), but kept out of the main --allow-vendor-change install
+# batch further down and installed as its own best-effort step instead, so
+# a personal repo going stale can't take the whole setup down with it.
+sudo zypper --non-interactive addrepo -f \
+  "https://download.opensuse.org/repositories/home:/lukho:/copyq/openSUSE_Tumbleweed/home:lukho:copyq.repo" \
+  || warn "Could not add the home:lukho:copyq OBS repo - copyq install below will likely fail; get it manually from https://build.opensuse.org/package/show/home:lukho:copyq/CopyQ-Qt5"
 sudo zypper --gpg-auto-import-keys refresh
 
 log "Installing base X11 stack + i3 + rice toolkit via zypper..."
@@ -129,10 +140,11 @@ log "Installing base X11 stack + i3 + rice toolkit via zypper..."
 #     everywhere in this script's own helper scripts - ships in its own
 #     "-tools" subpackage, confirmed via its actual notify-send.1 man page
 #     path; the shared library itself comes along as a dependency either way)
-#   libdbusmenu-gtk3-devel -> libdbusmenu-gtk-devel (openSUSE's dbusmenu
-#     devel package isn't GTK3-suffixed even though it builds the GTK3
-#     bindings - confirmed against the real package list on
-#     opensuse.pkgs.org, not guessed from the Fedora name)
+#   libdbusmenu-devel -> libdbusmenu-glib-devel, libdbusmenu-gtk3-devel
+#     stays libdbusmenu-gtk3-devel (an earlier pass here had this backwards -
+#     re-verified against live Tumbleweed repo metadata: there is no bare
+#     "libdbusmenu-devel" or "libdbusmenu-gtk-devel", only the glib- and
+#     gtk3-suffixed real subpackages)
 #   dnf-utils -> zypper-needs-restarting (see software-update.sh in section
 #     6c below for why this is a near-drop-in replacement, not just a rename)
 #   pipx -> python3-pipx (openSUSE's python3-X alias packages resolve to
@@ -142,14 +154,20 @@ log "Installing base X11 stack + i3 + rice toolkit via zypper..."
 #   dex-autostart is dropped entirely - see section 4 below (i3 config) for
 #     why openSUSE gets systemd's own xdg-autostart-generator instead of a
 #     package
+#   copyq is deliberately NOT in this batch even though it's a core rice
+#     feature (Mod+shift+v below) - it only exists via the personal
+#     home:lukho:copyq repo added above, and a single unresolvable name in
+#     this command would abort the ENTIRE script under this file's own
+#     `set -e` (confirmed: this exact failure mode is why it's split out
+#     into its own best-effort install right after this batch instead).
 sudo zypper --non-interactive install --allow-vendor-change \
   xorg-x11-server xinit xauth xrandr xset \
   i3 i3lock \
   picom polybar rofi dunst kitty \
   xss-lock NetworkManager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
-  copyq udiskie pcmanfm gammastep libnotify-tools nitrogen gnome-calendar \
+  udiskie pcmanfm gammastep libnotify-tools nitrogen gnome-calendar \
   system-config-printer hplip \
-  vala gtk3-devel libdbusmenu-devel libdbusmenu-gtk-devel \
+  vala gtk3-devel libdbusmenu-glib-devel libdbusmenu-gtk3-devel \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq flameshot ImageMagick \
   brightnessctl playerctl numlockx autorandr arandr xdotool python3-xlib \
@@ -158,6 +176,12 @@ sudo zypper --non-interactive install --allow-vendor-change \
   python3-pipx \
   jetbrains-mono-fonts \
   plymouth-plugin-script
+
+# copyq, best-effort (see the comment above the main install batch) - a
+# failure here is a real but non-fatal loss of one feature (Mod+shift+v
+# clipboard history), not grounds to abort the rest of setup.
+sudo zypper --non-interactive install copyq \
+  || warn "copyq failed to install (Mod+shift+v clipboard history won't work) - the home:lukho:copyq repo may be stale; check https://build.opensuse.org/package/show/home:lukho:copyq/CopyQ-Qt5"
 
 # NetworkManager-applet/pasystray/blueman/udiskie are still installed above -
 # their tray-icon *applets* (nm-applet, pasystray, blueman-applet) are

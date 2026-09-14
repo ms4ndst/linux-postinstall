@@ -307,9 +307,14 @@ bootstrap_repos() {
 
 install_base() {
     log INFO "Installing base utilities..."
-    # dbus-1-x11 and gpg2 are openSUSE's own naming (Fedora: dbus-x11 /
-    # gnupg2) - confirmed against current openSUSE package naming.
-    batch_install "base" curl wget git gpg2 dconf dbus-1-x11 xdg-user-dirs
+    # gpg2 is openSUSE's own naming (Fedora: gnupg2) - confirmed against
+    # current openSUSE package naming. dbus-1-x11 does NOT exist as its own
+    # package on current Tumbleweed (checked against live repo metadata -
+    # no such package, no provides either); dbus-launch now ships as part
+    # of the base "dbus-1" package itself (confirmed via its own manpage,
+    # which is filed under the dbus-1 package on Tumbleweed), so that's
+    # installed directly instead of the old split-out X11 package.
+    batch_install "base" curl wget git gpg2 dconf dbus-1 xdg-user-dirs
 }
 
 # Run a gsettings command as the target desktop user with a valid session -
@@ -856,16 +861,17 @@ fix_logitech_hires_scroll() {
 
 # ========== PRINTERS (new - no Ubuntu-script equivalent) ==========
 # CUPS + HPLIP cover the open-source rendering path for most printers, same
-# reasoning as the Fedora/Arch scripts' own comment here. system-config-
-# printer has no confirmed current openSUSE package (it's a Red-Hat-authored
-# tool; a live software.opensuse.org lookup during development found no
-# maintained Tumbleweed build for it) - yast2-printer is openSUSE's own
-# native CUPS-configuration module and is used in its place. package_exists
-# still gates it, so if this specific guess is wrong it's skipped rather
-# than failing the whole run.
+# reasoning as the Fedora/Arch scripts' own comment here. An earlier pass
+# here assumed system-config-printer had no openSUSE package - re-checked
+# directly against live Tumbleweed repo metadata and it's actually a real,
+# literal package name in the default OSS repo, so it's installed after
+# all. yast2-printer was dropped from Tumbleweed entirely (confirmed -
+# openSUSE's own wiki/mailing list say it was pulled because it no longer
+# worked), so there's no YaST equivalent to fall back to; CUPS' own web UI
+# at https://localhost:631 (started by cups.service below) is the other
+# supported way to configure printers now.
 install_printer_support() {
-    batch_install "Printer Support" cups hplip
-    safe_install yast2-printer
+    batch_install "Printer Support" cups hplip system-config-printer
     systemctl enable --now cups.service &>/dev/null || true
 }
 
@@ -1316,14 +1322,26 @@ install_php() {
     # no default-repo path shown anywhere - add it defensively, same as
     # Java:packages for gradle above.
     add_obs_repo "devel:languages:php" "PHP"
+    # php-xml (no "8") is deliberate, not a typo: XML support ships bundled
+    # into the base php8 package itself rather than as its own php8-xml
+    # subpackage (checked against the real devel:languages:php repo listing
+    # - no such subpackage exists) - "php-xml" is the virtual capability
+    # name php8 itself provides, which zypper resolves to it directly.
     batch_install "PHP" \
         php8-cli php8-fpm php8-devel php8-mysql php8-pgsql php8-sqlite \
-        php8-gd php8-curl php8-mbstring php8-xml php8-zip composer
+        php8-gd php8-curl php8-mbstring php-xml php8-zip composer
 }
 
 # ========== RUBY ==========
 install_ruby() {
-    batch_install "Ruby" ruby ruby-devel rubygem-bundler
+    # ruby/ruby-devel are real unversioned package names on Tumbleweed, but
+    # gem subpackages are NOT - there's no unversioned "rubygem-bundler"
+    # alias or provides (checked against live repo metadata), only the
+    # version-prefixed "ruby4.0-rubygem-bundler" (Tumbleweed's Ruby version
+    # as of this check) - package_exists still gates it, so a future Ruby
+    # bump that changes this prefix fails this one package gracefully
+    # rather than the whole run.
+    batch_install "Ruby" ruby ruby-devel ruby4.0-rubygem-bundler
 }
 
 # ========== .NET ==========
@@ -1954,9 +1972,13 @@ EOF
 }
 
 install_gui_tools() {
+    # openSUSE names the GNOME Shell extensions manager "gnome-extensions"
+    # (no "-app" suffix, unlike its upstream/Fedora name) - confirmed
+    # against the live package listing, summary "Extensions app for GNOME
+    # Shell" matches exactly.
     batch_install "GUI Tools" \
         gnome-tweaks \
-        gnome-extensions-app \
+        gnome-extensions \
         nautilus \
         eog \
         file-roller \
@@ -1970,16 +1992,19 @@ install_gui_tools() {
 install_icon_sets() {
     # Papirus/Breeze/Adwaita all ship directly in Tumbleweed's own repos.
     # openSUSE names the Breeze icon package "breeze5-icons" (KDE Frameworks
-    # 5 naming) rather than Fedora's "breeze-icon-theme" - both are listed,
-    # package_exists skips whichever isn't the real one. No confirmed
-    # numix-icon-theme/obsidian-icon-theme package or OBS project was found
-    # for openSUSE (checked live during development) - the vinceliuice-family
-    # installers below (Qogir/WhiteSur/Vimix) plus Newaita cover the same
-    # "extra icon variety" role via upstream install.sh scripts instead.
+    # 5 naming) rather than Fedora's "breeze-icon-theme" - it's actually a
+    # virtual capability now, resolved by zypper to the real "kf6-breeze-
+    # icons" package (KDE's Frameworks-6 rename), confirmed live against
+    # repo metadata; the old bare "breeze-icons" name has no package and no
+    # provides at all on current Tumbleweed, so it was dropped rather than
+    # left as permanent dead weight. No confirmed numix-icon-theme/obsidian-
+    # icon-theme package or OBS project was found for openSUSE (checked live
+    # during development) - the vinceliuice-family installers below (Qogir/
+    # WhiteSur/Vimix) plus Newaita cover the same "extra icon variety" role
+    # via upstream install.sh scripts instead.
     batch_install "Icon Sets" \
         papirus-icon-theme \
         breeze5-icons \
-        breeze-icons \
         adwaita-icon-theme
     install_qogir_icons
     install_whitesur_icons
@@ -2104,10 +2129,12 @@ install_lycia_theme() {
     if [ -d "$uh/.themes/Lycia" ]; then
         SKIPPED_PACKAGES+=("Lycia theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Lycia theme"; return 0
     fi
-    # GTK3 murrine engine + gnome-themes-extra assets - openSUSE names the
+    # GTK3 murrine engine + gnome-themes-extras assets - openSUSE names the
     # murrine package "gtk2-engine-murrine" rather than Fedora's
-    # "gtk-murrine-engine".
-    batch_install "Lycia Theme Dependencies" gtk2-engine-murrine sassc gnome-themes-extra
+    # "gtk-murrine-engine", and its own theme-assets package is
+    # "gnome-themes-extras" (plural "extras", confirmed against the live
+    # package listing - Fedora's "gnome-themes-extra" is singular).
+    batch_install "Lycia Theme Dependencies" gtk2-engine-murrine sassc gnome-themes-extras
     local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
     if ! su - "$user" -c "git clone --depth 1 https://github.com/Aevstiel/Lycia-Theme.git '$t/src'" 2>/dev/null; then
         rm -rf "$t"; FAILED_PACKAGES+=("Lycia theme"); ((TOTAL_FAILED++))
@@ -2132,9 +2159,13 @@ install_themes() {
 
 install_cursor_themes() {
     # openSUSE names the Breeze cursor theme "breeze5-cursors" (KDE
-    # Frameworks 5 naming, alongside the older bare "breeze-cursors") -
-    # both listed, package_exists skips whichever isn't the real one.
-    batch_install "Cursor Themes" breeze5-cursors breeze-cursors
+    # Frameworks 5 naming) - it's a virtual capability now, resolved by
+    # zypper to the real "breeze6-cursors" package (KDE's Frameworks-6
+    # rename), confirmed live against repo metadata. The old bare
+    # "breeze-cursors" name has no package and no provides at all on
+    # current Tumbleweed, so it was dropped rather than left as permanent
+    # dead weight.
+    batch_install "Cursor Themes" breeze5-cursors
 }
 
 # Unlike Arch (which has native ttf-*-nerd packages), openSUSE has no
@@ -2214,15 +2245,25 @@ install_chris_titus_mybash() {
 # home for exactly this category (hashcat confirmed to live there
 # specifically; aircrack-ng/hydra are ALSO mirrored into openSUSE:Factory
 # directly - both checked live during development) - enabled once, up front,
-# for the whole category rather than per-package.
+# for the whole category rather than per-package. A handful of others live
+# in their own curated subprojects instead of "security" itself: hping
+# ships there as "hping3" and torsocks lives in the "network" OBS project
+# (both confirmed against real Tumbleweed repo metadata), and steghide is
+# in "security:privacy" (same confirmed way). gobuster and ettercap were
+# DROPPED from this list entirely - the only Tumbleweed builds found for
+# either live in random personal home:* OBS projects, which is exactly the
+# unvetted trust tier this script's own header comment says to avoid; they
+# were not silently swapped for a shaky repo.
 install_security_tools() {
     add_obs_repo security "Security tools"
+    add_obs_repo network "Network tools (hping3, torsocks)"
+    add_obs_repo "security:privacy" "steghide"
 
     batch_install "Security - Network" \
-        nmap masscan hping bind-utils
+        nmap masscan hping3 bind-utils
 
     batch_install "Security - Web" \
-        nikto sqlmap gobuster whatweb wfuzz
+        nikto sqlmap whatweb wfuzz
 
     batch_install "Security - Cracking & Wireless" \
         john hashcat hydra aircrack-ng macchanger
@@ -2238,7 +2279,7 @@ install_security_tools() {
     # live check of openSUSE's own Firewalld wiki page during development) -
     # not a swap-in the way it is for Ubuntu's ufw, this IS the native answer.
     batch_install "Security - Firewall & Privacy" \
-        firewalld firewall-config openvpn wireguard-tools proxychains-ng torsocks keepassxc ettercap
+        firewalld firewall-config openvpn wireguard-tools proxychains-ng torsocks keepassxc
 }
 
 install_security_defensive() {
@@ -2291,17 +2332,14 @@ install_azure_cli() {
     safe_install azure-cli
 }
 
-# lazygit has no confirmed package in Tumbleweed's own OSS repo (checked
-# live during development), but IS built by the "devel:languages:go" OBS
-# project - openSUSE's own Go-ecosystem devel project, a comparable trust
-# tier to Fedora's official-Fedora-team COPRs rather than a random personal
-# home: project - so that's used here instead of the `go install` fallback
-# the Fedora/Arch scripts keep as a last resort.
+# lazygit is a confirmed package in Tumbleweed's own OSS repo (checked
+# live against the real repo metadata), so no OBS project or `go install`
+# fallback is needed - the fallback below is only for the case Tumbleweed
+# drops it from OSS in the future.
 install_lazygit() {
     if command -v lazygit &>/dev/null; then
         SKIPPED_PACKAGES+=("lazygit"); ((TOTAL_SKIPPED++)); log INFO "lazygit already installed"; return 0
     fi
-    add_obs_repo devel:languages:go "lazygit"
     if package_exists lazygit; then
         batch_install "lazygit" lazygit
         return 0
@@ -2968,7 +3006,7 @@ show_printers_menu() {
     clear
     ui_header "PRINTERS (CUPS + HP)" "HPLIP - HP's Linux printing/imaging stack"
     echo
-    ui_item 1 "Install printer support (cups + hplip + yast2-printer)"
+    ui_item 1 "Install printer support (cups + hplip + system-config-printer)"
     ui_item 2 "Install/check HP proprietary plugin (some older LaserJets/inkjets need this)"
     echo
     ui_item 0 "Back to Main Menu"
