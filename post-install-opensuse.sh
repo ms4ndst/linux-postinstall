@@ -74,6 +74,23 @@
 # failing the whole run - the same safety net the Fedora/Ubuntu/Arch
 # versions of this script all rely on.
 
+# ── Force a UTF-8 locale for this script's own output ────────────────────────
+# Real-world run turned up ✓/✗/↷ (and presumably the box-drawing characters
+# just below) rendering as literal \xHH-style escapes instead of the actual
+# glyphs. The file itself is verified correct, valid UTF-8 throughout (not
+# the bug) - this is an ambient-locale problem: unlike Fedora Workstation,
+# which ships en_US.UTF-8 configured out of the box, a minimal/JeOS-style
+# openSUSE install can boot with LANG unset or set to POSIX/C, under which
+# bash's own handling of multibyte characters in printf format strings goes
+# through this byte-escaping fallback. C.UTF-8 is a real glibc locale that
+# needs no locale-gen step and is present on every openSUSE install already
+# (unlike, say, en_US.UTF-8, which may not be generated) - forcing it here
+# only affects this script's own process, not the system's actual locale.
+if ! locale -a 2>/dev/null | grep -qi '^C\.UTF-8$\|^C\.utf8$'; then
+    echo "WARNING: no C.UTF-8 locale found - checkmark/box-drawing characters below may still render as escapes." >&2
+fi
+export LC_ALL=C.UTF-8 LANG=C.UTF-8
+
 # ── Catppuccin Mocha palette (24-bit truecolor ANSI) ─────────────────────────
 # Same convention as the Fedora/Arch/Ubuntu scripts: colors by SEMANTIC ROLE.
 # Auto-disables when stdout isn't a terminal or NO_COLOR is set.
@@ -172,7 +189,13 @@ package_exists() {
 pm_update() {
     zypper --gpg-auto-import-keys --non-interactive refresh
 }
-pm_install() { zypper --non-interactive install "$@" 2>/dev/null; }
+# Deliberately does NOT redirect stderr - a real run of this script hit
+# several silent "Failed: X" results (VS Code, TeamViewer, Slack) with no
+# way to tell WHY short of re-running the exact zypper command by hand.
+# safe_install() below captures this output itself and shows a snippet on
+# failure; the two other callers (npm fallback installs) already redirect
+# everything themselves, so this change is safe for them too.
+pm_install() { zypper --non-interactive install "$@"; }
 
 # Enable an OBS (Open Build Service) project as a zypper repo - this script's
 # equivalent of add_copr (Fedora) / the AUR fallback (Arch). Idempotency is
@@ -206,12 +229,13 @@ safe_install() {
             log WARNING "Not in repos: $pkg"; continue
         fi
         log INFO "Installing: $pkg"
-        if pm_install "$pkg" || is_installed "$pkg"; then
+        local install_output
+        if install_output=$(pm_install "$pkg" 2>&1) || is_installed "$pkg"; then
             INSTALLED_PACKAGES+=("$pkg"); ((TOTAL_INSTALLED++))
             log SUCCESS "Installed: $pkg"
         else
             FAILED_PACKAGES+=("$pkg"); ((TOTAL_FAILED++))
-            log ERROR "Failed: $pkg"
+            log ERROR "Failed: $pkg. zypper said: $(printf '%s' "$install_output" | tail -3 | tr '\n' ' ')"
         fi
     done
 }
@@ -1083,8 +1107,12 @@ install_vscode() {
     fi
     log INFO "Installing VS Code (Microsoft's official yum repo)..."
     rpm --import https://packages.microsoft.com/keys/microsoft.asc 2>/dev/null
-    zypper lr vscode &>/dev/null \
-        || zypper --non-interactive addrepo --refresh https://packages.microsoft.com/yumrepos/vscode vscode &>/dev/null
+    if ! zypper lr vscode &>/dev/null; then
+        local addrepo_err
+        if ! addrepo_err=$(zypper --non-interactive addrepo --refresh https://packages.microsoft.com/yumrepos/vscode vscode 2>&1); then
+            log WARNING "Adding the VS Code repo failed: $(printf '%s' "$addrepo_err" | tail -3 | tr '\n' ' ')"
+        fi
+    fi
     pm_update
     safe_install code
 }
@@ -1209,6 +1237,11 @@ install_npm_packages() {
 
 # ========== JAVA ==========
 install_java() {
+    # gradle isn't in Tumbleweed's default oss repo - confirmed via a real
+    # run of this script failing on it, then verified on software.opensuse.org:
+    # it's published by the Java:packages OBS project (maven/ant/junit and
+    # the JDK itself ARE in the default repo, so only gradle needs this).
+    add_obs_repo "Java:packages" "Gradle"
     batch_install "Java" java-21-openjdk java-21-openjdk-devel gradle maven ant junit
     # IntelliJ IDEA Community has no openSUSE/OBS package - Flathub is the
     # real equivalent of the Fedora/Ubuntu scripts' own choice here.
@@ -1217,11 +1250,15 @@ install_java() {
 
 # ========== C/C++ ==========
 install_c_cpp() {
-    # ninja (not "ninja-build") and pkg-config (not Fedora's renamed
-    # "pkgconf-pkg-config") are openSUSE's own current names.
+    # ninja (not "ninja-build") is openSUSE's own current name - confirmed.
+    # pkg-config: an earlier version of this script had this backwards -
+    # "pkgconf-pkg-config" IS openSUSE's real current name (confirmed via
+    # a real Tumbleweed rpm listing on opensuse.pkgs.org after a real run
+    # of this script failed on the plain "pkg-config" name), not a Fedora
+    # rename to avoid.
     batch_install "C/C++" \
         gcc gcc-c++ gcc-fortran clang cmake make ninja ccache \
-        autoconf automake libtool m4 bison flex gettext-tools pkg-config \
+        autoconf automake libtool m4 bison flex gettext-tools pkgconf-pkg-config \
         cppcheck valgrind gdb ltrace strace
 }
 
@@ -1272,8 +1309,13 @@ install_rust() {
 # ========== PHP ==========
 install_php() {
     # openSUSE versions its PHP package with a bare "php8" prefix (not
-    # Fedora's "php-" style) - confirmed against a live package listing
-    # during development.
+    # Fedora's "php-" style) - the names themselves check out against a
+    # live package listing. But every real listing found for them (checked
+    # after the gradle/pkg-config misses below turned up the same shape of
+    # gap) points at the devel:languages:php OBS project specifically, with
+    # no default-repo path shown anywhere - add it defensively, same as
+    # Java:packages for gradle above.
+    add_obs_repo "devel:languages:php" "PHP"
     batch_install "PHP" \
         php8-cli php8-fpm php8-devel php8-mysql php8-pgsql php8-sqlite \
         php8-gd php8-curl php8-mbstring php8-xml php8-zip composer
@@ -1323,7 +1365,7 @@ install_dotnet() {
 install_dev_tools() {
     batch_install "Dev Tools" \
         jq tig subversion make cmake \
-        autoconf automake bison flex gettext-tools pkg-config man man-pages less
+        autoconf automake bison flex gettext-tools pkgconf-pkg-config man man-pages less
     install_bruno
 }
 
@@ -1878,7 +1920,7 @@ configure_logiops() {
 install_logiops() {
     log INFO "Installing Logiops build dependencies..."
     batch_install "Logiops build deps" \
-        cmake pkg-config systemd-devel libevdev-devel libconfig-devel glib2-devel gcc-c++
+        cmake pkgconf-pkg-config systemd-devel libevdev-devel libconfig-devel glib2-devel gcc-c++
     local t; t=$(mktemp -d)
     if ! git clone --depth 1 https://github.com/PixlOne/logiops "$t/logiops" 2>/dev/null; then
         rm -rf "$t"; log WARNING "Logiops clone failed (needs network access to github.com)"; return 1
@@ -2488,9 +2530,11 @@ install_spotify() { flatpak_install_flathub com.spotify.Client "Spotify"; }
 # anyway). Slack's downloads page embeds a current version-specific .rpm
 # link built against a generic RHEL/CentOS baseline (an ".el8" file name) -
 # scraped the same way the Fedora script scrapes it. One openSUSE-specific
-# wrinkle confirmed via live research: that rpm can fail on openSUSE with a
-# missing libXScrnSaver1 dependency (SUSE's own name for the lib Fedora
-# calls libXss) - installed defensively first so the rpm install itself
+# wrinkle confirmed via a REAL run of this script (not just research): that
+# rpm needs the X11 screensaver extension library, which Fedora/RHEL name
+# libXScrnSaver but openSUSE packages as libXss1 (had this backwards in an
+# earlier version of this script - corrected here after the real install
+# failed on it) - installed defensively first so the rpm install itself
 # doesn't fail on it.
 #
 # NOTE ON THE FEDORA SCRIPT'S disable_stale_slack_repo(): deliberately not
@@ -2505,7 +2549,7 @@ install_slack() {
     if is_installed slack; then
         SKIPPED_PACKAGES+=("slack"); ((TOTAL_SKIPPED++)); log INFO "Already installed: slack"; return 0
     fi
-    safe_install libXScrnSaver1 2>/dev/null || true
+    safe_install libXss1
     log INFO "Installing Slack (direct rpm from slack.com)..."
     local page url t
     page=$(curl -sL "https://slack.com/downloads/instructions/linux?build=rpm&ddl=1" 2>/dev/null)
@@ -2519,19 +2563,27 @@ install_slack() {
         rm -rf "$t"; FAILED_PACKAGES+=("slack"); ((TOTAL_FAILED++))
         log WARNING "Slack rpm download failed ($url)"; return 1
     fi
-    if zypper --non-interactive install "$t/slack.rpm" 2>/dev/null; then
+    local install_err
+    if install_err=$(zypper --non-interactive install "$t/slack.rpm" 2>&1); then
         INSTALLED_PACKAGES+=("slack"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: slack"
     else
         FAILED_PACKAGES+=("slack"); ((TOTAL_FAILED++))
-        log WARNING "Slack rpm install failed - if it's a missing dependency, check 'rpm -qpR $url' and install the openSUSE-named equivalent manually"
+        log WARNING "Slack rpm install failed - if it's a missing dependency, check 'rpm -qpR $url' and install the openSUSE-named equivalent manually. zypper said: $(printf '%s' "$install_err" | tail -3 | tr '\n' ' ')"
     fi
     rm -rf "$t"
 }
 
-# Remmina ships directly in Tumbleweed's own repos - confirmed live during
-# development, no third-party repo needed the way Ubuntu needs
-# remmina-ppa-team for a modern build.
+# Remmina - a real run of this script found all three packages missing from
+# whatever repos were enabled at the time, contradicting an earlier version
+# of this comment's claim that Tumbleweed's own repos are enough on their
+# own. Search results on this are genuinely mixed (opensuse.pkgs.org lists
+# a build under the default "oss" repo, but the openSUSE Wiki's own Remmina
+# page and software.opensuse.org point at the X11:RemoteDesktop OBS project
+# instead) - rather than assert one source with more confidence than the
+# evidence supports, add X11:RemoteDesktop defensively as an extra source;
+# add_obs_repo() is a no-op if it's already reachable some other way.
 install_remmina() {
+    add_obs_repo "X11:RemoteDesktop" "Remmina"
     batch_install "Remmina" remmina remmina-plugin-rdp remmina-plugin-secret
 }
 
@@ -2608,11 +2660,19 @@ install_teamviewer() {
         SKIPPED_PACKAGES+=("teamviewer"); ((TOTAL_SKIPPED++)); log INFO "Already installed: teamviewer"; return 0
     fi
     log INFO "Installing TeamViewer (official openSUSE/SUSE-targeted rpm)..."
-    if zypper --non-interactive install https://download.teamviewer.com/download/linux/teamviewer-suse.x86_64.rpm 2>/dev/null \
+    local install_err
+    if install_err=$(zypper --non-interactive install https://download.teamviewer.com/download/linux/teamviewer-suse.x86_64.rpm 2>&1) \
         && { command -v teamviewer &>/dev/null || is_installed teamviewer; }; then
         INSTALLED_PACKAGES+=("teamviewer"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: teamviewer"
     else
-        FAILED_PACKAGES+=("teamviewer"); ((TOTAL_FAILED++)); log WARNING "TeamViewer install failed"
+        FAILED_PACKAGES+=("teamviewer"); ((TOTAL_FAILED++))
+        # The download URL itself is confirmed working (a real 302 -> 200,
+        # ~115MB rpm) - a failure here is much more likely an unresolved
+        # dependency in TeamViewer's own rpm (built against a specific
+        # SLES/Leap dependency set, not continuously tracked against
+        # Tumbleweed's rolling one) than a broken URL, so show zypper's own
+        # reason instead of a bare "failed".
+        log WARNING "TeamViewer install failed. zypper said: $(printf '%s' "$install_err" | tail -5 | tr '\n' ' ')"
     fi
 }
 
@@ -2634,8 +2694,12 @@ install_1password() {
     log INFO "Installing 1Password (AppImage)..."
     local dest="/opt/1Password"
     mkdir -p "$dest"
+    # downloads.1password.com/linux/appimage/1password-latest.AppImage (an
+    # earlier version of this script) is a genuine 404 - confirmed directly
+    # with curl, not just assumed from the plausible-looking URL shape. The
+    # AppImage 1Password's own docs actually point to lives on S3 instead.
     if curl -fL --retry 2 -o "$dest/1password.AppImage" \
-        https://downloads.1password.com/linux/appimage/1password-latest.AppImage 2>/dev/null \
+        https://onepassword.s3.amazonaws.com/linux/appimage/1password-latest.AppImage 2>/dev/null \
         && [ -s "$dest/1password.AppImage" ]; then
         chmod +x "$dest/1password.AppImage"
         ln -sf "$dest/1password.AppImage" /usr/local/bin/1password
