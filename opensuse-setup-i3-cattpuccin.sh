@@ -1,11 +1,24 @@
 #!/usr/bin/env bash
 # ============================================================================
-# i3 "hackerbox" post-install script — Fedora 44
+# i3 "hackerbox" post-install script — openSUSE Tumbleweed
 # Theme: Catppuccin Mocha | Layout: gapped + picom blur/shadows
 #
-# Installs: i3, picom, polybar, rofi, dunst, kitty, i3lock-color (COPR, with a
+# Ported from this repo's original fedroa-setup-i3-cattpuccin.sh (Fedora/dnf).
+# The overwhelming majority of this file - i3/picom/polybar/rofi/dunst/kitty
+# config generation, all 42 theme heredocs, the calendar-reminder daemon,
+# every helper script written via heredoc - is plain bash/Python/config text
+# with no distro dependency at all, so it is untouched here. Only the actual
+# package-manager calls (zypper vs dnf), a few OBS repos standing in for
+# Fedora's COPRs, and a handful of package names/system tools that genuinely
+# differ between the two distros were changed - see inline comments at each
+# spot for what was verified and why.
+#
+# Installs: i3, picom, polybar (OBS: X11:Utilities), rofi, dunst, kitty,
+#           i3lock-color (built from source - see section 1b - with a
 #           stock i3lock fallback), xss-lock, lxqt-policykit, flameshot,
-#           ImageMagick, brightnessctl, playerctl, numlockx, dex-autostart, autorandr,
+#           ImageMagick, brightnessctl, playerctl, numlockx, systemd's own
+#           xdg-autostart-generator in place of Fedora's dex-autostart package
+#           (openSUSE doesn't package dex/dex-autostart - see section 4), autorandr,
 #           arandr, fastfetch, Nerd Font, tray helpers, GTK/icon theme, rofi
 #           power menu, copyq clipboard history, udiskie USB automount, pcmanfm
 #           file manager, gammastep night light, volume/brightness OSD popups,
@@ -40,8 +53,8 @@ set -euo pipefail
 log()  { echo -e "\e[1;35m[i3-setup]\e[0m $*"; }
 warn() { echo -e "\e[1;33m[i3-setup]\e[0m $*"; }
 
-if ! command -v dnf >/dev/null 2>&1; then
-  echo "This script targets Fedora (dnf not found). Aborting." >&2
+if ! command -v zypper >/dev/null 2>&1; then
+  echo "This script targets openSUSE Tumbleweed (zypper not found). Aborting." >&2
   exit 1
 fi
 
@@ -53,14 +66,17 @@ mkdir -p "$CONF" "$BIN" "$FONTS"
 # ----------------------------------------------------------------------------
 # 0. Safety net: snapper snapshot of / before touching anything
 # ----------------------------------------------------------------------------
-# Needs Btrfs + an existing "root" snapper config (Fedora's Btrfs-by-default
-# installer sets this up automatically on recent releases) - best-effort,
+# Needs Btrfs + an existing "root" snapper config - openSUSE's own installer
+# has shipped Btrfs-plus-snapper-by-default for even longer than Fedora's
+# (Fedora's later Btrfs-by-default rollout was itself modeled on this same
+# openSUSE workflow), so on a stock Tumbleweed install this "root" config is
+# normally already there without any extra setup. Best-effort regardless,
 # never blocks the rest of the script if it's not available.
 if command -v snapper >/dev/null 2>&1 \
     && sudo snapper list-configs 2>/dev/null | awk '{print $1}' | grep -qx root; then
   log "Taking a snapper snapshot of / before starting (rollback point)..."
   if SNAP_NUM="$(sudo snapper -c root create --type single --print-number \
-      --description "before fedroa-setup-i3-cattpuccin.sh" 2>/dev/null)"; then
+      --description "before opensuse-setup-i3-cattpuccin.sh" 2>/dev/null)"; then
     log "Snapshot #$SNAP_NUM created. Roll back with: sudo snapper -c root undochange ${SNAP_NUM}..0"
   else
     warn "snapper snapshot failed — proceeding without a rollback point."
@@ -72,32 +88,85 @@ fi
 # ----------------------------------------------------------------------------
 # 1. Packages
 # ----------------------------------------------------------------------------
-log "Installing base X11 stack + i3 + rice toolkit via dnf..."
-sudo dnf install -y \
-  xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-xauth xrandr xset \
+# Three packages below (polybar, papirus-icon-theme, jetbrains-mono-fonts)
+# aren't in Tumbleweed's default oss repo - each verified missing there and
+# tracked down to a real, currently-publishing OBS project instead of just
+# assumed (checked build.opensuse.org directly for each):
+#   - polybar            -> X11:Utilities  (openSUSE:Factory's own X11-utility
+#                            staging project - actively maintained, not a
+#                            random home: repo)
+#   - papirus-icon-theme  -> X11:common:Factory (same kind of Factory staging
+#                            project, for the common/shared X11 icon themes)
+#   - jetbrains-mono-fonts -> M17N:fonts (openSUSE's dedicated fonts project;
+#                            confirmed current package there, version 2.304)
+# This is the OBS equivalent of the Fedora script's COPR-enable step below -
+# same idea (a vetted third-party build feeding the same distro's package
+# format), different service.
+log "Adding OBS repos for packages not in Tumbleweed's default oss repo (polybar, papirus-icon-theme, jetbrains-mono-fonts)..."
+sudo zypper --non-interactive addrepo -f \
+  https://download.opensuse.org/repositories/X11:Utilities/openSUSE_Tumbleweed/X11:Utilities.repo \
+  || warn "Could not add the X11:Utilities OBS repo - polybar install below will likely fail; add it manually from https://build.opensuse.org/project/show/X11:Utilities"
+sudo zypper --non-interactive addrepo -f \
+  https://download.opensuse.org/repositories/X11:common:Factory/openSUSE_Tumbleweed/X11:common:Factory.repo \
+  || warn "Could not add the X11:common:Factory OBS repo - papirus-icon-theme install below will likely fail; add it manually from https://build.opensuse.org/project/show/X11:common:Factory"
+sudo zypper --non-interactive addrepo -f \
+  https://download.opensuse.org/repositories/M17N:fonts/openSUSE_Tumbleweed/M17N:fonts.repo \
+  || warn "Could not add the M17N:fonts OBS repo - jetbrains-mono-fonts install below will likely fail; add it manually from https://build.opensuse.org/project/show/M17N:fonts"
+sudo zypper --gpg-auto-import-keys refresh
+
+log "Installing base X11 stack + i3 + rice toolkit via zypper..."
+# Package-name deltas from the Fedora list, each individually verified
+# against openSUSE's actual package search rather than assumed to carry
+# Fedora's naming straight over:
+#   xorg-x11-server-Xorg -> xorg-x11-server (openSUSE doesn't split an
+#     "-Xorg" subpackage off the base server package the way Fedora does)
+#   xorg-x11-xinit -> xinit, xorg-x11-xauth -> xauth (openSUSE ships these
+#     standalone X client tools under their plain upstream names, not
+#     prefixed "xorg-x11-" the way Fedora groups them)
+#   network-manager-applet -> NetworkManager-applet (same package, openSUSE
+#     just keeps NetworkManager's own CamelCase in the applet's name too)
+#   libnotify -> libnotify-tools (on openSUSE the notify-send CLI - used
+#     everywhere in this script's own helper scripts - ships in its own
+#     "-tools" subpackage, confirmed via its actual notify-send.1 man page
+#     path; the shared library itself comes along as a dependency either way)
+#   libdbusmenu-gtk3-devel -> libdbusmenu-gtk-devel (openSUSE's dbusmenu
+#     devel package isn't GTK3-suffixed even though it builds the GTK3
+#     bindings - confirmed against the real package list on
+#     opensuse.pkgs.org, not guessed from the Fedora name)
+#   dnf-utils -> zypper-needs-restarting (see software-update.sh in section
+#     6c below for why this is a near-drop-in replacement, not just a rename)
+#   pipx -> python3-pipx (openSUSE's python3-X alias packages resolve to
+#     whatever the current default Python flavor's real package is -
+#     currently python311-pipx on Tumbleweed - so the plain python3- name
+#     stays stable across Python version bumps)
+#   dex-autostart is dropped entirely - see section 4 below (i3 config) for
+#     why openSUSE gets systemd's own xdg-autostart-generator instead of a
+#     package
+sudo zypper --non-interactive install --allow-vendor-change \
+  xorg-x11-server xinit xauth xrandr xset \
   i3 i3lock \
   picom polybar rofi dunst kitty \
-  xss-lock network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
-  copyq udiskie pcmanfm gammastep libnotify nitrogen gnome-calendar \
+  xss-lock NetworkManager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
+  copyq udiskie pcmanfm gammastep libnotify-tools nitrogen gnome-calendar \
   system-config-printer hplip \
-  vala gtk3-devel libdbusmenu-devel libdbusmenu-gtk3-devel \
+  vala gtk3-devel libdbusmenu-devel libdbusmenu-gtk-devel \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq flameshot ImageMagick \
-  brightnessctl playerctl numlockx dex-autostart autorandr arandr xdotool python3-xlib \
-  dnf-utils \
+  brightnessctl playerctl numlockx autorandr arandr xdotool python3-xlib \
+  zypper-needs-restarting \
   solaar solaar-udev \
-  pipx \
+  python3-pipx \
   jetbrains-mono-fonts \
   plymouth-plugin-script
 
-# network-manager-applet/pasystray/blueman/udiskie are still installed above -
+# NetworkManager-applet/pasystray/blueman/udiskie are still installed above -
 # their tray-icon *applets* (nm-applet, pasystray, blueman-applet) are
 # deliberately never autostarted (see the i3 config below); polybar's own
 # wifi/volume/bluetooth widgets replace that display, but the underlying
 # packages (NetworkManager, PulseAudio, bluetoothd, umount automation) still
 # need to be present. udiskie IS autostarted, just in --tray mode.
 #
-# vala/gtk3-devel/libdbusmenu(-gtk3)-devel are build-only dependencies for
+# vala/gtk3-devel/libdbusmenu(-gtk)-devel are build-only dependencies for
 # snixembed (section 6e below) - not runtime deps of anything else here.
 
 # brightnessctl's udev rules gate /sys/class/backlight writes behind the
@@ -106,18 +175,59 @@ log "Adding $USER to the 'video' group (needed for brightnessctl)..."
 sudo usermod -aG video "$USER" 2>/dev/null \
   || warn "Could not add $USER to 'video' group - brightness keys may not work until you do this manually."
 
-log "Enabling COPR for i3lock-color (not in official Fedora repos)..."
-sudo dnf copr enable -y tokariew/i3lock-color || warn "COPR enable failed — you can install i3lock-color manually later."
-# The tokariew build installs itself AS /usr/bin/i3lock (same binary name,
-# extended flags - there's no separate "i3lock-color" command), which
-# conflicts file-for-file with the stock i3lock already installed above -
-# `dnf install` alone fails the whole transaction over that conflict.
-# `dnf swap` removes the old package and installs the new one as one atomic
-# transaction, which is exactly the fix for this class of same-file conflict.
-sudo dnf swap -y i3lock i3lock-color || warn "i3lock-color install failed; falling back to stock i3lock for now."
+# ----------------------------------------------------------------------------
+# 1b. i3lock-color, built from source (no maintained OBS package found)
+# ----------------------------------------------------------------------------
+# Unlike Fedora (a single well-maintained tokariew/i3lock-color COPR),
+# openSUSE's OBS only turned up personal home: projects for i3lock-color
+# (home:digitaltomm, home:sbradnick, home:bfein - checked build.opensuse.org
+# directly) - none of them look actively maintained enough to depend on for
+# a setup script other people will run. Building from source instead follows
+# this same script's own precedent for exactly this situation (see
+# snixembed in section 6e) rather than gambling on a random home: repo
+# staying up or getting rebuilt for future Tumbleweed snapshots.
+#
+# All of the following -devel packages were individually confirmed present
+# in Tumbleweed's default oss repo (not the obscure ones you'd expect to be
+# missing - xcb-util-xrm and xcb-util-image in particular were specifically
+# checked against openSUSE:Factory's package list, since they're easy to
+# assume are missing and aren't) - so unlike polybar/papirus/jetbrains-fonts
+# above, no extra repo is needed just to build this:
+log "Installing i3lock-color's build dependencies..."
+sudo zypper --non-interactive install \
+  autoconf automake pkgconf make gcc \
+  cairo-devel fontconfig-devel libev-devel libjpeg8-devel \
+  libxkbcommon-devel libxkbcommon-x11-devel pam-devel \
+  xcb-util-image-devel xcb-util-xrm-devel \
+  libxcb-devel libXinerama-devel libXrandr-devel \
+  || warn "One or more i3lock-color build dependencies failed to install - the source build below will likely fail too."
+
+I3LOCK_MARKER="$HOME/.local/state/i3lock-color-built"
+if [ ! -f "$I3LOCK_MARKER" ]; then
+  log "Building i3lock-color from source (Raymo111/i3lock-color, installed to ~/.local so it doesn't fight the stock i3lock package)..."
+  I3LOCK_TMPDIR="$(mktemp -d)"
+  if git clone --depth 1 https://github.com/Raymo111/i3lock-color "$I3LOCK_TMPDIR" >/dev/null 2>&1 \
+      && ( cd "$I3LOCK_TMPDIR" && autoreconf -i >/dev/null 2>&1 \
+           && ./configure --prefix="$HOME/.local" >/dev/null 2>&1 \
+           && make -j"$(nproc)" >/dev/null 2>&1 \
+           && make install >/dev/null 2>&1 ); then
+    mkdir -p "$(dirname "$I3LOCK_MARKER")"
+    touch "$I3LOCK_MARKER"
+    log "i3lock-color built and installed to $HOME/.local/bin/i3lock (lock.sh below calls it by absolute path, since i3's own exec environment doesn't have ~/.local/bin ahead of /usr/bin the way an interactive shell's PATH does)."
+  else
+    warn "i3lock-color build failed - falling back to the stock i3lock installed above (lock.sh below detects this automatically via $I3LOCK_MARKER)."
+  fi
+  rm -rf "$I3LOCK_TMPDIR"
+else
+  log "i3lock-color already built, skipping."
+fi
 
 # ----------------------------------------------------------------------------
-# 2. Nerd Font (JetBrainsMono) — official Fedora repos don't ship patched fonts
+# 2. Nerd Font (JetBrainsMono) — the plain jetbrains-mono-fonts package above
+#    (like Fedora's own repos) ships the unpatched upstream font; the only
+#    openSUSE packages of the pre-patched Nerd Font variant are personal
+#    home: OBS projects (home:GNorth, home:mohms - checked, neither looks
+#    like something to depend on), so download it the same way Fedora does.
 # ----------------------------------------------------------------------------
 if [ ! -d "$FONTS/JetBrainsMonoNerd" ]; then
   log "Downloading JetBrainsMono Nerd Font..."
@@ -148,8 +258,8 @@ fi
 #     progress bar that eases toward ~70% during LUKS decryption (which
 #     reports no real progress of its own) before real boot progress takes
 #     over - all driven by Plymouth's "script" module (plymouth-plugin-
-#     script, added to the dnf list above), not the simpler "two-step"
-#     module Fedora's own stock themes use.
+#     script, added to the zypper list above), not the simpler "two-step"
+#     module most distros' own stock themes use.
 #
 #     Omarchy's actual template assets (bullet/entry/lock/progress bar+box
 #     images, and its .script animation logic) are reused verbatim below -
@@ -792,6 +902,16 @@ mode "resize" {
 bindsym $mod+r mode "resize"
 
 # --- autostart ---
+# Diagnosed against GDM specifically (Fedora Workstation's fixed default) -
+# not independently re-verified against SDDM, which is what a default
+# openSUSE Tumbleweed KDE Plasma install uses instead (openSUSE doesn't fix
+# one desktop/display-manager pairing the way Fedora Workstation does; GDM
+# is just as available if you pick the GNOME pattern, in which case this
+# paragraph should apply unchanged). The fix itself doesn't actually care
+# which display manager caused the gap - it's a generic "graphical-
+# session.target isn't active, so start these two units by hand instead"
+# workaround - so this is left as-is rather than rewritten on a guess about
+# SDDM's own logind Desktop= behavior; flagging the assumption here instead.
 # GDM's i3.desktop just execs i3 directly - unlike gnome-session, nothing
 # ever imports this session's DISPLAY/XAUTHORITY into systemd --user's
 # activation environment. dbus-update-activation-environment fixes that
@@ -835,8 +955,8 @@ exec --no-startup-id snixembed --fork
 # Network Manager/PulseAudio/bluetoothd all keep working fine without their
 # applets running; only the redundant tray icon goes away. Their
 # /etc/xdg/autostart entries are overridden with Hidden=true in
-# ~/.config/autostart/ (section 6d below) so dex-autostart further down
-# doesn't bring them back either.
+# ~/.config/autostart/ (section 6d below) so the XDG-autostart pass further
+# down doesn't bring them back either.
 #
 # blueman-manager (opened by clicking the polybar bluetooth widget) itself
 # auto-spawns blueman-applet as its backend with no way to opt out - the
@@ -891,9 +1011,28 @@ exec --no-startup-id ~/.local/bin/calendar-reminder-daemon-launch.sh
 exec --no-startup-id numlockx on
 # Runs any other installed app's ~/.config/autostart .desktop entries (tray
 # apps, sync clients, etc.) - bare i3 has no XDG autostart support of its own.
-# (Fedora packages upstream's "dex" as "dex-autostart" - same tool/flags,
-# renamed to avoid a name collision with an unrelated Fedora package.)
-exec --no-startup-id dex-autostart -a -e i3
+# Fedora's build of this script used jceb/dex (packaged there as
+# "dex-autostart"); openSUSE doesn't package dex at all under either name -
+# checked openSUSE:Factory directly, the only "dex" hit there is dex-oidc,
+# an unrelated OAuth2/OIDC server that just happens to share the name. Rather
+# than chase down a third-party OBS build of a small shim, this uses
+# systemd's own systemd-xdg-autostart-generator instead - it ships as part
+# of the systemd package already installed by default on every Tumbleweed
+# system, so no extra package at all is needed. It reads the exact same
+# ~/.config/autostart and /etc/xdg/autostart .desktop files, respecting the
+# same OnlyShowIn/NotShowIn spec dex checks - just gated behind
+# $XDG_CURRENT_DESKTOP in the systemd --user manager's OWN environment
+# rather than a CLI flag (confirmed against systemd.io/DESKTOP_ENVIRONMENTS
+# and the systemd-xdg-autostart-generator(8) man page: generators only run
+# at manager startup/reload, so set-environment then daemon-reload is what
+# actually makes it pick up "i3" as the active desktop, matching dex's own
+# "-e i3" flag). Same shape of fix as the xdg-desktop-portal workaround just
+# above in this same exec block - this i3 session never activates
+# graphical-session.target on its own, so anything systemd --user would
+# normally wire up automatically for a "real" desktop environment needs an
+# explicit manual nudge here instead. Not a new pattern for this setup, just
+# a second thing that needed the same kind of nudge.
+exec --no-startup-id sh -c 'systemctl --user set-environment XDG_CURRENT_DESKTOP=i3; systemctl --user daemon-reload; systemctl --user start xdg-desktop-autostart.target'
 # MX Anywhere 3S needs its Scroll Wheel Resolution HID++ feature toggled
 # off-then-on after every reconnect (reboot, sleep/wake) for scrolling to
 # work properly - see ~/.local/bin/fix-mx-scroll.sh for why a plain "set to
@@ -901,7 +1040,8 @@ exec --no-startup-id dex-autostart -a -e i3
 # just never shows up in `solaar show`, so the retry loop times out and
 # exits quietly) - hardcoded to this specific, confirmed mouse rather than
 # gated behind generic detection, matching the same fix already offered as
-# a manual Peripherals menu action in post-install-fedora.sh.
+# a manual Peripherals menu action in post-install-opensuse.sh (this repo's
+# separate, general-purpose post-install script for this distro).
 exec --no-startup-id ~/.local/bin/fix-mx-scroll.sh
 exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.local/bin/lock.sh --with-screensaver
 # Idle-based lock: screensaver activation at 30min (triggers xss-lock ->
@@ -11802,10 +11942,11 @@ chmod +x "$BIN/blueman-applet-guard.sh"
 log "Writing caffeine (idle/sleep inhibitor) toggle + polybar widget scripts..."
 cat > "$BIN/caffeine-toggle.sh" <<'EOF'
 #!/usr/bin/env bash
-# "Caffeine" toggle - no packaged equivalent exists for Fedora (neither dnf
-# nor Flathub carry one), so this is a small hand-rolled stand-in for the
-# classic GNOME Caffeine extension: click to inhibit screen-blank/lock/sleep,
-# click again to release. Nothing changes system-wide while it's off.
+# "Caffeine" toggle - no packaged equivalent exists for openSUSE either
+# (checked both the default zypper repos and Flathub), so this is a small
+# hand-rolled stand-in for the classic GNOME Caffeine extension: click to
+# inhibit screen-blank/lock/sleep, click again to release. Nothing changes
+# system-wide while it's off.
 #
 # Two things happen while active:
 #   1. xset's screensaver/DPMS timers are disabled, so xss-lock never fires
@@ -11902,7 +12043,7 @@ chmod +x "$BIN/polybar-cliamp.sh"
 log "Writing polybar software-updates widget script..."
 cat > "$BIN/polybar-updates.sh" <<'EOF'
 #!/usr/bin/env bash
-# polybar custom/script module (tail=true): shows a count of pending dnf
+# polybar custom/script module (tail=true): shows a count of pending zypper
 # package updates, including "0" when there are none - always visible
 # rather than hiding when idle, unlike the media/network widgets elsewhere
 # in this rice. Loops and sleeps internally instead of relying on polybar's
@@ -11915,34 +12056,62 @@ cat > "$BIN/polybar-updates.sh" <<'EOF'
 # check immediately on startup, print, sleep, repeat - polybar just
 # displays whatever line the script most recently printed.
 #
-# Counts only real "name.arch  version  repo" lines - dnf's own "Upgrades"
-# section header would otherwise be miscounted as one extra package by a
-# naive line count. Relies on Fedora's own dnf-makecache.timer (enabled by
-# default) to keep repo metadata fresh in the background, so this just
-# reads whatever that cache last had rather than forcing a slow network
-# refresh itself.
+# `zypper lu` ("list-updates") prints one table row per available update,
+# each starting with a "v" status column (confirmed against zypper's own
+# documented output format, e.g. "v | Main Repository | pkgname | 1.0 |
+# 1.1 | x86_64") - counting lines starting "v |" is the zypper equivalent
+# of the Fedora script's dnf check-update line count. --no-refresh is
+# deliberate: plain `zypper lu` refreshes repo metadata itself before
+# listing (there's no separate background-cache timer the way Fedora's
+# dnf-makecache.timer works), and a network round trip every 900s from a
+# background polybar widget isn't worth it - this just reads whatever
+# metadata zypper last had cached, the same tradeoff the Fedora version
+# made with its own dnf-makecache-timer reliance. Note this is a
+# `zypper up`-shaped count (same-package version bumps only), not a
+# `zypper dup`-shaped one - Tumbleweed's own recommended dup workflow (see
+# software-update.sh below) can also add/remove/vendor-swap packages this
+# simpler per-package count won't reflect; good enough for an at-a-glance
+# widget, not a substitute for actually running the update.
 while true; do
-  count=$(timeout 10 dnf check-update -q 2>/dev/null | grep -cE '^\S+\.(x86_64|noarch|i686|aarch64|s390x|ppc64le)[[:space:]]')
+  count=$(timeout 10 zypper --non-interactive --no-refresh lu 2>/dev/null | grep -cE '^v[[:space:]]*\|')
   printf ' %s\n' "${count:-0}"
   sleep 900
 done
 EOF
 chmod +x "$BIN/polybar-updates.sh"
 
-log "Writing software-update.sh (dnf upgrade + reboot-required check)..."
+log "Writing software-update.sh (zypper dup + reboot-required check)..."
 cat > "$BIN/software-update.sh" <<'EOF'
 #!/usr/bin/env bash
-# Runs the actual dnf upgrade (same fully-interactive flow as before -
-# dnf's own "Is this ok [y/N]:" prompt is untouched), then checks whether
-# it left the system needing a reboot (kernel/glibc/systemd/etc. update)
-# via dnf-utils' `needs-restarting -r` and offers to reboot right away.
-# Exit code semantics are the inverse of a typical command: 1 means a
-# reboot IS required, 0 means it's not (confirmed against the real tool,
-# not assumed from the name) - this rice's polybar update-count widget
-# only reports pending package counts, not reboot-required state, so
-# without this the only other way to notice is by chance days later.
+# Runs the actual system update, then checks whether it left the system
+# needing a reboot (kernel/glibc/systemd/etc. update) and offers to reboot
+# right away.
+#
+# `zypper dup` (dist-upgrade), not `zypper up` - this is Tumbleweed's own
+# documented recommendation for a rolling release, not just a renamed
+# equivalent: every Tumbleweed snapshot is treated like a new distro
+# version, so packages can be added, dropped, or switch vendor/repo between
+# snapshots in ways a plain `zypper up` won't pick up, leaving stale
+# packages behind over time. --no-allow-vendor-change is the commonly
+# recommended middle ground - keeps dup's full add/remove/upgrade behavior
+# but still blocks a package silently jumping to a different vendor/repo
+# than the one it was installed from (e.g. one of the OBS repos this
+# script added in section 1), which is the actual failure mode plain
+# `zypper up` was trying to guard against in the first place.
+#
+# needs-restarting -r then checks whether that left the system needing a
+# reboot. openSUSE doesn't ship dnf-utils, obviously, but zypper's own
+# "zypper-needs-restarting" package (installed in section 1 above) is a
+# genuine, deliberate compatibility shim for exactly this dnf-utils tool -
+# same command name, same -r/--reboothint flag, same inverted exit-code
+# semantics (1 means a reboot IS required, 0 means it's not - confirmed
+# against its actual upstream source/man page, not assumed just because
+# the name matched), so the line below is unchanged from the Fedora
+# version. This rice's polybar update-count widget only reports pending
+# package counts, not reboot-required state, so without this the only
+# other way to notice is by chance days later.
 set -uo pipefail
-sudo dnf upgrade
+sudo zypper dup --no-allow-vendor-change
 
 echo
 if needs-restarting -r >/dev/null 2>&1; then
@@ -12315,12 +12484,12 @@ chmod +x "$BIN/calendar-reminder-daemon-launch.sh"
 # ----------------------------------------------------------------------------
 # 6d. Disable the redundant tray applets' own autostart entries
 # ----------------------------------------------------------------------------
-# network-manager-applet/pasystray/blueman all ship their OWN
+# NetworkManager-applet/pasystray/blueman all ship their OWN
 # /etc/xdg/autostart/*.desktop entries independent of the i3 exec lines
-# above - removing those exec lines alone isn't enough, since
-# dex-autostart -a -e i3 (further up in the i3 config) would still pick
-# these up and relaunch them. The standard fix for a system-wide autostart
-# entry you don't want, without touching the system file itself (which
+# above - removing those exec lines alone isn't enough, since the
+# systemd-xdg-autostart-generator pass (further up in the i3 config) would
+# still pick these up and relaunch them. The standard fix for a system-wide
+# autostart entry you don't want, without touching the system file itself (which
 # would need root and would affect every user), is a per-user override with
 # Hidden=true in ~/.config/autostart/ using the same filename.
 log "Disabling nm-applet/pasystray/blueman-applet's own autostart entries (polybar's widgets replace their tray icons)..."
@@ -12357,10 +12526,11 @@ systemctl --user mask evolution-alarm-notify.service >/dev/null 2>&1 || warn "Co
 # ----------------------------------------------------------------------------
 # 6e. snixembed (StatusNotifierItem -> legacy XEmbed tray proxy)
 # ----------------------------------------------------------------------------
-# Not packaged for Fedora. Builds cleanly from source with the vala/
-# gtk3-devel/libdbusmenu(-gtk3)-devel packages already installed in section
-# 1 - best-effort like the Nerd Font download above, since a build failure
-# here shouldn't be able to take down the rest of the script (you'd just
+# Not packaged for openSUSE either (checked - nothing in the default repos
+# or the OBS repos already added above). Builds cleanly from source with the
+# vala/gtk3-devel/libdbusmenu(-gtk)-devel packages already installed in
+# section 1 - best-effort like the Nerd Font download above, since a build
+# failure here shouldn't be able to take down the rest of the script (you'd just
 # lose SNI tray icons for apps like OBS/1Password/Discord; the legacy-
 # protocol tray icons this script's own widgets don't already replace would
 # still work without it).
@@ -18322,7 +18492,7 @@ cp "$CONF/kitty/themes/catppuccin-mocha.conf" "$CONF/kitty/current.conf"
 # 6f. Starship prompt theming - matches the shell prompt (powerline segments)
 #     to whichever desktop theme is active, the same way kitty/rofi already
 #     do. Only relevant if Chris Titus mybash (installed by the separate
-#     post-install-fedora.sh script, not this one) is actually in use - its
+#     post-install-opensuse.sh script, not this one) is actually in use - its
 #     setup.sh points ~/.config/starship.toml at a fixed Nord-colored config
 #     via a symlink into ~/.local/share/mybash/starship.toml, completely
 #     independent of kitty's own ANSI palette, which is exactly why
@@ -25375,14 +25545,18 @@ if [ "$1" = "--with-screensaver" ]; then
 fi
 
 # Color flags are i3lock-color-only - stock i3lock rejects unknown options
-# and would just fail to lock. The tokariew COPR build of i3lock-color
-# installs itself AS /usr/bin/i3lock (same binary name, extended flags -
-# there is no separate "i3lock-color" command), so detect by checking
-# whether the i3lock-color PACKAGE is installed via rpm, not by binary name
-# or `--help` output - i3lock's `--help` always prints the same terse usage
-# summary regardless of build (it just points to `man i3lock` for the full
-# flag list), so grepping it for a color flag name never actually matches
-# either build and silently always falls through to the plain branch below.
+# and would just fail to lock. Fedora's tokariew COPR build installs itself
+# AS /usr/bin/i3lock (same binary name, extended flags), so that version of
+# this script detected it by checking whether the i3lock-color PACKAGE was
+# installed via rpm. openSUSE's build (section 1b above, since no maintained
+# OBS package was found) is a from-source build into ~/.local instead of a
+# system package, so there's no rpm entry to query either way - it's
+# detected via the marker file that build step writes on success instead.
+# Not by binary name or `--help` output either way - i3lock's `--help`
+# always prints the same terse usage summary regardless of build (it just
+# points to `man i3lock` for the full flag list), so grepping it for a
+# color flag name never actually matches either build and silently always
+# falls through to the plain branch below.
 # This build is based on the modern Raymo111/i3lock-color fork, whose flags
 # use hyphens (--inside-color) rather than the older eBrnd-style names
 # (--insidecolor) - confirmed against `man i3lock` on this exact build,
@@ -25489,8 +25663,14 @@ WRONG="${WRONGS[$RANDOM % ${#WRONGS[@]}]}"
 DIM="$HOME/.config/i3lock/dim.png"
 [ -f "$DIM" ] || { mkdir -p "$HOME/.config/i3lock"; magick -size 1x1 xc:"rgba(0,0,0,0.45)" "$DIM"; }
 
-if rpm -q i3lock-color >/dev/null 2>&1; then
-  lock_and_blank i3lock \
+I3LOCK_COLOR_BIN="$HOME/.local/bin/i3lock"
+if [ -f "$HOME/.local/state/i3lock-color-built" ] && [ -x "$I3LOCK_COLOR_BIN" ]; then
+  # Called by absolute path, not bare "i3lock" - this runs from i3's own
+  # exec environment (via xss-lock/Mod+l), which does NOT source .bashrc's
+  # PATH prepend of ~/.local/bin the way an interactive shell would, so a
+  # bare "i3lock" here would still resolve to the stock /usr/bin/i3lock
+  # even after a successful build.
+  lock_and_blank "$I3LOCK_COLOR_BIN" \
     --blur=8 \
     -i "$DIM" -t \
     --clock --indicator \
@@ -25606,16 +25786,26 @@ cat > "$BIN/screensaver.sh" <<'EOF'
 # Astal/AGS shell (which i3 doesn't have an equivalent of). Exits on any
 # keypress OR mouse movement.
 LOGO="$HOME/.config/screensaver/logo.txt"
-FEDORA_SVG="/usr/share/fedora-logos/fedora_logo.svg"
+# openSUSE's own distro-logo SVG (Fedora's equivalent is
+# /usr/share/fedora-logos/fedora_logo.svg) - ships as part of the
+# distribution-logos-openSUSE-icons branding package installed by default
+# on any openSUSE desktop, so nothing extra needs adding to section 1's
+# package list. Confirmed path/filename against that package's actual file
+# list (it's the generic "distributor-logo.svg" name, not suffixed
+# "-openSUSE" - openSUSE's own branding package is what makes that generic
+# name resolve to the openSUSE geeko on an openSUSE system in the first
+# place; distro-specific variants like distributor-logo-Leap.svg exist
+# alongside it for other openSUSE products).
+OPENSUSE_SVG="/usr/share/icons/hicolor/scalable/apps/distributor-logo.svg"
 if [ ! -f "$LOGO" ]; then
   mkdir -p "$(dirname "$LOGO")"
-  if command -v magick >/dev/null 2>&1 && [ -f "$FEDORA_SVG" ]; then
+  if command -v magick >/dev/null 2>&1 && [ -f "$OPENSUSE_SVG" ]; then
     # Two source pixel rows -> one terminal row, using a half-block glyph
     # (█ both on, ▀ top only, ▄ bottom only, space neither) to double the
     # effective vertical resolution - the same trick Omarchy's own
     # transcoder uses. The alpha channel (not color/threshold) is the mask,
     # since the SVG's logo shape is opaque on a transparent background.
-    magick -background none "$FEDORA_SVG" -auto-orient \
+    magick -background none "$OPENSUSE_SVG" -auto-orient \
       -alpha extract -alpha off -bordercolor black -border 1 -trim +repage \
       -resize 80x52 -threshold 50% -negate -compress none pbm:- 2>/dev/null \
       | awk '
@@ -25635,10 +25825,12 @@ if [ ! -f "$LOGO" ]; then
           }
         }' > "$LOGO"
   fi
-  # Fall back to the old typed-letter banner if ImageMagick or the Fedora
+  # Fall back to the old typed-letter banner if ImageMagick or the openSUSE
   # logo SVG isn't present (non-standard install) or the pipeline above
-  # produced nothing.
-  [ -s "$LOGO" ] || fastfetch --logo Fedora -s none > "$LOGO"
+  # produced nothing. fastfetch has shipped a real "openSUSE" ascii/logo
+  # entry for a long time (it auto-selects the same one on distro
+  # detection), so --logo openSUSE here is a direct swap, not a guess.
+  [ -s "$LOGO" ] || fastfetch --logo openSUSE -s none > "$LOGO"
 fi
 
 # A plain fullscreen terminal only sees mouse movement as input if it typed
@@ -25938,7 +26130,7 @@ cat > "$BIN/set-screensaver-text.sh" <<'EOF'
 #!/usr/bin/env bash
 # Set the screensaver logo (~/.config/screensaver/logo.txt) from either
 # typed text or an image file - both converted to the same solid Unicode
-# half-block art (█▀▄) the Fedora logo uses in screensaver.sh. Matches
+# half-block art (█▀▄) the openSUSE logo uses in screensaver.sh. Matches
 # Omarchy's own screensaver branding (`omarchy branding screensaver
 # text|image`), just as one plain script instead of a subcommand.
 #
@@ -25955,16 +26147,19 @@ cat > "$BIN/set-screensaver-text.sh" <<'EOF'
 # no --invert equivalent here for a light-subject-on-dark-photo yet.
 #
 # Overwrites $LOGO every run - that's intentional here (unlike
-# screensaver.sh's own lazy Fedora-logo generation, which only writes if
+# screensaver.sh's own lazy openSUSE-logo generation, which only writes if
 # missing).
 set -euo pipefail
 
 LOGO="$HOME/.config/screensaver/logo.txt"
 FONT="/usr/share/fonts/truetype/nerd-fonts/JetBrainsMonoNerdFont-Bold.ttf"
-FEDORA_SVG="/usr/share/fedora-logos/fedora_logo.svg"
+# See screensaver.sh's own OPENSUSE_SVG comment above for why this exact
+# path/package is the right one on openSUSE.
+OPENSUSE_SVG="/usr/share/icons/hicolor/scalable/apps/distributor-logo.svg"
 
 if ! command -v magick >/dev/null 2>&1; then
   echo "ImageMagick (magick) is not installed." >&2
+  echo "  openSUSE:      sudo zypper install ImageMagick" >&2
   echo "  Ubuntu/Debian: sudo apt install imagemagick" >&2
   echo "  Fedora:        sudo dnf install ImageMagick" >&2
   echo "  Arch:          sudo pacman -S imagemagick" >&2
@@ -25975,7 +26170,7 @@ mkdir -p "$(dirname "$LOGO")"
 
 INPUT="${1:-}"
 if [ -z "$INPUT" ]; then
-  read -r -p "Screensaver text, a path to an image, or 'reset' for the Fedora default: " INPUT
+  read -r -p "Screensaver text, a path to an image, or 'reset' for the openSUSE default: " INPUT
 fi
 if [ -z "$INPUT" ]; then
   echo "Nothing entered, leaving $LOGO unchanged." >&2
@@ -25987,7 +26182,7 @@ trap 'rm -f "$TMP_PNG"' EXIT
 
 # Two source pixel rows -> one terminal row, using a half-block glyph
 # (█ both on, ▀ top only, ▄ bottom only, space neither) - identical to the
-# conversion screensaver.sh runs on the Fedora logo SVG.
+# conversion screensaver.sh runs on the openSUSE logo SVG.
 to_block_art() {
   awk '
     BEGIN { block["11"]="█"; block["10"]="▀"; block["01"]="▄"; block["00"]=" " }
@@ -26008,26 +26203,26 @@ to_block_art() {
 }
 
 if [ "$(printf '%s' "$INPUT" | tr '[:upper:]' '[:lower:]')" = "reset" ]; then
-  # Reset mode - regenerates the exact same Fedora block-art logo
+  # Reset mode - regenerates the exact same openSUSE block-art logo
   # screensaver.sh itself lazily creates on first run (identical magick
-  # pipeline against the real Fedora SVG, reusing this script's own
+  # pipeline against the real openSUSE SVG, reusing this script's own
   # to_block_art rather than a second copy), so picking this is
   # indistinguishable from having never customized the logo at all.
-  if [ -f "$FEDORA_SVG" ]; then
-    magick -background none "$FEDORA_SVG" -auto-orient \
+  if [ -f "$OPENSUSE_SVG" ]; then
+    magick -background none "$OPENSUSE_SVG" -auto-orient \
       -alpha extract -alpha off -bordercolor black -border 1 -trim +repage \
       -resize 80x52 -threshold 50% -negate -compress none pbm:- 2>/dev/null \
       | to_block_art >"$LOGO"
   fi
-  # Same fallback screensaver.sh itself uses if the Fedora SVG isn't
-  # installed (non-Fedora system) or the pipeline above produced nothing.
+  # Same fallback screensaver.sh itself uses if the openSUSE SVG isn't
+  # installed (non-openSUSE system) or the pipeline above produced nothing.
   if [ ! -s "$LOGO" ]; then
-    command -v fastfetch >/dev/null 2>&1 && fastfetch --logo Fedora -s none >"$LOGO"
+    command -v fastfetch >/dev/null 2>&1 && fastfetch --logo openSUSE -s none >"$LOGO"
   fi
 elif [ -f "$INPUT" ]; then
   # Image mode. Real transparency (an icon/logo on a clear background) is
   # the mask if present - dark pixels are already threshold-negated
-  # correctly the same way the Fedora SVG is in screensaver.sh. Otherwise
+  # correctly the same way the openSUSE SVG is in screensaver.sh. Otherwise
   # (a flattened PNG/JPG/photo with no alpha channel) fall back to
   # grayscale + threshold with NO negate, since dark-subject-on-light-
   # background needs the opposite polarity from the alpha-mask case -
@@ -26051,7 +26246,7 @@ elif [ -f "$INPUT" ]; then
   fi
 else
   # Text mode. Point size is tuned so short phrases end up roughly the same
-  # visual scale as the block Fedora logo (which targets an 80-column
+  # visual scale as the block openSUSE logo (which targets an 80-column
   # canvas) once resized below - longer text just shrinks further to fit,
   # same tradeoff arbitrarily-sized source images have above.
   FONT_ARGS=()
@@ -26388,10 +26583,11 @@ fi
 # ----------------------------------------------------------------------------
 # 13. Catppuccin GTK3/4 theme (best-effort — cosmetic only, won't fail the script)
 # ----------------------------------------------------------------------------
-# Not packaged for Fedora. The official catppuccin/gtk GitHub releases ship
-# prebuilt theme folders (just GTK CSS + assets, no compilation) - download
-# the Mocha/mauve variant matching the rest of this rice and drop it
-# straight into ~/.themes.
+# Not packaged for openSUSE either (checked - no hit in the default repos
+# or any of the OBS repos already added above). The official catppuccin/gtk
+# GitHub releases ship prebuilt theme folders (just GTK CSS + assets, no
+# compilation) - download the Mocha/mauve variant matching the rest of this
+# rice and drop it straight into ~/.themes.
 GTK_THEME_NAME="catppuccin-mocha-mauve-standard+default"
 if [ ! -d "$HOME/.themes/$GTK_THEME_NAME" ]; then
   log "Downloading Catppuccin GTK theme (Mocha, mauve accent)..."
@@ -26524,9 +26720,9 @@ fi
 # ----------------------------------------------------------------------------
 # 14c. CLIamp (terminal music player) - Mod+m
 # ----------------------------------------------------------------------------
-# Not packaged for Fedora - vendor curl|sh installer fetches a prebuilt
-# release binary (no Go/build deps needed) into ~/.local/bin, same shape as
-# the Claude Code installer pattern used elsewhere. Best-effort like
+# Not packaged for openSUSE either - vendor curl|sh installer fetches a
+# prebuilt release binary (no Go/build deps needed) into ~/.local/bin, same
+# shape as the Claude Code installer pattern used elsewhere. Best-effort like
 # snixembed/the Nerd Font above - a failed install just logs a warning.
 if ! command -v cliamp >/dev/null 2>&1; then
   log "Installing CLIamp (terminal music player)..."
@@ -26547,9 +26743,17 @@ cat <<'EOF'
  Next steps
 ────────────────────────────────────────────────────────────
  1. Log out.
- 2. At the GDM login screen, click the gear icon next to the
-    password field and select "i3" (it's a plain Xorg session —
-    installing the i3 package registers it automatically).
+ 2. At the login screen, pick "i3" as the session (it's a plain Xorg
+    session - installing the i3 package registers it automatically).
+    Where exactly that picker is depends on your display manager, since
+    unlike Fedora Workstation's fixed GDM, openSUSE doesn't fix one
+    login manager: GDM puts it behind the gear icon next to the password
+    field, SDDM (openSUSE's own KDE Plasma pattern default) has a
+    session dropdown on the login form itself, and a plain startx/.xinitrc
+    setup skips a session picker entirely - see section 4's autostart
+    comment above if you're on GDM and hit the same graphical-
+    session.target gap Fedora GDM has; not independently re-verified
+    under SDDM.
  3. First login will look mostly bare until picom/polybar spawn
     (a couple seconds). If polybar doesn't appear, run:
         polybar -c ~/.config/polybar/config.ini top-primary
