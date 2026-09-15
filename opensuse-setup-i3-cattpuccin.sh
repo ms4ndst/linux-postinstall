@@ -240,16 +240,23 @@ I3LOCK_MARKER="$HOME/.local/state/i3lock-color-built"
 if [ ! -f "$I3LOCK_MARKER" ]; then
   log "Building i3lock-color from source (Raymo111/i3lock-color, installed to ~/.local so it doesn't fight the stock i3lock package)..."
   I3LOCK_TMPDIR="$(mktemp -d)"
-  if git clone --depth 1 https://github.com/Raymo111/i3lock-color "$I3LOCK_TMPDIR" >/dev/null 2>&1 \
-      && ( cd "$I3LOCK_TMPDIR" && autoreconf -i >/dev/null 2>&1 \
-           && ./configure --prefix="$HOME/.local" >/dev/null 2>&1 \
-           && make -j"$(nproc)" >/dev/null 2>&1 \
-           && make install >/dev/null 2>&1 ); then
+  # Every step used to redirect to /dev/null, so a failure gave no clue why -
+  # just this same "build failed" line with nothing to act on. Now logged to
+  # a real file (kept on failure, not just /dev/null) so the actual configure/
+  # make error is visible instead of having to blindly re-run by hand.
+  I3LOCK_BUILD_LOG="$(mktemp --suffix=-i3lock-color-build.log)"
+  if { git clone --depth 1 https://github.com/Raymo111/i3lock-color "$I3LOCK_TMPDIR" \
+      && ( cd "$I3LOCK_TMPDIR" && autoreconf -i \
+           && ./configure --prefix="$HOME/.local" \
+           && make -j"$(nproc)" \
+           && make install ); } >"$I3LOCK_BUILD_LOG" 2>&1; then
     mkdir -p "$(dirname "$I3LOCK_MARKER")"
     touch "$I3LOCK_MARKER"
+    rm -f "$I3LOCK_BUILD_LOG"
     log "i3lock-color built and installed to $HOME/.local/bin/i3lock (lock.sh below calls it by absolute path, since i3's own exec environment doesn't have ~/.local/bin ahead of /usr/bin the way an interactive shell's PATH does)."
   else
-    warn "i3lock-color build failed - falling back to the stock i3lock installed above (lock.sh below detects this automatically via $I3LOCK_MARKER)."
+    warn "i3lock-color build failed - falling back to the stock i3lock installed above (lock.sh below detects this automatically via $I3LOCK_MARKER). Last 20 lines of the build log ($I3LOCK_BUILD_LOG):"
+    tail -n 20 "$I3LOCK_BUILD_LOG" | sed 's/^/  /'
   fi
   rm -rf "$I3LOCK_TMPDIR"
 else
