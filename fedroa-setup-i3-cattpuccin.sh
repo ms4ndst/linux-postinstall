@@ -11828,7 +11828,13 @@ cat > "$BIN/caffeine-toggle.sh" <<'EOF'
 #      systemd-logind won't suspend even on lid close, matching what the
 #      screensaver-based inhibition alone wouldn't cover.
 PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/caffeine.pid"
-IDLE_RESTORE="300 dpms 300 600 900"
+# Must match the i3 config's own startup `xset s 1800 dpms 1800 3600 5400`
+# exactly - this used to be a stale "300 dpms 300 600 900" (5min) left
+# over from an earlier default, so toggling caffeine off silently dropped
+# the real 30min idle timeout down to 5min from then on for the rest of
+# the session, cutting the screensaver's own on-screen time short well
+# before the intended 30 minutes.
+IDLE_RESTORE="1800 dpms 1800 3600 5400"
 
 if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
   kill "$(cat "$PIDFILE")" 2>/dev/null
