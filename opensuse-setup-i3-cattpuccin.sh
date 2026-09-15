@@ -169,7 +169,7 @@ sudo zypper --non-interactive install --allow-vendor-change \
   system-config-printer hplip \
   vala gtk3-devel libdbusmenu-glib-devel libdbusmenu-gtk3-devel \
   lxappearance papirus-icon-theme \
-  fastfetch git curl unzip jq flameshot ImageMagick \
+  fastfetch git curl unzip jq flameshot ImageMagick xclip slop \
   brightnessctl playerctl numlockx autorandr arandr xdotool python3-xlib \
   zypper-needs-restarting \
   solaar solaar-udev \
@@ -826,6 +826,9 @@ bindsym $mod+shift+e exec i3-nagbar -t warning -m 'Exit i3?' -B 'Yes' 'i3-msg ex
 bindsym $mod+l exec --no-startup-id ~/.local/bin/lock.sh --with-screensaver
 bindsym $mod+shift+p exec --no-startup-id ~/.local/bin/powermenu.sh
 bindsym Print exec --no-startup-id "flameshot gui || import /tmp/shot-$(date +%s).png"
+
+# --- colorpicker (grab any on-screen pixel's color as hex) ---
+bindsym $mod+shift+g exec --no-startup-id ~/.local/bin/colorpicker.sh
 
 # --- clipboard history (copyq) ---
 bindsym $mod+shift+v exec --no-startup-id copyq toggle
@@ -12750,7 +12753,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -12862,7 +12865,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -12974,7 +12977,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -13086,7 +13089,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -13198,7 +13201,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -13310,7 +13313,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -13422,7 +13425,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -13534,7 +13537,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -13646,7 +13649,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -13758,7 +13761,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -13870,7 +13873,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -13982,7 +13985,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -14094,7 +14097,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -14206,7 +14209,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -14318,7 +14321,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -14430,7 +14433,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -14542,7 +14545,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -14654,7 +14657,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -14766,7 +14769,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -14878,7 +14881,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -14990,7 +14993,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -15040,7 +15043,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -15152,7 +15155,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -15264,7 +15267,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -15376,7 +15379,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -15488,7 +15491,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -15600,7 +15603,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -15712,7 +15715,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -15824,7 +15827,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -15936,7 +15939,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -16048,7 +16051,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -16160,7 +16163,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -16272,7 +16275,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -16384,7 +16387,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -16496,7 +16499,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -16608,7 +16611,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -16720,7 +16723,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -16832,7 +16835,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -16944,7 +16947,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -17056,7 +17059,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -17168,7 +17171,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -17280,7 +17283,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 12;
+    lines: 13;
     padding: 8px 0;
 }
 
@@ -25542,6 +25545,44 @@ EOF
 fi
 
 # ----------------------------------------------------------------------------
+# 9c. Colorpicker (Mod+shift+g) - grab any on-screen pixel's color as hex
+# ----------------------------------------------------------------------------
+log "Writing colorpicker script..."
+cat > "$BIN/colorpicker.sh" <<'EOF'
+#!/usr/bin/env bash
+# slop grabs the click point (a plain click with no drag reports back a
+# 0x0 selection right at the cursor, so no special "point mode" flag is
+# needed - %c reports 1 if the user cancels with Escape instead of
+# clicking). ImageMagick's `import` (already installed above for
+# flameshot's own X11-legacy-capture fallback) then re-samples that single
+# root-window pixel straight to a 1x1 crop; `txt:-` is the simplest
+# ImageMagick output format to pull a plain #RRGGBB out of without a
+# second `convert` process. A small solid-color swatch PNG is generated on
+# the fly as the notification icon so the popup actually shows the picked
+# color, not just its hex text.
+set -uo pipefail
+
+read -r X Y CANCELLED < <(slop -f '%x %y %c' 2>/dev/null)
+if [ -z "${X:-}" ] || [ "${CANCELLED:-0}" = "1" ]; then
+  exit 0
+fi
+
+HEX=$(import -window root -crop 1x1+"$X"+"$Y" +repage txt:- 2>/dev/null | tail -n1 | grep -oP '#[0-9A-Fa-f]{6}')
+if [ -z "$HEX" ]; then
+  notify-send -h string:x-dunst-stack-tag:colorpicker "Colorpicker" "Could not read pixel color at $X,$Y"
+  exit 1
+fi
+HEX="${HEX^^}"
+printf '%s' "$HEX" | xclip -selection clipboard
+
+SWATCH="$(mktemp --suffix=.png)"
+convert -size 64x64 "xc:$HEX" "$SWATCH" 2>/dev/null
+notify-send -h string:x-dunst-stack-tag:colorpicker -i "$SWATCH" "Colorpicker" "$HEX copied to clipboard"
+( sleep 5; rm -f "$SWATCH" ) & disown
+EOF
+chmod +x "$BIN/colorpicker.sh"
+
+# ----------------------------------------------------------------------------
 # 10. fastfetch
 # ----------------------------------------------------------------------------
 log "Writing fastfetch config..."
@@ -26506,6 +26547,7 @@ ROWS=(
   "Mod+m|CLIamp terminal music player"
   "Mod+alt+space|App menu (this menu)"
   "Print|Screenshot (flameshot)"
+  "Mod+shift+g|Colorpicker (click a pixel, hex copied to clipboard)"
   "Mod+shift+q|Close focused window"
   "Mod+f|Fullscreen toggle"
   "Mod+shift+f|Floating toggle"
@@ -26568,6 +26610,7 @@ LABELS=(
   $'  Toggle Do Not Disturb'
   $'  Music Player'
   $'  Clipboard History'
+  $'  Colorpicker'
   $'  Lock Screen'
   $'  Power Menu'
   $'  Reload i3'
@@ -26582,6 +26625,7 @@ COMMANDS=(
   "~/.local/bin/dnd-toggle.sh"
   "~/.local/bin/cliamp-toggle.sh"
   "copyq toggle"
+  "~/.local/bin/colorpicker.sh"
   "~/.local/bin/lock.sh --with-screensaver"
   "~/.local/bin/powermenu.sh"
   "i3-msg reload"
@@ -26871,6 +26915,7 @@ cat <<'EOF'
    Mod+shift+p       power menu (lock/suspend/logout/reboot/shutdown)
    Mod+shift+v       clipboard history (copyq)
    Print             screenshot (flameshot gui)
+   Mod+shift+g       colorpicker (click a pixel, hex copied to clipboard)
    Mod+shift+q       close focused window
    Mod+f             fullscreen toggle
    Mod+shift+space   floating toggle
