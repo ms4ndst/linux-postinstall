@@ -26194,6 +26194,38 @@ else
   notify-send "Desktop Theme" "No dunst theme for $CHOSEN, keeping previous"
 fi
 
+# GTK3/GTK4 theme (generate-gtk-themes.py) - "-square" variants share their
+# base rice's palette 1:1 (no GTK theme equivalent of polybar/rofi corner
+# rounding), so a real GTK theme only ever exists as Rice-<base-name>, never
+# Rice-<name>-square. Require gtk-3.0 specifically, not just the top-level
+# Rice-<name> dir: a Rice-<name> with only gtk-4.0 (no GTK3 coverage) set
+# as the global theme would silently fall back to bare Adwaita for every
+# plain GTK3 app (nm-connection-editor, etc) - the exact regression this
+# guards against.
+GTK_BASE="${CHOSEN%-square}"
+if [ -d "$HOME/.themes/Rice-$GTK_BASE/gtk-3.0" ]; then
+  gsettings set org.gnome.desktop.interface gtk-theme "Rice-$GTK_BASE"
+  [ -f "$HOME/.config/gtk-3.0/settings.ini" ] && sed -i "s/^gtk-theme-name=.*/gtk-theme-name=Rice-$GTK_BASE/" "$HOME/.config/gtk-3.0/settings.ini"
+  [ -f "$HOME/.config/gtk-4.0/settings.ini" ] && sed -i "s/^gtk-theme-name=.*/gtk-theme-name=Rice-$GTK_BASE/" "$HOME/.config/gtk-4.0/settings.ini"
+  # GTK_THEME (env var) beats gsettings/settings.ini outright for any GTK3/
+  # GTK4 app that has it set - and this machine's systemd user session
+  # imports a fixed GTK_THEME from environment.d at login (originally
+  # Cattish-Macchiato-Round, discovered while wiring this up: it's exactly
+  # why nm-connection-editor kept showing that theme even with the gsettings/
+  # settings.ini switch above in place). Keep it in sync too, and update
+  # both the on-disk default (for the NEXT login) and systemd's live table
+  # (for anything systemd itself launches from now on) - but note this
+  # can't retroactively change the env of i3/polybar/etc as already-running
+  # processes; see polybar-theme.sh's own comment/README note for what that
+  # means for THIS session vs the next login.
+  if [ -f "$HOME/.config/environment.d/gtk-theme.conf" ]; then
+    sed -i "s/^GTK_THEME=.*/GTK_THEME=Rice-$GTK_BASE/" "$HOME/.config/environment.d/gtk-theme.conf"
+    systemctl --user set-environment GTK_THEME="Rice-$GTK_BASE" 2>/dev/null || true
+  fi
+else
+  notify-send "Desktop Theme" "No GTK theme Rice-$GTK_BASE for $CHOSEN, keeping previous"
+fi
+
 notify-send "Desktop Theme" "Switched to $CHOSEN"
 EOF
 chmod +x "$BIN/polybar-theme.sh"
