@@ -226,11 +226,15 @@ sudo usermod -aG video "$USER" 2>/dev/null \
 # missing - xcb-util-xrm and xcb-util-image in particular were specifically
 # checked against openSUSE:Factory's package list, since they're easy to
 # assume are missing and aren't) - so unlike polybar/papirus/jetbrains-fonts
-# above, no extra repo is needed just to build this:
+# above, no extra repo is needed just to build this. giflib-devel was missed
+# in the initial pass (i3lock-color's configure only checks for gif_lib.h
+# when actually run, not obvious from the source tree) - a real build on
+# Tumbleweed failed at ./configure with "cannot find the gif_lib.h header"
+# until this was added:
 log "Installing i3lock-color's build dependencies..."
 sudo zypper --non-interactive install \
   autoconf automake pkgconf make gcc \
-  cairo-devel fontconfig-devel libev-devel libjpeg8-devel \
+  cairo-devel fontconfig-devel libev-devel libjpeg8-devel giflib-devel \
   libxkbcommon-devel libxkbcommon-x11-devel pam-devel \
   xcb-util-image-devel xcb-util-xrm-devel \
   libxcb-devel libXinerama-devel libXrandr-devel \
