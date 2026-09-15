@@ -53,6 +53,24 @@ set -euo pipefail
 log()  { echo -e "\e[1;35m[i3-setup]\e[0m $*"; }
 warn() { echo -e "\e[1;33m[i3-setup]\e[0m $*"; }
 
+# Enable an OBS (Open Build Service) project as a zypper repo, idempotently.
+# Ported from post-install-opensuse.sh's add_obs_repo(): checked by URL
+# substring (not alias) because addrepo -r reads the actual alias from
+# inside the fetched .repo file, which doesn't always match the project
+# name - re-running `zypper addrepo` for an already-added repo fails with
+# "Repository named 'X11_Utilities' already exists", which this script used
+# to surface as a scary (and wrong) "install below will likely fail"
+# warning on every re-run once the repos were already present.
+add_obs_repo() {
+  local project="$1" pkg_desc="$2"
+  local url="https://download.opensuse.org/repositories/${project//:/:\/}/openSUSE_Tumbleweed/"
+  if sudo zypper lr -u 2>/dev/null | grep -qF "$url"; then
+    return 0
+  fi
+  sudo zypper --non-interactive addrepo -f "${url}${project}.repo" \
+    || warn "Could not add the $project OBS repo - $pkg_desc install below will likely fail; add it manually from https://build.opensuse.org/project/show/${project}"
+}
+
 if ! command -v zypper >/dev/null 2>&1; then
   echo "This script targets openSUSE Tumbleweed (zypper not found). Aborting." >&2
   exit 1
@@ -103,15 +121,9 @@ fi
 # same idea (a vetted third-party build feeding the same distro's package
 # format), different service.
 log "Adding OBS repos for packages not in Tumbleweed's default oss repo (polybar, papirus-icon-theme, jetbrains-mono-fonts)..."
-sudo zypper --non-interactive addrepo -f \
-  https://download.opensuse.org/repositories/X11:Utilities/openSUSE_Tumbleweed/X11:Utilities.repo \
-  || warn "Could not add the X11:Utilities OBS repo - polybar install below will likely fail; add it manually from https://build.opensuse.org/project/show/X11:Utilities"
-sudo zypper --non-interactive addrepo -f \
-  https://download.opensuse.org/repositories/X11:common:Factory/openSUSE_Tumbleweed/X11:common:Factory.repo \
-  || warn "Could not add the X11:common:Factory OBS repo - papirus-icon-theme install below will likely fail; add it manually from https://build.opensuse.org/project/show/X11:common:Factory"
-sudo zypper --non-interactive addrepo -f \
-  https://download.opensuse.org/repositories/M17N:fonts/openSUSE_Tumbleweed/M17N:fonts.repo \
-  || warn "Could not add the M17N:fonts OBS repo - jetbrains-mono-fonts install below will likely fail; add it manually from https://build.opensuse.org/project/show/M17N:fonts"
+add_obs_repo "X11:Utilities" "polybar"
+add_obs_repo "X11:common:Factory" "papirus-icon-theme"
+add_obs_repo "M17N:fonts" "jetbrains-mono-fonts"
 # copyq has no maintained package anywhere else on openSUSE (checked live -
 # not in the default repo, not in any curated OBS project) - only a
 # personal home:lukho:copyq project builds it at all, a lower trust tier
@@ -120,9 +132,7 @@ sudo zypper --non-interactive addrepo -f \
 # nice-to-have), but kept out of the main --allow-vendor-change install
 # batch further down and installed as its own best-effort step instead, so
 # a personal repo going stale can't take the whole setup down with it.
-sudo zypper --non-interactive addrepo -f \
-  "https://download.opensuse.org/repositories/home:/lukho:/copyq/openSUSE_Tumbleweed/home:lukho:copyq.repo" \
-  || warn "Could not add the home:lukho:copyq OBS repo - copyq install below will likely fail; get it manually from https://build.opensuse.org/package/show/home:lukho:copyq/CopyQ-Qt5"
+add_obs_repo "home:lukho:copyq" "copyq"
 sudo zypper --gpg-auto-import-keys refresh
 
 log "Installing base X11 stack + i3 + rice toolkit via zypper..."
@@ -1192,8 +1202,18 @@ blur: {
 # just from the rounded-corners clip) removes the sampling entirely.
 blur-background-exclude = [
   "class_g = 'Polybar'",
-  "window_type = 'menu'"
+  "window_type = 'menu'",
+  "override_redirect = true"
 ];
+# slop's own click-to-pick overlay (colorpicker.sh, Mod+shift+g) is an
+# override-redirect window with no conventional WM_CLASS - same shape as
+# i3lock and the browser context menus above, and the same property
+# fade-exclude already uses to target i3lock specifically. Without this,
+# picom blurs the entire screen behind slop's crosshair while it's active,
+# making it hard to see the exact pixel being picked. This is a blanket
+# rule (matches every override-redirect window, not just slop) - the same
+# trade-off fade-exclude's own override_redirect entry already accepts,
+# so dropdown menus/tooltips/notifications lose background blur too.
 
 active-opacity = 1.0;
 inactive-opacity = 0.92;
@@ -25550,29 +25570,77 @@ fi
 log "Writing colorpicker script..."
 cat > "$BIN/colorpicker.sh" <<'EOF'
 #!/usr/bin/env bash
-# slop grabs the click point (a plain click with no drag reports back a
-# 0x0 selection right at the cursor, so no special "point mode" flag is
-# needed - %c reports 1 if the user cancels with Escape instead of
-# clicking). ImageMagick's `import` (already installed above for
-# flameshot's own X11-legacy-capture fallback) then re-samples that single
-# root-window pixel straight to a 1x1 crop; `txt:-` is the simplest
-# ImageMagick output format to pull a plain #RRGGBB out of without a
-# second `convert` process. A small solid-color swatch PNG is generated on
-# the fly as the notification icon so the popup actually shows the picked
-# color, not just its hex text.
+# slop grabs the click point. `-t 0` (tolerance 0) is required, not
+# cosmetic: slop doubles as a window-picker - click-and-release without
+# dragging past the tolerance threshold selects the ENTIRE window under
+# the cursor instead of a point at the cursor (confirmed live - this
+# script originally assumed a plain click always gave a 0x0 selection at
+# the exact click position, which silently produced a whole-window/whole-
+# screen-sized "selection" instead, sampling its center rather than the
+# actually-clicked pixel; -t 0 disables that window-selection path
+# entirely so every click is always a real, tiny point-sized rectangle).
+# ImageMagick's `import` (already installed above for flameshot's own
+# X11-legacy-capture fallback) then re-samples that single root-window
+# pixel straight to a 1x1 crop; `txt:-` is the simplest ImageMagick output
+# format to pull a plain color out of without a second `convert` process.
+# A small solid-color swatch PNG is generated on the fly as the
+# notification icon so the popup actually shows the picked color, not
+# just its hex text.
 set -uo pipefail
 
-read -r X Y CANCELLED < <(slop -f '%x %y %c' 2>/dev/null)
-if [ -z "${X:-}" ] || [ "${CANCELLED:-0}" = "1" ]; then
+# A missing dependency or a slop failure (no DISPLAY, X grab denied, etc.)
+# used to fall through to the same silent exit as a plain Escape-cancel -
+# indistinguishable from "nothing happens" at the keybinding. Each of
+# those now gets its own notification; only an actual user cancel stays
+# silent.
+for dep in slop import xclip; do
+  if ! command -v "$dep" &>/dev/null; then
+    notify-send -h string:x-dunst-stack-tag:colorpicker "Colorpicker" "'$dep' is not installed"
+    exit 1
+  fi
+done
+
+SLOP_OUT=$(slop -t 0 -f '%x %y %w %h %c' 2>&1)
+if [ $? -ne 0 ]; then
+  notify-send -h string:x-dunst-stack-tag:colorpicker "Colorpicker" "slop failed: $(printf '%s' "$SLOP_OUT" | tail -n1)"
+  exit 1
+fi
+read -r X Y W H CANCELLED <<< "$SLOP_OUT"
+if [ "${CANCELLED:-0}" = "1" ]; then
   exit 0
 fi
+if [ -z "${X:-}" ]; then
+  notify-send -h string:x-dunst-stack-tag:colorpicker "Colorpicker" "slop returned no coordinates"
+  exit 1
+fi
+# Even a careful click almost never reports back a perfect 0x0 selection -
+# a pixel or two of real mouse movement between press and release is
+# normal, and %x/%y alone is that selection's TOP-LEFT CORNER, not the
+# click point itself. Sampling the corner instead of the center is close
+# enough to go unnoticed most of the time, but on a small color swatch it
+# can land just outside it in a neighboring color entirely (confirmed:
+# reported as picking a color from what looked like "a large area" instead
+# of the intended small target). Centering on the actual selection box
+# fixes this for any amount of jitter, and is a no-op for a genuine 0x0
+# click (X+0/2, Y+0/2 is just X,Y again).
+X=$(( X + W / 2 ))
+Y=$(( Y + H / 2 ))
 
-HEX=$(import -window root -crop 1x1+"$X"+"$Y" +repage txt:- 2>/dev/null | tail -n1 | grep -oP '#[0-9A-Fa-f]{6}')
-if [ -z "$HEX" ]; then
+# Parsed from the "srgb(R,G,B)" decimal triplet in txt: output, not its
+# own "#RRGGBB"-looking hex field - on a Q16 (16-bit-per-channel) build of
+# ImageMagick (confirmed live: this is the default on some distros' own
+# packages) that hex field is actually 4 digits per channel
+# (e.g. "#313134343535"), and a plain 6-hex-digit grep against it silently
+# grabs the wrong substring instead of failing. The srgb(...) triplet is
+# always plain 0-255 regardless of quantum depth, so building the hex
+# ourselves from that is depth-independent.
+RGB=$(import -window root -crop 1x1+"$X"+"$Y" +repage txt:- 2>/dev/null | tail -n1 | grep -oP '(?<=srgb\()[0-9]+,[0-9]+,[0-9]+(?=\))')
+if [ -z "$RGB" ]; then
   notify-send -h string:x-dunst-stack-tag:colorpicker "Colorpicker" "Could not read pixel color at $X,$Y"
   exit 1
 fi
-HEX="${HEX^^}"
+IFS=',' read -r R G B <<< "$RGB"
+HEX=$(printf '#%02X%02X%02X' "$R" "$G" "$B")
 printf '%s' "$HEX" | xclip -selection clipboard
 
 SWATCH="$(mktemp --suffix=.png)"
