@@ -249,17 +249,24 @@ if [ ! -f "$I3LOCK_MARKER" ]; then
   # a real file (kept on failure, not just /dev/null) so the actual configure/
   # make error is visible instead of having to blindly re-run by hand.
   I3LOCK_BUILD_LOG="$(mktemp --suffix=-i3lock-color-build.log)"
-  # --disable-maintainer-mode: a real build hit "make: *** No rule to make
-  # target 'all-configured'" right after i3lock itself had already linked
-  # fine (CCLD i3lock) - the classic Autotools trap where a fresh git clone
-  # leaves every file with near-identical mtimes, so mid-build `make` decides
-  # configure/Makefile.in look stale, tries to auto-regenerate them via the
-  # maintainer-mode rules autoreconf just enabled, and restarts itself into a
-  # target that doesn't exist. Disabling maintainer-mode turns that
-  # auto-remake-and-restart machinery off entirely for this one-shot build.
+  # --disable-builddir: a real build hit "make: *** No rule to make target
+  # 'all-configured'" right after i3lock itself had already linked fine
+  # (CCLD i3lock). Root cause (traced into m4/ax_enable_builddir.m4):
+  # configure.ac calls AX_ENABLE_BUILDDIR, which for an in-tree configure
+  # auto-relocates the real build into a <host-triplet>/ VPATH subdir and
+  # rewrites the top-level Makefile into a recursive wrapper whose
+  # "all-configured" rule forwards into that subdir. Because the actual
+  # `configure` script only exists in the true srcdir (not the VPATH
+  # subdir), the wrapper's "does this dir need configuring" check
+  # (`test ! -f configure`) always trips, so it recurses `make
+  # all-configured` into the subdir's plain automake Makefile - which never
+  # defines that target. --disable-builddir skips the relocation/wrapper
+  # entirely and just builds in-tree. (--disable-maintainer-mode was tried
+  # first on the same symptom and did not help - left out since it wasn't
+  # the actual cause.)
   if { git clone --depth 1 https://github.com/Raymo111/i3lock-color "$I3LOCK_TMPDIR" \
       && ( cd "$I3LOCK_TMPDIR" && autoreconf -i \
-           && ./configure --prefix="$HOME/.local" --disable-maintainer-mode \
+           && ./configure --prefix="$HOME/.local" --disable-builddir \
            && make -j"$(nproc)" \
            && make install ); } >"$I3LOCK_BUILD_LOG" 2>&1; then
     mkdir -p "$(dirname "$I3LOCK_MARKER")"
