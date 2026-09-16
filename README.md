@@ -796,8 +796,9 @@ Developer/cloud tooling installed together:
 - **Docker + docker-compose** (`docker.io`, `docker-compose`) — a lightweight, dedicated Docker install; adds the invoking user to the `docker` group and enables the service. *(The [Container & Virtualization](#container--virtualization) category also installs these, alongside podman/LXC/KVM/Cockpit — this is just Docker for a dev box.)*
 - **Azure CLI** — via Microsoft's official install script (`curl -sL https://aka.ms/InstallAzureCLIDeb | bash`); provides the `az` command.
 - **lazygit** — installed with `go install github.com/jesseduffield/lazygit@latest`. Go is installed first if missing; the build runs **as your user** (lands in `~/go/bin`) and is symlinked into `/usr/local/bin` so it's on everyone's `PATH`.
+- **rclone + fuse3** — WM-agnostic cloud storage mounting (Google Drive, etc.), no desktop-shell dependency so it works the same under i3 as under GNOME. Creates `~/GoogleDrive` and a `~/.config/systemd/user/rclone-gdrive.service` unit (`rclone mount gdrive: %h/GoogleDrive --vfs-cache-mode writes`), owned by the invoking user and enabled via plain `default.target` (not `graphical-session.target`, which a bare i3 session never activates). `rclone config` itself is interactive (OAuth in a browser) so it isn't run for you — the script prints the three follow-up steps (`rclone config`, optional `loginctl enable-linger`, `systemctl --user enable --now rclone-gdrive.service`). Google's shared rclone client_id retires during 2026, so you'll need your own — see [docs/rclone-google-drive-client-id.md](docs/rclone-google-drive-client-id.md) for up-to-date Google Cloud Console steps.
 
-> `docker`/`az`/`lazygit` are CLI tools with no `.desktop` launcher, so this category produces no app-folder icons (expected).
+> `docker`/`az`/`lazygit`/`rclone` are CLI tools with no `.desktop` launcher, so this category produces no app-folder icons (expected).
 
 ---
 
@@ -1407,6 +1408,7 @@ Package sets otherwise mirror the Ubuntu script's Full/Defensive split closely: 
 - **Docker (standalone)** — `moby-engine` + `docker-compose`, same distro-native choice as [Fedora: Containers & VMs](#fedora-containers--vms)
 - **Azure CLI** — Microsoft's official yum repo (`packages.microsoft.com/yumrepos/azure-cli`)
 - **lazygit** — ships natively in Fedora's own repos (simpler than the Ubuntu script's `go install` build, which is kept only as a fallback if the package isn't found)
+- **rclone + fuse3** — WM-agnostic cloud storage mounting (Google Drive, etc.), both native Fedora packages. Creates `~/GoogleDrive` and a `~/.config/systemd/user/rclone-gdrive.service` unit gated on `default.target` (not `graphical-session.target`, which i3 never activates) so it starts on login under any WM. `rclone config` is interactive OAuth and isn't run for you — the script prints the follow-up steps. Google's shared rclone client_id retires during 2026, so you'll need your own — see [docs/rclone-google-drive-client-id.md](docs/rclone-google-drive-client-id.md) for up-to-date Google Cloud Console steps.
 
 ---
 
@@ -1977,6 +1979,7 @@ Package sets otherwise mirror the Fedora script's Full/Defensive split closely: 
 - **Docker (standalone)** — native `docker` + `docker-compose`, same distro-native choice as [openSUSE: Containers & VMs](#opensuse-containers--vms)
 - **Azure CLI** — Microsoft's official yum repo (`packages.microsoft.com/yumrepos/azure-cli`) — one of the few Microsoft repos here that Microsoft's own docs explicitly document a `zypper` tab for, not just yum/dnf
 - **lazygit** — via the **`devel:languages:go`** OBS project (openSUSE's own Go-ecosystem devel project — a comparable trust tier to an official Fedora-team COPR, not a personal `home:` project), falling back to `go install` if that project has no current build
+- **rclone + fuse3** — WM-agnostic cloud storage mounting (Google Drive, etc.), both in openSUSE's default repos. Creates `~/GoogleDrive` and a `~/.config/systemd/user/rclone-gdrive.service` unit gated on `default.target` (not `graphical-session.target`, which i3 never activates) so it starts on login under any WM. `rclone config` is interactive OAuth and isn't run for you — the script prints the follow-up steps. Google's shared rclone client_id retires during 2026, so you'll need your own — see [docs/rclone-google-drive-client-id.md](docs/rclone-google-drive-client-id.md) for up-to-date Google Cloud Console steps.
 
 ---
 
@@ -2430,6 +2433,7 @@ Same installer as [Web Development](#arch-web-development): `nodejs`, `npm`, plu
 - **Docker + docker-compose** — dedicated standalone install, enables the service, adds the invoking user to the `docker` group
 - **Azure CLI** — official `[extra]` package `azure-cli` (no longer AUR-only)
 - **lazygit** — official `[extra]` package (unlike Fedora's historical `go install`/COPR fallback)
+- **rclone + fuse3** — WM-agnostic cloud storage mounting (Google Drive, etc.), both official `[extra]` packages. Creates `~/GoogleDrive` and a `~/.config/systemd/user/rclone-gdrive.service` unit gated on `default.target` (not `graphical-session.target`, which i3 never activates) so it starts on login under any WM. `rclone config` is interactive OAuth and isn't run for you — the script prints the follow-up steps. Google's shared rclone client_id retires during 2026, so you'll need your own — see [docs/rclone-google-drive-client-id.md](docs/rclone-google-drive-client-id.md) for up-to-date Google Cloud Console steps.
 
 ---
 

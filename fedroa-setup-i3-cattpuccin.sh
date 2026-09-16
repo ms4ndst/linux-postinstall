@@ -11782,15 +11782,23 @@ log "Writing polybar bluetooth helper script..."
 cat > "$BIN/polybar-bluetooth.sh" <<'EOF'
 #!/usr/bin/env bash
 # polybar custom/script module: prints bluetooth adapter power state.
-# `timeout` guards against bluetoothctl hanging while bluetoothd's D-Bus
-# service is still registering right after boot/login - without it, a
-# stuck first invocation left the widget completely blank (not even
-# "off") until some later poll finally got through, instead of just
-# falling back to "off" for one 5s cycle.
-if timeout 2 bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
+# Reads the adapter's "Powered" D-Bus property directly via busctl instead
+# of shelling out to bluetoothctl's interactive client. busctl resolves in
+# single-digit-to-low-double-digit milliseconds whether bluez is registered
+# yet or not (confirmed live: ~10-35ms either way, success or clean
+# failure) - bluetoothctl's own startup is comparatively slow, and right
+# after boot/login, while bluetoothd's D-Bus service is still registering,
+# it was occasionally slow enough to wedge polybar's custom/script
+# executor: the widget then stayed permanently blank until a manual
+# polybar reload kicked its refresh timer back into life, since nothing
+# else re-triggers a wedged executor. Wrapping the old bluetoothctl call in
+# a `timeout` only bounded the hang, it didn't stop the executor from
+# getting stuck on a slow tick - going straight to a fast, fail-clean
+# D-Bus read avoids that class of bug instead of papering over it.
+STATE="off"
+adapter=$(busctl tree org.bluez --list 2>/dev/null | grep -m1 '^/org/bluez/hci[0-9]*$')
+if [ -n "$adapter" ] && busctl get-property org.bluez "$adapter" org.bluez.Adapter1 Powered 2>/dev/null | grep -q "true"; then
   STATE="on"
-else
-  STATE="off"
 fi
 printf '  @@ICO_BT@@ %s ' "$STATE"
 EOF

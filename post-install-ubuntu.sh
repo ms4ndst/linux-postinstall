@@ -3145,6 +3145,59 @@ install_devops() {
     install_docker_standalone
     install_azure_cli
     install_lazygit
+    install_rclone_cloud_storage
+}
+
+# rclone-based cloud storage mount (e.g. Google Drive) - WM-agnostic and
+# CLI-first, so it works the same under i3 as under any desktop shell.
+# Unlike a GNOME Online Accounts/gvfs mount, this needs no
+# graphical-session.target (i3's exec autostart never activates that
+# target - see the i3/xdg-desktop-portal gap noted elsewhere), just a plain
+# systemd --user unit gated on default.target, which starts with any login
+# session regardless of WM.
+#
+# `rclone config` is interactive (OAuth happens in a browser) so it can't be
+# scripted here - this installs rclone/fuse3, creates the mount point, and
+# drops a ready-to-enable systemd user unit for a remote named "gdrive".
+install_rclone_cloud_storage() {
+    batch_install "rclone (cloud storage)" rclone fuse3
+    if ! is_installed rclone; then
+        log WARNING "rclone install failed - skipping mount setup"
+        return 1
+    fi
+    if [ -z "$SUDO_USER" ] || [ "$SUDO_USER" = "root" ]; then
+        log WARNING "No invoking user detected - skipping rclone mount unit (run 'rclone config' and set up the systemd unit manually)"
+        return 0
+    fi
+    local uh; uh=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+    local mount_dir="$uh/GoogleDrive" unit_dir="$uh/.config/systemd/user"
+    local unit_file="$unit_dir/rclone-gdrive.service"
+    mkdir -p "$mount_dir" "$unit_dir"
+    if [ ! -f "$unit_file" ]; then
+        cat > "$unit_file" <<'EOF'
+[Unit]
+Description=rclone mount (gdrive) for Google Drive
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/rclone mount gdrive: %h/GoogleDrive --vfs-cache-mode writes
+ExecStop=/usr/bin/fusermount3 -u %h/GoogleDrive
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+EOF
+    fi
+    chown -R "$SUDO_USER:$SUDO_USER" "$mount_dir" "$unit_dir"
+    su - "$SUDO_USER" -c "systemctl --user daemon-reload" 2>/dev/null
+    log SUCCESS "rclone installed - mount point $mount_dir and unit $unit_file ready"
+    log WARNING "Cloud storage needs one-time manual setup as $SUDO_USER:"
+    log WARNING "  1. rclone config   (create a remote named 'gdrive', OAuth opens in a browser)"
+    log WARNING "  2. loginctl enable-linger $SUDO_USER   (optional: mount starts even without staying logged in)"
+    log WARNING "  3. systemctl --user enable --now rclone-gdrive.service   (mounts ~/GoogleDrive on login)"
 }
 
 # Docker + docker-compose as a lightweight, dedicated install (the full
