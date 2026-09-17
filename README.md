@@ -2805,7 +2805,7 @@ Each script targets **its own distro only** — the Fedora script checks for `dn
 
 **Set AI Window Folder** (app menu, `~/.local/bin/set-ai-window-folder.sh`) — prompts (via `read -e -i`, so the current value is pre-filled and tab-completes) for the folder `Mod+a`'s AI window should start Mistral Vibe CLI in, and saves it to `~/.config/ai-window/workdir`. `ai-window-toggle.sh` reads that file on every *fresh* launch and passes it to `vibe --workdir` (Vibe's own documented flag for scoping its project root, not a plain `cd` before exec). Same "applies at creation time, not retroactively" rule as everything else window-related here — changing the folder doesn't affect an AI window that's already running until you close and reopen it. Defaults to `$HOME` if never set.
 
-**Keybinding Help** (reachable from the app menu, or standalone via `~/.local/bin/keybindings-help.sh`) — prints the same cheat sheet as the [Keybinding Cheat Sheet](#️-keybinding-cheat-sheet) table below in a floating, Catppuccin Mocha–colored kitty window, dismissed by any keypress. It's a small curated `binding|action` array in the script itself, not something parsed out of the live `i3/config` — same shape as `app-menu.sh`'s own `LABELS`/`COMMANDS`, kept in sync with the README table by hand rather than generated, since the README's descriptions are written for a reader and a raw `bindsym` dump wouldn't be.
+**Keybinding Help** (`Mod+i`, the app menu, or standalone via `~/.local/bin/keybindings-help.sh`) — prints the same cheat sheet as the [Keybinding Cheat Sheet](#️-keybinding-cheat-sheet) table below in a floating, Catppuccin Mocha–colored kitty window, dismissed by any keypress. `Mod+k`/`Mod+shift+k` were already taken (focus/move window up), so `Mod+i` is the direct shortcut instead. It's a small curated `binding|action` array in the script itself, not something parsed out of the live `i3/config` — same shape as `app-menu.sh`'s own `LABELS`/`COMMANDS`, kept in sync with the README table by hand rather than generated, since the README's descriptions are written for a reader and a raw `bindsym` dump wouldn't be.
 
 **Note on `Mod1` vs `alt` in `i3/config`:** the app menu binding is written as `bindsym $mod+Mod1+space`, not the more readable `$mod+alt+space` — the latter parses without error (`i3 -C` stays silent) but silently produces a dead grab that never fires on this i3 build, confirmed via `i3-msg -t subscribe -m '["binding"]'` showing zero events for any `alt`-based bindsym while `Mod1`-based ones fire correctly. Every other modifier in the config (`shift`/`ctrl`/`$mod`) works fine as a bare word — it's specifically the word `alt` as a modifier name that's the trap. Physically it's still Super+Alt+Space.
 
@@ -3059,6 +3059,7 @@ Sorted alphabetically by key; where a key has more than one binding, the plain `
 | `Mod+ctrl+h` | Focus monitor to the left |
 | `Mod+shift+h` | Move window left |
 | `Mod+ctrl+shift+h` | Move workspace to the monitor on the left |
+| `Mod+i` | Show this keybinding cheat sheet in a floating window |
 | `Mod+j` | Focus down |
 | `Mod+shift+j` | Move window down |
 | `Mod+k` | Focus up |

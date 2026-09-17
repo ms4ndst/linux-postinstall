@@ -710,6 +710,13 @@ bindsym $mod+m exec --no-startup-id ~/.local/bin/cliamp-toggle.sh
 # conversation isn't lost by pressing the key again.
 bindsym $mod+a exec --no-startup-id ~/.local/bin/ai-window-toggle.sh
 
+# --- keybinding help ---
+# Mod+k/Mod+shift+k are both already taken (focus/move window up), so this
+# is Mod+i instead - also reachable from the app menu below. Opens in its
+# own floating kitty window (for_window rule above), dismissed by any
+# keypress.
+bindsym $mod+i exec --no-startup-id kitty --class KeybindingsHelp -e ~/.local/bin/keybindings-help.sh
+
 # --- app menu (Omarchy-style: reach this rice's utility scripts in one place) ---
 # "Mod1" here, not "alt" - the latter parses without error (i3 -C stays
 # silent) but produces a dead grab that never fires on this i3 build,
@@ -4451,10 +4458,16 @@ EOF
 
 cat > "$CONF/polybar/themes/isabel.ini" <<'EOF'
 ; Isabel - deliberately understated: no chip backgrounds anywhere, no
-; per-state color coding at all (focused/occupied/urgent workspaces all
-; share the SAME plain foreground color - only the icon SHAPE tells them
-; apart, confirmed by reading the source's own [module/bspwm] block,
-; which sets every state's label-*-foreground to the same ${color.fg}).
+; per-state color coding at all (focused/occupied workspaces share the
+; SAME plain foreground color - only the icon SHAPE tells them apart,
+; confirmed by reading the source's own [module/bspwm] block, which sets
+; every state's label-*-foreground to the same ${color.fg}). One
+; deliberate deviation from that source fidelity: label-urgent gets its
+; own ${colors.red} foreground below rather than also sharing the plain
+; default - an urgent workspace (a window demanding attention on one you
+; aren't looking at) needs to actually be visually distinct from a merely
+; occupied one on every theme in this rice, not just the ones that already
+; happened to color-code by state.
 ; Standalone items are separated by a real visible vertical 3-dot bullet
 ; glyph (U+F01D9, colored) instead of a plain gap or a divider line -
 ; distinct from every other separator style in this rice's set. Reuses
@@ -4523,6 +4536,7 @@ label-focused-padding = 1
 label-unfocused = "󰊠"
 label-unfocused-padding = 1
 label-urgent = "󰊠"
+label-urgent-foreground = ${colors.red}
 label-urgent-padding = 1
 
 [module/date]
@@ -5352,9 +5366,15 @@ cat > "$CONF/polybar/themes/pamela.ini" <<'EOF'
 ; icon family this rice's own Brenda/Emilia/Isabel/Marisol themes already
 ; use (confirmed identical codepoints again by reading pamela's own real
 ; config) - here with NO chip background at all, but WITH per-state color
-; (yellow focused, blue occupied/urgent), splitting the difference
-; between Isabel's fully-plain no-color treatment and the others' boxed
-; ones. Modeled directly on github.com/gh0stzk/dotfiles' real "pamela"
+; (yellow focused, blue occupied/urgent in the source). One deliberate
+; deviation from that source fidelity: label-urgent below gets its own
+; ${colors.red} instead of sharing occupied's blue - the real gh0stzk
+; config genuinely doesn't distinguish "occupied" from "needs your
+; attention", but that's a real gap for this rice's purposes, not a
+; stylistic choice worth preserving; every theme here needs urgent to
+; actually stand out from merely-occupied. Otherwise splitting the
+; difference between Isabel's fully-plain no-color treatment and the
+; others' boxed ones. Modeled directly on github.com/gh0stzk/dotfiles' real "pamela"
 ; rice (config/bspwm/rices/pamela/{config,modules}.ini, read from a full
 ; local clone) - the source actually ships this rice as SIX separate
 ; bars (launcher, workspaces, media, system stats, date, and a sixth for
@@ -5423,7 +5443,7 @@ label-unfocused = "󰊠"
 label-unfocused-foreground = ${colors.blue}
 label-unfocused-padding = 1
 label-urgent = "󰊠"
-label-urgent-foreground = ${colors.blue}
+label-urgent-foreground = ${colors.red}
 label-urgent-padding = 1
 
 [module/date]
@@ -9156,10 +9176,16 @@ EOF
 
 cat > "$CONF/polybar/themes/isabel-square.ini" <<'EOF'
 ; Isabel - deliberately understated: no chip backgrounds anywhere, no
-; per-state color coding at all (focused/occupied/urgent workspaces all
-; share the SAME plain foreground color - only the icon SHAPE tells them
-; apart, confirmed by reading the source's own [module/bspwm] block,
-; which sets every state's label-*-foreground to the same ${color.fg}).
+; per-state color coding at all (focused/occupied workspaces share the
+; SAME plain foreground color - only the icon SHAPE tells them apart,
+; confirmed by reading the source's own [module/bspwm] block, which sets
+; every state's label-*-foreground to the same ${color.fg}). One
+; deliberate deviation from that source fidelity: label-urgent gets its
+; own ${colors.red} foreground below rather than also sharing the plain
+; default - an urgent workspace (a window demanding attention on one you
+; aren't looking at) needs to actually be visually distinct from a merely
+; occupied one on every theme in this rice, not just the ones that already
+; happened to color-code by state.
 ; Standalone items are separated by a real visible vertical 3-dot bullet
 ; glyph (U+F01D9, colored) instead of a plain gap or a divider line -
 ; distinct from every other separator style in this rice's set. Reuses
@@ -9228,6 +9254,7 @@ label-focused-padding = 1
 label-unfocused = "󰊠"
 label-unfocused-padding = 1
 label-urgent = "󰊠"
+label-urgent-foreground = ${colors.red}
 label-urgent-padding = 1
 
 [module/date]
@@ -10292,9 +10319,15 @@ cat > "$CONF/polybar/themes/pamela-square.ini" <<'EOF'
 ; icon family this rice's own Brenda/Emilia/Isabel/Marisol themes already
 ; use (confirmed identical codepoints again by reading pamela's own real
 ; config) - here with NO chip background at all, but WITH per-state color
-; (yellow focused, blue occupied/urgent), splitting the difference
-; between Isabel's fully-plain no-color treatment and the others' boxed
-; ones. Modeled directly on github.com/gh0stzk/dotfiles' real "pamela"
+; (yellow focused, blue occupied/urgent in the source). One deliberate
+; deviation from that source fidelity: label-urgent below gets its own
+; ${colors.red} instead of sharing occupied's blue - the real gh0stzk
+; config genuinely doesn't distinguish "occupied" from "needs your
+; attention", but that's a real gap for this rice's purposes, not a
+; stylistic choice worth preserving; every theme here needs urgent to
+; actually stand out from merely-occupied. Otherwise splitting the
+; difference between Isabel's fully-plain no-color treatment and the
+; others' boxed ones. Modeled directly on github.com/gh0stzk/dotfiles' real "pamela"
 ; rice (config/bspwm/rices/pamela/{config,modules}.ini, read from a full
 ; local clone) - the source actually ships this rice as SIX separate
 ; bars (launcher, workspaces, media, system stats, date, and a sixth for
@@ -10363,7 +10396,7 @@ label-unfocused = "󰊠"
 label-unfocused-foreground = ${colors.blue}
 label-unfocused-padding = 1
 label-urgent = "󰊠"
-label-urgent-foreground = ${colors.blue}
+label-urgent-foreground = ${colors.red}
 label-urgent-padding = 1
 
 [module/date]
@@ -26652,6 +26685,7 @@ ROWS=(
   "Mod+ctrl+h|Focus monitor to the left"
   "Mod+shift+h|Move window left"
   "Mod+ctrl+shift+h|Move workspace to the monitor on the left"
+  "Mod+i|Show this keybinding help"
   "Mod+j|Focus down"
   "Mod+shift+j|Move window down"
   "Mod+k|Focus up"
