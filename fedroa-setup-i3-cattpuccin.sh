@@ -629,6 +629,20 @@ client.urgent           #f38ba8  #1e1e2e  #f38ba8  #f38ba8   #f38ba8
 floating_modifier $mod
 
 # --- window rules ---
+# Force a normal border on every window, regardless of what the app itself
+# asks for. VS Code, Claude Desktop, and some Electron/CSD-style Edge
+# windows explicitly set _MOTIF_WM_HINTS requesting zero decorations
+# (confirmed live via `xprop _MOTIF_WM_HINTS`: flags=0x2, decorations=0),
+# and i3 honors that per-window request over `default_border` - the
+# visible symptom was no border/focus indicator at all on those specific
+# windows, so with two side by side (e.g. two VS Code windows) neither
+# showed which one actually had focus. A wildcard for_window rule matching
+# every class runs after the automatic no-decoration handling and wins,
+# restoring the focused/unfocused border distinction uniformly. Only
+# applies to windows as they're first mapped, same as every other
+# for_window rule here - an already-open offending window needs a one-off
+# `i3-msg '[class="..."] border pixel 2'` to fix retroactively.
+for_window [class=".*"] border pixel 2
 # Settings-style dialogs launched from the polybar network/bluetooth widgets,
 # copyq's clipboard menu, and Evolution's calendar/task reminder popup - float
 # + center + shrink instead of tiling full-height like a regular window.
@@ -645,6 +659,10 @@ for_window [class="^copyq$"] floating enable, resize set 450 500, move position 
 # works every time.
 for_window [class="^Cliamp$"] floating enable, resize set 700 500, move position center
 for_window [class="^Cliamp$"] mark cliamp-scratch
+# Same "own line, not chained" requirement as the Cliamp rule above - a
+# chained `mark` silently never applies.
+for_window [class="^AIVibe$"] floating enable, resize set 900 650, move position center
+for_window [class="^AIVibe$"] mark ai-window-scratch
 for_window [class="^AppMenuTask$"] floating enable, resize set 600 400, move position center
 for_window [class="^KeybindingsHelp$"] floating enable, resize set 950 850, move position center
 for_window [class="^UpdatesTask$"] floating enable, resize set 1000 550, move position center
@@ -684,6 +702,13 @@ bindsym $mod+shift+v exec --no-startup-id copyq toggle
 # playback, MPRIS, and its IPC socket all keep working while hidden, so
 # polybar's media widget still controls it.
 bindsym $mod+m exec --no-startup-id ~/.local/bin/cliamp-toggle.sh
+
+# --- AI window (Mistral Vibe CLI, `vibe`) ---
+# Same scratchpad show/hide toggle as cliamp above: ai-window-toggle.sh
+# launches a fresh floating kitty+vibe session if none exists yet,
+# otherwise just tucks the existing one away/back so an in-progress
+# conversation isn't lost by pressing the key again.
+bindsym $mod+a exec --no-startup-id ~/.local/bin/ai-window-toggle.sh
 
 # --- app menu (Omarchy-style: reach this rice's utility scripts in one place) ---
 # "Mod1" here, not "alt" - the latter parses without error (i3 -C stays
@@ -18345,8 +18370,181 @@ EOF
 
 cp "$CONF/kitty/themes/catppuccin-mocha.conf" "$CONF/kitty/current.conf"
 
+
 # ----------------------------------------------------------------------------
-# 6f. Starship prompt theming - matches the shell prompt (powerline segments)
+# 6f. i3 border-color theming - matches window border/title colors to
+#     whichever desktop theme is active, the same way kitty/rofi/dunst
+#     already do. i3 has no equivalent of kitty's `set-colors` remote-
+#     control push, so unlike kitty this can't retint already-open windows
+#     live - polybar-theme.sh instead runs a plain `i3-msg reload` after
+#     swapping the file, which re-reads client.* for every window
+#     immediately (existing windows/layout are untouched by a reload,
+#     unlike `i3-msg restart`).
+#
+#     Colors are derived from each theme's own already-generated kitty
+#     palette (background/foreground/cursor/color1/7/8), the same
+#     derive-from-kitty's-resolved-colors approach the starship section
+#     below already uses: cursor doubles as the accent for the focused
+#     border/indicator, color8 (bright black) for unfocused/inactive
+#     borders, color1 (red) for urgent. catppuccin-mocha keeps its
+#     original hand-picked scheme (mauve/surface0/surface1/red) instead of
+#     the generic derivation, since that one predates this per-theme setup
+#     and was tuned on its own.
+# ----------------------------------------------------------------------------
+log "Writing per-theme i3 border-color configs..."
+mkdir -p "$CONF/i3/themes"
+
+cat > "$CONF/i3/themes/aline.conf" <<'EOF'
+client.focused          #2e5d66  #faf4ed  #575279  #2e5d66   #2e5d66
+client.unfocused        #9893a5  #faf4ed  #9893a5  #9893a5   #9893a5
+client.focused_inactive #9893a5  #faf4ed  #9893a5  #9893a5   #9893a5
+client.urgent           #b4637a  #faf4ed  #575279  #b4637a   #b4637a
+EOF
+
+cat > "$CONF/i3/themes/archcraft.conf" <<'EOF'
+client.focused          #c678dd  #1e222a  #c8ccd4  #c678dd   #c678dd
+client.unfocused        #727c91  #1e222a  #727c91  #727c91   #727c91
+client.focused_inactive #727c91  #1e222a  #727c91  #727c91   #727c91
+client.urgent           #e06c75  #1e222a  #c8ccd4  #e06c75   #e06c75
+EOF
+
+cat > "$CONF/i3/themes/brenda.conf" <<'EOF'
+client.focused          #e69875  #2d353b  #d3c6aa  #e69875   #e69875
+client.unfocused        #859289  #2d353b  #859289  #859289   #859289
+client.focused_inactive #859289  #2d353b  #859289  #859289   #859289
+client.urgent           #e67e80  #2d353b  #d3c6aa  #e67e80   #e67e80
+EOF
+
+cat > "$CONF/i3/themes/catppuccin-mocha.conf" <<'EOF'
+client.focused          #cba6f7  #1e1e2e  #cdd6f4  #cba6f7   #cba6f7
+client.unfocused        #313244  #1e1e2e  #6c7086  #313244   #313244
+client.focused_inactive #45475a  #1e1e2e  #a6adc8  #45475a   #45475a
+client.urgent           #f38ba8  #1e1e2e  #f38ba8  #f38ba8   #f38ba8
+EOF
+
+cat > "$CONF/i3/themes/cristina.conf" <<'EOF'
+client.focused          #8ec07c  #232136  #e0def4  #8ec07c   #8ec07c
+client.unfocused        #908caa  #232136  #908caa  #908caa   #908caa
+client.focused_inactive #908caa  #232136  #908caa  #908caa   #908caa
+client.urgent           #ea6f91  #232136  #e0def4  #ea6f91   #ea6f91
+EOF
+
+cat > "$CONF/i3/themes/cynthia.conf" <<'EOF'
+client.focused          #7fb4ca  #181616  #c5c9c5  #7fb4ca   #7fb4ca
+client.unfocused        #708491  #181616  #708491  #708491   #708491
+client.focused_inactive #708491  #181616  #708491  #708491   #708491
+client.urgent           #e46876  #181616  #c5c9c5  #e46876   #e46876
+EOF
+
+cat > "$CONF/i3/themes/daniela.conf" <<'EOF'
+client.focused          #7aa2f7  #1a1b26  #c0caf5  #7aa2f7   #7aa2f7
+client.unfocused        #565f89  #1a1b26  #565f89  #565f89   #565f89
+client.focused_inactive #565f89  #1a1b26  #565f89  #565f89   #565f89
+client.urgent           #f7768e  #1a1b26  #c0caf5  #f7768e   #f7768e
+EOF
+
+cat > "$CONF/i3/themes/dracula.conf" <<'EOF'
+client.focused          #bd93f9  #282a36  #f8f8f2  #bd93f9   #bd93f9
+client.unfocused        #6272a4  #282a36  #6272a4  #6272a4   #6272a4
+client.focused_inactive #6272a4  #282a36  #6272a4  #6272a4   #6272a4
+client.urgent           #ff5555  #282a36  #f8f8f2  #ff5555   #ff5555
+EOF
+
+cat > "$CONF/i3/themes/emilia.conf" <<'EOF'
+client.focused          #e0a458  #1e1a17  #e8dcc8  #e0a458   #e0a458
+client.unfocused        #9c8f7d  #1e1a17  #9c8f7d  #9c8f7d   #9c8f7d
+client.focused_inactive #9c8f7d  #1e1a17  #9c8f7d  #9c8f7d   #9c8f7d
+client.urgent           #d9736a  #1e1a17  #e8dcc8  #d9736a   #d9736a
+EOF
+
+cat > "$CONF/i3/themes/h4ck3r.conf" <<'EOF'
+client.focused          #76ea00  #0c1018  #00fa5c  #76ea00   #76ea00
+client.unfocused        #578a29  #0c1018  #578a29  #578a29   #578a29
+client.focused_inactive #578a29  #0c1018  #578a29  #578a29   #578a29
+client.urgent           #6dde00  #0c1018  #00fa5c  #6dde00   #6dde00
+EOF
+
+cat > "$CONF/i3/themes/hidrot.conf" <<'EOF'
+client.focused          #7cb88f  #1b1e24  #d6dce5  #7cb88f   #7cb88f
+client.unfocused        #6e7684  #1b1e24  #6e7684  #6e7684   #6e7684
+client.focused_inactive #6e7684  #1b1e24  #6e7684  #6e7684   #6e7684
+client.urgent           #d9707a  #1b1e24  #d6dce5  #d9707a   #d9707a
+EOF
+
+cat > "$CONF/i3/themes/isabel.conf" <<'EOF'
+client.focused          #4fd6be  #10181a  #a8c5c0  #4fd6be   #4fd6be
+client.unfocused        #5c7b76  #10181a  #5c7b76  #5c7b76   #5c7b76
+client.focused_inactive #5c7b76  #10181a  #5c7b76  #5c7b76   #5c7b76
+client.urgent           #d67f7f  #10181a  #a8c5c0  #d67f7f   #d67f7f
+EOF
+
+cat > "$CONF/i3/themes/jan.conf" <<'EOF'
+client.focused          #fb007a  #212a4c  #27fbfe  #fb007a   #fb007a
+client.unfocused        #6b7bb0  #212a4c  #6b7bb0  #6b7bb0   #6b7bb0
+client.focused_inactive #6b7bb0  #212a4c  #6b7bb0  #6b7bb0   #6b7bb0
+client.urgent           #fb007a  #212a4c  #27fbfe  #fb007a   #fb007a
+EOF
+
+cat > "$CONF/i3/themes/karla.conf" <<'EOF'
+client.focused          #f05393  #0e1113  #afb1db  #f05393   #f05393
+client.unfocused        #6272a4  #0e1113  #6272a4  #6272a4   #6272a4
+client.focused_inactive #6272a4  #0e1113  #6272a4  #6272a4   #6272a4
+client.urgent           #e7034a  #0e1113  #afb1db  #e7034a   #e7034a
+EOF
+
+cat > "$CONF/i3/themes/marisol.conf" <<'EOF'
+client.focused          #e8b84c  #241c1c  #f5e6e0  #e8b84c   #e8b84c
+client.unfocused        #a8827c  #241c1c  #a8827c  #a8827c   #a8827c
+client.focused_inactive #a8827c  #241c1c  #a8827c  #a8827c   #a8827c
+client.urgent           #e8604c  #241c1c  #f5e6e0  #e8604c   #e8604c
+EOF
+
+cat > "$CONF/i3/themes/nord.conf" <<'EOF'
+client.focused          #b48ead  #2e3440  #eceff4  #b48ead   #b48ead
+client.unfocused        #d8dee9  #2e3440  #d8dee9  #d8dee9   #d8dee9
+client.focused_inactive #d8dee9  #2e3440  #d8dee9  #d8dee9   #d8dee9
+client.urgent           #bf616a  #2e3440  #eceff4  #bf616a   #bf616a
+EOF
+
+cat > "$CONF/i3/themes/pamela.conf" <<'EOF'
+client.focused          #f2a272  #1d1f28  #fdfdfd  #f2a272   #f2a272
+client.unfocused        #8c8c8c  #1d1f28  #8c8c8c  #8c8c8c   #8c8c8c
+client.focused_inactive #8c8c8c  #1d1f28  #8c8c8c  #8c8c8c   #8c8c8c
+client.urgent           #f37f97  #1d1f28  #fdfdfd  #f37f97   #f37f97
+EOF
+
+cat > "$CONF/i3/themes/silvia.conf" <<'EOF'
+client.focused          #8ec07c  #3c3836  #ebdbb2  #8ec07c   #8ec07c
+client.unfocused        #928374  #3c3836  #928374  #928374   #928374
+client.focused_inactive #928374  #3c3836  #928374  #928374   #928374
+client.urgent           #cc241d  #3c3836  #ebdbb2  #cc241d   #cc241d
+EOF
+
+cat > "$CONF/i3/themes/varinka.conf" <<'EOF'
+client.focused          #dc5bbc  #212529  #f8f9fa  #dc5bbc   #dc5bbc
+client.unfocused        #6c757d  #212529  #6c757d  #6c757d   #6c757d
+client.focused_inactive #6c757d  #212529  #6c757d  #6c757d   #6c757d
+client.urgent           #dc5bbc  #212529  #f8f9fa  #dc5bbc   #dc5bbc
+EOF
+
+cat > "$CONF/i3/themes/yael.conf" <<'EOF'
+client.focused          #33b1ff  #161616  #ffffff  #33b1ff   #33b1ff
+client.unfocused        #8c8c8c  #161616  #8c8c8c  #8c8c8c   #8c8c8c
+client.focused_inactive #8c8c8c  #161616  #8c8c8c  #8c8c8c   #8c8c8c
+client.urgent           #ee5396  #161616  #ffffff  #ee5396   #ee5396
+EOF
+
+cat > "$CONF/i3/themes/z0mbi3.conf" <<'EOF'
+client.focused          #86aaec  #0d0f18  #a5b6cf  #86aaec   #86aaec
+client.unfocused        #6e8db4  #0d0f18  #6e8db4  #6e8db4   #6e8db4
+client.focused_inactive #6e8db4  #0d0f18  #6e8db4  #6e8db4   #6e8db4
+client.urgent           #dd6777  #0d0f18  #a5b6cf  #dd6777   #dd6777
+EOF
+
+cp "$CONF/i3/themes/catppuccin-mocha.conf" "$CONF/i3/current-borders.conf"
+
+# ----------------------------------------------------------------------------
+# 6g. Starship prompt theming - matches the shell prompt (powerline segments)
 #     to whichever desktop theme is active, the same way kitty/rofi already
 #     do. Only relevant if Chris Titus mybash (installed by the separate
 #     post-install-fedora.sh script, not this one) is actually in use - its
@@ -26198,14 +26396,14 @@ log "Writing polybar theme switcher script..."
 cat > "$BIN/polybar-theme.sh" <<'EOF'
 #!/usr/bin/env bash
 # Lists available themes (~/.config/polybar/themes/*.ini) via rofi and, on
-# selection, applies matching polybar + rofi + kitty + starship + dunst
-# themes together, so one pick retints the whole desktop instead of just
-# the bar. Each is its own COMPLETE, standalone config (a polybar
-# config.ini, a rofi .rasi pair, a kitty color .conf, a starship prompt
-# .toml, a dunst dunstrc) generated from the same underlying palette per
-# theme name - not a shared [colors] fragment different tools each
-# interpret slightly differently - applied with a plain file copy, no
-# splicing to keep in sync.
+# selection, applies matching polybar + rofi + kitty + starship + dunst +
+# i3 border-color themes together, so one pick retints the whole desktop
+# instead of just the bar. Each is its own COMPLETE, standalone config (a
+# polybar config.ini, a rofi .rasi pair, a kitty color .conf, a starship
+# prompt .toml, a dunst dunstrc, an i3 client.* border-color fragment)
+# generated from the same underlying palette per theme name - not a shared
+# [colors] fragment different tools each interpret slightly differently -
+# applied with a plain file copy, no splicing to keep in sync.
 #
 # Usage:
 #   polybar-theme.sh          # prompts via rofi
@@ -26223,6 +26421,8 @@ STARSHIP_THEMES_DIR="$HOME/.config/starship/themes"
 STARSHIP_CURRENT="$HOME/.config/starship.toml"
 DUNST_THEMES_DIR="$HOME/.config/dunst/themes"
 DUNST_CURRENT="$HOME/.config/dunst/dunstrc"
+I3_THEMES_DIR="$HOME/.config/i3/themes"
+I3_CURRENT="$HOME/.config/i3/current-borders.conf"
 
 mapfile -t THEME_FILES < <(find "$POLY_THEMES_DIR" -maxdepth 1 -name '*.ini' 2>/dev/null | sort)
 if [ "${#THEME_FILES[@]}" -eq 0 ]; then
@@ -26247,6 +26447,10 @@ ROFI_POWERMENU_FILE="$ROFI_THEMES_DIR/$CHOSEN-powermenu.rasi"
 KITTY_FILE="$KITTY_THEMES_DIR/$CHOSEN.conf"
 STARSHIP_FILE="$STARSHIP_THEMES_DIR/$CHOSEN.toml"
 DUNST_FILE="$DUNST_THEMES_DIR/$CHOSEN.dunstrc"
+# No "-square" variant of a border-color scheme exists (same reasoning as
+# GTK_BASE below - it's a corner-rounding distinction, not a color one), so
+# strip the suffix the same way before looking up the i3 theme file.
+I3_FILE="$I3_THEMES_DIR/${CHOSEN%-square}.conf"
 
 if [ ! -f "$POLY_FILE" ]; then
   notify-send "Desktop Theme" "No such theme: $CHOSEN"
@@ -26339,6 +26543,18 @@ if [ -f "$DUNST_FILE" ]; then
   dunstctl reload >/dev/null 2>&1 || true
 else
   notify-send "Desktop Theme" "No dunst theme for $CHOSEN, keeping previous"
+fi
+
+if [ -f "$I3_FILE" ]; then
+  cp "$I3_FILE" "$I3_CURRENT"
+  # Unlike kitty, i3 has no remote-control command to recolor client.* on
+  # already-open windows - `reload` re-reads the whole config (including
+  # the `include current-borders.conf` line) without touching the current
+  # layout/open windows, unlike `restart` which would also relaunch bars
+  # and drop in-flight scratchpad state (Cliamp/the AI window).
+  i3-msg reload >/dev/null 2>&1 || true
+else
+  notify-send "Desktop Theme" "No i3 border theme for $CHOSEN, keeping previous"
 fi
 
 notify-send "Desktop Theme" "Switched to $CHOSEN"
@@ -26514,6 +26730,54 @@ else
 fi
 EOF
 chmod +x "$BIN/cliamp-toggle.sh"
+
+log "Writing ai-window-toggle.sh (Mistral Vibe CLI)..."
+cat > "$BIN/ai-window-toggle.sh" <<'EOF'
+#!/usr/bin/env bash
+# Toggles a floating "AI window" running Mistral Vibe CLI (`vibe`) via i3's
+# scratchpad - same show/hide-without-killing pattern as cliamp-toggle.sh,
+# so an in-progress Vibe conversation/session isn't lost by just tucking
+# the window away.
+#
+# Doesn't copy cliamp-toggle.sh's "try `scratchpad show`, fall back to
+# `move scratchpad` on failure" approach - confirmed live that it's
+# unreliable here: `scratchpad show` on this window reported success:true
+# while actually leaving it shoved off-screen (negative coordinates) on its
+# *current* workspace, still counted visible/focused, instead of actually
+# parking it in i3's hidden __i3_scratch workspace. Asking i3 directly
+# which workspace the marked container is on right now and picking the one
+# correct action for that state sidesteps the ambiguous return value
+# entirely: no mark found -> launch fresh; already in __i3_scratch -> show
+# it; anywhere else (i.e. currently visible) -> hide it. Also sidesteps
+# tracking `vibe` by process name, which wouldn't work anyway - it's a
+# Python console_scripts entry point, so under `ps`/`pgrep -x` it reports
+# as "python3", never "vibe".
+mark=ai-window-scratch
+
+current_ws=$(i3-msg -t get_tree | python3 -c "
+import json, sys
+t = json.load(sys.stdin)
+def walk(n, ws=None):
+    if n.get('type') == 'workspace':
+        ws = n.get('name')
+    if 'ai-window-scratch' in n.get('marks', []):
+        print(ws or '')
+        sys.exit(0)
+    for c in n.get('nodes', []) + n.get('floating_nodes', []):
+        walk(c, ws)
+walk(t)
+")
+
+if [ -z "$current_ws" ]; then
+  exec kitty --class AIVibe -e vibe
+elif [ "$current_ws" = "__i3_scratch" ]; then
+  i3-msg "[con_mark=\"$mark\"] scratchpad show" >/dev/null
+  i3-msg "[con_mark=\"$mark\"] resize set 900 650, move position center" >/dev/null
+else
+  i3-msg "[con_mark=\"$mark\"] move scratchpad" >/dev/null
+fi
+EOF
+chmod +x "$BIN/ai-window-toggle.sh"
 
 # ----------------------------------------------------------------------------
 # 12. Wallpaper fallback (solid Catppuccin base color) if none exists
