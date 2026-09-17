@@ -2801,7 +2801,9 @@ Each script targets **its own distro only** — the Fedora script checks for `dn
 
 **[CLIamp](https://www.cliamp.stream/)** (`Mod+m`) — a terminal Winamp-style music player/streamer (Spotify, Qobuz, YouTube Music, Plex, Jellyfin, 30,000+ radio stations). Not packaged for Fedora, so it's installed via its own release-binary `curl | sh` installer into `~/.local/bin` — best-effort like the Nerd Font/snixembed installs, a failed download just logs a warning. Launches in its own floating kitty window (`kitty --class Cliamp -e cliamp`, matched by the `for_window` rule above), same pattern as the screensaver and copyq.
 
-**App menu** (`Mod+alt+space`, `~/.local/bin/app-menu.sh`) — a floating rofi menu for reaching this rice's own utility scripts in one place, inspired by [Omarchy](https://omarchy.org)'s Super-key menu system but scoped down to actions that actually exist here (Omarchy's own menu is much larger — package install/remove, etc. — with no equivalent in this plain i3 setup). Reuses `current.rasi` (the same active theme as the app launcher, kept in sync by `polybar-theme.sh` — see "Desktop-wide theming" above) rather than a dedicated theme, so it stays visually consistent and gets the search-filter-as-you-type behavior for free. The list is two parallel bash arrays (`LABELS`/`COMMANDS`, matched by index) rather than an associative array keyed by label text — trivial to extend, and avoids any risk of a label/command pair drifting apart under refactoring. Every rofi theme's `listview` is sized to `lines: 13` specifically because this menu's own item count grew to 13 over the course of building this rice — the shared theme file is also what sizes the app launcher (`drun`) and the Desktop Theme picker, so all three grew a little taller together rather than giving this menu its own one-off theme just for the row count. Entries that need interactive input — **Set Screensaver Text/Image** (`set-screensaver-text.sh`, see below) and **Keybinding Help** (`keybindings-help.sh`, see below) — open in their own floating kitty window (`class=AppMenuTask`/`class=KeybindingsHelp`, matched by `for_window` rules the same way copyq/Cliamp/the screensaver are); everything else (switching the polybar theme, toggling caffeine/DND, opening the music player or clipboard history, locking, the power menu, reloading/restarting i3) just runs directly. Icons are plain Nerd Font glyphs (not pango markup, unlike the power menu) since only one text color is needed here.
+**App menu** (`Mod+alt+space`, `~/.local/bin/app-menu.sh`) — a floating rofi menu for reaching this rice's own utility scripts in one place, inspired by [Omarchy](https://omarchy.org)'s Super-key menu system but scoped down to actions that actually exist here (Omarchy's own menu is much larger — package install/remove, etc. — with no equivalent in this plain i3 setup). Reuses `current.rasi` (the same active theme as the app launcher, kept in sync by `polybar-theme.sh` — see "Desktop-wide theming" above) rather than a dedicated theme, so it stays visually consistent and gets the search-filter-as-you-type behavior for free. The list is two parallel bash arrays (`LABELS`/`COMMANDS`, matched by index) rather than an associative array keyed by label text — trivial to extend, and avoids any risk of a label/command pair drifting apart under refactoring. Every rofi theme's `listview` is sized to `lines: 14` specifically because this menu's own item count grew to 14 over the course of building this rice — the shared theme file is also what sizes the app launcher (`drun`) and the Desktop Theme picker, so all three grew a little taller together rather than giving this menu its own one-off theme just for the row count. Entries that need interactive input — **Set Screensaver Text/Image**, **Set AI Window Folder** (`set-ai-window-folder.sh`, see below), and **Keybinding Help** (`keybindings-help.sh`, see below) — open in their own floating kitty window (`class=AppMenuTask`/`class=KeybindingsHelp`, matched by `for_window` rules the same way copyq/Cliamp/the screensaver are); everything else (switching the polybar theme, toggling caffeine/DND, opening the music player or clipboard history, locking, the power menu, reloading/restarting i3) just runs directly. Icons are plain Nerd Font glyphs (not pango markup, unlike the power menu) since only one text color is needed here.
+
+**Set AI Window Folder** (app menu, `~/.local/bin/set-ai-window-folder.sh`) — prompts (via `read -e -i`, so the current value is pre-filled and tab-completes) for the folder `Mod+a`'s AI window should start Mistral Vibe CLI in, and saves it to `~/.config/ai-window/workdir`. `ai-window-toggle.sh` reads that file on every *fresh* launch and passes it to `vibe --workdir` (Vibe's own documented flag for scoping its project root, not a plain `cd` before exec). Same "applies at creation time, not retroactively" rule as everything else window-related here — changing the folder doesn't affect an AI window that's already running until you close and reopen it. Defaults to `$HOME` if never set.
 
 **Keybinding Help** (reachable from the app menu, or standalone via `~/.local/bin/keybindings-help.sh`) — prints the same cheat sheet as the [Keybinding Cheat Sheet](#️-keybinding-cheat-sheet) table below in a floating, Catppuccin Mocha–colored kitty window, dismissed by any keypress. It's a small curated `binding|action` array in the script itself, not something parsed out of the live `i3/config` — same shape as `app-menu.sh`'s own `LABELS`/`COMMANDS`, kept in sync with the README table by hand rather than generated, since the README's descriptions are written for a reader and a raw `bindsym` dump wouldn't be.
 
@@ -3037,41 +3039,56 @@ After it finishes:
 
 `Mod` = Super/Windows key.
 
+Sorted alphabetically by key; where a key has more than one binding, the plain `Mod+<key>` form comes before any `Mod+<modifier>+<key>` form, and multi-modifier forms come after single-modifier ones.
+
 | Binding | Action |
 | --- | --- |
-| `Mod+Return` | Open kitty |
-| `Mod+space` / `Mod+shift+space` | Rofi app launcher (`drun`) / run launcher |
-| `Mod+e` | File manager (`pcmanfm`) |
-| `Mod+shift+w` | Wallpaper picker (`nitrogen`) |
-| `Mod+p` | Printer setup (`system-config-printer`) |
+| `Mod+1..9` | Switch to workspace 1–9 |
+| `Mod+shift+1..9` | Move window to workspace 1–9 |
+| `Mod+a` | Toggle the floating "AI window" — [Mistral Vibe CLI](https://docs.mistral.ai/getting-started/quickstarts/vibe-code/install-cli) (opens as a floating window, scratchpad show/hide like CLIamp below) |
+| `Mod+b` | Split horizontal (for next window) |
 | `Mod+c` | Toggle caffeine (inhibit screen-lock/sleep) |
-| `Mod+n` | Toggle Do Not Disturb (pause/resume dunst) |
+| `Mod+shift+c` | Reload i3 |
+| `Mod+e` | File manager (`pcmanfm`) |
+| `Mod+shift+e` | Exit i3 (with confirm) |
 | `Mod+Escape` | Block-art screensaver, on demand |
-| `Mod+l` | Lock screen |
-| `Mod+shift+p` | Power menu (lock / suspend / logout / reboot / shutdown) |
-| `Mod+shift+v` | Clipboard history (`copyq toggle`, opens as a floating window) |
-| `Mod+m` | [CLIamp](https://www.cliamp.stream/) terminal music player (opens as a floating window) |
-| `Mod+alt+space` | App menu — Omarchy-style floating menu of this rice's own utility scripts |
-| `Print` | Screenshot (`flameshot gui`, falls back to `import`) |
-| `Mod+shift+g` | Colorpicker — click any on-screen pixel, its hex color is copied to the clipboard |
-| `Mod+shift+q` | Close focused window |
 | `Mod+f` | Fullscreen toggle |
 | `Mod+shift+f` | Floating toggle |
-| `Mod+ctrl+space` | Toggle tiling/floating focus |
-| `Mod+h/j/k/;` | Focus left/down/up/right |
-| `Mod+shift+h/j/k/;` | Move window left/down/up/right |
-| `Mod+v` / `Mod+b` | Split vertical / horizontal (for next window) |
-| `Mod+t` | Toggle container layout split direction |
-| `Mod+ctrl+h/l` | Focus next/prev **monitor** |
-| `Mod+ctrl+shift+h/l` | Move workspace to next/prev **monitor** |
-| `Mod+1..9` / `Mod+shift+1..9` | Switch to / move window to workspace 1–9 |
+| `Mod+shift+g` | Colorpicker — click any on-screen pixel, its hex color is copied to the clipboard |
+| `Mod+h` | Focus left |
+| `Mod+ctrl+h` | Focus monitor to the left |
+| `Mod+shift+h` | Move window left |
+| `Mod+ctrl+shift+h` | Move workspace to the monitor on the left |
+| `Mod+j` | Focus down |
+| `Mod+shift+j` | Move window down |
+| `Mod+k` | Focus up |
+| `Mod+shift+k` | Move window up |
+| `Mod+l` | Lock screen |
+| `Mod+ctrl+l` | Focus monitor to the right |
+| `Mod+ctrl+shift+l` | Move workspace to the monitor on the right |
+| `Mod+m` | [CLIamp](https://www.cliamp.stream/) terminal music player (opens as a floating window, scratchpad show/hide) |
+| `Mod+n` | Toggle Do Not Disturb (pause/resume dunst) |
+| `Mod+p` | Printer setup (`system-config-printer`) |
+| `Mod+shift+p` | Power menu (lock / suspend / logout / reboot / shutdown) |
+| `Print` | Screenshot (`flameshot gui`, falls back to `import`) |
 | `Mod+r` | Resize mode (`h/j/k/l` to resize, `Return`/`Escape` to exit) |
-| `Mod+shift+r` / `Mod+shift+c` | Restart / reload i3 |
-| `Mod+shift+e` | Exit i3 (with confirm) |
+| `Mod+shift+r` | Restart i3 |
+| `Mod+Return` | Open kitty |
+| `Mod+shift+q` | Close focused window |
+| `Mod+semicolon` | Focus right |
+| `Mod+shift+semicolon` | Move window right |
+| `Mod+space` | Rofi app launcher (`drun`) |
+| `Mod+alt+space` | App menu — Omarchy-style floating menu of this rice's own utility scripts |
+| `Mod+ctrl+space` | Toggle tiling/floating focus |
+| `Mod+shift+space` | Rofi run launcher |
+| `Mod+t` | Toggle container layout split direction |
+| `Mod+v` | Split vertical (for next window) |
+| `Mod+shift+v` | Clipboard history (`copyq toggle`, opens as a floating window) |
+| `Mod+shift+w` | Wallpaper picker (`nitrogen`) |
+| `Mod+shift+XF86Assistant` | Launch Claude Desktop (hardware AI-assistant key, if your keyboard has one) |
+| `XF86Audio{Play,Next,Prev}` | Media control via `playerctl` |
 | `XF86Audio{Raise,Lower,Mute}Volume` | Volume via `pactl`, with a dunst level popup |
 | `XF86MonBrightness{Up,Down}` | Brightness via `brightnessctl`, with a dunst level popup |
-| `XF86Audio{Play,Next,Prev}` | Media control via `playerctl` |
-| `Mod+shift+XF86Assistant` | Launch Claude Desktop (hardware AI-assistant key, if your keyboard has one) |
 
 Several polybar widgets are clickable too: left-click the wifi widget opens `wifi-menu.sh` (see below) to scan and connect, middle-click opens `nm-connection-editor` for advanced/saved-connection editing, right-click toggles the wifi radio on/off; left-click the ethernet widget opens `nm-connection-editor` (no scanning concept applies to a wired link, so it stays the primary action there); left-click the bluetooth widget opens `blueman-manager`, and left-click the clock opens `gnome-calendar` — all open as small centered floating windows (`for_window` rules in the generated i3 config) instead of tiling full-height. The same treatment applies to `system-config-printer` (`Mod+p`). Calendar/task reminders no longer open a separate floating window at all — `~/.local/bin/calendar-reminder-daemon.py` fires them as themed dunst notifications instead (see "Desktop-wide theming" below), and Evolution's own reminder popup is disabled. The caffeine widget (`Mod+c`) is left-click to toggle, right-click to trigger the screensaver/lock immediately. The Do Not Disturb widget (`Mod+n`) is left-click to toggle. The media control widget (right after volume) is three separate click zones — previous, play/pause, next — and disappears entirely when nothing is playing. The software-updates widget (right after cpu) is left-click to open `sudo dnf upgrade` (Fedora) or `sudo zypper dup --no-allow-vendor-change` (openSUSE — see the port-differences subsection above) in its own floating, centered terminal; unlike the widgets above, it always stays visible, showing "0" rather than disappearing when there's nothing pending.
 

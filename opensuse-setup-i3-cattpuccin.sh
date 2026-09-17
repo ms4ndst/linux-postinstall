@@ -12841,7 +12841,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -12953,7 +12953,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -13065,7 +13065,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -13177,7 +13177,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -13289,7 +13289,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -13401,7 +13401,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -13513,7 +13513,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -13625,7 +13625,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -13737,7 +13737,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -13849,7 +13849,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -13961,7 +13961,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -14073,7 +14073,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -14185,7 +14185,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -14297,7 +14297,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -14409,7 +14409,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -14521,7 +14521,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -14633,7 +14633,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -14745,7 +14745,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -14857,7 +14857,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -14969,7 +14969,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -15081,7 +15081,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -15131,7 +15131,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -15243,7 +15243,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -15355,7 +15355,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -15467,7 +15467,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -15579,7 +15579,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -15691,7 +15691,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -15803,7 +15803,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -15915,7 +15915,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -16027,7 +16027,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -16139,7 +16139,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -16251,7 +16251,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -16363,7 +16363,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -16475,7 +16475,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -16587,7 +16587,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -16699,7 +16699,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -16811,7 +16811,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -16923,7 +16923,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -17035,7 +17035,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -17147,7 +17147,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -17259,7 +17259,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -17371,7 +17371,7 @@ prompt { text-color: @mauve; padding: 0 8px 0 0; }
 entry  { text-color: @text; }
 
 listview {
-    lines: 13;
+    lines: 14;
     padding: 8px 0;
 }
 
@@ -26668,6 +26668,57 @@ EOF
 chmod +x "$BIN/set-screensaver-text.sh"
 
 # ----------------------------------------------------------------------------
+# 11d3. AI window startup folder - reachable from the app menu below, and
+#       standalone as its own script. Stores a single path in a plain text
+#       file that ai-window-toggle.sh reads on every fresh launch (passed
+#       to `vibe --workdir`, its own documented flag for scoping which
+#       directory it treats as the project root - not a plain `cd`, so it
+#       works the same regardless of what shell/rc ends up running kitty).
+#       Only takes effect for a NEW AI window - same "applies at creation
+#       time, not retroactively" caveat as everything else in this rice
+#       that isn't live-recolored/reloaded (border colors, for_window
+#       rules); an already-running session keeps whatever folder it
+#       started with until you close and reopen it.
+# ----------------------------------------------------------------------------
+log "Writing AI window startup-folder script..."
+cat > "$BIN/set-ai-window-folder.sh" <<'EOF'
+#!/usr/bin/env bash
+# Sets the folder Mistral Vibe CLI starts in the next time Mod+a launches a
+# fresh AI window (see ai-window-toggle.sh). `read -e -i` gives readline
+# tab-completion and a pre-filled, editable default - same interactive
+# style as set-screensaver-text.sh's own prompt, just editable in place
+# instead of typed from scratch.
+set -euo pipefail
+
+CONF_DIR="$HOME/.config/ai-window"
+WORKDIR_FILE="$CONF_DIR/workdir"
+mkdir -p "$CONF_DIR"
+
+CURRENT="$(cat "$WORKDIR_FILE" 2>/dev/null || echo "$HOME")"
+echo "AI window startup folder is currently: $CURRENT"
+read -r -e -i "$CURRENT" -p "New startup folder (tab-completes): " INPUT
+INPUT="${INPUT:-$CURRENT}"
+# read -e doesn't expand a leading ~ itself - do it manually before the
+# directory check below, same as any other path a user might type here.
+INPUT="${INPUT/#\~/$HOME}"
+
+if [ ! -d "$INPUT" ]; then
+  echo "Not a directory: $INPUT" >&2
+  echo
+  echo "Press any key to close..."
+  read -r -n 1 -s
+  exit 1
+fi
+
+echo "$INPUT" > "$WORKDIR_FILE"
+echo "AI window will now start in: $INPUT"
+echo
+echo "Press any key to close..."
+read -r -n 1 -s
+EOF
+chmod +x "$BIN/set-ai-window-folder.sh"
+
+# ----------------------------------------------------------------------------
 # 11e1. Polybar theme switcher - reachable from the app menu below, and
 #       standalone as its own script.
 # ----------------------------------------------------------------------------
@@ -26858,40 +26909,58 @@ RESET=$'\033[0m'
 
 # binding|action - same rows as the README cheat sheet table, kept in sync
 # by hand (this is a small, curated display list, not something parsed out
-# of i3/config, same shape as app-menu.sh's own LABELS/COMMANDS).
+# of i3/config, same shape as app-menu.sh's own LABELS/COMMANDS). Sorted
+# alphabetically by key; where a key has more than one binding, the plain
+# Mod+<key> form comes before any Mod+<modifier>+<key> form, and
+# multi-modifier forms come after single-modifier ones - same rule the
+# README table's rows follow.
 ROWS=(
-  "Mod+Return|Open kitty"
-  "Mod+space / Mod+shift+space|Rofi app launcher (drun) / run launcher"
-  "Mod+e|File manager (pcmanfm)"
-  "Mod+shift+w|Wallpaper picker (nitrogen)"
-  "Mod+p|Printer setup"
+  "Mod+1..9|Switch to workspace 1-9"
+  "Mod+shift+1..9|Move window to workspace 1-9"
+  "Mod+a|AI window (Mistral Vibe CLI), toggle show/hide"
+  "Mod+b|Split horizontal (for next window)"
   "Mod+c|Toggle caffeine (inhibit screen-lock/sleep)"
-  "Mod+n|Toggle Do Not Disturb"
+  "Mod+shift+c|Reload i3"
+  "Mod+e|File manager (pcmanfm)"
+  "Mod+shift+e|Exit i3 (with confirm)"
   "Mod+Escape|Block-art screensaver, on demand"
-  "Mod+l|Lock screen"
-  "Mod+shift+p|Power menu"
-  "Mod+shift+v|Clipboard history (copyq)"
-  "Mod+m|CLIamp terminal music player"
-  "Mod+alt+space|App menu (this menu)"
-  "Print|Screenshot (flameshot)"
-  "Mod+shift+g|Colorpicker (click a pixel, hex copied to clipboard)"
-  "Mod+shift+q|Close focused window"
   "Mod+f|Fullscreen toggle"
   "Mod+shift+f|Floating toggle"
-  "Mod+ctrl+space|Toggle tiling/floating focus"
-  "Mod+h/j/k/;|Focus left/down/up/right"
-  "Mod+shift+h/j/k/;|Move window left/down/up/right"
-  "Mod+v / Mod+b|Split vertical / horizontal (for next window)"
-  "Mod+t|Toggle container layout split direction"
-  "Mod+ctrl+h/l|Focus next/prev monitor"
-  "Mod+ctrl+shift+h/l|Move workspace to next/prev monitor"
-  "Mod+1..9 / Mod+shift+1..9|Switch to / move window to workspace 1-9"
+  "Mod+shift+g|Colorpicker (click a pixel, hex copied to clipboard)"
+  "Mod+h|Focus left"
+  "Mod+ctrl+h|Focus monitor to the left"
+  "Mod+shift+h|Move window left"
+  "Mod+ctrl+shift+h|Move workspace to the monitor on the left"
+  "Mod+j|Focus down"
+  "Mod+shift+j|Move window down"
+  "Mod+k|Focus up"
+  "Mod+shift+k|Move window up"
+  "Mod+l|Lock screen"
+  "Mod+ctrl+l|Focus monitor to the right"
+  "Mod+ctrl+shift+l|Move workspace to the monitor on the right"
+  "Mod+m|CLIamp terminal music player, toggle show/hide"
+  "Mod+n|Toggle Do Not Disturb"
+  "Mod+p|Printer setup"
+  "Mod+shift+p|Power menu"
+  "Print|Screenshot (flameshot)"
   "Mod+r|Resize mode (h/j/k/l, Return/Escape to exit)"
-  "Mod+shift+r / Mod+shift+c|Restart / reload i3"
-  "Mod+shift+e|Exit i3 (with confirm)"
+  "Mod+shift+r|Restart i3"
+  "Mod+Return|Open kitty"
+  "Mod+shift+q|Close focused window"
+  "Mod+semicolon|Focus right"
+  "Mod+shift+semicolon|Move window right"
+  "Mod+space|Rofi app launcher (drun)"
+  "Mod+alt+space|App menu (this menu)"
+  "Mod+ctrl+space|Toggle tiling/floating focus"
+  "Mod+shift+space|Rofi run launcher"
+  "Mod+t|Toggle container layout split direction"
+  "Mod+v|Split vertical (for next window)"
+  "Mod+shift+v|Clipboard history (copyq)"
+  "Mod+shift+w|Wallpaper picker (nitrogen)"
+  "Mod+shift+XF86Assistant|Launch Claude Desktop"
+  "XF86Audio Play/Next/Prev|Media control (playerctl)"
   "XF86Audio Raise/Lower/Mute Volume|Volume, with a dunst level popup"
   "XF86MonBrightness Up/Down|Brightness, with a dunst level popup"
-  "XF86Audio Play/Next/Prev|Media control (playerctl)"
 )
 
 WIDTH=0
@@ -26933,6 +27002,7 @@ LABELS=(
   $'  Desktop Theme'
   $'  Set Screensaver Text/Image'
   $'  Preview Screensaver'
+  $'  Set AI Window Folder'
   $'  Toggle Caffeine'
   $'  Toggle Do Not Disturb'
   $'  Music Player'
@@ -26948,6 +27018,7 @@ COMMANDS=(
   "~/.local/bin/polybar-theme.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/set-screensaver-text.sh"
   "kitty --class Screensaver -e ~/.local/bin/screensaver.sh"
+  "kitty --class AppMenuTask -e ~/.local/bin/set-ai-window-folder.sh"
   "~/.local/bin/caffeine-toggle.sh"
   "~/.local/bin/dnd-toggle.sh"
   "~/.local/bin/cliamp-toggle.sh"
@@ -27048,7 +27119,12 @@ walk(t)
 ")
 
 if [ -z "$current_ws" ]; then
-  exec kitty --class AIVibe -e vibe
+  # Startup folder is configurable via the app menu's "Set AI Window
+  # Folder" entry (set-ai-window-folder.sh) - $HOME if never set. `vibe
+  # --workdir` is its own documented flag for this, not a plain `cd`
+  # before exec, so it's scoped correctly regardless of shell/rc.
+  workdir="$(cat "$HOME/.config/ai-window/workdir" 2>/dev/null || echo "$HOME")"
+  exec kitty --class AIVibe -e vibe --workdir "$workdir"
 elif [ "$current_ws" = "__i3_scratch" ]; then
   i3-msg "[con_mark=\"$mark\"] scratchpad show" >/dev/null
   i3-msg "[con_mark=\"$mark\"] resize set 900 650, move position center" >/dev/null
