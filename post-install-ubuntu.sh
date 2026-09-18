@@ -2275,6 +2275,7 @@ install_gui_tweaks() {
     install_gui_tools
     install_gnome_extensions
     configure_logiops
+    configure_mousiki
 }
 
 # Install a curated set of GNOME Shell extensions via gext (the gnome-extensions-cli
@@ -2593,6 +2594,63 @@ devices: (
 );
 LOGID_EOF
     log INFO "Wrote /etc/logid.cfg (MX Master 3 / MX Master mappings)"
+}
+
+configure_mousiki() {
+    local msg="Build and install Mousiki (terminal music player) from source?"
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Build" --no-button "Skip" 12 72 && do_it=true
+    else
+        echo -e "$msg [y/N]:"
+        read -r REPLY
+        { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
+    fi
+    if $do_it; then install_mousiki; else log INFO "Skipped Mousiki"; fi
+}
+# github.com/itzender5820/mousiki - no PPA/deb package, no binary release
+# (the one GitHub release is a source zip) - the project's own setup.sh is
+# source-build-only everywhere, so this mirrors that script's real
+# apt-get dependency list and build steps by hand rather than shelling out
+# to it.
+install_mousiki() {
+    log INFO "Installing Mousiki build dependencies..."
+    batch_install "Mousiki build deps" cmake build-essential ffmpeg yt-dlp python3 python3-pip
+    local t; t=$(mktemp -d)
+    if ! git clone --depth 1 https://github.com/itzender5820/mousiki "$t/mousiki" 2>/dev/null; then
+        rm -rf "$t"; log WARNING "Mousiki clone failed (needs network access to github.com)"; return 1
+    fi
+    (
+        cd "$t/mousiki" || exit 1
+        cmake -B build 2>/dev/null && cmake --build build -j"$(nproc)" 2>/dev/null
+    )
+    if [ -x "$t/mousiki/build/mousiki" ]; then
+        install -m 755 "$t/mousiki/build/mousiki" /usr/local/bin/mousiki
+        log SUCCESS "Mousiki built and installed to /usr/local/bin/mousiki"
+        setup_mousiki_user_config "$t/mousiki"
+    else
+        log WARNING "Mousiki build failed"
+    fi
+    rm -rf "$t"
+}
+# Lyrics (optional - the upstream setup.sh treats this pip package as
+# soft/non-fatal too) and first-run config, both scoped to the real desktop
+# user rather than root, matching this script's own LazyVim/user-config
+# pattern elsewhere.
+setup_mousiki_user_config() {
+    local src="$1"
+    [ -z "$SUDO_USER" ] || [ "$SUDO_USER" = "root" ] && return 0
+    local uh; uh=$(eval echo ~"$SUDO_USER" 2>/dev/null)
+    [ -z "$uh" ] && return 0
+    su - "$SUDO_USER" -c "pip3 install --user requests" &>/dev/null || true
+    su - "$SUDO_USER" -c "mkdir -p '$uh/.config/mousiki' '$uh/.config/yt-dlp'"
+    if [ ! -f "$uh/.config/mousiki/config.txt" ] && [ -f "$src/config.txt" ]; then
+        cp "$src/config.txt" "$uh/.config/mousiki/config.txt"
+        chown "$SUDO_USER":"$SUDO_USER" "$uh/.config/mousiki/config.txt"
+    fi
+    if ! grep -q "player_client=android" "$uh/.config/yt-dlp/config" 2>/dev/null; then
+        su - "$SUDO_USER" -c "echo '--extractor-args \"youtube:player_client=android\"' >> '$uh/.config/yt-dlp/config'"
+    fi
 }
 
 # Add a PPA in a way that works cleanly across both supported releases. PPAs
