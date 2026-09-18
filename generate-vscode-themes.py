@@ -30,9 +30,11 @@ POLYBAR_THEMES_DIR = os.path.expanduser("~/.config/polybar/themes")
 EXTENSION_DIR = os.path.expanduser("~/.vscode/extensions/linux-postinstall-rice-themes")
 
 THEMES = [
-    "aline", "archcraft", "brenda", "catppuccin-mocha", "cristina", "cynthia",
-    "daniela", "dracula", "emilia", "h4ck3r", "hidrot", "isabel", "jan",
-    "karla", "marisol", "nord", "pamela", "silvia", "varinka", "yael", "z0mbi3",
+    "aline", "alireza", "archblur", "archcraft", "breddie", "brenda",
+    "catppuccin-mocha", "cherryblocks", "classic", "cristina", "cynthia",
+    "daniela", "dracula", "emilia", "float", "h4ck3r", "hidrot", "isabel",
+    "jan", "karla", "marisol", "nord", "pamela", "silvia", "tobi", "varinka",
+    "yael", "yucklys", "z0mbi3",
 ]
 
 # aline is the one light theme in the whole set (confirmed in this rice's own

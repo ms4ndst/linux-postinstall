@@ -939,11 +939,21 @@ exec --no-startup-id dex-autostart -a -e i3
 # a manual Peripherals menu action in post-install-fedora.sh.
 exec --no-startup-id ~/.local/bin/fix-mx-scroll.sh
 exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.local/bin/lock.sh --with-screensaver
-# Idle-based lock: screensaver activation at 30min (triggers xss-lock ->
+# Idle-based lock: screensaver activation at 20min (triggers xss-lock ->
 # lock.sh --with-screensaver, which force-blanks the display immediately on
 # lock regardless of these DPMS timers - see lock_and_blank() in lock.sh).
-# DPMS standby/suspend/off at 30/60/90min are mostly a fallback for that.
-exec --no-startup-id xset s 1800 dpms 1800 3600 5400
+# DPMS standby/suspend/off all at 50min is a fallback for total abandonment
+# (screensaver.sh has no timeout of its own - it just keeps rendering until
+# a keypress, so without this the monitor would stay lit forever). Must
+# stay strictly LATER than the screensaver's own 20min mark, not equal to
+# it: DPMS is a separate subsystem from the X screensaver extension xss-
+# lock listens to, and blanks the monitor at the hardware level regardless
+# of what's on screen - confirmed live, with both set to the same value
+# the monitor was going dark at the 20min mark right along with (sometimes
+# fractionally before) the screensaver itself became visible, making it
+# look like idle skipped straight to sleep instead of showing the
+# screensaver first.
+exec --no-startup-id xset s 1200 dpms 3000 3000 3000
 
 bar {
     mode invisible
@@ -2180,6 +2190,454 @@ format-background = ${colors.surface0}
 screenchange-reload = true
 EOF
 
+cat > "$CONF/polybar/themes/alireza.ini" <<'EOF'
+; Alireza - modeled directly on codeberg.org/alirezaalavi/dotfiles' real i3
+; setup, corrected against its own screenshots (screenshots/i3_dracula_2025-
+; {1,2,3}.png) after an earlier config-only pass missed the actual look:
+; that i3bar/i3status-rust bar renders almost everything in plain WHITE
+; text (icons.icons="awesome6" gives small monochrome glyphs, not per-
+; module colored ones) on a bar that's visibly near-black - noticeably
+; darker than the #282a36 window/terminal background seen in the same
+; screenshots (nvim, the file manager, the terminal), not the same shade -
+; ported here as a distinct "mantle" (bar-only) vs "base" (everything
+; else) split, unlike most other themes in this set which keep the two
+; identical. Color is reserved for the workspace indicator (their own
+; colorscheme.conf: focused/urgent both FILL border+background with
+; accent, not just text) and for in-app selection highlights, which the
+; screenshots show as PINK far more often than the purple their i3
+; colorscheme.conf uses for window borders (the file manager's selected
+; row, the terminal music player's selected track, and the cava-style
+; volume bars are all pink) - ported as this theme's dominant in-app
+; accent, with purple kept specifically for the window-border/workspace-
+; chip role their colorscheme.conf actually specifies. Two of their own
+; deviations from stock Dracula carry over unchanged from the first pass:
+; a brighter red (#FF5E76, used consistently in both their i3 colorscheme
+; and their sway waybar CSS - not a one-off) instead of stock #ff5555, and
+; a second lighter purple ("purple_dark1", #938BFF, named "lavender" here)
+; for inactive workspace text.
+[colors]
+base     = #282A36
+mantle   = #191A21
+surface0 = #44475A
+text     = #F8F8F2
+subtext  = #6272A4
+purple   = #BD93F9
+lavender = #938BFF
+red      = #FF5E76
+green    = #50FA7B
+orange   = #FFB86C
+pink     = #FF79C6
+yellow   = #F1FA8C
+cyan     = #8BE9FD
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.mantle}
+foreground = ${colors.text}
+radius = 8
+padding-left = 2
+padding-right = 2
+module-margin = 1
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+underline-size = 2
+overline-size = 2
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Plain white text throughout, matching the source's actual near-monochrome
+; bar (its own real accents show up on window borders and in-app selections,
+; not here) - only the workspace chip and low-battery/muted-volume states
+; get real color, same restraint the source's own bar shows.
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+; Focused gets a frame (underline+overline), not a solid fill - a filled
+; chip on top of the font read visually heavier/larger than intended.
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.purple}
+label-focused-underline = ${colors.purple}
+label-focused-overline = ${colors.purple}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.lavender}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.text}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-alireza gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "%percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.pink}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.pink}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+; Only the "low" state (under low-at%, not charging) actually gets colored -
+; one of the only places the source's otherwise monochrome bar shows real
+; color at all.
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/archblur.ini" <<'EOF'
+; Archblur - modeled directly on github.com/kiddae/polybar-themes'
+; "arch-blur" bar (confirmed by reading a full local clone). That whole
+; archive's configs pull every color from the user's own ~/.Xresources via
+; xrdb, with only bare black/white as fallbacks - no fixed palette is
+; actually checked in for any of its themes. Its bspwmrc, though, sources
+; "$HOME/.colors/gruvbox/gruvbox.sh" for its actual real desktop colors
+; (confirmed live in the source archive's own "tiny" folder screenshot,
+; showing that exact
+; source line) - real, published Gruvbox Dark values used here for every
+; theme drawn from this archive, differing between them by structure
+; (height/radius/spacing/accent role) rather than a from-scratch palette
+; each time, the same way the archive's own bar variants were always
+; meant to share one desktop colorscheme.
+[colors]
+base     = #282828
+mantle   = #1D2021
+surface0 = #3C3836
+surface1 = #504945
+text     = #EBDBB2
+subtext  = #A89984
+red      = #FB4934
+green    = #B8BB26
+yellow   = #FABD2F
+blue     = #83A598
+purple   = #D3869B
+aqua     = #8EC07C
+orange   = #FE8019
+gray     = #928374
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 32
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 10
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.orange}
+label-focused-underline = ${colors.orange}
+label-focused-overline = ${colors.orange}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-archblur gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "%percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.orange}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.orange}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
 cat > "$CONF/polybar/themes/archcraft.ini" <<'EOF'
 ; Archcraft - grouped clusters bracketed by rounded-cap decorators, where
 ; the group's own widgets share the SAME background as the caps so the
@@ -2760,6 +3218,234 @@ format-background = ${colors.tray-bg}
 screenchange-reload = true
 EOF
 
+cat > "$CONF/polybar/themes/breddie.ini" <<'EOF'
+; Breddie - modeled directly on codeberg.org/breddiesucks/dotfiles' real
+; polybar/rofi/dunst/alacritty configs and its actual XMonad window-border
+; colors (xmonad/xmonad.hs: myFocusedBorderColor "#acb0d0", myNormalBorder-
+; Color "#444b61" - confirmed by reading a full local clone), plus its own
+; screenshots (.showoff/01.png, 02.png) for the overall look: a near-black
+; TokyoNight-family background (#1a1b26, its alacritty.toml's own primary
+; background - the same well-known open palette this rice's own "daniela"
+; theme already called "Tokyo-Night-ADJACENT" rather than exact; this port
+; uses the source's real hex values directly) with an almost monochrome
+; bar - workspace numbers and stats all in one muted light color, no
+; per-module color-coding - color reserved for the focused-workspace
+; accent and alert states, the same restraint this rice's own "isabel"/
+; "alireza" ports already follow for similarly minimal sources.
+;
+; Two real bugs in the source were not carried over, same policy already
+; applied to this rice's own "isabel"/"pamela" ports: its polybar
+; [colors] "alert" is a literal typo (`#D9EBCB8R` - R isn't a hex digit),
+; clearly meant to be its alacritty yellow (`#ebcb8c`) - used here as
+; intended. Its xworkspaces "active" state sets a background-alt that's
+; IDENTICAL to the bar's own background (`background-alt = background`),
+; making the focused-workspace indicator invisible in practice - given a
+; real underline+overline frame instead (this rice's own "alireza" fix for
+; the same class of problem), using the real accent its xmonad.hs actually
+; assigns to focused windows (`#acb0d0`) rather than an invisible chip.
+[colors]
+base     = #1A1B26
+mantle   = #1A1B26
+surface0 = #292A44
+text     = #E5E9F0
+subtext  = #444B61
+lavender = #ACB0D0
+blue     = #7AA2F7
+cyan     = #0DB9D7
+green    = #9ECE6A
+yellow   = #EBCB8C
+orange   = #FF9E64
+red      = #F7768E
+purple   = #BB9AF7
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 8
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.lavender}
+label-focused-underline = ${colors.lavender}
+label-focused-overline = ${colors.lavender}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.yellow}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-breddie gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "VOL %percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "MUTED"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.purple}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+; Only the "low" state (under low-at%, not charging) actually gets colored -
+; matching the near-monochrome restraint the source's own bar shows.
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
 cat > "$CONF/polybar/themes/brenda.ini" <<'EOF'
 ; Brenda - flat, individually-colored two-part widgets: every widget is a
 ; vivid-colored icon chip immediately followed by its own cream ("mbg")
@@ -3061,6 +3747,428 @@ format-background = ${colors.base}
 screenchange-reload = true
 EOF
 
+cat > "$CONF/polybar/themes/cherryblocks.ini" <<'EOF'
+; Cherryblocks - modeled directly on github.com/kiddae/polybar-themes'
+; "cherryblocks" bar (confirmed by reading a full local clone) - its own
+; screenshot shows the bottom bar as several visually SEPARATE rounded
+; blocks with real gaps between them, not one continuous strip - ported
+; here via a wider module-margin than any other theme in this set, giving
+; each widget group real breathing room instead of a merged bar. "Cherry"
+; for the red accent, matching the theme's own name. Gruvbox Dark palette
+; (see "archblur" for how that was confirmed), structure the
+; differentiator.
+[colors]
+base     = #282828
+mantle   = #1D2021
+surface0 = #3C3836
+surface1 = #504945
+text     = #EBDBB2
+subtext  = #A89984
+red      = #FB4934
+green    = #B8BB26
+yellow   = #FABD2F
+blue     = #83A598
+purple   = #D3869B
+aqua     = #8EC07C
+orange   = #FE8019
+gray     = #928374
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 10
+padding-left = 2
+padding-right = 2
+module-margin = 3
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.red}
+label-focused-underline = ${colors.red}
+label-focused-overline = ${colors.red}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-cherryblocks gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "%percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.red}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.red}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+cat > "$CONF/polybar/themes/classic.ini" <<'EOF'
+; Classic - modeled directly on github.com/kiddae/polybar-themes'
+; "classic2-rounded" bar (confirmed by reading a full local clone) - its
+; own screenshot is almost entirely grayscale, just plain light text on a
+; near-black bar with a single small colored dot marking the focused
+; workspace - ported here as a deliberately near-monochrome theme, most
+; widgets left in muted subtext, with the workspace accent as the one
+; spot of real color. Gruvbox Dark palette (see "archblur" for how that
+; was confirmed), structure the differentiator.
+[colors]
+base     = #282828
+mantle   = #1D2021
+surface0 = #3C3836
+surface1 = #504945
+text     = #EBDBB2
+subtext  = #A89984
+red      = #FB4934
+green    = #B8BB26
+yellow   = #FABD2F
+blue     = #83A598
+purple   = #D3869B
+aqua     = #8EC07C
+orange   = #FE8019
+gray     = #928374
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 28
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.orange}
+label-focused-underline = ${colors.orange}
+label-focused-overline = ${colors.orange}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-classic gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "%percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.orange}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.orange}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
 cat > "$CONF/polybar/themes/cristina.ini" <<'EOF'
 ; Cristina - individually-colored pill capsules: each quantifiable widget
 ; gets its OWN rounded-cap bracket pair (U+E0B6/U+E0B4, same glyph family
@@ -3232,15 +4340,15 @@ index-sort = true
 wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
-label-focused-font = 2
+label-focused-font = 3
 label-focused-foreground = ${colors.lime}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
-label-unfocused-font = 2
+label-unfocused-font = 3
 label-unfocused-foreground = ${colors.subtext}
 label-unfocused-padding = 1
 label-urgent = ${self.ws-label}
-label-urgent-font = 2
+label-urgent-font = 3
 label-urgent-foreground = ${colors.purple}
 label-urgent-padding = 1
 
@@ -3686,15 +4794,15 @@ index-sort = true
 wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
-label-focused-font = 2
+label-focused-font = 3
 label-focused-foreground = ${colors.blue}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
-label-unfocused-font = 2
+label-unfocused-font = 3
 label-unfocused-foreground = ${colors.subtext}
 label-unfocused-padding = 1
 label-urgent = ${self.ws-label}
-label-urgent-font = 2
+label-urgent-font = 3
 label-urgent-foreground = ${colors.red}
 label-urgent-padding = 1
 
@@ -4246,6 +5354,218 @@ type = custom/script
 exec = ~/.local/bin/polybar-layout.sh
 interval = 1
 format = <label>
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/float.ini" <<'EOF'
+; Float - modeled directly on github.com/kiddae/polybar-themes' "float2"
+; bar (confirmed by reading a full local clone) - its real config sets a
+; real inset (offset-x/y = 20px) and a thick same-color-as-background
+; border, making the bar visually detach/float off the screen edges
+; rather than sit flush against them - approximated here with generous
+; left/right padding and a larger corner radius, the closest polybar
+; equivalent this rice's other themes already use. Gruvbox Dark palette
+; (see "archblur" for how that was confirmed), structure the
+; differentiator.
+[colors]
+base     = #282828
+mantle   = #1D2021
+surface0 = #3C3836
+surface1 = #504945
+text     = #EBDBB2
+subtext  = #A89984
+red      = #FB4934
+green    = #B8BB26
+yellow   = #FABD2F
+blue     = #83A598
+purple   = #D3869B
+aqua     = #8EC07C
+orange   = #FE8019
+gray     = #928374
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 12
+padding-left = 8
+padding-right = 8
+module-margin = 2
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.aqua}
+label-focused-underline = ${colors.aqua}
+label-focused-overline = ${colors.aqua}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-float gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "%percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.aqua}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.aqua}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
 
 [module/tray]
 type = internal/tray
@@ -5800,6 +7120,233 @@ tray-padding = 6
 screenchange-reload = true
 EOF
 
+cat > "$CONF/polybar/themes/tobi.ini" <<'EOF'
+; Tobi - modeled directly on codeberg.org/justTOBBI/dotfiles' real bspwm/
+; polybar/dunst setup (confirmed by reading a full local clone), plus its
+; own screenshots (assets/justtobbi-bspwm.png, workflow.png) for the
+; overall look. Its own README calls the whole rice "Catppuccin", and its
+; base background (#1e1e2e) is exactly Catppuccin Mocha's - but its real
+; colors.ini tweaks most of the actual accents away from stock Mocha
+; (fg=#d9e0ee vs Mocha's #cdd6f4, fg-alt=#6e6c7e vs #a6adc8, blue=#96cdfb
+; vs #89b4fa, red=#f28fad vs #f38ba8, green=#abe9b3 vs #a6e3a1, yellow=
+; #fae3b0 vs #f9e2af) - different enough from this rice's own stock
+; "catppuccin-mocha" port to be worth a separate theme rather than a
+; duplicate, so ported with its own real tweaked values rather than
+; swapped for an unrelated palette the way this rice's "daniela" port
+; (genuinely byte-identical to stock Mocha) had to be.
+;
+; Its real modules.ini fills the focused-workspace chip with a solid
+; background (`label-focused-background = ${colors.blue-alt}`) - given a
+; frame (underline+overline) instead here, same fix already applied to
+; this rice's own "alireza"/"breddie" ports: a filled chip on top of the
+; font reads visually heavier/larger than intended. Its rofi setup turned
+; out to just import the same generic third-party "Arc Dark" theme already
+; seen (and skipped for the same reason) porting this rice's "alireza"
+; source - not really Tobi's own design, so this port's rofi/dunst/kitty
+; all draw from Tobi's real Catppuccin-tweaked colors.ini instead, matching
+; how every other tool here already shares one theme's palette.
+[colors]
+base     = #1E1E2E
+mantle   = #181825
+surface0 = #313244
+text     = #D9E0EE
+subtext  = #6E6C7E
+blue     = #62B4F9
+sky      = #96CDFB
+cyan     = #89DCEB
+green    = #ABE9B3
+yellow   = #FAE3B0
+red      = #F28FAD
+pink     = #F5C2E7
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 10
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.blue}
+label-focused-underline = ${colors.blue}
+label-focused-overline = ${colors.blue}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-tobi gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = "%output%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.green}
+label-volume = "%percentage%%"
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.cyan}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.pink}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.pink}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
 cat > "$CONF/polybar/themes/varinka.ini" <<'EOF'
 ; Varinka - a genuine near-monochrome grayscale palette: reading the
 ; source's own colors.ini, keys named "red"/"purple"/"blue"/"cyan"/
@@ -6070,16 +7617,16 @@ index-sort = true
 wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
-label-focused-font = 2
+label-focused-font = 3
 label-focused-padding = 2
 label-focused-foreground = ${colors.base}
 label-focused-background = ${colors.blue}
 label-unfocused = ${self.ws-label}
-label-unfocused-font = 2
+label-unfocused-font = 3
 label-unfocused-padding = 2
 label-unfocused-foreground = ${colors.indigo}
 label-urgent = ${self.ws-label}
-label-urgent-font = 2
+label-urgent-font = 3
 label-urgent-padding = 2
 label-urgent-foreground = ${colors.red}
 
@@ -6221,6 +7768,310 @@ tray-padding = 6
 [settings]
 screenchange-reload = true
 EOF
+cat > "$CONF/polybar/themes/yucklys.ini" <<'EOF'
+; Yucklys - modeled directly on github.com/Yucklys/polybar-nord-theme's real
+; dark-colors/nord-top/nord-down/nord-config (a full local clone read
+; directly) plus its own polybar-nord.png screenshot. Real, distinguishing
+; choice vs this rice's existing "nord" port: that one is built from
+; nord1/nord2 surface layers + nord10 (#5e81ac) as its main accent; this
+; source never touches nord10 or nord1/nord2 at all - it stays fully flat
+; (no chip backgrounds anywhere except a genuine urgent-workspace/
+; temperature-warning invert and the powermenu "pill"), using underline-
+; only accents in nord7 (#8fbcbb, teal - focused workspace/title) and nord9
+; (#81a1c1, its real dominant secondary accent) instead. Colors below are
+; copied byte-for-byte from its real colors/dark-colors.
+;
+; Workspace switcher is genuinely unusual and kept as-is: focused shows a
+; roman-numeral icon (I-X, from its real ws-icon-N config) framed by a
+; teal underline; every UNFOCUSED workspace shows only a plain "*" dot in
+; nord9, not its own number - confirmed real (label-unfocused = "•" in its
+; actual nord-top), not a fetch artifact, unlike several icon glyphs
+; elsewhere in its config that came back blank (nerd-font codepoints that
+; didn't survive plain-text fetching) - those were filled in with icons
+; already used elsewhere in this rice's own themes rather than guessed.
+;
+; Its own module set leans on several services this system doesn't run
+; (mpd, an OpenWeather API key, a clash proxy, a personal onedrive client,
+; clipmenu, mullvad, a private daily-poem API, and a borrowed third-party
+; "nord-oneline" rofi launcher theme from lr-tech/rofi-themes-collection -
+; not really Yucklys' own design, same situation already hit porting
+; "alireza"'s rofi setup) - skipped rather than shipped broken or empty.
+; Its real, dependency-free modules (i3, title, capslock, pulseaudio,
+; network signal-ramp, cpu/memory, temperature, powermenu) are kept and
+; restyled only enough to fit this rice's font/icon set; this rice's own
+; usual widgets (backlight, media, cliamp, bluetooth, caffeine, dnd,
+; updates, layout, tray, date) are appended alongside them rather than
+; replacing anything. Powermenu keeps its real filled-pill look (solid
+; nord9 background) but is rewired to this rice's own powermenu.sh
+; ($mod+shift+p) instead of the source's rofi-power-menu modi, which isn\'t
+; installed here.
+[colors]
+base     = #2E3440
+mantle   = #2E3440
+surface0 = #4C566A
+surface1 = #4C566A
+text     = #D8DEE9
+subtext  = #4C566A
+mauve    = #81A1C1
+lavender = #B48EAD
+sky      = #88C0D0
+green    = #A3BE8C
+teal     = #8FBCBB
+yellow   = #EBCB8B
+peach    = #D08770
+red      = #BF616A
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 4
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3 title
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
+
+; --- real widgets, from the source's own nord-top/nord-down -----------------
+[module/i3]
+type = internal/i3
+format = <label-state> <label-mode>
+index-sort = true
+enable-scroll = true
+wrapping-scroll = true
+ws-icon-0 = 1;I
+ws-icon-1 = 2;II
+ws-icon-2 = 3;III
+ws-icon-3 = 4;IV
+ws-icon-4 = 5;V
+ws-icon-5 = 6;VI
+ws-icon-6 = 7;VII
+ws-icon-7 = 8;VIII
+ws-icon-8 = 9;IX
+ws-icon-9 = 10;X
+label-focused = %icon%
+label-focused-font = 3
+label-focused-foreground = ${colors.teal}
+label-focused-underline = ${colors.teal}
+label-focused-padding = 2
+label-unfocused = *
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.mauve}
+label-unfocused-padding = 2
+label-urgent = %icon%
+label-urgent-font = 3
+label-urgent-foreground = ${colors.text}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 2
+
+[module/title]
+type = internal/xwindow
+format = <label>
+format-underline = ${colors.teal}
+label = %title%
+label-maxlen = 20
+label-empty = Desktop
+label-padding = 2
+
+[module/keyboard]
+type = internal/xkeyboard
+blacklist-0 = num lock
+blacklist-1 = scroll lock
+format = <label-indicator>
+label-indicator-on = " CL"
+label-indicator-on-foreground = ${colors.peach}
+format-underline = ${colors.peach}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume = <label-volume>
+format-volume-underline = ${colors.lavender}
+label-volume = "  %percentage%%"
+label-volume-foreground = ${colors.green}
+label-muted = " muted"
+label-muted-foreground = ${colors.red}
+
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:} %ifname%%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+; Real 4-level signal-strength ramp from the source (urgent/notify/nord7/
+; success by strength) - its actual distinguishing touch vs every other
+; theme's plain-text network module here.
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected = <ramp-signal> <label-connected>
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid%%{A}%{A}%{A}"
+ramp-signal-0 = ▂
+ramp-signal-0-foreground = ${colors.red}
+ramp-signal-1 = ▄
+ramp-signal-1-foreground = ${colors.yellow}
+ramp-signal-2 = ▆
+ramp-signal-2-foreground = ${colors.teal}
+ramp-signal-3 = █
+ramp-signal-3-foreground = ${colors.green}
+format-disconnected =
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format = <label>
+label = "  %percentage%%"
+label-foreground = ${colors.green}
+
+[module/memory]
+type = internal/memory
+interval = 2
+format = <label>
+label = "  %percentage_used%%"
+label-foreground = ${colors.yellow}
+
+[module/temperature]
+type = internal/temperature
+thermal-zone = 0
+base-temperature = 20
+warn-temperature = 70
+format = <ramp><label>
+format-warn = <label-warn>
+format-warn-background = ${colors.text}
+label = " %temperature-c%"
+label-warn = " %temperature-c%"
+label-warn-foreground = ${colors.red}
+ramp-0 =
+ramp-0-foreground = ${colors.sky}
+ramp-1 =
+ramp-1-foreground = ${colors.green}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "  %output%%"
+label-foreground = ${colors.mauve}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.green}
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.sky}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging = <label-charging>
+format-charging-underline = ${colors.text}
+label-charging = "  %percentage%%"
+label-charging-foreground = ${colors.text}
+format-discharging = <label-discharging>
+format-discharging-underline = ${colors.yellow}
+label-discharging = "  %percentage%%"
+label-discharging-foreground = ${colors.text}
+label-full = " Full"
+label-full-foreground = ${colors.green}
+format-full-underline = ${colors.green}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+format = <label>
+label-foreground = ${colors.yellow}
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[module/date]
+type = internal/date
+interval = 1
+date = %H:%M
+date-alt = %Y-%m-%d %a
+format = <label>
+label = "%{A1:GTK_THEME=Rice-yucklys gnome-calendar &:} %date%%{A}"
+label-foreground = ${colors.text}
+label-underline = ${colors.sky}
+
+; Real filled "pill" - the source's own distinctive treatment for its
+; powermenu icon (solid nord9 background, base-color text) rather than an
+; underline like everything else here.
+[module/powermenu]
+type = custom/text
+format = <label>
+label = " ⏻ "
+label-background = ${colors.mauve}
+label-foreground = ${colors.base}
+click-left = ~/.local/bin/powermenu.sh &
+
+[settings]
+screenchange-reload = true
+EOF
 
 cat > "$CONF/polybar/themes/z0mbi3.ini" <<'EOF'
 ; Z0mbi3 - a Nord-adjacent but genuinely distinct dark navy palette
@@ -6291,15 +8142,15 @@ index-sort = true
 wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
-label-focused-font = 2
+label-focused-font = 3
 label-focused-foreground = ${colors.text}
 label-focused-padding = 2
 label-unfocused = ${self.ws-label}
-label-unfocused-font = 2
+label-unfocused-font = 3
 label-unfocused-foreground = ${colors.subtext}
 label-unfocused-padding = 2
 label-urgent = ${self.ws-label}
-label-urgent-font = 2
+label-urgent-font = 3
 label-urgent-foreground = ${colors.red}
 label-urgent-padding = 2
 
@@ -6727,6 +8578,454 @@ format-background = ${colors.tray-bg}
 screenchange-reload = true
 EOF
 
+cat > "$CONF/polybar/themes/alireza-square.ini" <<'EOF'
+; Alireza - modeled directly on codeberg.org/alirezaalavi/dotfiles' real i3
+; setup, corrected against its own screenshots (screenshots/i3_dracula_2025-
+; {1,2,3}.png) after an earlier config-only pass missed the actual look:
+; that i3bar/i3status-rust bar renders almost everything in plain WHITE
+; text (icons.icons="awesome6" gives small monochrome glyphs, not per-
+; module colored ones) on a bar that's visibly near-black - noticeably
+; darker than the #282a36 window/terminal background seen in the same
+; screenshots (nvim, the file manager, the terminal), not the same shade -
+; ported here as a distinct "mantle" (bar-only) vs "base" (everything
+; else) split, unlike most other themes in this set which keep the two
+; identical. Color is reserved for the workspace indicator (their own
+; colorscheme.conf: focused/urgent both FILL border+background with
+; accent, not just text) and for in-app selection highlights, which the
+; screenshots show as PINK far more often than the purple their i3
+; colorscheme.conf uses for window borders (the file manager's selected
+; row, the terminal music player's selected track, and the cava-style
+; volume bars are all pink) - ported as this theme's dominant in-app
+; accent, with purple kept specifically for the window-border/workspace-
+; chip role their colorscheme.conf actually specifies. Two of their own
+; deviations from stock Dracula carry over unchanged from the first pass:
+; a brighter red (#FF5E76, used consistently in both their i3 colorscheme
+; and their sway waybar CSS - not a one-off) instead of stock #ff5555, and
+; a second lighter purple ("purple_dark1", #938BFF, named "lavender" here)
+; for inactive workspace text.
+[colors]
+base     = #282A36
+mantle   = #191A21
+surface0 = #44475A
+text     = #F8F8F2
+subtext  = #6272A4
+purple   = #BD93F9
+lavender = #938BFF
+red      = #FF5E76
+green    = #50FA7B
+orange   = #FFB86C
+pink     = #FF79C6
+yellow   = #F1FA8C
+cyan     = #8BE9FD
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.mantle}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 1
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+underline-size = 2
+overline-size = 2
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Plain white text throughout, matching the source's actual near-monochrome
+; bar (its own real accents show up on window borders and in-app selections,
+; not here) - only the workspace chip and low-battery/muted-volume states
+; get real color, same restraint the source's own bar shows.
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+; Focused gets a frame (underline+overline), not a solid fill - a filled
+; chip on top of the font read visually heavier/larger than intended.
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.purple}
+label-focused-underline = ${colors.purple}
+label-focused-overline = ${colors.purple}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.lavender}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.text}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-alireza gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "%percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.pink}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.pink}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+; Only the "low" state (under low-at%, not charging) actually gets colored -
+; one of the only places the source's otherwise monochrome bar shows real
+; color at all.
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/archblur-square.ini" <<'EOF'
+; Archblur - modeled directly on github.com/kiddae/polybar-themes'
+; "arch-blur" bar (confirmed by reading a full local clone). That whole
+; archive's configs pull every color from the user's own ~/.Xresources via
+; xrdb, with only bare black/white as fallbacks - no fixed palette is
+; actually checked in for any of its themes. Its bspwmrc, though, sources
+; "$HOME/.colors/gruvbox/gruvbox.sh" for its actual real desktop colors
+; (confirmed live in the source archive's own "tiny" folder screenshot,
+; showing that exact
+; source line) - real, published Gruvbox Dark values used here for every
+; theme drawn from this archive, differing between them by structure
+; (height/radius/spacing/accent role) rather than a from-scratch palette
+; each time, the same way the archive's own bar variants were always
+; meant to share one desktop colorscheme.
+[colors]
+base     = #282828
+mantle   = #1D2021
+surface0 = #3C3836
+surface1 = #504945
+text     = #EBDBB2
+subtext  = #A89984
+red      = #FB4934
+green    = #B8BB26
+yellow   = #FABD2F
+blue     = #83A598
+purple   = #D3869B
+aqua     = #8EC07C
+orange   = #FE8019
+gray     = #928374
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 32
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.orange}
+label-focused-underline = ${colors.orange}
+label-focused-overline = ${colors.orange}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-archblur gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "%percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.orange}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.orange}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
 cat > "$CONF/polybar/themes/archcraft-square.ini" <<'EOF'
 ; Archcraft - grouped clusters bracketed by rounded-cap decorators, where
 ; the group's own widgets share the SAME background as the caps so the
@@ -6985,6 +9284,234 @@ tray-spacing = 8
 tray-padding = 6
 format-background = ${colors.surface0}
 tray-background = ${colors.surface0}
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/breddie-square.ini" <<'EOF'
+; Breddie - modeled directly on codeberg.org/breddiesucks/dotfiles' real
+; polybar/rofi/dunst/alacritty configs and its actual XMonad window-border
+; colors (xmonad/xmonad.hs: myFocusedBorderColor "#acb0d0", myNormalBorder-
+; Color "#444b61" - confirmed by reading a full local clone), plus its own
+; screenshots (.showoff/01.png, 02.png) for the overall look: a near-black
+; TokyoNight-family background (#1a1b26, its alacritty.toml's own primary
+; background - the same well-known open palette this rice's own "daniela"
+; theme already called "Tokyo-Night-ADJACENT" rather than exact; this port
+; uses the source's real hex values directly) with an almost monochrome
+; bar - workspace numbers and stats all in one muted light color, no
+; per-module color-coding - color reserved for the focused-workspace
+; accent and alert states, the same restraint this rice's own "isabel"/
+; "alireza" ports already follow for similarly minimal sources.
+;
+; Two real bugs in the source were not carried over, same policy already
+; applied to this rice's own "isabel"/"pamela" ports: its polybar
+; [colors] "alert" is a literal typo (`#D9EBCB8R` - R isn't a hex digit),
+; clearly meant to be its alacritty yellow (`#ebcb8c`) - used here as
+; intended. Its xworkspaces "active" state sets a background-alt that's
+; IDENTICAL to the bar's own background (`background-alt = background`),
+; making the focused-workspace indicator invisible in practice - given a
+; real underline+overline frame instead (this rice's own "alireza" fix for
+; the same class of problem), using the real accent its xmonad.hs actually
+; assigns to focused windows (`#acb0d0`) rather than an invisible chip.
+[colors]
+base     = #1A1B26
+mantle   = #1A1B26
+surface0 = #292A44
+text     = #E5E9F0
+subtext  = #444B61
+lavender = #ACB0D0
+blue     = #7AA2F7
+cyan     = #0DB9D7
+green    = #9ECE6A
+yellow   = #EBCB8C
+orange   = #FF9E64
+red      = #F7768E
+purple   = #BB9AF7
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.lavender}
+label-focused-underline = ${colors.lavender}
+label-focused-overline = ${colors.lavender}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.yellow}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-breddie gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "VOL %percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "MUTED"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.purple}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.purple}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+; Only the "low" state (under low-at%, not charging) actually gets colored -
+; matching the near-monochrome restraint the source's own bar shows.
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
 
 [settings]
 screenchange-reload = true
@@ -7561,6 +10088,428 @@ format-overline = ${colors.mauve}
 screenchange-reload = true
 EOF
 
+cat > "$CONF/polybar/themes/cherryblocks-square.ini" <<'EOF'
+; Cherryblocks - modeled directly on github.com/kiddae/polybar-themes'
+; "cherryblocks" bar (confirmed by reading a full local clone) - its own
+; screenshot shows the bottom bar as several visually SEPARATE rounded
+; blocks with real gaps between them, not one continuous strip - ported
+; here via a wider module-margin than any other theme in this set, giving
+; each widget group real breathing room instead of a merged bar. "Cherry"
+; for the red accent, matching the theme's own name. Gruvbox Dark palette
+; (see "archblur" for how that was confirmed), structure the
+; differentiator.
+[colors]
+base     = #282828
+mantle   = #1D2021
+surface0 = #3C3836
+surface1 = #504945
+text     = #EBDBB2
+subtext  = #A89984
+red      = #FB4934
+green    = #B8BB26
+yellow   = #FABD2F
+blue     = #83A598
+purple   = #D3869B
+aqua     = #8EC07C
+orange   = #FE8019
+gray     = #928374
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 3
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.red}
+label-focused-underline = ${colors.red}
+label-focused-overline = ${colors.red}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-cherryblocks gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "%percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.red}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.red}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+cat > "$CONF/polybar/themes/classic-square.ini" <<'EOF'
+; Classic - modeled directly on github.com/kiddae/polybar-themes'
+; "classic2-rounded" bar (confirmed by reading a full local clone) - its
+; own screenshot is almost entirely grayscale, just plain light text on a
+; near-black bar with a single small colored dot marking the focused
+; workspace - ported here as a deliberately near-monochrome theme, most
+; widgets left in muted subtext, with the workspace accent as the one
+; spot of real color. Gruvbox Dark palette (see "archblur" for how that
+; was confirmed), structure the differentiator.
+[colors]
+base     = #282828
+mantle   = #1D2021
+surface0 = #3C3836
+surface1 = #504945
+text     = #EBDBB2
+subtext  = #A89984
+red      = #FB4934
+green    = #B8BB26
+yellow   = #FABD2F
+blue     = #83A598
+purple   = #D3869B
+aqua     = #8EC07C
+orange   = #FE8019
+gray     = #928374
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 28
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.orange}
+label-focused-underline = ${colors.orange}
+label-focused-overline = ${colors.orange}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-classic gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "%percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.orange}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.orange}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
 cat > "$CONF/polybar/themes/cristina-square.ini" <<'EOF'
 ; Cristina - individually-colored pill capsules: each quantifiable widget
 ; gets its OWN rounded-cap bracket pair (U+E0B6/U+E0B4, same glyph family
@@ -7634,15 +10583,15 @@ index-sort = true
 wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
-label-focused-font = 2
+label-focused-font = 3
 label-focused-foreground = ${colors.lime}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
-label-unfocused-font = 2
+label-unfocused-font = 3
 label-unfocused-foreground = ${colors.subtext}
 label-unfocused-padding = 1
 label-urgent = ${self.ws-label}
-label-urgent-font = 2
+label-urgent-font = 3
 label-urgent-foreground = ${colors.purple}
 label-urgent-padding = 1
 
@@ -8072,15 +11021,15 @@ index-sort = true
 wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
-label-focused-font = 2
+label-focused-font = 3
 label-focused-foreground = ${colors.blue}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
-label-unfocused-font = 2
+label-unfocused-font = 3
 label-unfocused-foreground = ${colors.subtext}
 label-unfocused-padding = 1
 label-urgent = ${self.ws-label}
-label-urgent-font = 2
+label-urgent-font = 3
 label-urgent-foreground = ${colors.red}
 label-urgent-padding = 1
 
@@ -8686,6 +11635,218 @@ type = custom/script
 exec = ~/.local/bin/polybar-layout.sh
 interval = 1
 format = <label>
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
+cat > "$CONF/polybar/themes/float-square.ini" <<'EOF'
+; Float - modeled directly on github.com/kiddae/polybar-themes' "float2"
+; bar (confirmed by reading a full local clone) - its real config sets a
+; real inset (offset-x/y = 20px) and a thick same-color-as-background
+; border, making the bar visually detach/float off the screen edges
+; rather than sit flush against them - approximated here with generous
+; left/right padding and a larger corner radius, the closest polybar
+; equivalent this rice's other themes already use. Gruvbox Dark palette
+; (see "archblur" for how that was confirmed), structure the
+; differentiator.
+[colors]
+base     = #282828
+mantle   = #1D2021
+surface0 = #3C3836
+surface1 = #504945
+text     = #EBDBB2
+subtext  = #A89984
+red      = #FB4934
+green    = #B8BB26
+yellow   = #FABD2F
+blue     = #83A598
+purple   = #D3869B
+aqua     = #8EC07C
+orange   = #FE8019
+gray     = #928374
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 8
+padding-right = 8
+module-margin = 2
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.aqua}
+label-focused-underline = ${colors.aqua}
+label-focused-overline = ${colors.aqua}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-float gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "%output%%"
+label-foreground = ${colors.text}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+label-volume = "%percentage%%"
+label-volume-foreground = ${colors.text}
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.text}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.aqua}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.aqua}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.text}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
 
 [module/tray]
 type = internal/tray
@@ -10753,6 +13914,233 @@ tray-padding = 6
 screenchange-reload = true
 EOF
 
+cat > "$CONF/polybar/themes/tobi-square.ini" <<'EOF'
+; Tobi - modeled directly on codeberg.org/justTOBBI/dotfiles' real bspwm/
+; polybar/dunst setup (confirmed by reading a full local clone), plus its
+; own screenshots (assets/justtobbi-bspwm.png, workflow.png) for the
+; overall look. Its own README calls the whole rice "Catppuccin", and its
+; base background (#1e1e2e) is exactly Catppuccin Mocha's - but its real
+; colors.ini tweaks most of the actual accents away from stock Mocha
+; (fg=#d9e0ee vs Mocha's #cdd6f4, fg-alt=#6e6c7e vs #a6adc8, blue=#96cdfb
+; vs #89b4fa, red=#f28fad vs #f38ba8, green=#abe9b3 vs #a6e3a1, yellow=
+; #fae3b0 vs #f9e2af) - different enough from this rice's own stock
+; "catppuccin-mocha" port to be worth a separate theme rather than a
+; duplicate, so ported with its own real tweaked values rather than
+; swapped for an unrelated palette the way this rice's "daniela" port
+; (genuinely byte-identical to stock Mocha) had to be.
+;
+; Its real modules.ini fills the focused-workspace chip with a solid
+; background (`label-focused-background = ${colors.blue-alt}`) - given a
+; frame (underline+overline) instead here, same fix already applied to
+; this rice's own "alireza"/"breddie" ports: a filled chip on top of the
+; font reads visually heavier/larger than intended. Its rofi setup turned
+; out to just import the same generic third-party "Arc Dark" theme already
+; seen (and skipped for the same reason) porting this rice's "alireza"
+; source - not really Tobi's own design, so this port's rofi/dunst/kitty
+; all draw from Tobi's real Catppuccin-tweaked colors.ini instead, matching
+; how every other tool here already shares one theme's palette.
+[colors]
+base     = #1E1E2E
+mantle   = #181825
+surface0 = #313244
+text     = #D9E0EE
+subtext  = #6E6C7E
+blue     = #62B4F9
+sky      = #96CDFB
+cyan     = #89DCEB
+green    = #ABE9B3
+yellow   = #FAE3B0
+red      = #F28FAD
+pink     = #F5C2E7
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+overline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+
+; --- real widgets ------------------------------------------------------------
+; Frame (underline+overline), not a solid fill, for focused - a filled chip
+; on top of the font reads visually heavier/larger than intended (confirmed
+; the hard way porting this rice's own "alireza" theme).
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+ws-label = %index%
+label-focused = ${self.ws-label}
+label-focused-font = 3
+label-focused-foreground = ${colors.blue}
+label-focused-underline = ${colors.blue}
+label-focused-overline = ${colors.blue}
+label-focused-padding = 1
+label-unfocused = ${self.ws-label}
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = ${self.ws-label}
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+label = "%{A1:GTK_THEME=Rice-tobi gnome-calendar &:}%date%  %time%%{A}"
+label-foreground = ${colors.text}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+format-prefix = "󰃟 "
+format-prefix-foreground = ${colors.yellow}
+label = "%output%%"
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " "
+format-volume-prefix-foreground = ${colors.green}
+label-volume = "%percentage%%"
+label-muted = "muted"
+label-muted-foreground = ${colors.subtext}
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.cyan}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+label-foreground = ${colors.pink}
+format = <label>
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+label-foreground = ${colors.pink}
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+low-at = 15
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+label-low = "%percentage%%"
+label-charging-foreground = ${colors.text}
+label-discharging-foreground = ${colors.text}
+label-full-foreground = ${colors.text}
+label-low-foreground = ${colors.red}
+
+[module/memory]
+type = internal/memory
+interval = 2
+label = "%percentage_used%%"
+label-foreground = ${colors.text}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+label = "%percentage%%"
+label-foreground = ${colors.text}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-foreground = ${colors.yellow}
+format = <label>
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+
 cat > "$CONF/polybar/themes/varinka-square.ini" <<'EOF'
 ; Varinka - a genuine near-monochrome grayscale palette: reading the
 ; source's own colors.ini, keys named "red"/"purple"/"blue"/"cyan"/
@@ -11023,16 +14411,16 @@ index-sort = true
 wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
-label-focused-font = 2
+label-focused-font = 3
 label-focused-padding = 2
 label-focused-foreground = ${colors.base}
 label-focused-background = ${colors.blue}
 label-unfocused = ${self.ws-label}
-label-unfocused-font = 2
+label-unfocused-font = 3
 label-unfocused-padding = 2
 label-unfocused-foreground = ${colors.indigo}
 label-urgent = ${self.ws-label}
-label-urgent-font = 2
+label-urgent-font = 3
 label-urgent-padding = 2
 label-urgent-foreground = ${colors.red}
 
@@ -11174,6 +14562,310 @@ tray-padding = 6
 [settings]
 screenchange-reload = true
 EOF
+cat > "$CONF/polybar/themes/yucklys-square.ini" <<'EOF'
+; Yucklys - modeled directly on github.com/Yucklys/polybar-nord-theme's real
+; dark-colors/nord-top/nord-down/nord-config (a full local clone read
+; directly) plus its own polybar-nord.png screenshot. Real, distinguishing
+; choice vs this rice's existing "nord" port: that one is built from
+; nord1/nord2 surface layers + nord10 (#5e81ac) as its main accent; this
+; source never touches nord10 or nord1/nord2 at all - it stays fully flat
+; (no chip backgrounds anywhere except a genuine urgent-workspace/
+; temperature-warning invert and the powermenu "pill"), using underline-
+; only accents in nord7 (#8fbcbb, teal - focused workspace/title) and nord9
+; (#81a1c1, its real dominant secondary accent) instead. Colors below are
+; copied byte-for-byte from its real colors/dark-colors.
+;
+; Workspace switcher is genuinely unusual and kept as-is: focused shows a
+; roman-numeral icon (I-X, from its real ws-icon-N config) framed by a
+; teal underline; every UNFOCUSED workspace shows only a plain "*" dot in
+; nord9, not its own number - confirmed real (label-unfocused = "•" in its
+; actual nord-top), not a fetch artifact, unlike several icon glyphs
+; elsewhere in its config that came back blank (nerd-font codepoints that
+; didn't survive plain-text fetching) - those were filled in with icons
+; already used elsewhere in this rice's own themes rather than guessed.
+;
+; Its own module set leans on several services this system doesn't run
+; (mpd, an OpenWeather API key, a clash proxy, a personal onedrive client,
+; clipmenu, mullvad, a private daily-poem API, and a borrowed third-party
+; "nord-oneline" rofi launcher theme from lr-tech/rofi-themes-collection -
+; not really Yucklys' own design, same situation already hit porting
+; "alireza"'s rofi setup) - skipped rather than shipped broken or empty.
+; Its real, dependency-free modules (i3, title, capslock, pulseaudio,
+; network signal-ramp, cpu/memory, temperature, powermenu) are kept and
+; restyled only enough to fit this rice's font/icon set; this rice's own
+; usual widgets (backlight, media, cliamp, bluetooth, caffeine, dnd,
+; updates, layout, tray, date) are appended alongside them rather than
+; replacing anything. Powermenu keeps its real filled-pill look (solid
+; nord9 background) but is rewired to this rice's own powermenu.sh
+; ($mod+shift+p) instead of the source's rofi-power-menu modi, which isn\'t
+; installed here.
+[colors]
+base     = #2E3440
+mantle   = #2E3440
+surface0 = #4C566A
+surface1 = #4C566A
+text     = #D8DEE9
+subtext  = #4C566A
+mauve    = #81A1C1
+lavender = #B48EAD
+sky      = #88C0D0
+green    = #A3BE8C
+teal     = #8FBCBB
+yellow   = #EBCB8B
+peach    = #D08770
+red      = #BF616A
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3 title
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
+
+; --- real widgets, from the source's own nord-top/nord-down -----------------
+[module/i3]
+type = internal/i3
+format = <label-state> <label-mode>
+index-sort = true
+enable-scroll = true
+wrapping-scroll = true
+ws-icon-0 = 1;I
+ws-icon-1 = 2;II
+ws-icon-2 = 3;III
+ws-icon-3 = 4;IV
+ws-icon-4 = 5;V
+ws-icon-5 = 6;VI
+ws-icon-6 = 7;VII
+ws-icon-7 = 8;VIII
+ws-icon-8 = 9;IX
+ws-icon-9 = 10;X
+label-focused = %icon%
+label-focused-font = 3
+label-focused-foreground = ${colors.teal}
+label-focused-underline = ${colors.teal}
+label-focused-padding = 2
+label-unfocused = *
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.mauve}
+label-unfocused-padding = 2
+label-urgent = %icon%
+label-urgent-font = 3
+label-urgent-foreground = ${colors.text}
+label-urgent-background = ${colors.red}
+label-urgent-padding = 2
+
+[module/title]
+type = internal/xwindow
+format = <label>
+format-underline = ${colors.teal}
+label = %title%
+label-maxlen = 20
+label-empty = Desktop
+label-padding = 2
+
+[module/keyboard]
+type = internal/xkeyboard
+blacklist-0 = num lock
+blacklist-1 = scroll lock
+format = <label-indicator>
+label-indicator-on = " CL"
+label-indicator-on-foreground = ${colors.peach}
+format-underline = ${colors.peach}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume = <label-volume>
+format-volume-underline = ${colors.lavender}
+label-volume = "  %percentage%%"
+label-volume-foreground = ${colors.green}
+label-muted = " muted"
+label-muted-foreground = ${colors.red}
+
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:} %ifname%%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+; Real 4-level signal-strength ramp from the source (urgent/notify/nord7/
+; success by strength) - its actual distinguishing touch vs every other
+; theme's plain-text network module here.
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected = <ramp-signal> <label-connected>
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid%%{A}%{A}%{A}"
+ramp-signal-0 = ▂
+ramp-signal-0-foreground = ${colors.red}
+ramp-signal-1 = ▄
+ramp-signal-1-foreground = ${colors.yellow}
+ramp-signal-2 = ▆
+ramp-signal-2-foreground = ${colors.teal}
+ramp-signal-3 = █
+ramp-signal-3-foreground = ${colors.green}
+format-disconnected =
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format = <label>
+label = "  %percentage%%"
+label-foreground = ${colors.green}
+
+[module/memory]
+type = internal/memory
+interval = 2
+format = <label>
+label = "  %percentage_used%%"
+label-foreground = ${colors.yellow}
+
+[module/temperature]
+type = internal/temperature
+thermal-zone = 0
+base-temperature = 20
+warn-temperature = 70
+format = <ramp><label>
+format-warn = <label-warn>
+format-warn-background = ${colors.text}
+label = " %temperature-c%"
+label-warn = " %temperature-c%"
+label-warn-foreground = ${colors.red}
+ramp-0 =
+ramp-0-foreground = ${colors.sky}
+ramp-1 =
+ramp-1-foreground = ${colors.green}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "  %output%%"
+label-foreground = ${colors.mauve}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.green}
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.sky}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging = <label-charging>
+format-charging-underline = ${colors.text}
+label-charging = "  %percentage%%"
+label-charging-foreground = ${colors.text}
+format-discharging = <label-discharging>
+format-discharging-underline = ${colors.yellow}
+label-discharging = "  %percentage%%"
+label-discharging-foreground = ${colors.text}
+label-full = " Full"
+label-full-foreground = ${colors.green}
+format-full-underline = ${colors.green}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+format = <label>
+label-foreground = ${colors.yellow}
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[module/date]
+type = internal/date
+interval = 1
+date = %H:%M
+date-alt = %Y-%m-%d %a
+format = <label>
+label = "%{A1:GTK_THEME=Rice-yucklys gnome-calendar &:} %date%%{A}"
+label-foreground = ${colors.text}
+label-underline = ${colors.sky}
+
+; Real filled "pill" - the source's own distinctive treatment for its
+; powermenu icon (solid nord9 background, base-color text) rather than an
+; underline like everything else here.
+[module/powermenu]
+type = custom/text
+format = <label>
+label = " ⏻ "
+label-background = ${colors.mauve}
+label-foreground = ${colors.base}
+click-left = ~/.local/bin/powermenu.sh &
+
+[settings]
+screenchange-reload = true
+EOF
 
 cat > "$CONF/polybar/themes/z0mbi3-square.ini" <<'EOF'
 ; Z0mbi3 - a Nord-adjacent but genuinely distinct dark navy palette
@@ -11244,15 +14936,15 @@ index-sort = true
 wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
-label-focused-font = 2
+label-focused-font = 3
 label-focused-foreground = ${colors.text}
 label-focused-padding = 2
 label-unfocused = ${self.ws-label}
-label-unfocused-font = 2
+label-unfocused-font = 3
 label-unfocused-foreground = ${colors.subtext}
 label-unfocused-padding = 2
 label-urgent = ${self.ws-label}
-label-urgent-font = 2
+label-urgent-font = 3
 label-urgent-foreground = ${colors.red}
 label-urgent-padding = 2
 
@@ -11894,13 +15586,13 @@ cat > "$BIN/caffeine-toggle.sh" <<'EOF'
 #      systemd-logind won't suspend even on lid close, matching what the
 #      screensaver-based inhibition alone wouldn't cover.
 PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/caffeine.pid"
-# Must match the i3 config's own startup `xset s 1800 dpms 1800 3600 5400`
+# Must match the i3 config's own startup `xset s 1200 dpms 3000 3000 3000`
 # exactly - this used to be a stale "300 dpms 300 600 900" (5min) left
 # over from an earlier default, so toggling caffeine off silently dropped
-# the real 30min idle timeout down to 5min from then on for the rest of
-# the session, cutting the screensaver's own on-screen time short well
-# before the intended 30 minutes.
-IDLE_RESTORE="1800 dpms 1800 3600 5400"
+# the real idle timeout down to 5min from then on for the rest of the
+# session, cutting the screensaver's own on-screen time short well before
+# intended.
+IDLE_RESTORE="1200 dpms 3000 3000 3000"
 
 if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
   kill "$(cat "$PIDFILE")" 2>/dev/null
@@ -12701,6 +16393,231 @@ element-text {
 }
 EOF
 
+cat > "$CONF/rofi/themes/alireza.rasi" <<'EOF'
+* {
+    base:     #282A36db;
+    mantle:   #282A3603;
+    text:     #F8F8F2ff;
+    subtext:  #6272A4ff;
+    purple:   #BD93F9ff;
+    pink:     #FF79C6ff;
+    surface0: #44475A80;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @purple; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+/* Pink, not purple, for the selected row - the source's own screenshots
+ * (file manager's selected folder, the terminal music player's selected
+ * track) consistently highlight in pink, reserving purple for the window
+ * border/workspace-chip role its colorscheme.conf actually assigns it. */
+element selected {
+    background-color: @surface0;
+    text-color: @pink;
+}
+EOF
+cat > "$CONF/rofi/themes/alireza-powermenu.rasi" <<'EOF'
+* {
+    base:     #282A36db;
+    mantle:   #282A3603;
+    text:     #F8F8F2ff;
+    subtext:  #6272A4ff;
+    purple:   #BD93F9ff;
+    pink:     #FF79C6ff;
+    surface0: #44475A80;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @purple;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @pink;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/archblur.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FE8019ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @accent; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @accent;
+}
+EOF
+cat > "$CONF/rofi/themes/archblur-powermenu.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FE8019ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
 cat > "$CONF/rofi/themes/archcraft.rasi" <<'EOF'
 * {
     base:     #1E222Aff;
@@ -12799,6 +16716,121 @@ element selected {
     background-color: @surface0;
     border: 2px;
     border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/breddie.rasi" <<'EOF'
+/* Same fix as this rice's own "isabel"/"pamela" ports: the source's real
+ * rofi config sets bg-selected to the exact same value as bg
+ * (`bg: #1a1b2666; bg-selected: #1a1b2666;`), making the selected row
+ * invisible in practice - given a real, visible highlight here instead. */
+* {
+    base:     #1A1B26db;
+    mantle:   #1A1B2603;
+    text:     #E5E9F0ff;
+    subtext:  #444B61ff;
+    lavender: #ACB0D0ff;
+    surface0: #292A4480;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @lavender; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @lavender;
+}
+EOF
+cat > "$CONF/rofi/themes/breddie-powermenu.rasi" <<'EOF'
+* {
+    base:     #1A1B26db;
+    mantle:   #1A1B2603;
+    text:     #E5E9F0ff;
+    subtext:  #444B61ff;
+    lavender: #ACB0D0ff;
+    surface0: #292A4480;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @lavender;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @lavender;
     border-radius: 14px;
 }
 element-text {
@@ -13032,6 +17064,221 @@ element-text {
     /* Nerd Font glyphs' advance width isn't visually symmetric around their
        ink - 0.5 (true center) renders visibly right-of-center, so this is
        nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/cherryblocks.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FB4934ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @accent; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @accent;
+}
+EOF
+cat > "$CONF/rofi/themes/cherryblocks-powermenu.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FB4934ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/rofi/themes/classic.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FE8019ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @accent; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @accent;
+}
+EOF
+cat > "$CONF/rofi/themes/classic-powermenu.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FE8019ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
     horizontal-align: 0.32;
     vertical-align: 0.5;
 }
@@ -13592,6 +17839,114 @@ element-text {
     /* Nerd Font glyphs' advance width isn't visually symmetric around their
        ink - 0.5 (true center) renders visibly right-of-center, so this is
        nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/float.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #8EC07Cff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @accent; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @accent;
+}
+EOF
+cat > "$CONF/rofi/themes/float-powermenu.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #8EC07Cff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
     horizontal-align: 0.32;
     vertical-align: 0.5;
 }
@@ -14605,6 +18960,117 @@ element-text {
 }
 EOF
 
+cat > "$CONF/rofi/themes/tobi.rasi" <<'EOF'
+* {
+    base:     #1E1E2Eff;
+    mantle:   #181825ff;
+    text:     #D9E0EEff;
+    subtext:  #6E6C7Eff;
+    blue:     #62B4F9ff;
+    surface0: #313244ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @blue; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @blue;
+}
+EOF
+cat > "$CONF/rofi/themes/tobi-powermenu.rasi" <<'EOF'
+* {
+    base:     #1E1E2Eff;
+    mantle:   #181825ff;
+    text:     #D9E0EEff;
+    subtext:  #6E6C7Eff;
+    blue:     #62B4F9ff;
+    surface0: #313244ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @blue;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @blue;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
 cat > "$CONF/rofi/themes/varinka.rasi" <<'EOF'
 * {
     base:     #212529ff;
@@ -14716,6 +19182,64 @@ element-text {
     vertical-align: 0.5;
 }
 EOF
+cat > "$CONF/rofi/themes/yucklys-powermenu.rasi" <<'EOF'
+* {
+    base:     #2E3440ff;
+    mantle:   #2E3440ff;
+    text:     #D8DEE9ff;
+    subtext:  #4C566Aff;
+    mauve:    #81A1C1ff;
+    surface0: #4C566Aff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
 
 cat > "$CONF/rofi/themes/yael.rasi" <<'EOF'
 * {
@@ -14725,6 +19249,55 @@ cat > "$CONF/rofi/themes/yael.rasi" <<'EOF'
     subtext:  #8C8C8Cff;
     mauve:    #33B1FFff;
     surface0: #262626ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/yucklys.rasi" <<'EOF'
+* {
+    base:     #2E3440ff;
+    mantle:   #2E3440ff;
+    text:     #D8DEE9ff;
+    subtext:  #4C566Aff;
+    mauve:    #81A1C1ff;
+    surface0: #4C566Aff;
 
     background-color: @base;
     text-color: @text;
@@ -14991,6 +19564,231 @@ element-text {
 }
 EOF
 
+cat > "$CONF/rofi/themes/alireza-square.rasi" <<'EOF'
+* {
+    base:     #282A36db;
+    mantle:   #282A3603;
+    text:     #F8F8F2ff;
+    subtext:  #6272A4ff;
+    purple:   #BD93F9ff;
+    pink:     #FF79C6ff;
+    surface0: #44475A80;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @purple; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+/* Pink, not purple, for the selected row - the source's own screenshots
+ * (file manager's selected folder, the terminal music player's selected
+ * track) consistently highlight in pink, reserving purple for the window
+ * border/workspace-chip role its colorscheme.conf actually assigns it. */
+element selected {
+    background-color: @surface0;
+    text-color: @pink;
+}
+EOF
+cat > "$CONF/rofi/themes/alireza-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #282A36db;
+    mantle:   #282A3603;
+    text:     #F8F8F2ff;
+    subtext:  #6272A4ff;
+    purple:   #BD93F9ff;
+    pink:     #FF79C6ff;
+    surface0: #44475A80;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @purple;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @pink;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/archblur-square.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FE8019ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @accent; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @accent;
+}
+EOF
+cat > "$CONF/rofi/themes/archblur-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FE8019ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
 cat > "$CONF/rofi/themes/archcraft-square.rasi" <<'EOF'
 * {
     base:     #1E222Aff;
@@ -15089,6 +19887,121 @@ element selected {
     background-color: @surface0;
     border: 2px;
     border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/breddie-square.rasi" <<'EOF'
+/* Same fix as this rice's own "isabel"/"pamela" ports: the source's real
+ * rofi config sets bg-selected to the exact same value as bg
+ * (`bg: #1a1b2666; bg-selected: #1a1b2666;`), making the selected row
+ * invisible in practice - given a real, visible highlight here instead. */
+* {
+    base:     #1A1B26db;
+    mantle:   #1A1B2603;
+    text:     #E5E9F0ff;
+    subtext:  #444B61ff;
+    lavender: #ACB0D0ff;
+    surface0: #292A4480;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @lavender; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @lavender;
+}
+EOF
+cat > "$CONF/rofi/themes/breddie-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #1A1B26db;
+    mantle:   #1A1B2603;
+    text:     #E5E9F0ff;
+    subtext:  #444B61ff;
+    lavender: #ACB0D0ff;
+    surface0: #292A4480;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @lavender;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @lavender;
     border-radius: 0px;
 }
 element-text {
@@ -15322,6 +20235,221 @@ element-text {
     /* Nerd Font glyphs' advance width isn't visually symmetric around their
        ink - 0.5 (true center) renders visibly right-of-center, so this is
        nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/cherryblocks-square.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FB4934ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @accent; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @accent;
+}
+EOF
+cat > "$CONF/rofi/themes/cherryblocks-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FB4934ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/rofi/themes/classic-square.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FE8019ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @accent; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @accent;
+}
+EOF
+cat > "$CONF/rofi/themes/classic-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #FE8019ff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
     horizontal-align: 0.32;
     vertical-align: 0.5;
 }
@@ -15882,6 +21010,114 @@ element-text {
     /* Nerd Font glyphs' advance width isn't visually symmetric around their
        ink - 0.5 (true center) renders visibly right-of-center, so this is
        nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
+cat > "$CONF/rofi/themes/float-square.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #8EC07Cff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @accent; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @accent;
+}
+EOF
+cat > "$CONF/rofi/themes/float-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #1D2021ff;
+    text:     #EBDBB2ff;
+    subtext:  #A89984ff;
+    accent:   #8EC07Cff;
+    surface0: #3C3836ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
     horizontal-align: 0.32;
     vertical-align: 0.5;
 }
@@ -16895,6 +22131,117 @@ element-text {
 }
 EOF
 
+cat > "$CONF/rofi/themes/tobi-square.rasi" <<'EOF'
+* {
+    base:     #1E1E2Eff;
+    mantle:   #181825ff;
+    text:     #D9E0EEff;
+    subtext:  #6E6C7Eff;
+    blue:     #62B4F9ff;
+    surface0: #313244ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @blue; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @blue;
+}
+EOF
+cat > "$CONF/rofi/themes/tobi-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #1E1E2Eff;
+    mantle:   #181825ff;
+    text:     #D9E0EEff;
+    subtext:  #6E6C7Eff;
+    blue:     #62B4F9ff;
+    surface0: #313244ff;
+
+    background-color: @mantle;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @blue;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @blue;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+
 cat > "$CONF/rofi/themes/varinka-square.rasi" <<'EOF'
 * {
     base:     #212529ff;
@@ -17056,6 +22403,55 @@ element selected {
     text-color: @mauve;
 }
 EOF
+cat > "$CONF/rofi/themes/yucklys-square.rasi" <<'EOF'
+* {
+    base:     #2E3440ff;
+    mantle:   #2E3440ff;
+    text:     #D8DEE9ff;
+    subtext:  #4C566Aff;
+    mauve:    #81A1C1ff;
+    surface0: #4C566Aff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
 
 cat > "$CONF/rofi/themes/yael-square-powermenu.rasi" <<'EOF'
 * {
@@ -17114,6 +22510,64 @@ element-text {
     /* Nerd Font glyphs' advance width isn't visually symmetric around their
        ink - 0.5 (true center) renders visibly right-of-center, so this is
        nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/rofi/themes/yucklys-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #2E3440ff;
+    mantle:   #2E3440ff;
+    text:     #D8DEE9ff;
+    subtext:  #4C566Aff;
+    mauve:    #81A1C1ff;
+    surface0: #4C566Aff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
     horizontal-align: 0.32;
     vertical-align: 0.5;
 }
@@ -17332,6 +22786,58 @@ color7  #9893A5
 color15 #575279
 EOF
 
+cat > "$CONF/kitty/themes/alireza.conf" <<'EOF'
+foreground              #F8F8F2
+background              #282A36
+selection_foreground    #282A36
+selection_background    #F8F8F2
+cursor                  #BD93F9
+cursor_text_color       #282A36
+
+color0  #21222C
+color8  #6272A4
+color1  #FF5E76
+color9  #FF6E6E
+color2  #50FA7B
+color10 #69FF94
+color3  #F1FA8C
+color11 #FFFFA5
+color4  #BD93F9
+color12 #D6ACFF
+color5  #FF79C6
+color13 #FF92DF
+color6  #8BE9FD
+color14 #A4FFFF
+color7  #F8F8F2
+color15 #FFFFFF
+EOF
+
+cat > "$CONF/kitty/themes/archblur.conf" <<'EOF'
+foreground              #EBDBB2
+background              #282828
+selection_foreground    #282828
+selection_background    #EBDBB2
+cursor                  #FE8019
+cursor_text_color       #282828
+
+color0  #3C3836
+color8  #928374
+color1  #FB4934
+color9  #FB4934
+color2  #B8BB26
+color10 #B8BB26
+color3  #FABD2F
+color11 #FABD2F
+color4  #83A598
+color12 #83A598
+color5  #D3869B
+color13 #D3869B
+color6  #8EC07C
+color14 #8EC07C
+color7  #EBDBB2
+color15 #FBF1C7
+EOF
+
 cat > "$CONF/kitty/themes/archcraft.conf" <<'EOF'
 foreground              #C8CCD4
 background              #1E222A
@@ -17356,6 +22862,32 @@ color6  #56B6C2
 color14 #56B6C2
 color7  #727C91
 color15 #C8CCD4
+EOF
+
+cat > "$CONF/kitty/themes/breddie.conf" <<'EOF'
+foreground              #E5E9F0
+background              #1A1B26
+selection_foreground    #1A1B26
+selection_background    #E5E9F0
+cursor                  #ACB0D0
+cursor_text_color       #1A1B26
+
+color0  #32344A
+color8  #444B6A
+color1  #F7768E
+color9  #FF7A93
+color2  #9ECE6A
+color10 #B9F27C
+color3  #EBCB8C
+color11 #FF9E64
+color4  #81A1C1
+color12 #7DA6FF
+color5  #AD8EE6
+color13 #BB9AF7
+color6  #7AA2F7
+color14 #0DB9D7
+color7  #E5E9F0
+color15 #ACB0D0
 EOF
 
 cat > "$CONF/kitty/themes/brenda.conf" <<'EOF'
@@ -17409,6 +22941,57 @@ color6  #94E2D5
 color14 #94E2D5
 color7  #BAC2DE
 color15 #A6ADC8
+EOF
+
+cat > "$CONF/kitty/themes/cherryblocks.conf" <<'EOF'
+foreground              #EBDBB2
+background              #282828
+selection_foreground    #282828
+selection_background    #EBDBB2
+cursor                  #FB4934
+cursor_text_color       #282828
+
+color0  #3C3836
+color8  #928374
+color1  #FB4934
+color9  #FB4934
+color2  #B8BB26
+color10 #B8BB26
+color3  #FABD2F
+color11 #FABD2F
+color4  #83A598
+color12 #83A598
+color5  #D3869B
+color13 #D3869B
+color6  #8EC07C
+color14 #8EC07C
+color7  #EBDBB2
+color15 #FBF1C7
+EOF
+cat > "$CONF/kitty/themes/classic.conf" <<'EOF'
+foreground              #EBDBB2
+background              #282828
+selection_foreground    #282828
+selection_background    #EBDBB2
+cursor                  #FE8019
+cursor_text_color       #282828
+
+color0  #3C3836
+color8  #928374
+color1  #FB4934
+color9  #FB4934
+color2  #B8BB26
+color10 #B8BB26
+color3  #FABD2F
+color11 #FABD2F
+color4  #83A598
+color12 #83A598
+color5  #D3869B
+color13 #D3869B
+color6  #8EC07C
+color14 #8EC07C
+color7  #EBDBB2
+color15 #FBF1C7
 EOF
 
 cat > "$CONF/kitty/themes/cristina.conf" <<'EOF'
@@ -17539,6 +23122,32 @@ color6  #7FA5B5
 color14 #7FA5B5
 color7  #9C8F7D
 color15 #E8DCC8
+EOF
+
+cat > "$CONF/kitty/themes/float.conf" <<'EOF'
+foreground              #EBDBB2
+background              #282828
+selection_foreground    #282828
+selection_background    #EBDBB2
+cursor                  #8EC07C
+cursor_text_color       #282828
+
+color0  #3C3836
+color8  #928374
+color1  #FB4934
+color9  #FB4934
+color2  #B8BB26
+color10 #B8BB26
+color3  #FABD2F
+color11 #FABD2F
+color4  #83A598
+color12 #83A598
+color5  #D3869B
+color13 #D3869B
+color6  #8EC07C
+color14 #8EC07C
+color7  #EBDBB2
+color15 #FBF1C7
 EOF
 
 cat > "$CONF/kitty/themes/h4ck3r.conf" <<'EOF'
@@ -17775,6 +23384,32 @@ color7  #928374
 color15 #EBDBB2
 EOF
 
+cat > "$CONF/kitty/themes/tobi.conf" <<'EOF'
+foreground              #D9E0EE
+background              #1E1E2E
+selection_foreground    #1E1E2E
+selection_background    #D9E0EE
+cursor                  #62B4F9
+cursor_text_color       #1E1E2E
+
+color0  #181825
+color8  #6E6C7E
+color1  #F28FAD
+color9  #F88D96
+color2  #ABE9B3
+color10 #ABE9B3
+color3  #FAE3B0
+color11 #FAE3B0
+color4  #62B4F9
+color12 #96CDFB
+color5  #F5C2E7
+color13 #F5C2E7
+color6  #89DCEB
+color14 #89DCEB
+color7  #D9E0EE
+color15 #FFFFFF
+EOF
+
 cat > "$CONF/kitty/themes/varinka.conf" <<'EOF'
 foreground              #F8F9FA
 background              #212529
@@ -17825,6 +23460,31 @@ color6  #3DDBD9
 color14 #3DDBD9
 color7  #8C8C8C
 color15 #FFFFFF
+EOF
+cat > "$CONF/kitty/themes/yucklys.conf" <<'EOF'
+foreground              #D8DEE9
+background              #2E3440
+selection_foreground    #2E3440
+selection_background    #D8DEE9
+cursor                  #81A1C1
+cursor_text_color       #2E3440
+
+color0  #3B4252
+color8  #4C566A
+color1  #BF616A
+color9  #BF616A
+color2  #A3BE8C
+color10 #A3BE8C
+color3  #EBCB8B
+color11 #EBCB8B
+color4  #81A1C1
+color12 #81A1C1
+color5  #B48EAD
+color13 #B48EAD
+color6  #88C0D0
+color14 #8FBCBB
+color7  #D8DEE9
+color15 #ECEFF4
 EOF
 
 cat > "$CONF/kitty/themes/z0mbi3.conf" <<'EOF'
@@ -17879,6 +23539,58 @@ color7  #9893A5
 color15 #575279
 EOF
 
+cat > "$CONF/kitty/themes/alireza-square.conf" <<'EOF'
+foreground              #F8F8F2
+background              #282A36
+selection_foreground    #282A36
+selection_background    #F8F8F2
+cursor                  #BD93F9
+cursor_text_color       #282A36
+
+color0  #21222C
+color8  #6272A4
+color1  #FF5E76
+color9  #FF6E6E
+color2  #50FA7B
+color10 #69FF94
+color3  #F1FA8C
+color11 #FFFFA5
+color4  #BD93F9
+color12 #D6ACFF
+color5  #FF79C6
+color13 #FF92DF
+color6  #8BE9FD
+color14 #A4FFFF
+color7  #F8F8F2
+color15 #FFFFFF
+EOF
+
+cat > "$CONF/kitty/themes/archblur-square.conf" <<'EOF'
+foreground              #EBDBB2
+background              #282828
+selection_foreground    #282828
+selection_background    #EBDBB2
+cursor                  #FE8019
+cursor_text_color       #282828
+
+color0  #3C3836
+color8  #928374
+color1  #FB4934
+color9  #FB4934
+color2  #B8BB26
+color10 #B8BB26
+color3  #FABD2F
+color11 #FABD2F
+color4  #83A598
+color12 #83A598
+color5  #D3869B
+color13 #D3869B
+color6  #8EC07C
+color14 #8EC07C
+color7  #EBDBB2
+color15 #FBF1C7
+EOF
+
 cat > "$CONF/kitty/themes/archcraft-square.conf" <<'EOF'
 foreground              #C8CCD4
 background              #1E222A
@@ -17903,6 +23615,32 @@ color6  #56B6C2
 color14 #56B6C2
 color7  #727C91
 color15 #C8CCD4
+EOF
+
+cat > "$CONF/kitty/themes/breddie-square.conf" <<'EOF'
+foreground              #E5E9F0
+background              #1A1B26
+selection_foreground    #1A1B26
+selection_background    #E5E9F0
+cursor                  #ACB0D0
+cursor_text_color       #1A1B26
+
+color0  #32344A
+color8  #444B6A
+color1  #F7768E
+color9  #FF7A93
+color2  #9ECE6A
+color10 #B9F27C
+color3  #EBCB8C
+color11 #FF9E64
+color4  #81A1C1
+color12 #7DA6FF
+color5  #AD8EE6
+color13 #BB9AF7
+color6  #7AA2F7
+color14 #0DB9D7
+color7  #E5E9F0
+color15 #ACB0D0
 EOF
 
 cat > "$CONF/kitty/themes/brenda-square.conf" <<'EOF'
@@ -17956,6 +23694,57 @@ color6  #94E2D5
 color14 #94E2D5
 color7  #BAC2DE
 color15 #A6ADC8
+EOF
+
+cat > "$CONF/kitty/themes/cherryblocks-square.conf" <<'EOF'
+foreground              #EBDBB2
+background              #282828
+selection_foreground    #282828
+selection_background    #EBDBB2
+cursor                  #FB4934
+cursor_text_color       #282828
+
+color0  #3C3836
+color8  #928374
+color1  #FB4934
+color9  #FB4934
+color2  #B8BB26
+color10 #B8BB26
+color3  #FABD2F
+color11 #FABD2F
+color4  #83A598
+color12 #83A598
+color5  #D3869B
+color13 #D3869B
+color6  #8EC07C
+color14 #8EC07C
+color7  #EBDBB2
+color15 #FBF1C7
+EOF
+cat > "$CONF/kitty/themes/classic-square.conf" <<'EOF'
+foreground              #EBDBB2
+background              #282828
+selection_foreground    #282828
+selection_background    #EBDBB2
+cursor                  #FE8019
+cursor_text_color       #282828
+
+color0  #3C3836
+color8  #928374
+color1  #FB4934
+color9  #FB4934
+color2  #B8BB26
+color10 #B8BB26
+color3  #FABD2F
+color11 #FABD2F
+color4  #83A598
+color12 #83A598
+color5  #D3869B
+color13 #D3869B
+color6  #8EC07C
+color14 #8EC07C
+color7  #EBDBB2
+color15 #FBF1C7
 EOF
 
 cat > "$CONF/kitty/themes/cristina-square.conf" <<'EOF'
@@ -18086,6 +23875,32 @@ color6  #7FA5B5
 color14 #7FA5B5
 color7  #9C8F7D
 color15 #E8DCC8
+EOF
+
+cat > "$CONF/kitty/themes/float-square.conf" <<'EOF'
+foreground              #EBDBB2
+background              #282828
+selection_foreground    #282828
+selection_background    #EBDBB2
+cursor                  #8EC07C
+cursor_text_color       #282828
+
+color0  #3C3836
+color8  #928374
+color1  #FB4934
+color9  #FB4934
+color2  #B8BB26
+color10 #B8BB26
+color3  #FABD2F
+color11 #FABD2F
+color4  #83A598
+color12 #83A598
+color5  #D3869B
+color13 #D3869B
+color6  #8EC07C
+color14 #8EC07C
+color7  #EBDBB2
+color15 #FBF1C7
 EOF
 
 cat > "$CONF/kitty/themes/h4ck3r-square.conf" <<'EOF'
@@ -18322,6 +24137,32 @@ color7  #928374
 color15 #EBDBB2
 EOF
 
+cat > "$CONF/kitty/themes/tobi-square.conf" <<'EOF'
+foreground              #D9E0EE
+background              #1E1E2E
+selection_foreground    #1E1E2E
+selection_background    #D9E0EE
+cursor                  #62B4F9
+cursor_text_color       #1E1E2E
+
+color0  #181825
+color8  #6E6C7E
+color1  #F28FAD
+color9  #F88D96
+color2  #ABE9B3
+color10 #ABE9B3
+color3  #FAE3B0
+color11 #FAE3B0
+color4  #62B4F9
+color12 #96CDFB
+color5  #F5C2E7
+color13 #F5C2E7
+color6  #89DCEB
+color14 #89DCEB
+color7  #D9E0EE
+color15 #FFFFFF
+EOF
+
 cat > "$CONF/kitty/themes/varinka-square.conf" <<'EOF'
 foreground              #F8F9FA
 background              #212529
@@ -18372,6 +24213,31 @@ color6  #3DDBD9
 color14 #3DDBD9
 color7  #8C8C8C
 color15 #FFFFFF
+EOF
+cat > "$CONF/kitty/themes/yucklys-square.conf" <<'EOF'
+foreground              #D8DEE9
+background              #2E3440
+selection_foreground    #2E3440
+selection_background    #D8DEE9
+cursor                  #81A1C1
+cursor_text_color       #2E3440
+
+color0  #3B4252
+color8  #4C566A
+color1  #BF616A
+color9  #BF616A
+color2  #A3BE8C
+color10 #A3BE8C
+color3  #EBCB8B
+color11 #EBCB8B
+color4  #81A1C1
+color12 #81A1C1
+color5  #B48EAD
+color13 #B48EAD
+color6  #88C0D0
+color14 #8FBCBB
+color7  #D8DEE9
+color15 #ECEFF4
 EOF
 
 cat > "$CONF/kitty/themes/z0mbi3-square.conf" <<'EOF'
@@ -18434,11 +24300,32 @@ client.focused_inactive #9893a5  #faf4ed  #9893a5  #9893a5   #9893a5
 client.urgent           #b4637a  #faf4ed  #575279  #b4637a   #b4637a
 EOF
 
+cat > "$CONF/i3/themes/alireza.conf" <<'EOF'
+client.focused          #BD93F9  #BD93F9  #F8F8F2  #F8F8F2   #BD93F9
+client.unfocused        #282A36  #282A36  #938BFF  #44475A   #282A36
+client.focused_inactive #282A36  #282A36  #938BFF  #44475A   #282A36
+client.urgent           #FF5E76  #FF5E76  #F8F8F2  #8BE9FD   #FF5E76
+EOF
+
+cat > "$CONF/i3/themes/archblur.conf" <<'EOF'
+client.focused          #FE8019  #FE8019  #282828  #FE8019   #FE8019
+client.unfocused        #3C3836  #282828  #EBDBB2  #3C3836   #3C3836
+client.focused_inactive #3C3836  #282828  #EBDBB2  #3C3836   #3C3836
+client.urgent           #FB4934  #FB4934  #282828  #FB4934   #FB4934
+EOF
+
 cat > "$CONF/i3/themes/archcraft.conf" <<'EOF'
 client.focused          #c678dd  #1e222a  #c8ccd4  #c678dd   #c678dd
 client.unfocused        #727c91  #1e222a  #727c91  #727c91   #727c91
 client.focused_inactive #727c91  #1e222a  #727c91  #727c91   #727c91
 client.urgent           #e06c75  #1e222a  #c8ccd4  #e06c75   #e06c75
+EOF
+
+cat > "$CONF/i3/themes/breddie.conf" <<'EOF'
+client.focused          #ACB0D0  #ACB0D0  #1A1B26  #ACB0D0   #ACB0D0
+client.unfocused        #444B61  #1A1B26  #E5E9F0  #444B61   #444B61
+client.focused_inactive #444B61  #1A1B26  #E5E9F0  #444B61   #444B61
+client.urgent           #F7768E  #F7768E  #1A1B26  #F7768E   #F7768E
 EOF
 
 cat > "$CONF/i3/themes/brenda.conf" <<'EOF'
@@ -18453,6 +24340,19 @@ client.focused          #cba6f7  #1e1e2e  #cdd6f4  #cba6f7   #cba6f7
 client.unfocused        #313244  #1e1e2e  #6c7086  #313244   #313244
 client.focused_inactive #45475a  #1e1e2e  #a6adc8  #45475a   #45475a
 client.urgent           #f38ba8  #1e1e2e  #f38ba8  #f38ba8   #f38ba8
+EOF
+
+cat > "$CONF/i3/themes/cherryblocks.conf" <<'EOF'
+client.focused          #FB4934  #FB4934  #282828  #FB4934   #FB4934
+client.unfocused        #3C3836  #282828  #EBDBB2  #3C3836   #3C3836
+client.focused_inactive #3C3836  #282828  #EBDBB2  #3C3836   #3C3836
+client.urgent           #FB4934  #FB4934  #282828  #FB4934   #FB4934
+EOF
+cat > "$CONF/i3/themes/classic.conf" <<'EOF'
+client.focused          #FE8019  #FE8019  #282828  #FE8019   #FE8019
+client.unfocused        #3C3836  #282828  #EBDBB2  #3C3836   #3C3836
+client.focused_inactive #3C3836  #282828  #EBDBB2  #3C3836   #3C3836
+client.urgent           #FB4934  #FB4934  #282828  #FB4934   #FB4934
 EOF
 
 cat > "$CONF/i3/themes/cristina.conf" <<'EOF'
@@ -18488,6 +24388,13 @@ client.focused          #e0a458  #1e1a17  #e8dcc8  #e0a458   #e0a458
 client.unfocused        #9c8f7d  #1e1a17  #9c8f7d  #9c8f7d   #9c8f7d
 client.focused_inactive #9c8f7d  #1e1a17  #9c8f7d  #9c8f7d   #9c8f7d
 client.urgent           #d9736a  #1e1a17  #e8dcc8  #d9736a   #d9736a
+EOF
+
+cat > "$CONF/i3/themes/float.conf" <<'EOF'
+client.focused          #8EC07C  #8EC07C  #282828  #8EC07C   #8EC07C
+client.unfocused        #3C3836  #282828  #EBDBB2  #3C3836   #3C3836
+client.focused_inactive #3C3836  #282828  #EBDBB2  #3C3836   #3C3836
+client.urgent           #FB4934  #FB4934  #282828  #FB4934   #FB4934
 EOF
 
 cat > "$CONF/i3/themes/h4ck3r.conf" <<'EOF'
@@ -18553,6 +24460,13 @@ client.focused_inactive #928374  #3c3836  #928374  #928374   #928374
 client.urgent           #cc241d  #3c3836  #ebdbb2  #cc241d   #cc241d
 EOF
 
+cat > "$CONF/i3/themes/tobi.conf" <<'EOF'
+client.focused          #62B4F9  #62B4F9  #FFFFFF  #62B4F9   #62B4F9
+client.unfocused        #313244  #1E1E2E  #D9E0EE  #313244   #313244
+client.focused_inactive #313244  #1E1E2E  #D9E0EE  #313244   #313244
+client.urgent           #F28FAD  #F28FAD  #FFFFFF  #F28FAD   #F28FAD
+EOF
+
 cat > "$CONF/i3/themes/varinka.conf" <<'EOF'
 client.focused          #dc5bbc  #212529  #f8f9fa  #dc5bbc   #dc5bbc
 client.unfocused        #6c757d  #212529  #6c757d  #6c757d   #6c757d
@@ -18565,6 +24479,12 @@ client.focused          #33b1ff  #161616  #ffffff  #33b1ff   #33b1ff
 client.unfocused        #8c8c8c  #161616  #8c8c8c  #8c8c8c   #8c8c8c
 client.focused_inactive #8c8c8c  #161616  #8c8c8c  #8c8c8c   #8c8c8c
 client.urgent           #ee5396  #161616  #ffffff  #ee5396   #ee5396
+EOF
+cat > "$CONF/i3/themes/yucklys.conf" <<'EOF'
+client.focused          #8FBCBB  #2E3440  #D8DEE9  #8FBCBB   #8FBCBB
+client.unfocused        #D8DEE9  #2E3440  #D8DEE9  #D8DEE9   #D8DEE9
+client.focused_inactive #D8DEE9  #2E3440  #D8DEE9  #D8DEE9   #D8DEE9
+client.urgent           #BF616A  #2E3440  #D8DEE9  #BF616A   #BF616A
 EOF
 
 cat > "$CONF/i3/themes/z0mbi3.conf" <<'EOF'
@@ -18868,6 +24788,262 @@ style = "bg:#2E5D66"
 format = '[ $time ]($style)'
 EOF
 
+cat > "$CONF/starship/themes/alireza.toml" <<'EOF'
+format = """
+[](#282A36)\
+$python\
+$username\
+[](bg:#383A4A fg:#282A36)\
+$directory\
+[](fg:#383A4A bg:#44475A)\
+$git_branch\
+$git_status\
+[](fg:#44475A bg:#8BE9FD)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8BE9FD bg:#BD93F9)\
+$docker_context\
+[](fg:#BD93F9 bg:#FF79C6)\
+$time\
+[ ](fg:#FF79C6)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#282A36"
+style_root = "bg:#282A36"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#383A4A"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#BD93F9"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#44475A"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#44475A"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282A36"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#FF79C6"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/archblur.toml" <<'EOF'
+format = """
+[](#282828)\
+$python\
+$username\
+[](bg:#3C3836 fg:#282828)\
+$directory\
+[](fg:#3C3836 bg:#504945)\
+$git_branch\
+$git_status\
+[](fg:#504945 bg:#FE8019)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#FE8019 bg:#B8BB26)\
+$docker_context\
+[](fg:#B8BB26 bg:#FABD2F)\
+$time\
+[ ](fg:#FABD2F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+[username]
+show_always = true
+style_user = "bg:#282828"
+style_root = "bg:#282828"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C3836"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#504945"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#504945"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282828"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#FABD2F"
+format = '[ $time ]($style)'
+EOF
+
 cat > "$CONF/starship/themes/archcraft.toml" <<'EOF'
 format = """
 [](#1E222A)\
@@ -18997,6 +25173,262 @@ format = '[ $symbol ($version) ]($style)'
 disabled = false
 time_format = "%R" # Hour:Minute Format
 style = "bg:#61AFEF"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/alireza-square.toml" <<'EOF'
+format = """
+[](#282A36)\
+$python\
+$username\
+[](bg:#383A4A fg:#282A36)\
+$directory\
+[](fg:#383A4A bg:#44475A)\
+$git_branch\
+$git_status\
+[](fg:#44475A bg:#8BE9FD)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8BE9FD bg:#BD93F9)\
+$docker_context\
+[](fg:#BD93F9 bg:#FF79C6)\
+$time\
+[ ](fg:#FF79C6)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#282A36"
+style_root = "bg:#282A36"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#383A4A"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#BD93F9"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#44475A"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#44475A"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282A36"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8BE9FD"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#FF79C6"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/archblur-square.toml" <<'EOF'
+format = """
+[](#282828)\
+$python\
+$username\
+[](bg:#3C3836 fg:#282828)\
+$directory\
+[](fg:#3C3836 bg:#504945)\
+$git_branch\
+$git_status\
+[](fg:#504945 bg:#FE8019)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#FE8019 bg:#B8BB26)\
+$docker_context\
+[](fg:#B8BB26 bg:#FABD2F)\
+$time\
+[ ](fg:#FABD2F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+[username]
+show_always = true
+style_user = "bg:#282828"
+style_root = "bg:#282828"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C3836"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#504945"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#504945"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282828"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#FABD2F"
 format = '[ $time ]($style)'
 EOF
 
@@ -19132,6 +25564,138 @@ style = "bg:#61AFEF"
 format = '[ $time ]($style)'
 EOF
 
+cat > "$CONF/starship/themes/breddie.toml" <<'EOF'
+format = """
+[](#1A1B26)\
+$python\
+$username\
+[](bg:#292A44 fg:#1A1B26)\
+$directory\
+[](fg:#292A44 bg:#444B61)\
+$git_branch\
+$git_status\
+[](fg:#444B61 bg:#7AA2F7)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#7AA2F7 bg:#BB9AF7)\
+$docker_context\
+[](fg:#BB9AF7 bg:#EBCB8C)\
+$time\
+[ ](fg:#EBCB8C)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1A1B26"
+style_root = "bg:#1A1B26"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#292A44"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#BB9AF7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#444B61"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#444B61"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1A1B26"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#EBCB8C"
+format = '[ $time ]($style)'
+EOF
+
 cat > "$CONF/starship/themes/brenda.toml" <<'EOF'
 format = """
 [](#2D353B)\
@@ -19261,6 +25825,138 @@ format = '[ $symbol ($version) ]($style)'
 disabled = false
 time_format = "%R" # Hour:Minute Format
 style = "bg:#7FBBB3"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/breddie-square.toml" <<'EOF'
+format = """
+[](#1A1B26)\
+$python\
+$username\
+[](bg:#292A44 fg:#1A1B26)\
+$directory\
+[](fg:#292A44 bg:#444B61)\
+$git_branch\
+$git_status\
+[](fg:#444B61 bg:#7AA2F7)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#7AA2F7 bg:#BB9AF7)\
+$docker_context\
+[](fg:#BB9AF7 bg:#EBCB8C)\
+$time\
+[ ](fg:#EBCB8C)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1A1B26"
+style_root = "bg:#1A1B26"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#292A44"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#BB9AF7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#444B61"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#444B61"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1A1B26"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#7AA2F7"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#EBCB8C"
 format = '[ $time ]($style)'
 EOF
 
@@ -19660,6 +26356,253 @@ style = "bg:#89B4FA"
 format = '[ $time ]($style)'
 EOF
 
+cat > "$CONF/starship/themes/cherryblocks.toml" <<'EOF'
+format = """
+[](#282828)\
+$python\
+$username\
+[](bg:#3C3836 fg:#282828)\
+$directory\
+[](fg:#3C3836 bg:#504945)\
+$git_branch\
+$git_status\
+[](fg:#504945 bg:#FB4934)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#FB4934 bg:#B8BB26)\
+$docker_context\
+[](fg:#B8BB26 bg:#FABD2F)\
+$time\
+[ ](fg:#FABD2F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+[username]
+show_always = true
+style_user = "bg:#282828"
+style_root = "bg:#282828"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C3836"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#504945"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#504945"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282828"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#FABD2F"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/starship/themes/classic.toml" <<'EOF'
+format = """
+[](#282828)\
+$python\
+$username\
+[](bg:#3C3836 fg:#282828)\
+$directory\
+[](fg:#3C3836 bg:#504945)\
+$git_branch\
+$git_status\
+[](fg:#504945 bg:#FE8019)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#FE8019 bg:#B8BB26)\
+$docker_context\
+[](fg:#B8BB26 bg:#FABD2F)\
+$time\
+[ ](fg:#FABD2F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+[username]
+show_always = true
+style_user = "bg:#282828"
+style_root = "bg:#282828"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C3836"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#504945"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#504945"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282828"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#FABD2F"
+format = '[ $time ]($style)'
+EOF
+
 cat > "$CONF/starship/themes/cristina.toml" <<'EOF'
 format = """
 [](#232136)\
@@ -19789,6 +26732,253 @@ format = '[ $symbol ($version) ]($style)'
 disabled = false
 time_format = "%R" # Hour:Minute Format
 style = "bg:#34738E"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/cherryblocks-square.toml" <<'EOF'
+format = """
+[](#282828)\
+$python\
+$username\
+[](bg:#3C3836 fg:#282828)\
+$directory\
+[](fg:#3C3836 bg:#504945)\
+$git_branch\
+$git_status\
+[](fg:#504945 bg:#FB4934)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#FB4934 bg:#B8BB26)\
+$docker_context\
+[](fg:#B8BB26 bg:#FABD2F)\
+$time\
+[ ](fg:#FABD2F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+[username]
+show_always = true
+style_user = "bg:#282828"
+style_root = "bg:#282828"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C3836"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#504945"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#504945"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282828"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#FB4934"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#FABD2F"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/starship/themes/classic-square.toml" <<'EOF'
+format = """
+[](#282828)\
+$python\
+$username\
+[](bg:#3C3836 fg:#282828)\
+$directory\
+[](fg:#3C3836 bg:#504945)\
+$git_branch\
+$git_status\
+[](fg:#504945 bg:#FE8019)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#FE8019 bg:#B8BB26)\
+$docker_context\
+[](fg:#B8BB26 bg:#FABD2F)\
+$time\
+[ ](fg:#FABD2F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+[username]
+show_always = true
+style_user = "bg:#282828"
+style_root = "bg:#282828"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C3836"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#504945"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#504945"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282828"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#FE8019"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#FABD2F"
 format = '[ $time ]($style)'
 EOF
 
@@ -20980,6 +28170,130 @@ style = "bg:#7FA5B5"
 format = '[ $time ]($style)'
 EOF
 
+cat > "$CONF/starship/themes/float.toml" <<'EOF'
+format = """
+[](#282828)\
+$python\
+$username\
+[](bg:#3C3836 fg:#282828)\
+$directory\
+[](fg:#3C3836 bg:#504945)\
+$git_branch\
+$git_status\
+[](fg:#504945 bg:#8EC07C)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8EC07C bg:#B8BB26)\
+$docker_context\
+[](fg:#B8BB26 bg:#FABD2F)\
+$time\
+[ ](fg:#FABD2F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+[username]
+show_always = true
+style_user = "bg:#282828"
+style_root = "bg:#282828"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C3836"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#504945"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#504945"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282828"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#FABD2F"
+format = '[ $time ]($style)'
+EOF
+
 cat > "$CONF/starship/themes/h4ck3r.toml" <<'EOF'
 format = """
 [](#0C1018)\
@@ -21109,6 +28423,130 @@ format = '[ $symbol ($version) ]($style)'
 disabled = false
 time_format = "%R" # Hour:Minute Format
 style = "bg:#9CF542"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/float-square.toml" <<'EOF'
+format = """
+[](#282828)\
+$python\
+$username\
+[](bg:#3C3836 fg:#282828)\
+$directory\
+[](fg:#3C3836 bg:#504945)\
+$git_branch\
+$git_status\
+[](fg:#504945 bg:#8EC07C)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8EC07C bg:#B8BB26)\
+$docker_context\
+[](fg:#B8BB26 bg:#FABD2F)\
+$time\
+[ ](fg:#FABD2F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+[username]
+show_always = true
+style_user = "bg:#282828"
+style_root = "bg:#282828"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3C3836"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#504945"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#504945"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282828"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8EC07C"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#FABD2F"
 format = '[ $time ]($style)'
 EOF
 
@@ -23356,6 +30794,138 @@ style = "bg:#458588"
 format = '[ $time ]($style)'
 EOF
 
+cat > "$CONF/starship/themes/tobi.toml" <<'EOF'
+format = """
+[](#1E1E2E)\
+$python\
+$username\
+[](bg:#313244 fg:#1E1E2E)\
+$directory\
+[](fg:#313244 bg:#6E6C7E)\
+$git_branch\
+$git_status\
+[](fg:#6E6C7E bg:#62B4F9)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#62B4F9 bg:#F5C2E7)\
+$docker_context\
+[](fg:#F5C2E7 bg:#FAE3B0)\
+$time\
+[ ](fg:#FAE3B0)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1E1E2E"
+style_root = "bg:#1E1E2E"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#313244"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#F5C2E7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#6E6C7E"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#6E6C7E"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1E1E2E"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#FAE3B0"
+format = '[ $time ]($style)'
+EOF
+
 cat > "$CONF/starship/themes/varinka.toml" <<'EOF'
 format = """
 [](#212529)\
@@ -23485,6 +31055,138 @@ format = '[ $symbol ($version) ]($style)'
 disabled = false
 time_format = "%R" # Hour:Minute Format
 style = "bg:#495057"
+format = '[ $time ]($style)'
+EOF
+
+cat > "$CONF/starship/themes/tobi-square.toml" <<'EOF'
+format = """
+[](#1E1E2E)\
+$python\
+$username\
+[](bg:#313244 fg:#1E1E2E)\
+$directory\
+[](fg:#313244 bg:#6E6C7E)\
+$git_branch\
+$git_status\
+[](fg:#6E6C7E bg:#62B4F9)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#62B4F9 bg:#F5C2E7)\
+$docker_context\
+[](fg:#F5C2E7 bg:#FAE3B0)\
+$time\
+[ ](fg:#FAE3B0)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1E1E2E"
+style_root = "bg:#1E1E2E"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#313244"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#F5C2E7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#6E6C7E"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#6E6C7E"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1E1E2E"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#62B4F9"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#FAE3B0"
 format = '[ $time ]($style)'
 EOF
 
@@ -23751,6 +31453,127 @@ time_format = "%R" # Hour:Minute Format
 style = "bg:#33B1FF"
 format = '[ $time ]($style)'
 EOF
+cat > "$CONF/starship/themes/yucklys.toml" <<'EOF'
+format = """
+[](#2E3440)\
+$python\
+$username\
+[](bg:#4C566A fg:#2E3440)\
+$directory\
+[](fg:#4C566A bg:#81A1C1)\
+$git_branch\
+$git_status\
+[](fg:#81A1C1 bg:#8FBCBB)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8FBCBB bg:#B48EAD)\
+$docker_context\
+[](fg:#B48EAD bg:#2E3440)\
+$time\
+[ ](fg:#2E3440)\
+"""
+command_timeout = 5000
+
+[username]
+show_always = true
+style_user = "bg:#2E3440"
+style_root = "bg:#2E3440"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#4C566A"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B48EAD"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#81A1C1"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#81A1C1"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#2E3440"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#2E3440"
+format = '[ $time ]($style)'
+EOF
 
 cat > "$CONF/starship/themes/yael-square.toml" <<'EOF'
 format = """
@@ -23881,6 +31704,127 @@ format = '[ $symbol ($version) ]($style)'
 disabled = false
 time_format = "%R" # Hour:Minute Format
 style = "bg:#33B1FF"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/starship/themes/yucklys-square.toml" <<'EOF'
+format = """
+[](#2E3440)\
+$python\
+$username\
+[](bg:#4C566A fg:#2E3440)\
+$directory\
+[](fg:#4C566A bg:#81A1C1)\
+$git_branch\
+$git_status\
+[](fg:#81A1C1 bg:#8FBCBB)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8FBCBB bg:#B48EAD)\
+$docker_context\
+[](fg:#B48EAD bg:#2E3440)\
+$time\
+[ ](fg:#2E3440)\
+"""
+command_timeout = 5000
+
+[username]
+show_always = true
+style_user = "bg:#2E3440"
+style_root = "bg:#2E3440"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#4C566A"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B48EAD"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#81A1C1"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#81A1C1"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#2E3440"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8FBCBB"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#2E3440"
 format = '[ $time ]($style)'
 EOF
 
@@ -24238,6 +32182,74 @@ foreground = "#B4637A"
 frame_color = "#B4637A"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/alireza-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#BD93F9"
+corner_radius = 0
+background = "#282A36"
+foreground = "#F8F8F2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#282A36"
+
+[urgency_low]
+background = "#282A36"
+foreground = "#6272A4"
+frame_color = "#282A36"
+timeout = 4
+
+[urgency_normal]
+background = "#282A36"
+foreground = "#F8F8F2"
+frame_color = "#BD93F9"
+timeout = 6
+
+[urgency_critical]
+background = "#282A36"
+foreground = "#FF5E76"
+frame_color = "#FF5E76"
+timeout = 0
+EOF
+
+cat > "$CONF/dunst/themes/archblur-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#FE8019"
+corner_radius = 0
+background = "#282828"
+foreground = "#EBDBB2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#282828"
+
+[urgency_low]
+background = "#282828"
+foreground = "#A89984"
+frame_color = "#282828"
+timeout = 4
+
+[urgency_normal]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FE8019"
+timeout = 6
+
+[urgency_critical]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FB4934"
+timeout = 0
+EOF
+
 cat > "$CONF/dunst/themes/archcraft-square.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -24271,6 +32283,74 @@ foreground = "#E06C75"
 frame_color = "#E06C75"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/alireza.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#BD93F9"
+corner_radius = 10
+background = "#282A36"
+foreground = "#F8F8F2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#282A36"
+
+[urgency_low]
+background = "#282A36"
+foreground = "#6272A4"
+frame_color = "#282A36"
+timeout = 4
+
+[urgency_normal]
+background = "#282A36"
+foreground = "#F8F8F2"
+frame_color = "#BD93F9"
+timeout = 6
+
+[urgency_critical]
+background = "#282A36"
+foreground = "#FF5E76"
+frame_color = "#FF5E76"
+timeout = 0
+EOF
+
+cat > "$CONF/dunst/themes/archblur.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#FE8019"
+corner_radius = 10
+background = "#282828"
+foreground = "#EBDBB2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#282828"
+
+[urgency_low]
+background = "#282828"
+foreground = "#A89984"
+frame_color = "#282828"
+timeout = 4
+
+[urgency_normal]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FE8019"
+timeout = 6
+
+[urgency_critical]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FB4934"
+timeout = 0
+EOF
+
 cat > "$CONF/dunst/themes/archcraft.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -24304,6 +32384,43 @@ foreground = "#E06C75"
 frame_color = "#E06C75"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/breddie-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#ACB0D0"
+corner_radius = 0
+background = "#1A1B26"
+foreground = "#E5E9F0"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#1A1B26"
+
+[urgency_low]
+background = "#1A1B26"
+foreground = "#444B61"
+frame_color = "#1A1B26"
+timeout = 4
+
+[urgency_normal]
+background = "#1A1B26"
+foreground = "#E5E9F0"
+frame_color = "#ACB0D0"
+timeout = 6
+
+; Matches the source's own real dunstrc critical style directly (dark red
+; background, bright red frame) - one of the only places its otherwise
+; near-monochrome setup uses bold, alarming color at all.
+[urgency_critical]
+background = "#900000"
+foreground = "#ffffff"
+frame_color = "#ff0000"
+timeout = 0
+EOF
+
 cat > "$CONF/dunst/themes/brenda-square.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -24337,6 +32454,43 @@ foreground = "#E67E80"
 frame_color = "#E67E80"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/breddie.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#ACB0D0"
+corner_radius = 10
+background = "#1A1B26"
+foreground = "#E5E9F0"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#1A1B26"
+
+[urgency_low]
+background = "#1A1B26"
+foreground = "#444B61"
+frame_color = "#1A1B26"
+timeout = 4
+
+[urgency_normal]
+background = "#1A1B26"
+foreground = "#E5E9F0"
+frame_color = "#ACB0D0"
+timeout = 6
+
+; Matches the source's own real dunstrc critical style directly (dark red
+; background, bright red frame) - one of the only places its otherwise
+; near-monochrome setup uses bold, alarming color at all.
+[urgency_critical]
+background = "#900000"
+foreground = "#ffffff"
+frame_color = "#ff0000"
+timeout = 0
+EOF
+
 cat > "$CONF/dunst/themes/brenda.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -24436,6 +32590,73 @@ foreground = "#F38BA8"
 frame_color = "#F38BA8"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/cherryblocks-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#FB4934"
+corner_radius = 0
+background = "#282828"
+foreground = "#EBDBB2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#282828"
+
+[urgency_low]
+background = "#282828"
+foreground = "#A89984"
+frame_color = "#282828"
+timeout = 4
+
+[urgency_normal]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FB4934"
+timeout = 6
+
+[urgency_critical]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FB4934"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/classic-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#FE8019"
+corner_radius = 0
+background = "#282828"
+foreground = "#EBDBB2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#282828"
+
+[urgency_low]
+background = "#282828"
+foreground = "#A89984"
+frame_color = "#282828"
+timeout = 4
+
+[urgency_normal]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FE8019"
+timeout = 6
+
+[urgency_critical]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FB4934"
+timeout = 0
+EOF
+
 cat > "$CONF/dunst/themes/cristina-square.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -24469,6 +32690,73 @@ foreground = "#EA6F91"
 frame_color = "#EA6F91"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/cherryblocks.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#FB4934"
+corner_radius = 10
+background = "#282828"
+foreground = "#EBDBB2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#282828"
+
+[urgency_low]
+background = "#282828"
+foreground = "#A89984"
+frame_color = "#282828"
+timeout = 4
+
+[urgency_normal]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FB4934"
+timeout = 6
+
+[urgency_critical]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FB4934"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/classic.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#FE8019"
+corner_radius = 0
+background = "#282828"
+foreground = "#EBDBB2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#282828"
+
+[urgency_low]
+background = "#282828"
+foreground = "#A89984"
+frame_color = "#282828"
+timeout = 4
+
+[urgency_normal]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FE8019"
+timeout = 6
+
+[urgency_critical]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FB4934"
+timeout = 0
+EOF
+
 cat > "$CONF/dunst/themes/cristina.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -24766,6 +33054,40 @@ foreground = "#D9736A"
 frame_color = "#D9736A"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/float-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#8EC07C"
+corner_radius = 0
+background = "#282828"
+foreground = "#EBDBB2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#282828"
+
+[urgency_low]
+background = "#282828"
+foreground = "#A89984"
+frame_color = "#282828"
+timeout = 4
+
+[urgency_normal]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#8EC07C"
+timeout = 6
+
+[urgency_critical]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FB4934"
+timeout = 0
+EOF
+
 cat > "$CONF/dunst/themes/h4ck3r-square.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -24799,6 +33121,40 @@ foreground = "#6DDE00"
 frame_color = "#6DDE00"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/float.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#8EC07C"
+corner_radius = 12
+background = "#282828"
+foreground = "#EBDBB2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#282828"
+
+[urgency_low]
+background = "#282828"
+foreground = "#A89984"
+frame_color = "#282828"
+timeout = 4
+
+[urgency_normal]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#8EC07C"
+timeout = 6
+
+[urgency_critical]
+background = "#282828"
+foreground = "#EBDBB2"
+frame_color = "#FB4934"
+timeout = 0
+EOF
+
 cat > "$CONF/dunst/themes/h4ck3r.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -25360,6 +33716,40 @@ foreground = "#CC241D"
 frame_color = "#CC241D"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/tobi-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#62B4F9"
+corner_radius = 0
+background = "#1E1E2E"
+foreground = "#D9E0EE"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#1E1E2E"
+
+[urgency_low]
+background = "#1E1E2E"
+foreground = "#6E6C7E"
+frame_color = "#96CDFB"
+timeout = 4
+
+[urgency_normal]
+background = "#1E1E2E"
+foreground = "#D9E0EE"
+frame_color = "#62B4F9"
+timeout = 6
+
+[urgency_critical]
+background = "#1E1E2E"
+foreground = "#D9E0EE"
+frame_color = "#F28FAD"
+timeout = 0
+EOF
+
 cat > "$CONF/dunst/themes/varinka-square.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -25393,6 +33783,40 @@ foreground = "#DC5BBC"
 frame_color = "#DC5BBC"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/tobi.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#62B4F9"
+corner_radius = 10
+background = "#1E1E2E"
+foreground = "#D9E0EE"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#1E1E2E"
+
+[urgency_low]
+background = "#1E1E2E"
+foreground = "#6E6C7E"
+frame_color = "#96CDFB"
+timeout = 4
+
+[urgency_normal]
+background = "#1E1E2E"
+foreground = "#D9E0EE"
+frame_color = "#62B4F9"
+timeout = 6
+
+[urgency_critical]
+background = "#1E1E2E"
+foreground = "#D9E0EE"
+frame_color = "#F28FAD"
+timeout = 0
+EOF
+
 cat > "$CONF/dunst/themes/varinka.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -25459,6 +33883,39 @@ foreground = "#EE5396"
 frame_color = "#EE5396"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/yucklys-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#81A1C1"
+corner_radius = 0
+background = "#2E3440"
+foreground = "#D8DEE9"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#4C566A"
+
+[urgency_low]
+background = "#2E3440"
+foreground = "#4C566A"
+frame_color = "#4C566A"
+timeout = 4
+
+[urgency_normal]
+background = "#2E3440"
+foreground = "#D8DEE9"
+frame_color = "#81A1C1"
+timeout = 6
+
+[urgency_critical]
+background = "#2E3440"
+foreground = "#BF616A"
+frame_color = "#BF616A"
+timeout = 0
+EOF
 cat > "$CONF/dunst/themes/yael.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -25490,6 +33947,39 @@ timeout = 6
 background = "#161616"
 foreground = "#EE5396"
 frame_color = "#EE5396"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/yucklys.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#81A1C1"
+corner_radius = 10
+background = "#2E3440"
+foreground = "#D8DEE9"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#4C566A"
+
+[urgency_low]
+background = "#2E3440"
+foreground = "#4C566A"
+frame_color = "#4C566A"
+timeout = 4
+
+[urgency_normal]
+background = "#2E3440"
+foreground = "#D8DEE9"
+frame_color = "#81A1C1"
+timeout = 6
+
+[urgency_critical]
+background = "#2E3440"
+foreground = "#BF616A"
+frame_color = "#BF616A"
 timeout = 0
 EOF
 cat > "$CONF/dunst/themes/z0mbi3-square.dunstrc" <<'EOF'
