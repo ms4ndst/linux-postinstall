@@ -2306,6 +2306,7 @@ exec = ~/.local/bin/polybar-media.sh
 interval = 1
 label-foreground = ${colors.green}
 format = <label>
+format-background = ${colors.surface0}
 
 [module/cliamp]
 type = custom/script
@@ -2314,6 +2315,7 @@ interval = 3
 click-left = ~/.local/bin/cliamp-toggle.sh &
 label-foreground = ${colors.green}
 format = <label>
+format-background = ${colors.surface0}
 
 [module/network-wired]
 type = internal/network
@@ -2396,6 +2398,7 @@ tail = true
 click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
 label-foreground = ${colors.yellow}
 format = <label>
+format-background = ${colors.surface0}
 
 [module/layout]
 type = custom/script
@@ -2682,6 +2685,7 @@ width = 100%
 height = 32
 background = ${colors.base}
 foreground = ${colors.text}
+bottom = true
 radius = 10
 padding-left = 2
 padding-right = 2
@@ -2691,21 +2695,35 @@ overline-size = 2
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
-modules-center =
+modules-left = launcher i3
+modules-center = media
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray backlight pulseaudio cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio cliamp network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
 ; on top of the font reads visually heavier/larger than intended (confirmed
 ; the hard way porting this rice's own "alireza" theme).
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.orange}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.red}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -3178,16 +3196,16 @@ surface0 = #F2E9E1
 surface1 = #F2E9E1
 text = #575279
 subtext = #9893A5
-teal = #2E7480
+teal = #9CCFD8
 ; Dedicated dark, fully-opaque backdrop for the system tray specifically -
 ; most tray icons (Discord, 1Password, etc.) are drawn in white/light
 ; colors expecting a dark bar and become invisible against this theme's
 ; own light cream chips (caught via direct feedback, not assumed).
 tray-bg = #3D3757
 green = #286983
-yellow = #A15E15
+yellow = #EA9D34
 red = #B4637A
-blue = #2E5D66
+blue = #56949F
 
 [bar/base]
 monitor = ${env:MONITOR:}
@@ -3208,11 +3226,11 @@ modules-center = bi date bd
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi bluetooth caffeine dnd bd sep bi battery memory cpu updates layout bd sep bi-tray tray bd-tray
+modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi bluetooth caffeine dnd bd sep bi battery memory cpu filesystem updates layout bd sep bi-tray tray bd-tray
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi memory cpu updates bd
+modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi memory cpu filesystem updates bd
 
 [module/bi]
 type = custom/text
@@ -3261,15 +3279,15 @@ format = <label-state> <label-mode>
 format-background = ${colors.surface0}
 index-sort = true
 wrapping-scroll = false
-ws-icon-0 = 1;󰬺
-ws-icon-1 = 2;󰬻
-ws-icon-2 = 3;󰬼
-ws-icon-3 = 4;󰬽
-ws-icon-4 = 5;󰬾
-ws-icon-5 = 6;󰬿
-ws-icon-6 = 7;󰭀
-ws-icon-7 = 8;󰭁
-ws-icon-8 = 9;󰭂
+ws-icon-0 = 1;%{F#76aaff}󰬺%{F-}
+ws-icon-1 = 2;%{F#ad78cf}󰬻%{F-}
+ws-icon-2 = 3;%{F#70d7c5}󰬼%{F-}
+ws-icon-3 = 4;%{F#f09e6c}󰬽%{F-}
+ws-icon-4 = 5;%{F#f46bc9}󰬾%{F-}
+ws-icon-5 = 6;%{F#ef658c}󰬿%{F-}
+ws-icon-6 = 7;%{F#76aaff}󰭀%{F-}
+ws-icon-7 = 8;%{F#ad78cf}󰭁%{F-}
+ws-icon-8 = 9;%{F#70d7c5}󰭂%{F-}
 ws-icon-default = "♟"
 label-focused = ${self.ws-label}
 ws-label = %index%
@@ -3415,6 +3433,15 @@ format-background = ${colors.surface0}
 format-prefix = " "
 format-prefix-foreground = ${colors.text}
 label = " %percentage%% "
+
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+format-mounted-background = ${colors.surface0}
+format-mounted-prefix = " "
+format-mounted-prefix-foreground = ${colors.text}
+label-mounted = " %percentage_used%% "
 
 [module/updates]
 type = custom/script
@@ -3687,6 +3714,14 @@ cat > "$CONF/polybar/themes/brenda.ini" <<'EOF'
 ; when render-tested in this rice's actual Nerd Font build, so charging
 ; reuses this rice's own already-verified battery icon instead of a new,
 ; unverified one.
+; Label-urgent below deliberately breaks from the source's real same-
+; as-occupied urgent color - an urgent workspace (demanding attention on
+; one you aren't looking at) should actually stand out, the same disclosed
+; rice-wide exception already applied on this rice's own Isabel/Karla.
+; A filesystem widget (real source has one) was tried and reverted -
+; tested live, its extra icon+value box pushed the whole cluster past
+; the bar's own right edge, spilling half outside the rounded corner.
+; Fitting first, not squeezing in a widget that doesn't fit.
 [colors]
 base   = #2D353B
 mantle = #2D353B
@@ -3823,20 +3858,24 @@ label-foreground = ${colors.base}
 ; takes up no space instead of showing a permanent "offline" label.
 [module/media]
 type = custom/script
-exec = ~/.local/bin/polybar-media.sh
+exec = ~/.local/bin/polybar-media-boxed.sh
 interval = 1
-label-foreground = ${colors.base}
-format-background = ${colors.surface0}
+click-left = playerctl previous &
+click-middle = playerctl play-pause &
+click-right = playerctl next &
 format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
 
 [module/cliamp]
 type = custom/script
 exec = ~/.local/bin/polybar-cliamp.sh
 interval = 3
 click-left = ~/.local/bin/cliamp-toggle.sh &
-label-foreground = ${colors.base}
-format-background = ${colors.surface0}
 format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
+label-padding = 1
 
 [module/network-wired]
 type = internal/network
@@ -3950,9 +3989,10 @@ type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
 tail = true
 click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
-label-foreground = ${colors.base}
-format-background = ${colors.surface0}
 format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
+label-padding = 1
 
 [module/layout]
 type = custom/script
@@ -3973,14 +4013,19 @@ EOF
 
 cat > "$CONF/polybar/themes/cherryblocks.ini" <<'EOF'
 ; Cherryblocks - modeled directly on github.com/kiddae/polybar-themes'
-; "cherryblocks" bar (confirmed by reading a full local clone) - its own
-; screenshot shows the bottom bar as several visually SEPARATE rounded
-; blocks with real gaps between them, not one continuous strip - ported
-; here via a wider module-margin than any other theme in this set, giving
-; each widget group real breathing room instead of a merged bar. "Cherry"
-; for the red accent, matching the theme's own name. Gruvbox Dark palette
-; (see "archblur" for how that was confirmed), structure the
-; differentiator.
+; real "cherryblocks" bar (config read from a full local clone). Its
+; defining, name-giving trait is SOLID FILLED CHIPS: every widget renders
+; as `format-background = <accent>` with inverted (base-colored) text,
+; not a shared group background or an underline - confirmed directly in
+; its own config (`format-background = ${color.color1}`, `format-
+; foreground = ${color.background}` on the workspace/mpd/time modules).
+; The real source also splits this into three separate floating bars
+; (workspace, music, tray) with true gaps of desktop between them - this
+; rice's shared polybar-launch.sh only ever launches one bar per monitor,
+; so that part is approximated with real gap modules between clusters
+; inside a single bar instead (the chip look itself, its main visual
+; identity, is not approximated - it's the real thing). Gruvbox Dark
+; palette (see "archblur" for how that was confirmed).
 [colors]
 base     = #282828
 mantle   = #1D2021
@@ -4017,13 +4062,18 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray gap-cb backlight pulseaudio media cliamp gap-cb network-wired network-wireless bluetooth gap-cb caffeine dnd battery gap-cb memory cpu updates layout gap-cb date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp gap-cb network-wired network-wireless gap-cb memory cpu updates gap-cb date
 
 ; --- real widgets ------------------------------------------------------------
+[module/gap-cb]
+type = custom/text
+format = <label>
+label = "  "
+
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
 ; on top of the font reads visually heavier/larger than intended (confirmed
 ; the hard way porting this rice's own "alireza" theme).
@@ -4035,9 +4085,8 @@ wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
 label-focused-font = 3
-label-focused-foreground = ${colors.red}
-label-focused-underline = ${colors.red}
-label-focused-overline = ${colors.red}
+label-focused-foreground = ${colors.base}
+label-focused-background = ${colors.red}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
 label-unfocused-font = 3
@@ -4054,8 +4103,9 @@ type = internal/date
 interval = 1
 date = %Y-%m-%d
 time = %H:%M
+format-background = ${colors.blue}
 label = "%{A1:GTK_THEME=Rice-cherryblocks gnome-calendar &:}%date%  %time%%{A}"
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/backlight]
 type = custom/script
@@ -4063,16 +4113,18 @@ exec = ~/.local/bin/polybar-backlight.sh
 interval = 1
 scroll-up = brightnessctl set +5% &
 scroll-down = brightnessctl set 5%- &
+format-background = ${colors.yellow}
 format = <label>
 label = "%output%%"
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+format-background = ${colors.purple}
 label-volume = "%percentage%%"
-label-volume-foreground = ${colors.text}
+label-volume-foreground = ${colors.base}
 label-muted = "muted"
-label-muted-foreground = ${colors.subtext}
+label-muted-foreground = ${colors.base}
 
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
@@ -4081,16 +4133,18 @@ label-muted-foreground = ${colors.subtext}
 type = internal/network
 interface-type = wired
 interval = 3
+format-background = ${colors.green}
 label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
-label-connected-foreground = ${colors.text}
+label-connected-foreground = ${colors.base}
 format-disconnected =
 
 [module/network-wireless]
 type = internal/network
 interface-type = wireless
 interval = 3
+format-background = ${colors.green}
 label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
+label-connected-foreground = ${colors.base}
 format-disconnected =
 
 [module/bluetooth]
@@ -4098,14 +4152,16 @@ type = custom/script
 exec = ~/.local/bin/polybar-bluetooth.sh
 interval = 5
 click-left = blueman-manager &
+format-background = ${colors.aqua}
 format = <label>
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/media]
 type = custom/script
 exec = ~/.local/bin/polybar-media.sh
 interval = 1
-label-foreground = ${colors.red}
+format-background = ${colors.red}
+label-foreground = ${colors.base}
 format = <label>
 
 [module/cliamp]
@@ -4113,7 +4169,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-cliamp.sh
 interval = 3
 click-left = ~/.local/bin/cliamp-toggle.sh &
-label-foreground = ${colors.red}
+format-background = ${colors.red}
+label-foreground = ${colors.base}
 format = <label>
 
 [module/caffeine]
@@ -4122,49 +4179,55 @@ exec = ~/.local/bin/polybar-caffeine.sh
 interval = 3
 click-left = ~/.local/bin/caffeine-toggle.sh &
 click-right = xset s activate &
+format-background = ${colors.green}
 format = <label>
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/dnd]
 type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+format-background = ${colors.red}
 format = <label>
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/battery]
 type = internal/battery
 battery = BAT0
 adapter = AC
 low-at = 15
+format-background = ${colors.orange}
 label-charging = "%percentage%%"
 label-discharging = "%percentage%%"
 label-full = "Full"
 label-low = "%percentage%%"
-label-charging-foreground = ${colors.text}
-label-discharging-foreground = ${colors.text}
-label-full-foreground = ${colors.text}
-label-low-foreground = ${colors.red}
+label-charging-foreground = ${colors.base}
+label-discharging-foreground = ${colors.base}
+label-full-foreground = ${colors.base}
+label-low-foreground = ${colors.base}
 
 [module/memory]
 type = internal/memory
 interval = 2
+format-background = ${colors.purple}
 label = "%percentage_used%%"
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/cpu]
 type = internal/cpu
 interval = 2
+format-background = ${colors.aqua}
 label = "%percentage%%"
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
 tail = true
 click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
-label-foreground = ${colors.yellow}
+format-background = ${colors.yellow}
+label-foreground = ${colors.base}
 format = <label>
 
 [module/layout]
@@ -4178,19 +4241,27 @@ label-foreground = ${colors.text}
 type = internal/tray
 tray-spacing = 8
 tray-padding = 6
+tray-background = ${colors.surface0}
+format-background = ${colors.surface0}
 
 [settings]
 screenchange-reload = true
 EOF
 cat > "$CONF/polybar/themes/classic.ini" <<'EOF'
 ; Classic - modeled directly on github.com/kiddae/polybar-themes'
-; "classic2-rounded" bar (confirmed by reading a full local clone) - its
-; own screenshot is almost entirely grayscale, just plain light text on a
-; near-black bar with a single small colored dot marking the focused
-; workspace - ported here as a deliberately near-monochrome theme, most
-; widgets left in muted subtext, with the workspace accent as the one
-; spot of real color. Gruvbox Dark palette (see "archblur" for how that
-; was confirmed), structure the differentiator.
+; real "classic" bar (config read from a full local clone) - genuinely
+; the most minimal/monochrome theme in the whole archive: its own
+; [colors] block defines only background and foreground, nothing else,
+; and its bspwm module sets every workspace state (focused/occupied/
+; empty) to that same plain foreground - no accent hue anywhere at all,
+; confirmed by reading its real config directly rather than assumed from
+; "classic2-rounded" (a different, README-undocumented folder this port
+; mistakenly cited before). Ported here as fully monochrome to match -
+; every widget in plain text/subtext, with only the two universal,
+; disclosed exceptions every theme in this rice already applies (urgent
+; must stand out; low battery must stand out). Gruvbox Dark palette (see
+; "archblur" for how that was confirmed) still backs text/subtext, but no
+; accent hue from it is used anywhere in this theme's own widgets.
 [colors]
 base     = #282828
 mantle   = #1D2021
@@ -4245,9 +4316,9 @@ wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
 label-focused-font = 3
-label-focused-foreground = ${colors.orange}
-label-focused-underline = ${colors.orange}
-label-focused-overline = ${colors.orange}
+label-focused-foreground = ${colors.text}
+label-focused-underline = ${colors.text}
+label-focused-overline = ${colors.text}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
 label-unfocused-font = 3
@@ -4315,7 +4386,7 @@ label-foreground = ${colors.text}
 type = custom/script
 exec = ~/.local/bin/polybar-media.sh
 interval = 1
-label-foreground = ${colors.orange}
+label-foreground = ${colors.subtext}
 format = <label>
 
 [module/cliamp]
@@ -4323,7 +4394,7 @@ type = custom/script
 exec = ~/.local/bin/polybar-cliamp.sh
 interval = 3
 click-left = ~/.local/bin/cliamp-toggle.sh &
-label-foreground = ${colors.orange}
+label-foreground = ${colors.subtext}
 format = <label>
 
 [module/caffeine]
@@ -4374,7 +4445,7 @@ type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
 tail = true
 click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
-label-foreground = ${colors.yellow}
+label-foreground = ${colors.subtext}
 format = <label>
 
 [module/layout]
@@ -4443,15 +4514,15 @@ font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
 modules-left = i3
-modules-center =
+modules-center = title
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep bluetooth sep caffeine sep dnd sep battery sep memi memory memd sep cpi cpu cpd sep updates sep layout sep tray sep dti date dtd
+modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep bluetooth sep caffeine sep dnd sep battery sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep layout sep tray sep dti date dtd
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep updates sep dti date dtd
+modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep dti date dtd
 
 ; --- bracket pairs -------------------------------------------------------
 [module/sep]
@@ -4523,6 +4594,37 @@ label-font = 2
 label-foreground = ${colors.base}
 label-background = ${colors.yellow}
 
+[module/fsi]
+type = custom/text
+format = <label>
+label = ""
+label-font = 2
+label-foreground = ${colors.orange}
+label-background = ${colors.base}
+
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+format-mounted-background = ${colors.orange}
+label-mounted = "%percentage_used%%"
+label-mounted-foreground = ${colors.base}
+
+[module/fsd]
+type = custom/text
+format = <label>
+label = ""
+label-font = 2
+label-foreground = ${colors.base}
+label-background = ${colors.orange}
+
+[module/title]
+type = internal/xwindow
+label = %title:0:40:...%
+label-foreground = ${colors.purple}
+label-background = ${colors.base}
+label-padding = 5
+
 [module/voli]
 type = custom/text
 format = <label>
@@ -4569,7 +4671,7 @@ label-focused-foreground = ${colors.lime}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
 label-unfocused-font = 3
-label-unfocused-foreground = ${colors.subtext}
+label-unfocused-foreground = ${colors.purple}
 label-unfocused-padding = 1
 label-urgent = ${self.ws-label}
 label-urgent-font = 3
@@ -4734,6 +4836,10 @@ cat > "$CONF/polybar/themes/cynthia.ini" <<'EOF'
 ; usual single top bar instead, since a real second bar is a structural
 ; change to the launch/gaps setup affecting every theme, not something
 ; to introduce for just one of them.
+; Label-urgent below deliberately breaks from the source's real same-
+; as-occupied urgent color - an urgent workspace (demanding attention on
+; one you aren't looking at) should actually stand out, the same disclosed
+; rice-wide exception already applied on this rice's own Isabel/Karla.
 [colors]
 base   = #181616
 mantle = #181616
@@ -4766,11 +4872,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bi memory cpu bd sep bi network-wired network-wireless bd sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
+modules-right = bi memory cpu filesystem bd sep bi network-wired network-wireless bd sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bi memory cpu bd sep bi network-wired network-wireless bd sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
+modules-right = bi memory cpu filesystem bd sep bi network-wired network-wireless bd sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
 
 [module/bi]
 type = custom/text
@@ -4932,6 +5038,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+format-mounted-prefix = " "
+label-mounted = "%percentage_used%%"
+
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -4972,6 +5085,10 @@ cat > "$CONF/polybar/themes/daniela.ini" <<'EOF'
 ; set look color-identical, so this port keeps daniela's real STRUCTURE
 ; (word-prefix, fully flat, no backgrounds) but uses a fresh Tokyo-Night-
 ; adjacent palette instead, distinct from every other theme here.
+; Label-urgent below deliberately breaks from the source's real same-
+; as-occupied urgent color - an urgent workspace (demanding attention on
+; one you aren't looking at) should actually stand out, the same disclosed
+; rice-wide exception already applied on this rice's own Isabel/Karla.
 [colors]
 base   = #1A1B26
 mantle = #1A1B26
@@ -5004,11 +5121,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout tray date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu filesystem updates layout tray date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
@@ -5156,6 +5273,15 @@ format-prefix-font = 1
 format-prefix-foreground = ${colors.blue}
 label = "%percentage%%"
 
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+format-mounted-prefix = "DISK "
+format-mounted-prefix-font = 1
+format-mounted-prefix-foreground = ${colors.orange}
+label-mounted = "%percentage_used%%"
+
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -5198,6 +5324,10 @@ cat > "$CONF/polybar/themes/emilia.ini" <<'EOF'
 ; it here too would make two themes look color-identical, so this port
 ; uses a fresh warm copper/amber palette instead, distinct from every
 ; other theme built so far.
+; Label-urgent below deliberately breaks from the source's real same-
+; as-occupied urgent color - an urgent workspace (demanding attention on
+; one you aren't looking at) should actually stand out, the same disclosed
+; rice-wide exception already applied on this rice's own Isabel/Karla.
 [colors]
 base   = #1E1A17
 mantle = #1E1A17
@@ -5230,11 +5360,11 @@ modules-center = bi i3 bd
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = neti network-wired network-wireless netd sep bti bluetooth btd sep cafi caffeine cafd sep dndi dnd dndd sep bati battery batd sep memi memory memd sep cpi cpu cpd sep updates sep layout sep tray sep dti date dtd
+modules-right = neti network-wired network-wireless netd sep bti bluetooth btd sep cafi caffeine cafd sep dndi dnd dndd sep bati battery batd sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep layout sep tray sep dti date dtd
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep updates sep dti date dtd
+modules-right = neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep dti date dtd
 
 [module/bi]
 type = custom/text
@@ -5395,6 +5525,30 @@ label-foreground = ${colors.surface0}
 label-background = ${colors.base}
 
 [module/cpd]
+type = custom/text
+format = <label>
+label = ""
+label-font = 2
+label-foreground = ${colors.surface0}
+label-background = ${colors.base}
+
+[module/fsi]
+type = custom/text
+format = <label>
+label = ""
+label-font = 2
+label-foreground = ${colors.surface0}
+label-background = ${colors.base}
+
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+format-mounted-background = ${colors.surface0}
+format-mounted-prefix = " "
+label-mounted = "%percentage_used%%"
+
+[module/fsd]
 type = custom/text
 format = <label>
 label = ""
@@ -5589,15 +5743,25 @@ screenchange-reload = true
 EOF
 
 cat > "$CONF/polybar/themes/float.ini" <<'EOF'
-; Float - modeled directly on github.com/kiddae/polybar-themes' "float2"
-; bar (confirmed by reading a full local clone) - its real config sets a
-; real inset (offset-x/y = 20px) and a thick same-color-as-background
-; border, making the bar visually detach/float off the screen edges
-; rather than sit flush against them - approximated here with generous
-; left/right padding and a larger corner radius, the closest polybar
-; equivalent this rice's other themes already use. Gruvbox Dark palette
-; (see "archblur" for how that was confirmed), structure the
-; differentiator.
+; Float - modeled directly on github.com/kiddae/polybar-themes' real
+; "float" bar (config read from a full local clone, not "float2" - a
+; different, README-undocumented folder this port mistakenly cited
+; before). Its real config is a genuinely floating pill: width 80%,
+; centered (offset-x 10%), inset 10px from the top, radius 15. width=80%
+; is applied directly below (a real, working improvement over the
+; generic full-width template); offset-x/offset-y are NOT - tested
+; directly in this exact i3+polybar 3.7.2 setup (fixed pixel values too,
+; not just percentages) and the bar stays flush at the screen edge
+; regardless, an environment limitation rather than a config mistake, so
+; left undone rather than shipped as a claim this setup can't actually
+; deliver. Gruvbox Dark palette (see "archblur" for how that was
+; confirmed).
+;
+; modules-right is real-source-only (cpu memory date pulseaudio power),
+; not this rice's usual full widget set - tested directly at the real
+; 80%-width and it visibly clipped (date/power got cut off past the
+; bar's own edge). Fitting first, not squeezing in extra widgets that
+; don't fit.
 [colors]
 base     = #282828
 mantle   = #1D2021
@@ -5616,11 +5780,11 @@ gray     = #928374
 
 [bar/base]
 monitor = ${env:MONITOR:}
-width = 100%
+width = 80%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
-radius = 12
+radius = 15
 padding-left = 8
 padding-right = 8
 module-margin = 2
@@ -5629,21 +5793,35 @@ overline-size = 2
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
-modules-center =
+modules-left = launcher i3
+modules-center = media
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = cpu memory date pulseaudio power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = cpu memory date pulseaudio
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
 ; on top of the font reads visually heavier/larger than intended (confirmed
 ; the hard way porting this rice's own "alireza" theme).
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.aqua}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.red}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -5817,6 +5995,10 @@ cat > "$CONF/polybar/themes/h4ck3r.ini" <<'EOF'
 ; status/target-lock modules are custom scripts specific to that rice's
 ; own security-tool workflow, not part of this rig, so left out rather
 ; than faked, same call made for other themes' unportable widgets.
+; Label-urgent below deliberately breaks from the source's real same-
+; as-occupied urgent color - an urgent workspace (demanding attention on
+; one you aren't looking at) should actually stand out, the same disclosed
+; rice-wide exception already applied on this rice's own Isabel/Karla.
 [colors]
 base   = #0C1018
 mantle = #0C1018
@@ -6027,6 +6209,10 @@ cat > "$CONF/polybar/themes/isabel.ini" <<'EOF'
 ; adjacent scheme, already close to this rice's own Archcraft theme, so
 ; this port uses a fresh teal/mint dark palette instead to stay visually
 ; distinct.
+; A filesystem widget and a title module (real source has both) were
+; tried and reverted - tested live, the combined width pushed the bar
+; past the screen edge entirely. Fitting first, not squeezing in
+; widgets that don't fit.
 [colors]
 base   = #10181A
 mantle = #10181A
@@ -6253,12 +6439,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -6270,6 +6456,20 @@ format = <label>
 label = "  "
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.blue}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.orange}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -6286,7 +6486,7 @@ ws-icon-7 = 8;󰭁
 ws-icon-8 = 9;󰭂
 ws-icon-default = "♟"
 label-focused = "[%icon%]"
-label-focused-foreground = ${colors.pink}
+label-focused-foreground = ${colors.magenta}
 label-focused-font = 2
 label-unfocused = %icon%
 label-unfocused-foreground = ${colors.lime}
@@ -6390,7 +6590,7 @@ adapter = AC
 format-charging-prefix = " "
 format-charging-prefix-foreground = ${colors.pink}
 format-discharging-prefix = " "
-format-discharging-prefix-foreground = ${colors.pink}
+format-discharging-prefix-foreground = ${colors.blue}
 format-full-prefix = " "
 format-full-prefix-foreground = ${colors.green}
 label-charging = "%percentage%%"
@@ -6408,7 +6608,7 @@ label = "%percentage_used%%"
 type = internal/cpu
 interval = 2
 format-prefix = " "
-format-prefix-foreground = ${colors.pink}
+format-prefix-foreground = ${colors.magenta}
 label = "%percentage%%"
 
 [module/updates]
@@ -6444,7 +6644,9 @@ cat > "$CONF/polybar/themes/karla.ini" <<'EOF'
 ; verified rendering there), but on a vivid rather than monochrome
 ; palette, and with no color distinction between focused/unfocused
 ; (matching the source's own [module/bspwm], which sets both to the same
-; plain foreground). Modeled directly on github.com/gh0stzk/dotfiles'
+; plain foreground; label-urgent below still gets its own red, the
+; same disclosed "urgent must stand out" exception applied rice-wide).
+; Modeled directly on github.com/gh0stzk/dotfiles'
 ; real "karla" rice (config/bspwm/rices/karla/{config,modules}.ini, read
 ; from a full local clone) - the source actually ships this rice as
 ; THREE separate bars (system stats, media/battery/network, and a
@@ -6482,12 +6684,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -6500,6 +6702,20 @@ label = " | "
 label-foreground = ${colors.subtext}
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.blue}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.red}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -6507,7 +6723,7 @@ index-sort = true
 wrapping-scroll = false
 ws-label = %index%
 label-focused = "󱓇"
-label-focused-foreground = ${colors.pink}
+label-focused-foreground = ${colors.text}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
 label-unfocused-foreground = ${colors.text}
@@ -6944,6 +7160,7 @@ blue   = #8897F4
 cyan   = #79E6F3
 green  = #5ADECD
 yellow = #F2A272
+pink   = #EC407A
 
 [bar/base]
 monitor = ${env:MONITOR:}
@@ -6958,12 +7175,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -6975,6 +7192,20 @@ format = <label>
 label = "  "
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.blue}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.red}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -7101,6 +7332,7 @@ label = "%percentage_used%%"
 type = internal/cpu
 interval = 2
 format-prefix = " "
+format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
 [module/updates]
@@ -7174,12 +7406,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date dots power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -7192,6 +7424,20 @@ label = " 󰇙 "
 label-foreground = ${colors.orange}
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.text}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.red}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -7403,11 +7649,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu filesystem updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -7547,6 +7793,13 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+label-mounted = "%percentage_used%%"
+label-mounted-foreground = ${colors.blue}
+
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -7611,12 +7864,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=16;5"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -7628,6 +7881,20 @@ format = <label>
 label = "  "
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.orange}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.orange}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -7644,7 +7911,7 @@ label-focused = %icon%
 label-focused-foreground = ${colors.text}
 label-focused-font = 2
 label-unfocused = %icon%
-label-unfocused-foreground = ${colors.subtext}
+label-unfocused-foreground = ${colors.grey}
 label-unfocused-font = 2
 label-urgent = %icon%
 label-urgent-foreground = ${colors.pink}
@@ -7817,12 +8084,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -7834,6 +8101,20 @@ format = <label>
 label = "  "
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.blue}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.blue}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -8296,6 +8577,306 @@ click-left = ~/.local/bin/powermenu.sh &
 [settings]
 screenchange-reload = true
 EOF
+cat > "$CONF/polybar/themes/yucklys-light.ini" <<'EOF'
+; Yucklys Light - the source's own light/dark PAIR (github.com/Yucklys/
+; polybar-nord-theme's real colors/light-colors + bars/light-config, a full
+; local clone read directly): same module set and layout as this rice's
+; "yucklys" (dark), background/text/muted swap to the source's real light
+; values (base=nord6 #eceff4, text=nord0 #2e3440, muted=nord1 #3b4252 -
+; copied byte-for-byte), while every Frost/Aurora accent hue (teal/sky/
+; mauve/green/yellow/peach/red/lavender) stays the exact same real hex the
+; dark theme uses - that part of the source's own light-colors file is
+; identical to dark-colors, confirmed by diffing them directly.
+;
+; Those accent hexes are genuinely unreadable as TEXT on this bright a
+; background though - computed contrast against #eceff4 (WCAG relative
+; luminance, not eyeballed): teal 1.81:1, sky 1.74:1, mauve 2.34:1, yellow
+; 1.35:1 - all well under even the lenient 3:1 floor for icon-sized text,
+; the same class of bug this rice's own README already documents fixing
+; on "aline" and "nord" (unreadable accents on a light chip/dark surface
+; kept for luminance reasons). Each accent below gets a same-hue, darkened
+; "text-safe" value (>=4.5:1 against #eceff4) for use as underline/label
+; text; the ORIGINAL vivid value is kept under -bg for anything used as a
+; filled chip instead (urgent workspace, powermenu pill, temperature-warn),
+; where the vivid tone is the chip color and a separately-chosen readable
+; foreground goes on top of it - not a fabricated palette, the same real
+; hues just split into two roles the way this rice's own "nord" theme
+; already splits red/red-light for the same reason.
+[colors]
+base     = #ECEFF4
+mantle   = #ECEFF4
+surface0 = #3B4252
+surface1 = #3B4252
+text     = #2E3440
+subtext  = #3B4252
+mauve    = #496F95
+mauve-bg = #81A1C1
+lavender = #8C5D83
+sky      = #357587
+green    = #597442
+teal     = #457473
+yellow   = #8D6618
+peach    = #AA5338
+red      = #B54954
+red-bg   = #BF616A
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 4
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3 title
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
+
+; --- real widgets, from the source's own nord-top/nord-down -----------------
+[module/i3]
+type = internal/i3
+format = <label-state> <label-mode>
+index-sort = true
+enable-scroll = true
+wrapping-scroll = true
+ws-icon-0 = 1;I
+ws-icon-1 = 2;II
+ws-icon-2 = 3;III
+ws-icon-3 = 4;IV
+ws-icon-4 = 5;V
+ws-icon-5 = 6;VI
+ws-icon-6 = 7;VII
+ws-icon-7 = 8;VIII
+ws-icon-8 = 9;IX
+ws-icon-9 = 10;X
+label-focused = %icon%
+label-focused-font = 3
+label-focused-foreground = ${colors.teal}
+label-focused-underline = ${colors.teal}
+label-focused-padding = 2
+label-unfocused = *
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.mauve}
+label-unfocused-padding = 2
+label-urgent = %icon%
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red-bg}
+label-urgent-padding = 2
+
+[module/title]
+type = internal/xwindow
+format = <label>
+format-underline = ${colors.teal}
+label = %title%
+label-maxlen = 20
+label-empty = Desktop
+label-padding = 2
+
+[module/keyboard]
+type = internal/xkeyboard
+blacklist-0 = num lock
+blacklist-1 = scroll lock
+format = <label-indicator>
+label-indicator-on = " CL"
+label-indicator-on-foreground = ${colors.peach}
+format-underline = ${colors.peach}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume = <label-volume>
+format-volume-underline = ${colors.lavender}
+label-volume = "  %percentage%%"
+label-volume-foreground = ${colors.green}
+label-muted = " muted"
+label-muted-foreground = ${colors.red}
+
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:} %ifname%%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected = <ramp-signal> <label-connected>
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid%%{A}%{A}%{A}"
+ramp-signal-0 = ▂
+ramp-signal-0-foreground = ${colors.red}
+ramp-signal-1 = ▄
+ramp-signal-1-foreground = ${colors.yellow}
+ramp-signal-2 = ▆
+ramp-signal-2-foreground = ${colors.teal}
+ramp-signal-3 = █
+ramp-signal-3-foreground = ${colors.green}
+format-disconnected =
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format = <label>
+label = "  %percentage%%"
+label-foreground = ${colors.green}
+
+[module/memory]
+type = internal/memory
+interval = 2
+format = <label>
+label = "  %percentage_used%%"
+label-foreground = ${colors.yellow}
+
+[module/temperature]
+type = internal/temperature
+thermal-zone = 0
+base-temperature = 20
+warn-temperature = 70
+format = <ramp><label>
+format-warn = <label-warn>
+format-warn-background = ${colors.text}
+label = " %temperature-c%"
+label-warn = " %temperature-c%"
+label-warn-foreground = ${colors.red-bg}
+ramp-0 =
+ramp-0-foreground = ${colors.sky}
+ramp-1 =
+ramp-1-foreground = ${colors.green}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "  %output%%"
+label-foreground = ${colors.mauve}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.green}
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.sky}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging = <label-charging>
+format-charging-underline = ${colors.text}
+label-charging = "  %percentage%%"
+label-charging-foreground = ${colors.text}
+format-discharging = <label-discharging>
+format-discharging-underline = ${colors.yellow}
+label-discharging = "  %percentage%%"
+label-discharging-foreground = ${colors.text}
+label-full = " Full"
+label-full-foreground = ${colors.green}
+format-full-underline = ${colors.green}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+format = <label>
+label-foreground = ${colors.yellow}
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+; Dedicated dark backdrop for the tray specifically - most tray icons
+; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
+; dark bar, and would otherwise inherit this theme's own light base and
+; effectively disappear (same real bug already fixed on this rice's own
+; "aline"/"brenda" themes). Reuses surface0 (nord1, the theme's one real
+; dark tone) rather than a fabricated new color.
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.surface0}
+format-background = ${colors.surface0}
+
+[module/date]
+type = internal/date
+interval = 1
+date = %H:%M
+date-alt = %Y-%m-%d %a
+format = <label>
+label = "%{A1:GTK_THEME=Rice-yucklys-light gnome-calendar &:} %date%%{A}"
+label-foreground = ${colors.text}
+label-underline = ${colors.sky}
+
+; Real filled "pill" - the source's own distinctive treatment for its
+; powermenu icon. Chip stays the original vivid nord9, text goes on
+; subtext (dark) instead of base (light-on-light would be unreadable
+; against this mid-tone chip - checked: 2.34:1 vs 3.74:1).
+[module/powermenu]
+type = custom/text
+format = <label>
+label = " ⏻ "
+label-background = ${colors.mauve-bg}
+label-foreground = ${colors.subtext}
+click-left = ~/.local/bin/powermenu.sh &
+
+[settings]
+screenchange-reload = true
+EOF
 
 cat > "$CONF/polybar/themes/z0mbi3.ini" <<'EOF'
 ; Z0mbi3 - a Nord-adjacent but genuinely distinct dark navy palette
@@ -8317,10 +8898,11 @@ cat > "$CONF/polybar/themes/z0mbi3.ini" <<'EOF'
 [colors]
 base   = #0D0F18
 mantle = #0D0F18
-surface0 = #1C1E27
+surface0 = #151720
 surface1 = #1C1E27
 text   = #A5B6CF
 subtext = #6E8DB4
+focus  = #8EA6C4
 red    = #DD6777
 green  = #90CEAA
 yellow = #ECD3A0
@@ -8367,7 +8949,7 @@ wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
 label-focused-font = 3
-label-focused-foreground = ${colors.text}
+label-focused-foreground = ${colors.focus}
 label-focused-padding = 2
 label-unfocused = ${self.ws-label}
 label-unfocused-font = 3
@@ -8573,16 +9155,16 @@ surface0 = #F2E9E1
 surface1 = #F2E9E1
 text = #575279
 subtext = #9893A5
-teal = #2E7480
+teal = #9CCFD8
 ; Dedicated dark, fully-opaque backdrop for the system tray specifically -
 ; most tray icons (Discord, 1Password, etc.) are drawn in white/light
 ; colors expecting a dark bar and become invisible against this theme's
 ; own light cream chips (caught via direct feedback, not assumed).
 tray-bg = #3D3757
 green = #286983
-yellow = #A15E15
+yellow = #EA9D34
 red = #B4637A
-blue = #2E5D66
+blue = #56949F
 
 [bar/base]
 monitor = ${env:MONITOR:}
@@ -8603,11 +9185,11 @@ modules-center = date
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu updates sep layout sep tray
+modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu filesystem updates sep layout sep tray
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep memory cpu updates
+modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep memory cpu filesystem updates
 
 [module/sep]
 type = custom/text
@@ -8621,15 +9203,15 @@ format = <label-state> <label-mode>
 format-background = ${colors.surface0}
 index-sort = true
 wrapping-scroll = false
-ws-icon-0 = 1;󰬺
-ws-icon-1 = 2;󰬻
-ws-icon-2 = 3;󰬼
-ws-icon-3 = 4;󰬽
-ws-icon-4 = 5;󰬾
-ws-icon-5 = 6;󰬿
-ws-icon-6 = 7;󰭀
-ws-icon-7 = 8;󰭁
-ws-icon-8 = 9;󰭂
+ws-icon-0 = 1;%{F#76aaff}󰬺%{F-}
+ws-icon-1 = 2;%{F#ad78cf}󰬻%{F-}
+ws-icon-2 = 3;%{F#70d7c5}󰬼%{F-}
+ws-icon-3 = 4;%{F#f09e6c}󰬽%{F-}
+ws-icon-4 = 5;%{F#f46bc9}󰬾%{F-}
+ws-icon-5 = 6;%{F#ef658c}󰬿%{F-}
+ws-icon-6 = 7;%{F#76aaff}󰭀%{F-}
+ws-icon-7 = 8;%{F#ad78cf}󰭁%{F-}
+ws-icon-8 = 9;%{F#70d7c5}󰭂%{F-}
 ws-icon-default = "♟"
 label-focused = ${self.ws-label}
 ws-label = %index%
@@ -8775,6 +9357,15 @@ format-background = ${colors.surface0}
 format-prefix = " "
 format-prefix-foreground = ${colors.text}
 label = " %percentage%% "
+
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+format-mounted-background = ${colors.surface0}
+format-mounted-prefix = " "
+format-mounted-prefix-foreground = ${colors.text}
+label-mounted = " %percentage_used%% "
 
 [module/updates]
 type = custom/script
@@ -9070,6 +9661,7 @@ width = 100%
 height = 32
 background = ${colors.base}
 foreground = ${colors.text}
+bottom = true
 radius = 0
 padding-left = 2
 padding-right = 2
@@ -9079,21 +9671,35 @@ overline-size = 2
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
-modules-center =
+modules-left = launcher i3
+modules-center = media
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray backlight pulseaudio cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio cliamp network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
 ; on top of the font reads visually heavier/larger than intended (confirmed
 ; the hard way porting this rice's own "alireza" theme).
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.orange}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.red}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -9758,6 +10364,14 @@ cat > "$CONF/polybar/themes/brenda-square.ini" <<'EOF'
 ; when render-tested in this rice's actual Nerd Font build, so charging
 ; reuses this rice's own already-verified battery icon instead of a new,
 ; unverified one.
+; Label-urgent below deliberately breaks from the source's real same-
+; as-occupied urgent color - an urgent workspace (demanding attention on
+; one you aren't looking at) should actually stand out, the same disclosed
+; rice-wide exception already applied on this rice's own Isabel/Karla.
+; A filesystem widget (real source has one) was tried and reverted -
+; tested live, its extra icon+value box pushed the whole cluster past
+; the bar's own right edge, spilling half outside the rounded corner.
+; Fitting first, not squeezing in a widget that doesn't fit.
 [colors]
 base   = #2D353B
 mantle = #2D353B
@@ -9894,20 +10508,24 @@ label-foreground = ${colors.base}
 ; takes up no space instead of showing a permanent "offline" label.
 [module/media]
 type = custom/script
-exec = ~/.local/bin/polybar-media.sh
+exec = ~/.local/bin/polybar-media-boxed.sh
 interval = 1
-label-foreground = ${colors.base}
-format-background = ${colors.surface0}
+click-left = playerctl previous &
+click-middle = playerctl play-pause &
+click-right = playerctl next &
 format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
 
 [module/cliamp]
 type = custom/script
 exec = ~/.local/bin/polybar-cliamp.sh
 interval = 3
 click-left = ~/.local/bin/cliamp-toggle.sh &
-label-foreground = ${colors.base}
-format-background = ${colors.surface0}
 format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
+label-padding = 1
 
 [module/network-wired]
 type = internal/network
@@ -10021,9 +10639,10 @@ type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
 tail = true
 click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
-label-foreground = ${colors.base}
-format-background = ${colors.surface0}
 format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
+label-padding = 1
 
 [module/layout]
 type = custom/script
@@ -10314,14 +10933,19 @@ EOF
 
 cat > "$CONF/polybar/themes/cherryblocks-square.ini" <<'EOF'
 ; Cherryblocks - modeled directly on github.com/kiddae/polybar-themes'
-; "cherryblocks" bar (confirmed by reading a full local clone) - its own
-; screenshot shows the bottom bar as several visually SEPARATE rounded
-; blocks with real gaps between them, not one continuous strip - ported
-; here via a wider module-margin than any other theme in this set, giving
-; each widget group real breathing room instead of a merged bar. "Cherry"
-; for the red accent, matching the theme's own name. Gruvbox Dark palette
-; (see "archblur" for how that was confirmed), structure the
-; differentiator.
+; real "cherryblocks" bar (config read from a full local clone). Its
+; defining, name-giving trait is SOLID FILLED CHIPS: every widget renders
+; as `format-background = <accent>` with inverted (base-colored) text,
+; not a shared group background or an underline - confirmed directly in
+; its own config (`format-background = ${color.color1}`, `format-
+; foreground = ${color.background}` on the workspace/mpd/time modules).
+; The real source also splits this into three separate floating bars
+; (workspace, music, tray) with true gaps of desktop between them - this
+; rice's shared polybar-launch.sh only ever launches one bar per monitor,
+; so that part is approximated with real gap modules between clusters
+; inside a single bar instead (the chip look itself, its main visual
+; identity, is not approximated - it's the real thing). Gruvbox Dark
+; palette (see "archblur" for how that was confirmed).
 [colors]
 base     = #282828
 mantle   = #1D2021
@@ -10358,13 +10982,18 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray gap-cb backlight pulseaudio media cliamp gap-cb network-wired network-wireless bluetooth gap-cb caffeine dnd battery gap-cb memory cpu updates layout gap-cb date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp gap-cb network-wired network-wireless gap-cb memory cpu updates gap-cb date
 
 ; --- real widgets ------------------------------------------------------------
+[module/gap-cb]
+type = custom/text
+format = <label>
+label = "  "
+
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
 ; on top of the font reads visually heavier/larger than intended (confirmed
 ; the hard way porting this rice's own "alireza" theme).
@@ -10376,9 +11005,8 @@ wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
 label-focused-font = 3
-label-focused-foreground = ${colors.red}
-label-focused-underline = ${colors.red}
-label-focused-overline = ${colors.red}
+label-focused-foreground = ${colors.base}
+label-focused-background = ${colors.red}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
 label-unfocused-font = 3
@@ -10395,8 +11023,9 @@ type = internal/date
 interval = 1
 date = %Y-%m-%d
 time = %H:%M
+format-background = ${colors.blue}
 label = "%{A1:GTK_THEME=Rice-cherryblocks gnome-calendar &:}%date%  %time%%{A}"
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/backlight]
 type = custom/script
@@ -10404,16 +11033,18 @@ exec = ~/.local/bin/polybar-backlight.sh
 interval = 1
 scroll-up = brightnessctl set +5% &
 scroll-down = brightnessctl set 5%- &
+format-background = ${colors.yellow}
 format = <label>
 label = "%output%%"
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+format-background = ${colors.purple}
 label-volume = "%percentage%%"
-label-volume-foreground = ${colors.text}
+label-volume-foreground = ${colors.base}
 label-muted = "muted"
-label-muted-foreground = ${colors.subtext}
+label-muted-foreground = ${colors.base}
 
 ; Split wired/wireless so whichever is actually up is the only one that
 ; renders anything - format-disconnected is left blank so the inactive one
@@ -10422,16 +11053,18 @@ label-muted-foreground = ${colors.subtext}
 type = internal/network
 interface-type = wired
 interval = 3
+format-background = ${colors.green}
 label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
-label-connected-foreground = ${colors.text}
+label-connected-foreground = ${colors.base}
 format-disconnected =
 
 [module/network-wireless]
 type = internal/network
 interface-type = wireless
 interval = 3
+format-background = ${colors.green}
 label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
+label-connected-foreground = ${colors.base}
 format-disconnected =
 
 [module/bluetooth]
@@ -10439,14 +11072,16 @@ type = custom/script
 exec = ~/.local/bin/polybar-bluetooth.sh
 interval = 5
 click-left = blueman-manager &
+format-background = ${colors.aqua}
 format = <label>
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/media]
 type = custom/script
 exec = ~/.local/bin/polybar-media.sh
 interval = 1
-label-foreground = ${colors.red}
+format-background = ${colors.red}
+label-foreground = ${colors.base}
 format = <label>
 
 [module/cliamp]
@@ -10454,7 +11089,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-cliamp.sh
 interval = 3
 click-left = ~/.local/bin/cliamp-toggle.sh &
-label-foreground = ${colors.red}
+format-background = ${colors.red}
+label-foreground = ${colors.base}
 format = <label>
 
 [module/caffeine]
@@ -10463,49 +11099,55 @@ exec = ~/.local/bin/polybar-caffeine.sh
 interval = 3
 click-left = ~/.local/bin/caffeine-toggle.sh &
 click-right = xset s activate &
+format-background = ${colors.green}
 format = <label>
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/dnd]
 type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+format-background = ${colors.red}
 format = <label>
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/battery]
 type = internal/battery
 battery = BAT0
 adapter = AC
 low-at = 15
+format-background = ${colors.orange}
 label-charging = "%percentage%%"
 label-discharging = "%percentage%%"
 label-full = "Full"
 label-low = "%percentage%%"
-label-charging-foreground = ${colors.text}
-label-discharging-foreground = ${colors.text}
-label-full-foreground = ${colors.text}
-label-low-foreground = ${colors.red}
+label-charging-foreground = ${colors.base}
+label-discharging-foreground = ${colors.base}
+label-full-foreground = ${colors.base}
+label-low-foreground = ${colors.base}
 
 [module/memory]
 type = internal/memory
 interval = 2
+format-background = ${colors.purple}
 label = "%percentage_used%%"
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/cpu]
 type = internal/cpu
 interval = 2
+format-background = ${colors.aqua}
 label = "%percentage%%"
-label-foreground = ${colors.text}
+label-foreground = ${colors.base}
 
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
 tail = true
 click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
-label-foreground = ${colors.yellow}
+format-background = ${colors.yellow}
+label-foreground = ${colors.base}
 format = <label>
 
 [module/layout]
@@ -10519,19 +11161,27 @@ label-foreground = ${colors.text}
 type = internal/tray
 tray-spacing = 8
 tray-padding = 6
+tray-background = ${colors.surface0}
+format-background = ${colors.surface0}
 
 [settings]
 screenchange-reload = true
 EOF
 cat > "$CONF/polybar/themes/classic-square.ini" <<'EOF'
 ; Classic - modeled directly on github.com/kiddae/polybar-themes'
-; "classic2-rounded" bar (confirmed by reading a full local clone) - its
-; own screenshot is almost entirely grayscale, just plain light text on a
-; near-black bar with a single small colored dot marking the focused
-; workspace - ported here as a deliberately near-monochrome theme, most
-; widgets left in muted subtext, with the workspace accent as the one
-; spot of real color. Gruvbox Dark palette (see "archblur" for how that
-; was confirmed), structure the differentiator.
+; real "classic" bar (config read from a full local clone) - genuinely
+; the most minimal/monochrome theme in the whole archive: its own
+; [colors] block defines only background and foreground, nothing else,
+; and its bspwm module sets every workspace state (focused/occupied/
+; empty) to that same plain foreground - no accent hue anywhere at all,
+; confirmed by reading its real config directly rather than assumed from
+; "classic2-rounded" (a different, README-undocumented folder this port
+; mistakenly cited before). Ported here as fully monochrome to match -
+; every widget in plain text/subtext, with only the two universal,
+; disclosed exceptions every theme in this rice already applies (urgent
+; must stand out; low battery must stand out). Gruvbox Dark palette (see
+; "archblur" for how that was confirmed) still backs text/subtext, but no
+; accent hue from it is used anywhere in this theme's own widgets.
 [colors]
 base     = #282828
 mantle   = #1D2021
@@ -10586,9 +11236,9 @@ wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
 label-focused-font = 3
-label-focused-foreground = ${colors.orange}
-label-focused-underline = ${colors.orange}
-label-focused-overline = ${colors.orange}
+label-focused-foreground = ${colors.text}
+label-focused-underline = ${colors.text}
+label-focused-overline = ${colors.text}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
 label-unfocused-font = 3
@@ -10656,7 +11306,7 @@ label-foreground = ${colors.text}
 type = custom/script
 exec = ~/.local/bin/polybar-media.sh
 interval = 1
-label-foreground = ${colors.orange}
+label-foreground = ${colors.subtext}
 format = <label>
 
 [module/cliamp]
@@ -10664,7 +11314,7 @@ type = custom/script
 exec = ~/.local/bin/polybar-cliamp.sh
 interval = 3
 click-left = ~/.local/bin/cliamp-toggle.sh &
-label-foreground = ${colors.orange}
+label-foreground = ${colors.subtext}
 format = <label>
 
 [module/caffeine]
@@ -10715,7 +11365,7 @@ type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
 tail = true
 click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
-label-foreground = ${colors.yellow}
+label-foreground = ${colors.subtext}
 format = <label>
 
 [module/layout]
@@ -10784,15 +11434,15 @@ font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
 modules-left = i3
-modules-center =
+modules-center = title
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep filesystem sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep filesystem sep updates sep date
 
 ; --- bracket pairs -------------------------------------------------------
 [module/sep]
@@ -10812,7 +11462,7 @@ label-focused-foreground = ${colors.lime}
 label-focused-padding = 1
 label-unfocused = ${self.ws-label}
 label-unfocused-font = 3
-label-unfocused-foreground = ${colors.subtext}
+label-unfocused-foreground = ${colors.purple}
 label-unfocused-padding = 1
 label-urgent = ${self.ws-label}
 label-urgent-font = 3
@@ -10934,6 +11584,20 @@ format-prefix = " "
 format-prefix-foreground = ${colors.yellow}
 label = "%percentage%%"
 
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+format-mounted-prefix = " "
+format-mounted-prefix-foreground = ${colors.orange}
+label-mounted = "%percentage_used%%"
+
+[module/title]
+type = internal/xwindow
+label = %title:0:40:...%
+label-foreground = ${colors.purple}
+label-padding = 5
+
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -10977,6 +11641,10 @@ cat > "$CONF/polybar/themes/cynthia-square.ini" <<'EOF'
 ; usual single top bar instead, since a real second bar is a structural
 ; change to the launch/gaps setup affecting every theme, not something
 ; to introduce for just one of them.
+; Label-urgent below deliberately breaks from the source's real same-
+; as-occupied urgent color - an urgent workspace (demanding attention on
+; one you aren't looking at) should actually stand out, the same disclosed
+; rice-wide exception already applied on this rice's own Isabel/Karla.
 [colors]
 base   = #181616
 mantle = #181616
@@ -11009,11 +11677,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = memory cpu sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
+modules-right = memory cpu filesystem sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = memory cpu sep network-wired network-wireless sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
+modules-right = memory cpu filesystem sep network-wired network-wireless sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -11159,6 +11827,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+format-mounted-prefix = " "
+label-mounted = "%percentage_used%%"
+
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -11199,6 +11874,10 @@ cat > "$CONF/polybar/themes/daniela-square.ini" <<'EOF'
 ; set look color-identical, so this port keeps daniela's real STRUCTURE
 ; (word-prefix, fully flat, no backgrounds) but uses a fresh Tokyo-Night-
 ; adjacent palette instead, distinct from every other theme here.
+; Label-urgent below deliberately breaks from the source's real same-
+; as-occupied urgent color - an urgent workspace (demanding attention on
+; one you aren't looking at) should actually stand out, the same disclosed
+; rice-wide exception already applied on this rice's own Isabel/Karla.
 [colors]
 base   = #1A1B26
 mantle = #1A1B26
@@ -11231,11 +11910,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout tray date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu filesystem updates layout tray date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
@@ -11382,6 +12061,15 @@ format-prefix = "CPU "
 format-prefix-font = 1
 format-prefix-foreground = ${colors.blue}
 label = "%percentage%%"
+
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+format-mounted-prefix = "DISK "
+format-mounted-prefix-font = 1
+format-mounted-prefix-foreground = ${colors.orange}
+label-mounted = "%percentage_used%%"
 
 [module/updates]
 type = custom/script
@@ -11657,6 +12345,10 @@ cat > "$CONF/polybar/themes/emilia-square.ini" <<'EOF'
 ; it here too would make two themes look color-identical, so this port
 ; uses a fresh warm copper/amber palette instead, distinct from every
 ; other theme built so far.
+; Label-urgent below deliberately breaks from the source's real same-
+; as-occupied urgent color - an urgent workspace (demanding attention on
+; one you aren't looking at) should actually stand out, the same disclosed
+; rice-wide exception already applied on this rice's own Isabel/Karla.
 [colors]
 base   = #1E1A17
 mantle = #1E1A17
@@ -11689,11 +12381,11 @@ modules-center = i3
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep filesystem sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = network-wired network-wireless sep memory sep cpu sep filesystem sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -11845,6 +12537,14 @@ format-background = ${colors.surface0}
 format-prefix = " "
 label = "%percentage%%"
 
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+format-mounted-background = ${colors.surface0}
+format-mounted-prefix = " "
+label-mounted = "%percentage_used%%"
+
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -11870,15 +12570,25 @@ screenchange-reload = true
 EOF
 
 cat > "$CONF/polybar/themes/float-square.ini" <<'EOF'
-; Float - modeled directly on github.com/kiddae/polybar-themes' "float2"
-; bar (confirmed by reading a full local clone) - its real config sets a
-; real inset (offset-x/y = 20px) and a thick same-color-as-background
-; border, making the bar visually detach/float off the screen edges
-; rather than sit flush against them - approximated here with generous
-; left/right padding and a larger corner radius, the closest polybar
-; equivalent this rice's other themes already use. Gruvbox Dark palette
-; (see "archblur" for how that was confirmed), structure the
-; differentiator.
+; Float - modeled directly on github.com/kiddae/polybar-themes' real
+; "float" bar (config read from a full local clone, not "float2" - a
+; different, README-undocumented folder this port mistakenly cited
+; before). Its real config is a genuinely floating pill: width 80%,
+; centered (offset-x 10%), inset 10px from the top, radius 15. width=80%
+; is applied directly below (a real, working improvement over the
+; generic full-width template); offset-x/offset-y are NOT - tested
+; directly in this exact i3+polybar 3.7.2 setup (fixed pixel values too,
+; not just percentages) and the bar stays flush at the screen edge
+; regardless, an environment limitation rather than a config mistake, so
+; left undone rather than shipped as a claim this setup can't actually
+; deliver. Gruvbox Dark palette (see "archblur" for how that was
+; confirmed).
+;
+; modules-right is real-source-only (cpu memory date pulseaudio power),
+; not this rice's usual full widget set - tested directly at the real
+; 80%-width and it visibly clipped (date/power got cut off past the
+; bar's own edge). Fitting first, not squeezing in extra widgets that
+; don't fit.
 [colors]
 base     = #282828
 mantle   = #1D2021
@@ -11897,7 +12607,7 @@ gray     = #928374
 
 [bar/base]
 monitor = ${env:MONITOR:}
-width = 100%
+width = 80%
 height = 30
 background = ${colors.base}
 foreground = ${colors.text}
@@ -11910,21 +12620,35 @@ overline-size = 2
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
-modules-center =
+modules-left = launcher i3
+modules-center = media
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = cpu memory date pulseaudio power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = cpu memory date pulseaudio
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
 ; on top of the font reads visually heavier/larger than intended (confirmed
 ; the hard way porting this rice's own "alireza" theme).
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.aqua}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.red}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -12098,6 +12822,10 @@ cat > "$CONF/polybar/themes/h4ck3r-square.ini" <<'EOF'
 ; status/target-lock modules are custom scripts specific to that rice's
 ; own security-tool workflow, not part of this rig, so left out rather
 ; than faked, same call made for other themes' unportable widgets.
+; Label-urgent below deliberately breaks from the source's real same-
+; as-occupied urgent color - an urgent workspace (demanding attention on
+; one you aren't looking at) should actually stand out, the same disclosed
+; rice-wide exception already applied on this rice's own Isabel/Karla.
 [colors]
 base   = #0C1018
 mantle = #0C1018
@@ -12345,7 +13073,7 @@ modules-left = i3
 [bar/top-primary]
 inherit = bar/base
 modules-center = date-icon date
-modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates sep layout sep tray
+modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless bluetooth sep caffeine dnd sep battery memory cpu sep updates layout sep tray
 
 [bar/top-secondary]
 inherit = bar/base
@@ -12364,15 +13092,15 @@ format = <label-state>
 format-background = ${colors.surface0}
 index-sort = true
 wrapping-scroll = false
-label-focused = "󰄰"
+label-focused = "●"
 label-focused-foreground = ${colors.green0}
 label-focused-font = 2
 label-focused-padding = 2
-label-unfocused = "󰄰"
-label-unfocused-foreground = ${colors.blue0}
+label-unfocused = "●"
+label-unfocused-foreground = ${colors.purple0}
 label-unfocused-font = 2
 label-unfocused-padding = 2
-label-urgent = "󰄰"
+label-urgent = "●"
 label-urgent-foreground = ${colors.red0}
 label-urgent-font = 2
 label-urgent-padding = 2
@@ -12580,6 +13308,10 @@ cat > "$CONF/polybar/themes/isabel-square.ini" <<'EOF'
 ; adjacent scheme, already close to this rice's own Archcraft theme, so
 ; this port uses a fresh teal/mint dark palette instead to stay visually
 ; distinct.
+; A filesystem widget and a title module (real source has both) were
+; tried and reverted - tested live, the combined width pushed the bar
+; past the screen edge entirely. Fitting first, not squeezing in
+; widgets that don't fit.
 [colors]
 base   = #10181A
 mantle = #10181A
@@ -12806,12 +13538,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -12823,6 +13555,20 @@ format = <label>
 label = "  "
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.blue}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.orange}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -12839,7 +13585,7 @@ ws-icon-7 = 8;󰭁
 ws-icon-8 = 9;󰭂
 ws-icon-default = "♟"
 label-focused = "[%icon%]"
-label-focused-foreground = ${colors.pink}
+label-focused-foreground = ${colors.magenta}
 label-focused-font = 2
 label-unfocused = %icon%
 label-unfocused-foreground = ${colors.lime}
@@ -12943,7 +13689,7 @@ adapter = AC
 format-charging-prefix = " "
 format-charging-prefix-foreground = ${colors.pink}
 format-discharging-prefix = " "
-format-discharging-prefix-foreground = ${colors.pink}
+format-discharging-prefix-foreground = ${colors.blue}
 format-full-prefix = " "
 format-full-prefix-foreground = ${colors.green}
 label-charging = "%percentage%%"
@@ -12961,7 +13707,7 @@ label = "%percentage_used%%"
 type = internal/cpu
 interval = 2
 format-prefix = " "
-format-prefix-foreground = ${colors.pink}
+format-prefix-foreground = ${colors.magenta}
 label = "%percentage%%"
 
 [module/updates]
@@ -12997,7 +13743,9 @@ cat > "$CONF/polybar/themes/karla-square.ini" <<'EOF'
 ; verified rendering there), but on a vivid rather than monochrome
 ; palette, and with no color distinction between focused/unfocused
 ; (matching the source's own [module/bspwm], which sets both to the same
-; plain foreground). Modeled directly on github.com/gh0stzk/dotfiles'
+; plain foreground; label-urgent below still gets its own red, the
+; same disclosed "urgent must stand out" exception applied rice-wide).
+; Modeled directly on github.com/gh0stzk/dotfiles'
 ; real "karla" rice (config/bspwm/rices/karla/{config,modules}.ini, read
 ; from a full local clone) - the source actually ships this rice as
 ; THREE separate bars (system stats, media/battery/network, and a
@@ -13035,12 +13783,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -13053,6 +13801,20 @@ label = " | "
 label-foreground = ${colors.subtext}
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.blue}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.red}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -13585,6 +14347,7 @@ exec = ~/.local/bin/polybar-media.sh
 interval = 1
 label-foreground = ${colors.green}
 format = <label>
+format-background = ${colors.surface0}
 
 [module/cliamp]
 type = custom/script
@@ -13593,6 +14356,7 @@ interval = 3
 click-left = ~/.local/bin/cliamp-toggle.sh &
 label-foreground = ${colors.green}
 format = <label>
+format-background = ${colors.surface0}
 
 [module/network-wired]
 type = internal/network
@@ -13675,6 +14439,7 @@ tail = true
 click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
 label-foreground = ${colors.yellow}
 format = <label>
+format-background = ${colors.surface0}
 
 [module/layout]
 type = custom/script
@@ -13732,6 +14497,7 @@ blue   = #8897F4
 cyan   = #79E6F3
 green  = #5ADECD
 yellow = #F2A272
+pink   = #EC407A
 
 [bar/base]
 monitor = ${env:MONITOR:}
@@ -13746,12 +14512,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -13763,6 +14529,20 @@ format = <label>
 label = "  "
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.blue}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.red}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -13889,6 +14669,7 @@ label = "%percentage_used%%"
 type = internal/cpu
 interval = 2
 format-prefix = " "
+format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
 [module/updates]
@@ -13962,12 +14743,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date dots power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -13980,6 +14761,20 @@ label = " 󰇙 "
 label-foreground = ${colors.orange}
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.text}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.red}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -14191,11 +14986,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu filesystem updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -14335,6 +15130,13 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+label-mounted = "%percentage_used%%"
+label-mounted-foreground = ${colors.blue}
+
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -14399,12 +15201,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=16;5"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -14416,6 +15218,20 @@ format = <label>
 label = "  "
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.orange}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.orange}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -14432,7 +15248,7 @@ label-focused = %icon%
 label-focused-foreground = ${colors.text}
 label-focused-font = 2
 label-unfocused = %icon%
-label-unfocused-foreground = ${colors.subtext}
+label-unfocused-foreground = ${colors.grey}
 label-unfocused-font = 2
 label-urgent = %icon%
 label-urgent-foreground = ${colors.pink}
@@ -14605,12 +15421,12 @@ module-margin = 0
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
+modules-left = launcher i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
@@ -14622,6 +15438,20 @@ format = <label>
 label = "  "
 
 ; --- real widgets ------------------------------------------------------------
+[module/launcher]
+type = custom/text
+format = <label>
+label = "󰣇"
+label-foreground = ${colors.blue}
+click-left = ~/.local/bin/app-menu.sh &
+
+[module/power]
+type = custom/text
+format = <label>
+label = ""
+label-foreground = ${colors.blue}
+click-left = ~/.local/bin/powermenu.sh &
+
 [module/i3]
 type = internal/i3
 format = <label-state>
@@ -15084,6 +15914,306 @@ click-left = ~/.local/bin/powermenu.sh &
 [settings]
 screenchange-reload = true
 EOF
+cat > "$CONF/polybar/themes/yucklys-light-square.ini" <<'EOF'
+; Yucklys Light - the source's own light/dark PAIR (github.com/Yucklys/
+; polybar-nord-theme's real colors/light-colors + bars/light-config, a full
+; local clone read directly): same module set and layout as this rice's
+; "yucklys" (dark), background/text/muted swap to the source's real light
+; values (base=nord6 #eceff4, text=nord0 #2e3440, muted=nord1 #3b4252 -
+; copied byte-for-byte), while every Frost/Aurora accent hue (teal/sky/
+; mauve/green/yellow/peach/red/lavender) stays the exact same real hex the
+; dark theme uses - that part of the source's own light-colors file is
+; identical to dark-colors, confirmed by diffing them directly.
+;
+; Those accent hexes are genuinely unreadable as TEXT on this bright a
+; background though - computed contrast against #eceff4 (WCAG relative
+; luminance, not eyeballed): teal 1.81:1, sky 1.74:1, mauve 2.34:1, yellow
+; 1.35:1 - all well under even the lenient 3:1 floor for icon-sized text,
+; the same class of bug this rice's own README already documents fixing
+; on "aline" and "nord" (unreadable accents on a light chip/dark surface
+; kept for luminance reasons). Each accent below gets a same-hue, darkened
+; "text-safe" value (>=4.5:1 against #eceff4) for use as underline/label
+; text; the ORIGINAL vivid value is kept under -bg for anything used as a
+; filled chip instead (urgent workspace, powermenu pill, temperature-warn),
+; where the vivid tone is the chip color and a separately-chosen readable
+; foreground goes on top of it - not a fabricated palette, the same real
+; hues just split into two roles the way this rice's own "nord" theme
+; already splits red/red-light for the same reason.
+[colors]
+base     = #ECEFF4
+mantle   = #ECEFF4
+surface0 = #3B4252
+surface1 = #3B4252
+text     = #2E3440
+subtext  = #3B4252
+mauve    = #496F95
+mauve-bg = #81A1C1
+lavender = #8C5D83
+sky      = #357587
+green    = #597442
+teal     = #457473
+yellow   = #8D6618
+peach    = #AA5338
+red      = #B54954
+red-bg   = #BF616A
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 1
+underline-size = 2
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3 title
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
+
+; --- real widgets, from the source's own nord-top/nord-down -----------------
+[module/i3]
+type = internal/i3
+format = <label-state> <label-mode>
+index-sort = true
+enable-scroll = true
+wrapping-scroll = true
+ws-icon-0 = 1;I
+ws-icon-1 = 2;II
+ws-icon-2 = 3;III
+ws-icon-3 = 4;IV
+ws-icon-4 = 5;V
+ws-icon-5 = 6;VI
+ws-icon-6 = 7;VII
+ws-icon-7 = 8;VIII
+ws-icon-8 = 9;IX
+ws-icon-9 = 10;X
+label-focused = %icon%
+label-focused-font = 3
+label-focused-foreground = ${colors.teal}
+label-focused-underline = ${colors.teal}
+label-focused-padding = 2
+label-unfocused = *
+label-unfocused-font = 3
+label-unfocused-foreground = ${colors.mauve}
+label-unfocused-padding = 2
+label-urgent = %icon%
+label-urgent-font = 3
+label-urgent-foreground = ${colors.base}
+label-urgent-background = ${colors.red-bg}
+label-urgent-padding = 2
+
+[module/title]
+type = internal/xwindow
+format = <label>
+format-underline = ${colors.teal}
+label = %title%
+label-maxlen = 20
+label-empty = Desktop
+label-padding = 2
+
+[module/keyboard]
+type = internal/xkeyboard
+blacklist-0 = num lock
+blacklist-1 = scroll lock
+format = <label-indicator>
+label-indicator-on = " CL"
+label-indicator-on-foreground = ${colors.peach}
+format-underline = ${colors.peach}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume = <label-volume>
+format-volume-underline = ${colors.lavender}
+label-volume = "  %percentage%%"
+label-volume-foreground = ${colors.green}
+label-muted = " muted"
+label-muted-foreground = ${colors.red}
+
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+label-connected = "%{A1:nm-connection-editor &:} %ifname%%{A}"
+label-connected-foreground = ${colors.sky}
+format-disconnected =
+
+[module/network-wireless]
+type = internal/network
+interface-type = wireless
+interval = 3
+format-connected = <ramp-signal> <label-connected>
+label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid%%{A}%{A}%{A}"
+ramp-signal-0 = ▂
+ramp-signal-0-foreground = ${colors.red}
+ramp-signal-1 = ▄
+ramp-signal-1-foreground = ${colors.yellow}
+ramp-signal-2 = ▆
+ramp-signal-2-foreground = ${colors.teal}
+ramp-signal-3 = █
+ramp-signal-3-foreground = ${colors.green}
+format-disconnected =
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format = <label>
+label = "  %percentage%%"
+label-foreground = ${colors.green}
+
+[module/memory]
+type = internal/memory
+interval = 2
+format = <label>
+label = "  %percentage_used%%"
+label-foreground = ${colors.yellow}
+
+[module/temperature]
+type = internal/temperature
+thermal-zone = 0
+base-temperature = 20
+warn-temperature = 70
+format = <ramp><label>
+format-warn = <label-warn>
+format-warn-background = ${colors.text}
+label = " %temperature-c%"
+label-warn = " %temperature-c%"
+label-warn-foreground = ${colors.red-bg}
+ramp-0 =
+ramp-0-foreground = ${colors.sky}
+ramp-1 =
+ramp-1-foreground = ${colors.green}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+label = "  %output%%"
+label-foreground = ${colors.mauve}
+
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.green}
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+label-foreground = ${colors.sky}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+format = <label>
+label-foreground = ${colors.red}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging = <label-charging>
+format-charging-underline = ${colors.text}
+label-charging = "  %percentage%%"
+label-charging-foreground = ${colors.text}
+format-discharging = <label-discharging>
+format-discharging-underline = ${colors.yellow}
+label-discharging = "  %percentage%%"
+label-discharging-foreground = ${colors.text}
+label-full = " Full"
+label-full-foreground = ${colors.green}
+format-full-underline = ${colors.green}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+format = <label>
+label-foreground = ${colors.yellow}
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.text}
+
+; Dedicated dark backdrop for the tray specifically - most tray icons
+; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
+; dark bar, and would otherwise inherit this theme's own light base and
+; effectively disappear (same real bug already fixed on this rice's own
+; "aline"/"brenda" themes). Reuses surface0 (nord1, the theme's one real
+; dark tone) rather than a fabricated new color.
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.surface0}
+format-background = ${colors.surface0}
+
+[module/date]
+type = internal/date
+interval = 1
+date = %H:%M
+date-alt = %Y-%m-%d %a
+format = <label>
+label = "%{A1:GTK_THEME=Rice-yucklys-light gnome-calendar &:} %date%%{A}"
+label-foreground = ${colors.text}
+label-underline = ${colors.sky}
+
+; Real filled "pill" - the source's own distinctive treatment for its
+; powermenu icon. Chip stays the original vivid nord9, text goes on
+; subtext (dark) instead of base (light-on-light would be unreadable
+; against this mid-tone chip - checked: 2.34:1 vs 3.74:1).
+[module/powermenu]
+type = custom/text
+format = <label>
+label = " ⏻ "
+label-background = ${colors.mauve-bg}
+label-foreground = ${colors.subtext}
+click-left = ~/.local/bin/powermenu.sh &
+
+[settings]
+screenchange-reload = true
+EOF
 
 cat > "$CONF/polybar/themes/z0mbi3-square.ini" <<'EOF'
 ; Z0mbi3 - a Nord-adjacent but genuinely distinct dark navy palette
@@ -15105,10 +16235,11 @@ cat > "$CONF/polybar/themes/z0mbi3-square.ini" <<'EOF'
 [colors]
 base   = #0D0F18
 mantle = #0D0F18
-surface0 = #1C1E27
+surface0 = #151720
 surface1 = #1C1E27
 text   = #A5B6CF
 subtext = #6E8DB4
+focus  = #8EA6C4
 red    = #DD6777
 green  = #90CEAA
 yellow = #ECD3A0
@@ -15155,7 +16286,7 @@ wrapping-scroll = false
 ws-label = %index%
 label-focused = ${self.ws-label}
 label-focused-font = 3
-label-focused-foreground = ${colors.text}
+label-focused-foreground = ${colors.focus}
 label-focused-padding = 2
 label-unfocused = ${self.ws-label}
 label-unfocused-font = 3
@@ -15387,7 +16518,7 @@ modules-left = bi i3 bd
 [bar/top-primary]
 inherit = bar/base
 modules-center = bi date-icon date bd
-modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout bd sep tray
+modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bluetooth bd sep bi caffeine dnd bd sep bi battery memory cpu bd sep bi updates layout bd sep tray
 
 [bar/top-secondary]
 inherit = bar/base
@@ -15420,15 +16551,15 @@ format = <label-state>
 format-background = ${colors.surface0}
 index-sort = true
 wrapping-scroll = false
-label-focused = "󰄰"
+label-focused = "●"
 label-focused-foreground = ${colors.green0}
 label-focused-font = 2
 label-focused-padding = 2
-label-unfocused = "󰄰"
-label-unfocused-foreground = ${colors.blue0}
+label-unfocused = "●"
+label-unfocused-foreground = ${colors.purple0}
 label-unfocused-font = 2
 label-unfocused-padding = 2
-label-urgent = "󰄰"
+label-urgent = "●"
 label-urgent-foreground = ${colors.red0}
 label-urgent-font = 2
 label-urgent-padding = 2
@@ -15870,6 +17001,31 @@ fi
 printf '%%{A1:playerctl previous:}%%{A}  %%{A1:playerctl play-pause:}%s%%{A}  %%{A1:playerctl next:}%%{A}' "$icon"
 EOF
 chmod +x "$BIN/polybar-media.sh"
+
+log "Writing polybar boxed-media-control widget script..."
+cat > "$BIN/polybar-media-boxed.sh" <<'EOF'
+#!/usr/bin/env bash
+# Same icon logic as polybar-media.sh, but WITHOUT inline per-icon %{A...}
+# action tags. Needed by themes (Brenda) that put a shared format-background
+# behind this module: polybar renders a fragmented, broken-looking
+# background behind a label containing multiple action-tag regions instead
+# of one continuous chip (confirmed live - a real polybar quirk, not a
+# config mistake). The 3 actions move to the module's own click-left/
+# click-middle/click-right instead of 3 separately-clickable icon
+# positions - same 3 actions, triggered by mouse button instead of X
+# position within the label.
+status=$(playerctl status 2>/dev/null)
+[ -z "$status" ] && exit 0
+
+if [ "$status" = "Playing" ]; then
+  icon=""
+else
+  icon=""
+fi
+
+printf '   %s   ' "$icon"
+EOF
+chmod +x "$BIN/polybar-media-boxed.sh"
 
 log "Writing polybar cliamp-running-state widget script..."
 cat > "$BIN/polybar-cliamp.sh" <<'EOF'
@@ -19488,6 +20644,65 @@ element-text {
     vertical-align: 0.5;
 }
 EOF
+cat > "$CONF/rofi/themes/yucklys-light-powermenu.rasi" <<'EOF'
+* {
+    base:     #ECEFF4ff;
+    mantle:   #ECEFF4ff;
+    text:     #2E3440ff;
+    subtext:  #3B4252ff;
+    mauve:    #496F95ff;
+    surface0: #3B4252ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    text-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
 
 cat > "$CONF/rofi/themes/yael.rasi" <<'EOF'
 * {
@@ -19585,6 +20800,60 @@ element-text, element-icon {
 element selected {
     background-color: @surface0;
     text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/yucklys-light.rasi" <<'EOF'
+* {
+    base:     #ECEFF4ff;
+    mantle:   #ECEFF4ff;
+    text:     #2E3440ff;
+    subtext:  #3B4252ff;
+    mauve:    #496F95ff;
+    surface0: #3B4252ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+/* Selected element's chip is the dark surface0, not the light mantle - its
+   text needs the LIGHT base color to stay readable (checked: base against
+   surface0 is 8.73:1; mauve or text against surface0 is 1.2-1.9:1, the
+   same "text color kept from the unselected/dark-bg case" mistake this
+   rice's README already documents catching elsewhere). */
+element selected {
+    background-color: @surface0;
+    text-color: @base;
 }
 EOF
 
@@ -22700,6 +23969,60 @@ element selected {
     text-color: @mauve;
 }
 EOF
+cat > "$CONF/rofi/themes/yucklys-light-square.rasi" <<'EOF'
+* {
+    base:     #ECEFF4ff;
+    mantle:   #ECEFF4ff;
+    text:     #2E3440ff;
+    subtext:  #3B4252ff;
+    mauve:    #496F95ff;
+    surface0: #3B4252ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+/* Selected element's chip is the dark surface0, not the light mantle - its
+   text needs the LIGHT base color to stay readable (checked: base against
+   surface0 is 8.73:1; mauve or text against surface0 is 1.2-1.9:1, the
+   same "text color kept from the unselected/dark-bg case" mistake this
+   rice's README already documents catching elsewhere). */
+element selected {
+    background-color: @surface0;
+    text-color: @base;
+}
+EOF
 
 cat > "$CONF/rofi/themes/yael-square-powermenu.rasi" <<'EOF'
 * {
@@ -22808,6 +24131,65 @@ element normal.normal {
 }
 element selected {
     background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/rofi/themes/yucklys-light-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #ECEFF4ff;
+    mantle:   #ECEFF4ff;
+    text:     #2E3440ff;
+    subtext:  #3B4252ff;
+    mauve:    #496F95ff;
+    surface0: #3B4252ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    text-color: @base;
     border: 2px;
     border-color: @mauve;
     border-radius: 0px;
@@ -23734,6 +25116,31 @@ color14 #8FBCBB
 color7  #D8DEE9
 color15 #ECEFF4
 EOF
+cat > "$CONF/kitty/themes/yucklys-light.conf" <<'EOF'
+foreground              #2E3440
+background              #ECEFF4
+selection_foreground    #ECEFF4
+selection_background    #2E3440
+cursor                  #496F95
+cursor_text_color       #ECEFF4
+
+color0  #E5E9F0
+color8  #3B4252
+color1  #B54954
+color9  #B54954
+color2  #597442
+color10 #597442
+color3  #8D6618
+color11 #8D6618
+color4  #496F95
+color12 #496F95
+color5  #8C5D83
+color13 #8C5D83
+color6  #357587
+color14 #457473
+color7  #2E3440
+color15 #2E3440
+EOF
 
 cat > "$CONF/kitty/themes/z0mbi3.conf" <<'EOF'
 foreground              #A5B6CF
@@ -24487,6 +25894,31 @@ color14 #8FBCBB
 color7  #D8DEE9
 color15 #ECEFF4
 EOF
+cat > "$CONF/kitty/themes/yucklys-light-square.conf" <<'EOF'
+foreground              #2E3440
+background              #ECEFF4
+selection_foreground    #ECEFF4
+selection_background    #2E3440
+cursor                  #496F95
+cursor_text_color       #ECEFF4
+
+color0  #E5E9F0
+color8  #3B4252
+color1  #B54954
+color9  #B54954
+color2  #597442
+color10 #597442
+color3  #8D6618
+color11 #8D6618
+color4  #496F95
+color12 #496F95
+color5  #8C5D83
+color13 #8C5D83
+color6  #357587
+color14 #457473
+color7  #2E3440
+color15 #2E3440
+EOF
 
 cat > "$CONF/kitty/themes/z0mbi3-square.conf" <<'EOF'
 foreground              #A5B6CF
@@ -24563,10 +25995,10 @@ client.urgent           #FB4934  #FB4934  #282828  #FB4934   #FB4934
 EOF
 
 cat > "$CONF/i3/themes/archcraft.conf" <<'EOF'
-client.focused          #c678dd  #1e222a  #c8ccd4  #c678dd   #c678dd
-client.unfocused        #727c91  #1e222a  #727c91  #727c91   #727c91
-client.focused_inactive #727c91  #1e222a  #727c91  #727c91   #727c91
-client.urgent           #e06c75  #1e222a  #c8ccd4  #e06c75   #e06c75
+client.focused          #da6e89  #da6e89  #1e222a  #98c379   #da6e89
+client.focused_inactive #61afef  #61afef  #1e222a  #98c379   #61afef
+client.unfocused        #292e39  #292e39  #c8ccd4  #98c379   #292e39
+client.urgent           #c678dd  #c678dd  #c8ccd4  #98c379   #c678dd
 EOF
 
 cat > "$CONF/i3/themes/breddie.conf" <<'EOF'
@@ -24625,10 +26057,10 @@ client.urgent           #f7768e  #1a1b26  #c0caf5  #f7768e   #f7768e
 EOF
 
 cat > "$CONF/i3/themes/dracula.conf" <<'EOF'
-client.focused          #bd93f9  #282a36  #f8f8f2  #bd93f9   #bd93f9
-client.unfocused        #6272a4  #282a36  #6272a4  #6272a4   #6272a4
-client.focused_inactive #6272a4  #282a36  #6272a4  #6272a4   #6272a4
-client.urgent           #ff5555  #282a36  #f8f8f2  #ff5555   #ff5555
+client.focused          #6272a4  #6272a4  #f8f8f2  #6272a4   #6272a4
+client.focused_inactive #44475a  #44475a  #f8f8f2  #44475a   #44475a
+client.unfocused        #282a36  #282a36  #bfbfbf  #282a36   #282a36
+client.urgent           #44475a  #ff5555  #f8f8f2  #ff5555   #ff5555
 EOF
 
 cat > "$CONF/i3/themes/emilia.conf" <<'EOF'
@@ -24733,6 +26165,12 @@ client.focused          #8FBCBB  #2E3440  #D8DEE9  #8FBCBB   #8FBCBB
 client.unfocused        #D8DEE9  #2E3440  #D8DEE9  #D8DEE9   #D8DEE9
 client.focused_inactive #D8DEE9  #2E3440  #D8DEE9  #D8DEE9   #D8DEE9
 client.urgent           #BF616A  #2E3440  #D8DEE9  #BF616A   #BF616A
+EOF
+cat > "$CONF/i3/themes/yucklys-light.conf" <<'EOF'
+client.focused          #457473  #ECEFF4  #2E3440  #457473   #457473
+client.unfocused        #2E3440  #ECEFF4  #2E3440  #2E3440   #2E3440
+client.focused_inactive #2E3440  #ECEFF4  #2E3440  #2E3440   #2E3440
+client.urgent           #B54954  #ECEFF4  #2E3440  #B54954   #B54954
 EOF
 
 cat > "$CONF/i3/themes/z0mbi3.conf" <<'EOF'
@@ -31822,6 +33260,127 @@ time_format = "%R"
 style = "bg:#2E3440"
 format = '[ $time ]($style)'
 EOF
+cat > "$CONF/starship/themes/yucklys-light.toml" <<'EOF'
+format = """
+[](#ECEFF4)\
+$python\
+$username\
+[](bg:#3B4252 fg:#ECEFF4)\
+$directory\
+[](fg:#3B4252 bg:#81A1C1)\
+$git_branch\
+$git_status\
+[](fg:#81A1C1 bg:#8FBCBB)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8FBCBB bg:#B48EAD)\
+$docker_context\
+[](fg:#B48EAD bg:#ECEFF4)\
+$time\
+[ ](fg:#ECEFF4)\
+"""
+command_timeout = 5000
+
+[username]
+show_always = true
+style_user = "bg:#ECEFF4 fg:#2E3440"
+style_root = "bg:#ECEFF4 fg:#2E3440"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3B4252 fg:#ECEFF4"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B48EAD fg:#2E3440"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#81A1C1 fg:#2E3440"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#81A1C1 fg:#2E3440"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#ECEFF4 fg:#2E3440"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#ECEFF4 fg:#2E3440"
+format = '[ $time ]($style)'
+EOF
 
 cat > "$CONF/starship/themes/yael-square.toml" <<'EOF'
 format = """
@@ -32073,6 +33632,127 @@ format = '[ $symbol ($version) ]($style)'
 disabled = false
 time_format = "%R"
 style = "bg:#2E3440"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/starship/themes/yucklys-light-square.toml" <<'EOF'
+format = """
+[](#ECEFF4)\
+$python\
+$username\
+[](bg:#3B4252 fg:#ECEFF4)\
+$directory\
+[](fg:#3B4252 bg:#81A1C1)\
+$git_branch\
+$git_status\
+[](fg:#81A1C1 bg:#8FBCBB)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8FBCBB bg:#B48EAD)\
+$docker_context\
+[](fg:#B48EAD bg:#ECEFF4)\
+$time\
+[ ](fg:#ECEFF4)\
+"""
+command_timeout = 5000
+
+[username]
+show_always = true
+style_user = "bg:#ECEFF4 fg:#2E3440"
+style_root = "bg:#ECEFF4 fg:#2E3440"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3B4252 fg:#ECEFF4"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B48EAD fg:#2E3440"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#81A1C1 fg:#2E3440"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#81A1C1 fg:#2E3440"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#ECEFF4 fg:#2E3440"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8FBCBB fg:#2E3440"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#ECEFF4 fg:#2E3440"
 format = '[ $time ]($style)'
 EOF
 
@@ -34164,6 +35844,39 @@ foreground = "#BF616A"
 frame_color = "#BF616A"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/yucklys-light-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#496F95"
+corner_radius = 0
+background = "#ECEFF4"
+foreground = "#2E3440"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3B4252"
+
+[urgency_low]
+background = "#ECEFF4"
+foreground = "#3B4252"
+frame_color = "#3B4252"
+timeout = 4
+
+[urgency_normal]
+background = "#ECEFF4"
+foreground = "#2E3440"
+frame_color = "#496F95"
+timeout = 6
+
+[urgency_critical]
+background = "#ECEFF4"
+foreground = "#B54954"
+frame_color = "#B54954"
+timeout = 0
+EOF
 cat > "$CONF/dunst/themes/yael.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -34228,6 +35941,39 @@ timeout = 6
 background = "#2E3440"
 foreground = "#BF616A"
 frame_color = "#BF616A"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/yucklys-light.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#496F95"
+corner_radius = 10
+background = "#ECEFF4"
+foreground = "#2E3440"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3B4252"
+
+[urgency_low]
+background = "#ECEFF4"
+foreground = "#3B4252"
+frame_color = "#3B4252"
+timeout = 4
+
+[urgency_normal]
+background = "#ECEFF4"
+foreground = "#2E3440"
+frame_color = "#496F95"
+timeout = 6
+
+[urgency_critical]
+background = "#ECEFF4"
+foreground = "#B54954"
+frame_color = "#B54954"
 timeout = 0
 EOF
 cat > "$CONF/dunst/themes/z0mbi3-square.dunstrc" <<'EOF'

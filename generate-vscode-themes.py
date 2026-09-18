@@ -34,7 +34,7 @@ THEMES = [
     "catppuccin-mocha", "cherryblocks", "classic", "cristina", "cynthia",
     "daniela", "dracula", "emilia", "float", "h4ck3r", "hidrot", "isabel",
     "jan", "karla", "marisol", "nord", "pamela", "silvia", "tobi", "varinka",
-    "yael", "yucklys", "z0mbi3",
+    "yael", "yucklys", "yucklys-light", "z0mbi3",
 ]
 
 # aline is the one light theme in the whole set (confirmed in this rice's own
