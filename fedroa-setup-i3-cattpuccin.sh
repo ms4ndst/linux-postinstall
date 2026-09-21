@@ -659,6 +659,14 @@ for_window [class="^copyq$"] floating enable, resize set 450 500, move position 
 # works every time.
 for_window [class="^Cliamp$"] floating enable, resize set 700 500, move position center
 for_window [class="^Cliamp$"] mark cliamp-scratch
+# Fullscreen, not a fixed floating size - cliamp setup is a full-TUI
+# wizard that redraws the whole screen rather than appending scrollable
+# terminal output, so a form taller than the window is just clipped with
+# no way to reach it (confirmed directly: a fixed 700x550 box cut off
+# fields on some provider forms). Fullscreen guarantees the maximum
+# space every time instead of guessing a size that might still be short
+# for some provider's form.
+for_window [class="^CliampSetup$"] fullscreen enable
 # Same "own line, not chained" requirement as the Cliamp rule above - a
 # chained `mark` silently never applies.
 for_window [class="^AIVibe$"] floating enable, resize set 900 650, move position center
@@ -702,6 +710,12 @@ bindsym $mod+shift+v exec --no-startup-id copyq toggle
 # playback, MPRIS, and its IPC socket all keep working while hidden, so
 # polybar's media widget still controls it.
 bindsym $mod+m exec --no-startup-id ~/.local/bin/cliamp-toggle.sh
+# `cliamp setup` - a genuinely different command from bare cliamp above,
+# not the same app reached a different way. Picking/configuring a remote
+# source (Navidrome, Plex, Spotify, ...) only happens in this wizard's own
+# "Pick a provider to configure" screen - the player's own TUI (mod+m) has
+# no path to it at all, confirmed by testing its actual keybindings.
+bindsym $mod+shift+m exec --no-startup-id ~/.local/bin/cliamp-setup.sh
 
 # --- AI window (Mistral Vibe CLI, `vibe`) ---
 # Same scratchpad show/hide toggle as cliamp above: ai-window-toggle.sh
@@ -37071,6 +37085,24 @@ else
 fi
 EOF
 chmod +x "$BIN/cliamp-toggle.sh"
+
+log "Writing cliamp-setup.sh..."
+cat > "$BIN/cliamp-setup.sh" <<'EOF'
+#!/usr/bin/env bash
+# Opens cliamp's own provider-configuration wizard (`cliamp setup`) in a
+# floating window - a genuinely different command from bare `cliamp`
+# (bound to $mod+m via cliamp-toggle.sh), not the same app in a different
+# environment. Bare `cliamp` is just the player; picking/configuring a
+# remote source (Navidrome, Plex, Spotify, ...) only happens inside
+# `cliamp setup`'s own "Pick a provider to configure" screen, which the
+# player's own TUI has no path to (confirmed directly: Tab/Enter/Escape
+# inside the player cycle Playlist/Equalizer/Source/Provider views, none
+# of which reach the setup wizard). Not scratchpad-toggled like cliamp
+# itself - the wizard is a one-shot flow that exits on its own once you're
+# done, so it's launched fresh every time rather than minimized/resumed.
+exec kitty --class CliampSetup -e cliamp setup
+EOF
+chmod +x "$BIN/cliamp-setup.sh"
 
 log "Writing ai-window-toggle.sh (Mistral Vibe CLI)..."
 cat > "$BIN/ai-window-toggle.sh" <<'EOF'

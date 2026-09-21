@@ -923,7 +923,15 @@ install_snapshots_full() {
 }
 
 install_snapshots_btrfs() {
-    batch_install "Snapshot Tools" snapper snapper-zypp-plugin grub2-snapper-plugin btrfsmaintenance
+    # yast2-snapper (the YaST module, official in openSUSE's own repos) is
+    # the idiomatic Snapper GUI here, not a third-party app - btrfs-assistant
+    # isn't in any official openSUSE repo (only unofficial OBS home: projects),
+    # so it's deliberately not used. NOTE: yast2-snapper ships on Tumbleweed
+    # and Leap 15.6, but Leap 16.0 dropped the YaST stack entirely (verified
+    # against openSUSE's own package search) - batch_install's existing
+    # failure handling (non-fatal, logged, continues) covers that gap rather
+    # than needing a version check here.
+    batch_install "Snapshot Tools" snapper snapper-zypp-plugin grub2-snapper-plugin btrfsmaintenance yast2-snapper
 
     if ! snapper list-configs 2>/dev/null | grep -qw root; then
         log INFO "No Snapper 'root' config found (unusual on a default Tumbleweed install) - creating one..."
@@ -1625,6 +1633,7 @@ install_ai_tools() {
     install_cursor
     install_lmstudio
     install_neuralinverse
+    install_invokeai
 }
 
 install_ollama() {
@@ -1808,6 +1817,50 @@ install_neuralinverse() {
     fi
     FAILED_PACKAGES+=("neuralinverse"); ((TOTAL_FAILED++))
     log WARNING "Neural Inverse install failed - try: curl -fsSL https://neuralinverse.com/sh | bash -s -- --ide"; return 0
+}
+
+# InvokeAI (invoke.ai) - "a free and open-source creative engine for
+# AI-powered image generation" (local Stable Diffusion/Flux/SDXL web UI +
+# node-based workflows, runs on an NVIDIA or AMD GPU). No AUR/COPR/
+# openSUSE/Ubuntu package and no Flathub listing (confirmed via a live
+# search) - the project's own README says "To get started with Invoke,
+# Download the Launcher", pointing at a SEPARATE repo
+# (github.com/invoke-ai/launcher, an Electron app that manages installing/
+# updating the actual Python/PyTorch backend on first run) rather than the
+# main invoke-ai/InvokeAI repo, which ships no binary release assets at
+# all (confirmed via the GitHub API - InvokeAI itself is PyPI-only). The
+# launcher's own releases always publish a version-independent
+# "Invoke.Community.Edition-latest.AppImage" asset (confirmed live via a
+# HEAD request), so - unlike install_claude_desktop above - no GitHub-API
+# version lookup is needed, just a direct download of that stable URL.
+install_invokeai() {
+    if command -v invoke-ai &>/dev/null; then
+        SKIPPED_PACKAGES+=("invoke-ai"); ((TOTAL_SKIPPED++)); log INFO "Already installed: invoke-ai"; return 0
+    fi
+    log INFO "Installing InvokeAI (Launcher AppImage - no distro package exists)..."
+    local t; t=$(mktemp -d)
+    local app_url="https://github.com/invoke-ai/launcher/releases/latest/download/Invoke.Community.Edition-latest.AppImage"
+    if curl -L -f --retry 2 -o "$t/invoke-ai.AppImage" "$app_url" 2>/dev/null; then
+        chmod +x "$t/invoke-ai.AppImage"; mv "$t/invoke-ai.AppImage" /usr/local/bin/invoke-ai
+        cat > /usr/share/applications/invoke-ai.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=InvokeAI
+GenericName=AI Image Generation
+Comment=Local Stable Diffusion/Flux/SDXL creative engine (Invoke Community Edition)
+Exec=invoke-ai %F
+Icon=invoke-ai
+Terminal=false
+Categories=Graphics;Utility;
+EOF
+        chmod 644 /usr/share/applications/invoke-ai.desktop
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("invoke-ai"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: invoke-ai (AppImage, /usr/local/bin/invoke-ai - needs an NVIDIA/AMD GPU; downloads its own PyTorch/model backend on first run)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("invoke-ai"); ((TOTAL_FAILED++))
+    log WARNING "InvokeAI download failed - get it from https://github.com/invoke-ai/launcher/releases"; return 0
 }
 
 # Cursor's official yum repo (downloads.cursor.com/yumrepo) is the SAME

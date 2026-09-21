@@ -1783,6 +1783,7 @@ install_ai_tools() {
     install_cursor
     install_lmstudio
     install_neuralinverse
+    install_invokeai
 }
 
 # NOTE on tracking: these tools install outside apt (curl script, npm/native
@@ -2047,6 +2048,50 @@ install_neuralinverse() {
     log WARNING "Neural Inverse install failed - try: curl -fsSL https://neuralinverse.com/sh | bash -s -- --ide"; return 0
 }
 
+# InvokeAI (invoke.ai) - "a free and open-source creative engine for
+# AI-powered image generation" (local Stable Diffusion/Flux/SDXL web UI +
+# node-based workflows, runs on an NVIDIA or AMD GPU). No AUR/COPR/
+# openSUSE/Ubuntu package and no Flathub listing (confirmed via a live
+# search) - the project's own README says "To get started with Invoke,
+# Download the Launcher", pointing at a SEPARATE repo
+# (github.com/invoke-ai/launcher, an Electron app that manages installing/
+# updating the actual Python/PyTorch backend on first run) rather than the
+# main invoke-ai/InvokeAI repo, which ships no binary release assets at
+# all (confirmed via the GitHub API - InvokeAI itself is PyPI-only). The
+# launcher's own releases always publish a version-independent
+# "Invoke.Community.Edition-latest.AppImage" asset (confirmed live via a
+# HEAD request), so - unlike install_claude_desktop above - no GitHub-API
+# version lookup is needed, just a direct download of that stable URL.
+install_invokeai() {
+    if command -v invoke-ai &>/dev/null; then
+        SKIPPED_PACKAGES+=("invoke-ai"); ((TOTAL_SKIPPED++)); log INFO "Already installed: invoke-ai"; return 0
+    fi
+    log INFO "Installing InvokeAI (Launcher AppImage - no distro package exists)..."
+    local t; t=$(mktemp -d)
+    local app_url="https://github.com/invoke-ai/launcher/releases/latest/download/Invoke.Community.Edition-latest.AppImage"
+    if curl -L -f --retry 2 -o "$t/invoke-ai.AppImage" "$app_url" 2>/dev/null; then
+        chmod +x "$t/invoke-ai.AppImage"; mv "$t/invoke-ai.AppImage" /usr/local/bin/invoke-ai
+        cat > /usr/share/applications/invoke-ai.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=InvokeAI
+GenericName=AI Image Generation
+Comment=Local Stable Diffusion/Flux/SDXL creative engine (Invoke Community Edition)
+Exec=invoke-ai %F
+Icon=invoke-ai
+Terminal=false
+Categories=Graphics;Utility;
+EOF
+        chmod 644 /usr/share/applications/invoke-ai.desktop
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("invoke-ai"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: invoke-ai (AppImage, /usr/local/bin/invoke-ai - needs an NVIDIA/AMD GPU; downloads its own PyTorch/model backend on first run)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("invoke-ai"); ((TOTAL_FAILED++))
+    log WARNING "InvokeAI download failed - get it from https://github.com/invoke-ai/launcher/releases"; return 0
+}
+
 install_cursor() {
     if command -v cursor &>/dev/null || is_installed cursor; then
         SKIPPED_PACKAGES+=("cursor"); ((TOTAL_SKIPPED++)); log INFO "Already installed: cursor"; return 0
@@ -2276,6 +2321,7 @@ install_gui_tweaks() {
     install_gnome_extensions
     configure_logiops
     configure_mousiki
+    install_snapper_gui
 }
 
 # Install a curated set of GNOME Shell extensions via gext (the gnome-extensions-cli
@@ -2651,6 +2697,28 @@ setup_mousiki_user_config() {
     if ! grep -q "player_client=android" "$uh/.config/yt-dlp/config" 2>/dev/null; then
         su - "$SUDO_USER" -c "echo '--extractor-args \"youtube:player_client=android\"' >> '$uh/.config/yt-dlp/config'"
     fi
+}
+
+# Snapper GUI (snapper-gui, official Ubuntu universe package on every
+# supported release 22.04-26.04 - verified against packages.ubuntu.com).
+# Deliberately NOT btrfs-assistant: that's official Ubuntu only from 25.10
+# onward, and the only source for it on 22.04/24.04 is an unofficial,
+# personally-run PPA (ppa:toffuuu101/ppa-btrfs-assistant-matt) - not worth
+# the trust tradeoff when snapper-gui is a real Debian/Ubuntu-shipped
+# package everywhere already.
+#
+# Scope note: unlike the Arch/Fedora/openSUSE scripts' own snapshot
+# sections, this deliberately does NOT build out full Snapper automation
+# (a "root" config, timeline/cleanup timers, GRUB boot-menu integration) -
+# Ubuntu doesn't default to Btrfs the way those distros do, so assuming a
+# Btrfs root and wiring all of that up here would be a bigger, riskier
+# change than "install the GUI tool" actually asked for. If your root IS
+# Btrfs with Snapper already configured, this GUI will work against it
+# out of the box; if not, apt's own dependency resolution still pulls in
+# the `snapper` package, and the GUI itself will just have nothing to show
+# until a config exists (`sudo snapper -c root create-config /`).
+install_snapper_gui() {
+    batch_install "Snapper GUI" snapper snapper-gui
 }
 
 # Add a PPA in a way that works cleanly across both supported releases. PPAs
