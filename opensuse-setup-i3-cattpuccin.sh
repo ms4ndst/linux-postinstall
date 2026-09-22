@@ -33,8 +33,7 @@
 #           projects' real i3 setups, a rounded-capsule Archcraft reskin
 #           modeled on archcraft-i3wm's real polybar config, 16 more
 #           reskins ported from rices in gh0stzk/dotfiles (a real
-#           18-theme bspwm collection), and a hidrot reskin ported from
-#           Murzchnvok/polybar-collection - each a full
+#           18-theme bspwm collection) - each a full
 #           color+layout+module-styling package, not just a palette swap),
 #           plus a square "-square" counterpart for every one of those 21
 #           (42 total) with every rounded bar corner, pill end-cap, and
@@ -1650,13 +1649,14 @@ format-connected-background = ${colors.blue}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='   ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#1e1e2e' WIFI_OFF_FG='#f38ba8' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}   %essid% %{A}%{A}%{A}"
-label-connected-foreground = ${colors.base}
-format-connected-background = ${colors.blue}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #89b4fa
 
 [module/bluetooth]
 type = custom/script
@@ -1682,6 +1682,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.base}
 format-background = ${colors.red}
@@ -1920,12 +1922,7 @@ sed -i \
 # entries at all - both one-line fixes (a larger label-*-font slot, an
 # explicit label-*-padding) easy to miss by omission on any theme with
 # plain digit/letter workspace labels. andrea and melissa were dropped by
-# request rather than iterated on further. hidrot (below, from
-# github.com/Murzchnvok/polybar-collection - its sibling theme "murz" was
-# built, tested, and also dropped by request) applies every one of these
-# lessons from the start instead of needing them fixed in after the fact:
-# ~90% opacity (not full), an explicit dark tray-bg token, and real
-# padding/font sizing on its workspace glyphs from the first version.
+# request rather than iterated on further.
 #
 # IMPORTANT for editing any theme file below: never hand-type a Nerd Font
 # glyph directly into a heredoc/file, and never hand-type one into an
@@ -2098,12 +2095,13 @@ label-connected-foreground = ${colors.sky}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='  ' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#8be9fd' WIFI_OFF_FG='#ff5555' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.sky}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -2127,6 +2125,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -2341,13 +2341,14 @@ format-connected-background = ${colors.surface0}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='  ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#88c0d0' WIFI_OFF_FG='#bf616a' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}%{A}"
-label-connected-foreground = ${colors.sky}
-format-connected-background = ${colors.surface0}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #3b4252
 
 [module/bluetooth]
 type = custom/script
@@ -2373,6 +2374,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red-light}
 format-background = ${colors.surface0}
@@ -2563,12 +2566,13 @@ label-connected-foreground = ${colors.text}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#F8F8F2' WIFI_OFF_FG='#FF5E76' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -2607,6 +2611,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.text}
 
@@ -2797,12 +2803,13 @@ label-connected-foreground = ${colors.text}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#EBDBB2' WIFI_OFF_FG='#FB4934' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -2841,6 +2848,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.text}
 
@@ -3091,12 +3100,13 @@ label-connected-foreground = ${colors.sky}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='  ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#56b6c2' WIFI_OFF_FG='#e06c75' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}%{A}"
-label-connected-foreground = ${colors.sky}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -3120,6 +3130,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -3380,14 +3392,14 @@ label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#575279' WIFI_OFF_FG='#B4637A' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #F2E9E1
 
 [module/bluetooth]
 type = custom/script
@@ -3411,6 +3423,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 format-background = ${colors.surface0}
 label-foreground = ${colors.red}
@@ -3612,12 +3626,13 @@ label-connected-foreground = ${colors.text}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#E5E9F0' WIFI_OFF_FG='#F7768E' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -3656,6 +3671,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.text}
 
@@ -3901,13 +3918,14 @@ label-connected-foreground = ${colors.base}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#2D353B' WIFI_OFF_FG='#E67E80' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-background = ${colors.surface0}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
-label-connected-foreground = ${colors.base}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #F8F5E4
 
 [module/bluetooth]
 type = custom/script
@@ -3933,6 +3951,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 format-background = ${colors.surface0}
 label-foreground = ${colors.red-dark}
@@ -4153,13 +4173,13 @@ label-connected-foreground = ${colors.base}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#282828' WIFI_OFF_FG='#FB4934' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-background = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.base}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -4202,6 +4222,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format-background = ${colors.red}
 format = <label>
 label-foreground = ${colors.base}
@@ -4381,12 +4403,13 @@ label-connected-foreground = ${colors.text}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#EBDBB2' WIFI_OFF_FG='#FB4934' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -4425,6 +4448,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.text}
 
@@ -4671,7 +4696,6 @@ label-font = 2
 label-foreground = ${colors.base}
 label-background = ${colors.indigo}
 
-
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
 type = internal/i3
@@ -4747,13 +4771,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#E0DEF4' WIFI_OFF_FG='#EA6F91' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.orange}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -4776,6 +4800,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -4994,13 +5020,14 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#C5C9C5' WIFI_OFF_FG='#E46876' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = " "
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #242121
 
 [module/bluetooth]
 type = custom/script
@@ -5023,6 +5050,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -5220,14 +5249,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#C0CAF5' WIFI_OFF_FG='#F7768E' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = "NET "
-format-connected-prefix-font = 1
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -5251,6 +5279,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -5586,7 +5616,6 @@ label-font = 2
 label-foreground = ${colors.surface0}
 label-background = ${colors.base}
 
-
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
 type = internal/i3
@@ -5665,14 +5694,14 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#E8DCC8' WIFI_OFF_FG='#D9736A' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #2B241F
 
 [module/bluetooth]
 type = custom/script
@@ -5697,6 +5726,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 format-background = ${colors.surface0}
 label-foreground = ${colors.red}
@@ -5746,242 +5777,6 @@ type = custom/script
 exec = ~/.local/bin/polybar-layout.sh
 interval = 1
 format = <label>
-
-[module/tray]
-type = internal/tray
-tray-spacing = 8
-tray-padding = 6
-
-[settings]
-screenchange-reload = true
-EOF
-
-cat > "$CONF/polybar/themes/float.ini" <<'EOF'
-; Float - modeled directly on github.com/kiddae/polybar-themes' real
-; "float" bar (config read from a full local clone, not "float2" - a
-; different, README-undocumented folder this port mistakenly cited
-; before). Its real config is a genuinely floating pill: width 80%,
-; centered (offset-x 10%), inset 10px from the top, radius 15. width=80%
-; is applied directly below (a real, working improvement over the
-; generic full-width template); offset-x/offset-y are NOT - tested
-; directly in this exact i3+polybar 3.7.2 setup (fixed pixel values too,
-; not just percentages) and the bar stays flush at the screen edge
-; regardless, an environment limitation rather than a config mistake, so
-; left undone rather than shipped as a claim this setup can't actually
-; deliver. Gruvbox Dark palette (see "archblur" for how that was
-; confirmed).
-;
-; modules-right is real-source-only (cpu memory date pulseaudio power),
-; not this rice's usual full widget set - tested directly at the real
-; 80%-width and it visibly clipped (date/power got cut off past the
-; bar's own edge). Fitting first, not squeezing in extra widgets that
-; don't fit.
-[colors]
-base     = #282828
-mantle   = #1D2021
-surface0 = #3C3836
-surface1 = #504945
-text     = #EBDBB2
-subtext  = #A89984
-red      = #FB4934
-green    = #B8BB26
-yellow   = #FABD2F
-blue     = #83A598
-purple   = #D3869B
-aqua     = #8EC07C
-orange   = #FE8019
-gray     = #928374
-
-[bar/base]
-monitor = ${env:MONITOR:}
-width = 80%
-height = 30
-background = ${colors.base}
-foreground = ${colors.text}
-radius = 15
-padding-left = 8
-padding-right = 8
-module-margin = 2
-underline-size = 2
-overline-size = 2
-font-0 = "JetBrainsMono Nerd Font:size=10;2"
-font-1 = "JetBrainsMono Nerd Font:size=14;4"
-font-2 = "JetBrains Mono:size=10;2"
-modules-left = launcher i3
-modules-center = media
-
-[bar/top-primary]
-inherit = bar/base
-modules-right = cpu memory date pulseaudio power
-
-[bar/top-secondary]
-inherit = bar/base
-modules-right = cpu memory date pulseaudio
-
-; --- real widgets ------------------------------------------------------------
-; Frame (underline+overline), not a solid fill, for focused - a filled chip
-; on top of the font reads visually heavier/larger than intended (confirmed
-; the hard way porting this rice's own "alireza" theme).
-[module/launcher]
-type = custom/text
-format = <label>
-label = "󰣇"
-label-foreground = ${colors.aqua}
-click-left = ~/.local/bin/app-menu.sh &
-
-[module/power]
-type = custom/text
-format = <label>
-label = ""
-label-foreground = ${colors.red}
-click-left = ~/.local/bin/powermenu.sh &
-
-[module/i3]
-type = internal/i3
-format = <label-state>
-index-sort = true
-wrapping-scroll = false
-ws-label = %index%
-label-focused = ${self.ws-label}
-label-focused-font = 3
-label-focused-foreground = ${colors.aqua}
-label-focused-underline = ${colors.aqua}
-label-focused-overline = ${colors.aqua}
-label-focused-padding = 1
-label-unfocused = ${self.ws-label}
-label-unfocused-font = 3
-label-unfocused-foreground = ${colors.subtext}
-label-unfocused-padding = 1
-label-urgent = ${self.ws-label}
-label-urgent-font = 3
-label-urgent-foreground = ${colors.base}
-label-urgent-background = ${colors.red}
-label-urgent-padding = 1
-
-[module/date]
-type = internal/date
-interval = 1
-date = %Y-%m-%d
-time = %H:%M
-label = "%{A1:GTK_THEME=Rice-float gnome-calendar &:}%date%  %time%%{A}"
-label-foreground = ${colors.text}
-
-[module/backlight]
-type = custom/script
-exec = ~/.local/bin/polybar-backlight.sh
-interval = 1
-scroll-up = brightnessctl set +5% &
-scroll-down = brightnessctl set 5%- &
-format = <label>
-label = "%output%%"
-label-foreground = ${colors.text}
-
-[module/pulseaudio]
-type = internal/pulseaudio
-label-volume = "%percentage%%"
-label-volume-foreground = ${colors.text}
-label-muted = "muted"
-label-muted-foreground = ${colors.subtext}
-
-; Split wired/wireless so whichever is actually up is the only one that
-; renders anything - format-disconnected is left blank so the inactive one
-; takes up no space instead of showing a permanent "offline" label.
-[module/network-wired]
-type = internal/network
-interface-type = wired
-interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
-
-[module/network-wireless]
-type = internal/network
-interface-type = wireless
-interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
-
-[module/bluetooth]
-type = custom/script
-exec = ~/.local/bin/polybar-bluetooth.sh
-interval = 5
-click-left = blueman-manager &
-format = <label>
-label-foreground = ${colors.text}
-
-[module/media]
-type = custom/script
-exec = ~/.local/bin/polybar-media.sh
-interval = 1
-label-foreground = ${colors.aqua}
-format = <label>
-
-[module/cliamp]
-type = custom/script
-exec = ~/.local/bin/polybar-cliamp.sh
-interval = 3
-click-left = ~/.local/bin/cliamp-toggle.sh &
-label-foreground = ${colors.aqua}
-format = <label>
-
-[module/caffeine]
-type = custom/script
-exec = ~/.local/bin/polybar-caffeine.sh
-interval = 3
-click-left = ~/.local/bin/caffeine-toggle.sh &
-click-right = xset s activate &
-format = <label>
-label-foreground = ${colors.text}
-
-[module/dnd]
-type = custom/script
-exec = ~/.local/bin/polybar-dnd.sh
-interval = 2
-click-left = ~/.local/bin/dnd-toggle.sh &
-format = <label>
-label-foreground = ${colors.text}
-
-[module/battery]
-type = internal/battery
-battery = BAT0
-adapter = AC
-low-at = 15
-label-charging = "%percentage%%"
-label-discharging = "%percentage%%"
-label-full = "Full"
-label-low = "%percentage%%"
-label-charging-foreground = ${colors.text}
-label-discharging-foreground = ${colors.text}
-label-full-foreground = ${colors.text}
-label-low-foreground = ${colors.red}
-
-[module/memory]
-type = internal/memory
-interval = 2
-label = "%percentage_used%%"
-label-foreground = ${colors.text}
-
-[module/cpu]
-type = internal/cpu
-interval = 2
-label = "%percentage%%"
-label-foreground = ${colors.text}
-
-[module/updates]
-type = custom/script
-exec = ~/.local/bin/polybar-updates.sh
-tail = true
-click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
-label-foreground = ${colors.yellow}
-format = <label>
-
-[module/layout]
-type = custom/script
-exec = ~/.local/bin/polybar-layout.sh
-interval = 1
-format = <label>
-label-foreground = ${colors.text}
 
 [module/tray]
 type = internal/tray
@@ -6121,12 +5916,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#00FA5C' WIFI_OFF_FG='#6DDE00' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -6148,6 +5944,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.subtext}
 
@@ -6332,12 +6130,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#A8C5C0' WIFI_OFF_FG='#D67F7F' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -6359,6 +6158,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 
 [module/battery]
@@ -6565,13 +6366,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#27FBFE' WIFI_OFF_FG='#DB330A' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -6594,6 +6395,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.pink}
 
@@ -6802,13 +6605,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#AFB1DB' WIFI_OFF_FG='#E7034A' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -6832,6 +6635,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -7048,13 +6853,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#F5E6E0' WIFI_OFF_FG='#E8604C' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -7077,6 +6882,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -7289,13 +7096,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#FDFDFD' WIFI_OFF_FG='#F37F97' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -7319,6 +7126,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -7522,13 +7331,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#EBDBB2' WIFI_OFF_FG='#CC241D' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -7552,6 +7361,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red-light}
 
@@ -7734,12 +7545,13 @@ label-connected-foreground = ${colors.sky}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#96CDFB' WIFI_OFF_FG='#F28FAD' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.sky}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -7778,6 +7590,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -7980,12 +7794,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#F8F9FA' WIFI_OFF_FG='#DE8658' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -8007,6 +7822,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.pink}
 
@@ -8204,13 +8021,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#FFFFFF' WIFI_OFF_FG='#EE5396' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -8234,6 +8051,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -8436,20 +8255,13 @@ format-disconnected =
 ; success by strength) - its actual distinguishing touch vs every other
 ; theme's plain-text network module here.
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#D8DEE9' WIFI_OFF_FG='#BF616A' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected = <ramp-signal> <label-connected>
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid%%{A}%{A}%{A}"
-ramp-signal-0 = ▂
-ramp-signal-0-foreground = ${colors.red}
-ramp-signal-1 = ▄
-ramp-signal-1-foreground = ${colors.yellow}
-ramp-signal-2 = ▆
-ramp-signal-2-foreground = ${colors.teal}
-ramp-signal-3 = █
-ramp-signal-3-foreground = ${colors.green}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/cpu]
 type = internal/cpu
@@ -8528,6 +8340,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -8727,20 +8541,13 @@ label-connected-foreground = ${colors.sky}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#2E3440' WIFI_OFF_FG='#B54954' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected = <ramp-signal> <label-connected>
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid%%{A}%{A}%{A}"
-ramp-signal-0 = ▂
-ramp-signal-0-foreground = ${colors.red}
-ramp-signal-1 = ▄
-ramp-signal-1-foreground = ${colors.yellow}
-ramp-signal-2 = ▆
-ramp-signal-2-foreground = ${colors.teal}
-ramp-signal-3 = █
-ramp-signal-3-foreground = ${colors.green}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/cpu]
 type = internal/cpu
@@ -8819,6 +8626,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -9036,14 +8845,14 @@ label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#A5B6CF' WIFI_OFF_FG='#DD6777' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #151720
 
 [module/bluetooth]
 type = custom/script
@@ -9069,6 +8878,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 format-background = ${colors.surface0}
 label-foreground = ${colors.red}
@@ -9304,14 +9115,14 @@ label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#575279' WIFI_OFF_FG='#B4637A' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #F2E9E1
 
 [module/bluetooth]
 type = custom/script
@@ -9335,6 +9146,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 format-background = ${colors.surface0}
 label-foreground = ${colors.red}
@@ -9539,12 +9352,13 @@ label-connected-foreground = ${colors.text}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#F8F8F2' WIFI_OFF_FG='#FF5E76' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -9583,6 +9397,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.text}
 
@@ -9773,12 +9589,13 @@ label-connected-foreground = ${colors.text}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#EBDBB2' WIFI_OFF_FG='#FB4934' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -9817,6 +9634,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.text}
 
@@ -10053,12 +9872,13 @@ label-connected-foreground = ${colors.sky}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='  ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#56b6c2' WIFI_OFF_FG='#e06c75' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}%{A}"
-label-connected-foreground = ${colors.sky}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -10082,6 +9902,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -10262,12 +10084,13 @@ label-connected-foreground = ${colors.text}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#E5E9F0' WIFI_OFF_FG='#F7768E' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -10306,6 +10129,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.text}
 
@@ -10551,13 +10376,14 @@ label-connected-foreground = ${colors.base}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#2D353B' WIFI_OFF_FG='#E67E80' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-background = ${colors.surface0}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
-label-connected-foreground = ${colors.base}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #F8F5E4
 
 [module/bluetooth]
 type = custom/script
@@ -10583,6 +10409,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 format-background = ${colors.surface0}
 label-foreground = ${colors.red-dark}
@@ -10857,13 +10685,14 @@ format-connected-background = ${colors.blue}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='   ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#1e1e2e' WIFI_OFF_FG='#f38ba8' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}   %essid% %{A}%{A}%{A}"
-label-connected-foreground = ${colors.base}
-format-connected-background = ${colors.blue}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #89b4fa
 
 [module/bluetooth]
 type = custom/script
@@ -10889,6 +10718,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.base}
 format-background = ${colors.red}
@@ -11073,13 +10904,13 @@ label-connected-foreground = ${colors.base}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#282828' WIFI_OFF_FG='#FB4934' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-background = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.base}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -11122,6 +10953,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format-background = ${colors.red}
 format = <label>
 label-foreground = ${colors.base}
@@ -11301,12 +11134,13 @@ label-connected-foreground = ${colors.text}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#EBDBB2' WIFI_OFF_FG='#FB4934' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -11345,6 +11179,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.text}
 
@@ -11538,13 +11374,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#E0DEF4' WIFI_OFF_FG='#EA6F91' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.orange}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -11567,6 +11403,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -11783,13 +11621,14 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#C5C9C5' WIFI_OFF_FG='#E46876' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = " "
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #242121
 
 [module/bluetooth]
 type = custom/script
@@ -11812,6 +11651,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -12009,14 +11850,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#C0CAF5' WIFI_OFF_FG='#F7768E' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = "NET "
-format-connected-prefix-font = 1
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -12040,6 +11880,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -12260,12 +12102,13 @@ label-connected-foreground = ${colors.sky}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='  ' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#8be9fd' WIFI_OFF_FG='#ff5555' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.sky}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -12289,6 +12132,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -12484,14 +12329,14 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#E8DCC8' WIFI_OFF_FG='#D9736A' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #2B241F
 
 [module/bluetooth]
 type = custom/script
@@ -12516,6 +12361,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 format-background = ${colors.surface0}
 label-foreground = ${colors.red}
@@ -12573,242 +12420,6 @@ type = custom/script
 exec = ~/.local/bin/polybar-layout.sh
 interval = 1
 format = <label>
-
-[module/tray]
-type = internal/tray
-tray-spacing = 8
-tray-padding = 6
-
-[settings]
-screenchange-reload = true
-EOF
-
-cat > "$CONF/polybar/themes/float-square.ini" <<'EOF'
-; Float - modeled directly on github.com/kiddae/polybar-themes' real
-; "float" bar (config read from a full local clone, not "float2" - a
-; different, README-undocumented folder this port mistakenly cited
-; before). Its real config is a genuinely floating pill: width 80%,
-; centered (offset-x 10%), inset 10px from the top, radius 15. width=80%
-; is applied directly below (a real, working improvement over the
-; generic full-width template); offset-x/offset-y are NOT - tested
-; directly in this exact i3+polybar 3.7.2 setup (fixed pixel values too,
-; not just percentages) and the bar stays flush at the screen edge
-; regardless, an environment limitation rather than a config mistake, so
-; left undone rather than shipped as a claim this setup can't actually
-; deliver. Gruvbox Dark palette (see "archblur" for how that was
-; confirmed).
-;
-; modules-right is real-source-only (cpu memory date pulseaudio power),
-; not this rice's usual full widget set - tested directly at the real
-; 80%-width and it visibly clipped (date/power got cut off past the
-; bar's own edge). Fitting first, not squeezing in extra widgets that
-; don't fit.
-[colors]
-base     = #282828
-mantle   = #1D2021
-surface0 = #3C3836
-surface1 = #504945
-text     = #EBDBB2
-subtext  = #A89984
-red      = #FB4934
-green    = #B8BB26
-yellow   = #FABD2F
-blue     = #83A598
-purple   = #D3869B
-aqua     = #8EC07C
-orange   = #FE8019
-gray     = #928374
-
-[bar/base]
-monitor = ${env:MONITOR:}
-width = 80%
-height = 30
-background = ${colors.base}
-foreground = ${colors.text}
-radius = 0
-padding-left = 8
-padding-right = 8
-module-margin = 2
-underline-size = 2
-overline-size = 2
-font-0 = "JetBrainsMono Nerd Font:size=10;2"
-font-1 = "JetBrainsMono Nerd Font:size=14;4"
-font-2 = "JetBrains Mono:size=10;2"
-modules-left = launcher i3
-modules-center = media
-
-[bar/top-primary]
-inherit = bar/base
-modules-right = cpu memory date pulseaudio power
-
-[bar/top-secondary]
-inherit = bar/base
-modules-right = cpu memory date pulseaudio
-
-; --- real widgets ------------------------------------------------------------
-; Frame (underline+overline), not a solid fill, for focused - a filled chip
-; on top of the font reads visually heavier/larger than intended (confirmed
-; the hard way porting this rice's own "alireza" theme).
-[module/launcher]
-type = custom/text
-format = <label>
-label = "󰣇"
-label-foreground = ${colors.aqua}
-click-left = ~/.local/bin/app-menu.sh &
-
-[module/power]
-type = custom/text
-format = <label>
-label = ""
-label-foreground = ${colors.red}
-click-left = ~/.local/bin/powermenu.sh &
-
-[module/i3]
-type = internal/i3
-format = <label-state>
-index-sort = true
-wrapping-scroll = false
-ws-label = %index%
-label-focused = ${self.ws-label}
-label-focused-font = 3
-label-focused-foreground = ${colors.aqua}
-label-focused-underline = ${colors.aqua}
-label-focused-overline = ${colors.aqua}
-label-focused-padding = 1
-label-unfocused = ${self.ws-label}
-label-unfocused-font = 3
-label-unfocused-foreground = ${colors.subtext}
-label-unfocused-padding = 1
-label-urgent = ${self.ws-label}
-label-urgent-font = 3
-label-urgent-foreground = ${colors.base}
-label-urgent-background = ${colors.red}
-label-urgent-padding = 1
-
-[module/date]
-type = internal/date
-interval = 1
-date = %Y-%m-%d
-time = %H:%M
-label = "%{A1:GTK_THEME=Rice-float gnome-calendar &:}%date%  %time%%{A}"
-label-foreground = ${colors.text}
-
-[module/backlight]
-type = custom/script
-exec = ~/.local/bin/polybar-backlight.sh
-interval = 1
-scroll-up = brightnessctl set +5% &
-scroll-down = brightnessctl set 5%- &
-format = <label>
-label = "%output%%"
-label-foreground = ${colors.text}
-
-[module/pulseaudio]
-type = internal/pulseaudio
-label-volume = "%percentage%%"
-label-volume-foreground = ${colors.text}
-label-muted = "muted"
-label-muted-foreground = ${colors.subtext}
-
-; Split wired/wireless so whichever is actually up is the only one that
-; renders anything - format-disconnected is left blank so the inactive one
-; takes up no space instead of showing a permanent "offline" label.
-[module/network-wired]
-type = internal/network
-interface-type = wired
-interval = 3
-label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
-
-[module/network-wireless]
-type = internal/network
-interface-type = wireless
-interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.text}
-format-disconnected =
-
-[module/bluetooth]
-type = custom/script
-exec = ~/.local/bin/polybar-bluetooth.sh
-interval = 5
-click-left = blueman-manager &
-format = <label>
-label-foreground = ${colors.text}
-
-[module/media]
-type = custom/script
-exec = ~/.local/bin/polybar-media.sh
-interval = 1
-label-foreground = ${colors.aqua}
-format = <label>
-
-[module/cliamp]
-type = custom/script
-exec = ~/.local/bin/polybar-cliamp.sh
-interval = 3
-click-left = ~/.local/bin/cliamp-toggle.sh &
-label-foreground = ${colors.aqua}
-format = <label>
-
-[module/caffeine]
-type = custom/script
-exec = ~/.local/bin/polybar-caffeine.sh
-interval = 3
-click-left = ~/.local/bin/caffeine-toggle.sh &
-click-right = xset s activate &
-format = <label>
-label-foreground = ${colors.text}
-
-[module/dnd]
-type = custom/script
-exec = ~/.local/bin/polybar-dnd.sh
-interval = 2
-click-left = ~/.local/bin/dnd-toggle.sh &
-format = <label>
-label-foreground = ${colors.text}
-
-[module/battery]
-type = internal/battery
-battery = BAT0
-adapter = AC
-low-at = 15
-label-charging = "%percentage%%"
-label-discharging = "%percentage%%"
-label-full = "Full"
-label-low = "%percentage%%"
-label-charging-foreground = ${colors.text}
-label-discharging-foreground = ${colors.text}
-label-full-foreground = ${colors.text}
-label-low-foreground = ${colors.red}
-
-[module/memory]
-type = internal/memory
-interval = 2
-label = "%percentage_used%%"
-label-foreground = ${colors.text}
-
-[module/cpu]
-type = internal/cpu
-interval = 2
-label = "%percentage%%"
-label-foreground = ${colors.text}
-
-[module/updates]
-type = custom/script
-exec = ~/.local/bin/polybar-updates.sh
-tail = true
-click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
-label-foreground = ${colors.yellow}
-format = <label>
-
-[module/layout]
-type = custom/script
-exec = ~/.local/bin/polybar-layout.sh
-interval = 1
-format = <label>
-label-foreground = ${colors.text}
 
 [module/tray]
 type = internal/tray
@@ -12948,12 +12559,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#00FA5C' WIFI_OFF_FG='#6DDE00' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -12975,6 +12587,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.subtext}
 
@@ -13018,284 +12632,6 @@ format = <label>
 type = internal/tray
 tray-spacing = 8
 tray-padding = 6
-
-[settings]
-screenchange-reload = true
-EOF
-
-cat > "$CONF/polybar/themes/hidrot-square.ini" <<'EOF'
-; Hidrot - three separate floating clusters bracketed by NEUTRAL rounded
-; caps (U+E0B6/U+E0B4, same glyph family as Mocha/Archcraft/Aline/Marisol)
-; that match each cluster's own content background rather than a vivid
-; accent - the workspace cluster, and a rainbow-icon cluster where every
-; widget gets its OWN distinct vivid icon-chip color (blue/aqua/green/
-; purple/yellow/red) against one shared neutral value-chip background,
-; confirmed by reading the source's own real per-widget files directly
-; (each sets format-prefix-background to a different accent, format-
-; background to the same neutral bg1 throughout). Modeled directly on
-; github.com/Murzchnvok/polybar-collection's real "hidrot" theme (themes/
-; hidrot/*.ini, read from a full local clone) - like its sibling "murz"
-; (this rice's own theme by the same name, later removed by request),
-; colors come from a separate, swappable colorscheme file; its three
-; bundled colorschemes (gruvbox/nord/onedark) are all already used
-; elsewhere in this rice's set, so this port uses a fresh graphite-blue
-; palette instead. The source's own background is semi-transparent - but
-; this rice's own Marisol theme already went fully transparent once and
-; had to be walked back after real feedback found it illegible against
-; an actual wallpaper, so hidrot ships at a safer ~90% opacity from the
-; start instead of repeating that mistake. Workspace state icons and the
-; system tray both get real attention up front for the same reason:
-; explicit padding and a comfortably large font on the workspace glyphs
-; (this rice's own Jan/Karla/Varinka all needed that fixed in after the
-; fact), and a dedicated dark, opaque tray backdrop independent of the
-; rest of the palette (Aline/Brenda both needed that fixed in after the
-; fact too, since most tray icons are drawn expecting a dark bar).
-[colors]
-base   = #E61B1E24
-mantle = #E61B1E24
-surface0 = #262B33
-surface1 = #262B33
-text   = #D6DCE5
-subtext = #6E7684
-green0 = #7CB88F
-purple0 = #B08FD1
-blue0  = #6E93C7
-red0   = #D9707A
-blue1  = #5E8FCC
-aqua1  = #4FB0A6
-green1 = #7BBF7E
-purple1 = #B08FD1
-yellow1 = #D9B25C
-red1   = #D9707A
-tray-bg = #14161A
-
-[bar/base]
-monitor = ${env:MONITOR:}
-width = 100%
-height = 30
-background = ${colors.base}
-foreground = ${colors.text}
-radius = 0
-padding-left = 2
-padding-right = 2
-module-margin = 0
-font-0 = "JetBrainsMono Nerd Font:size=10;2"
-font-1 = "JetBrainsMono Nerd Font:size=14;4"
-font-2 = "JetBrains Mono:size=10;2"
-modules-left = i3
-
-[bar/top-primary]
-inherit = bar/base
-modules-center = date-icon date
-modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless bluetooth sep caffeine dnd sep battery memory cpu sep updates layout sep tray
-
-[bar/top-secondary]
-inherit = bar/base
-modules-center = date-icon date
-modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless memory cpu updates
-
-[module/sep]
-type = custom/text
-format = <label>
-label = "  "
-
-; --- real widgets ------------------------------------------------------------
-[module/i3]
-type = internal/i3
-format = <label-state>
-format-background = ${colors.surface0}
-index-sort = true
-wrapping-scroll = false
-label-focused = "●"
-label-focused-foreground = ${colors.green0}
-label-focused-font = 2
-label-focused-padding = 2
-label-unfocused = "●"
-label-unfocused-foreground = ${colors.purple0}
-label-unfocused-font = 2
-label-unfocused-padding = 2
-label-urgent = "●"
-label-urgent-foreground = ${colors.red0}
-label-urgent-font = 2
-label-urgent-padding = 2
-
-[module/date-icon]
-type = custom/text
-format = <label>
-format-background = ${colors.surface0}
-label = "󱑎"
-label-foreground = ${colors.green1}
-
-[module/date]
-type = internal/date
-interval = 1
-date = %Y-%m-%d
-time = %H:%M
-format-background = ${colors.surface0}
-label = "%{A1:GTK_THEME=Rice-hidrot gnome-calendar &:} %date%  %time% %{A}"
-
-[module/backlight]
-type = custom/script
-exec = ~/.local/bin/polybar-backlight.sh
-interval = 1
-scroll-up = brightnessctl set +5% &
-scroll-down = brightnessctl set 5%- &
-format = <label>
-format-background = ${colors.surface0}
-format-prefix = "󰖨 "
-format-prefix-background = ${colors.blue1}
-format-prefix-foreground = ${colors.base}
-label = " %output%% "
-
-[module/pulseaudio]
-type = internal/pulseaudio
-format-volume-background = ${colors.surface0}
-format-volume-prefix = "󰕾 "
-format-volume-prefix-background = ${colors.yellow1}
-format-volume-prefix-foreground = ${colors.base}
-format-muted-background = ${colors.surface0}
-format-muted-prefix = "󰖁 "
-format-muted-prefix-background = ${colors.red1}
-format-muted-prefix-foreground = ${colors.base}
-label-volume = " %percentage%% "
-label-muted = " muted "
-
-; Split wired/wireless so whichever is actually up is the only one that
-; renders anything - format-disconnected is left blank so the inactive one
-; takes up no space instead of showing a permanent "offline" label.
-[module/media]
-type = custom/script
-exec = ~/.local/bin/polybar-media.sh
-interval = 1
-label-foreground = ${colors.yellow1}
-format-background = ${colors.surface0}
-format = <label>
-
-[module/cliamp]
-type = custom/script
-exec = ~/.local/bin/polybar-cliamp.sh
-interval = 3
-click-left = ~/.local/bin/cliamp-toggle.sh &
-label-foreground = ${colors.yellow1}
-format-background = ${colors.surface0}
-format = <label>
-
-[module/network-wired]
-type = internal/network
-interface-type = wired
-interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = "󰒍 "
-format-connected-prefix-background = ${colors.green1}
-format-connected-prefix-foreground = ${colors.base}
-label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
-format-disconnected-background = ${colors.surface0}
-format-disconnected-prefix = "󰒎 "
-format-disconnected-prefix-background = ${colors.red1}
-format-disconnected-prefix-foreground = ${colors.base}
-format-disconnected =
-
-[module/network-wireless]
-type = internal/network
-interface-type = wireless
-interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = "󰖩 "
-format-connected-prefix-background = ${colors.green1}
-format-connected-prefix-foreground = ${colors.base}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
-format-disconnected =
-
-[module/bluetooth]
-type = custom/script
-exec = ~/.local/bin/polybar-bluetooth.sh
-interval = 5
-click-left = blueman-manager &
-format = <label>
-format-background = ${colors.surface0}
-
-[module/caffeine]
-type = custom/script
-exec = ~/.local/bin/polybar-caffeine.sh
-interval = 3
-click-left = ~/.local/bin/caffeine-toggle.sh &
-click-right = xset s activate &
-format = <label>
-format-background = ${colors.surface0}
-label-foreground = ${colors.green0}
-
-[module/dnd]
-type = custom/script
-exec = ~/.local/bin/polybar-dnd.sh
-interval = 2
-click-left = ~/.local/bin/dnd-toggle.sh &
-format = <label>
-format-background = ${colors.surface0}
-label-foreground = ${colors.red0}
-
-[module/battery]
-type = internal/battery
-battery = BAT0
-adapter = AC
-format-charging-background = ${colors.surface0}
-format-charging-prefix = "󰠠 "
-format-charging-prefix-background = ${colors.aqua1}
-format-charging-prefix-foreground = ${colors.base}
-format-discharging-background = ${colors.surface0}
-format-discharging-prefix = "󰠠 "
-format-discharging-prefix-background = ${colors.blue1}
-format-discharging-prefix-foreground = ${colors.base}
-format-full-background = ${colors.surface0}
-format-full-prefix = "󰠠 "
-format-full-prefix-background = ${colors.green1}
-format-full-prefix-foreground = ${colors.base}
-label-charging = " %percentage%% "
-label-discharging = " %percentage%% "
-label-full = " Full "
-
-[module/memory]
-type = internal/memory
-interval = 2
-format-background = ${colors.surface0}
-format-prefix = "󰘚 "
-format-prefix-background = ${colors.green1}
-format-prefix-foreground = ${colors.base}
-label = " %percentage_used%% "
-
-[module/cpu]
-type = internal/cpu
-interval = 2
-format-background = ${colors.surface0}
-format-prefix = "󰍛 "
-format-prefix-background = ${colors.purple1}
-format-prefix-foreground = ${colors.base}
-label = " %percentage%% "
-
-; Explicit dark, opaque tray backdrop - most tray icons (Discord,
-; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
-; and this theme's own bar background is only ~90% opaque, not a fully
-; reliable backdrop by itself.
-[module/updates]
-type = custom/script
-exec = ~/.local/bin/polybar-updates.sh
-tail = true
-click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
-label-foreground = ${colors.yellow1}
-format-background = ${colors.surface0}
-format = <label>
-
-[module/layout]
-type = custom/script
-exec = ~/.local/bin/polybar-layout.sh
-interval = 1
-format = <label>
-
-[module/tray]
-type = internal/tray
-tray-spacing = 8
-tray-padding = 6
-tray-background = ${colors.tray-bg}
-format-background = ${colors.tray-bg}
 
 [settings]
 screenchange-reload = true
@@ -13431,12 +12767,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#A8C5C0' WIFI_OFF_FG='#D67F7F' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -13458,6 +12795,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 
 [module/battery]
@@ -13664,13 +13003,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#27FBFE' WIFI_OFF_FG='#DB330A' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -13693,6 +13032,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.pink}
 
@@ -13901,13 +13242,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#AFB1DB' WIFI_OFF_FG='#E7034A' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -13931,6 +13272,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -14132,13 +13475,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#F5E6E0' WIFI_OFF_FG='#E8604C' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -14161,6 +13504,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -14382,13 +13727,14 @@ format-connected-background = ${colors.surface0}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='  ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#88c0d0' WIFI_OFF_FG='#bf616a' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}  %essid% %{A}%{A}%{A}"
-label-connected-foreground = ${colors.sky}
-format-connected-background = ${colors.surface0}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #3b4252
 
 [module/bluetooth]
 type = custom/script
@@ -14414,6 +13760,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red-light}
 format-background = ${colors.surface0}
@@ -14626,13 +13974,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#FDFDFD' WIFI_OFF_FG='#F37F97' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -14656,6 +14004,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -14859,13 +14209,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#EBDBB2' WIFI_OFF_FG='#CC241D' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -14889,6 +14239,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red-light}
 
@@ -15071,12 +14423,13 @@ label-connected-foreground = ${colors.sky}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#96CDFB' WIFI_OFF_FG='#F28FAD' ~/.local/bin/polybar-wifi.sh
 interval = 3
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-label-connected-foreground = ${colors.sky}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -15115,6 +14468,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -15317,12 +14672,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#F8F9FA' WIFI_OFF_FG='#DE8658' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -15344,6 +14700,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.pink}
 
@@ -15541,13 +14899,13 @@ label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#FFFFFF' WIFI_OFF_FG='#EE5396' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:}%essid%%{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/bluetooth]
 type = custom/script
@@ -15571,6 +14929,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -15773,20 +15133,13 @@ format-disconnected =
 ; success by strength) - its actual distinguishing touch vs every other
 ; theme's plain-text network module here.
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#D8DEE9' WIFI_OFF_FG='#BF616A' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected = <ramp-signal> <label-connected>
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid%%{A}%{A}%{A}"
-ramp-signal-0 = ▂
-ramp-signal-0-foreground = ${colors.red}
-ramp-signal-1 = ▄
-ramp-signal-1-foreground = ${colors.yellow}
-ramp-signal-2 = ▆
-ramp-signal-2-foreground = ${colors.teal}
-ramp-signal-3 = █
-ramp-signal-3-foreground = ${colors.green}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/cpu]
 type = internal/cpu
@@ -15865,6 +15218,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -16064,20 +15419,13 @@ label-connected-foreground = ${colors.sky}
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#2E3440' WIFI_OFF_FG='#B54954' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected = <ramp-signal> <label-connected>
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid%%{A}%{A}%{A}"
-ramp-signal-0 = ▂
-ramp-signal-0-foreground = ${colors.red}
-ramp-signal-1 = ▄
-ramp-signal-1-foreground = ${colors.yellow}
-ramp-signal-2 = ▆
-ramp-signal-2-foreground = ${colors.teal}
-ramp-signal-3 = █
-ramp-signal-3-foreground = ${colors.green}
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
 
 [module/cpu]
 type = internal/cpu
@@ -16156,6 +15504,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 label-foreground = ${colors.red}
 
@@ -16373,14 +15723,14 @@ label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
 format-disconnected =
 
 [module/network-wireless]
-type = internal/network
-interface-type = wireless
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#A5B6CF' WIFI_OFF_FG='#DD6777' ~/.local/bin/polybar-wifi.sh
 interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.green}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
-format-disconnected =
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = #151720
 
 [module/bluetooth]
 type = custom/script
@@ -16406,6 +15756,8 @@ type = custom/script
 exec = ~/.local/bin/polybar-dnd.sh
 interval = 2
 click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
 format = <label>
 format-background = ${colors.surface0}
 label-foreground = ${colors.red}
@@ -16462,299 +15814,6 @@ tray-spacing = 8
 tray-padding = 6
 tray-background = ${colors.surface0}
 format-background = ${colors.surface0}
-
-[settings]
-screenchange-reload = true
-EOF
-
-
-cat > "$CONF/polybar/themes/hidrot.ini" <<'EOF'
-; Hidrot - three separate floating clusters bracketed by NEUTRAL rounded
-; caps (U+E0B6/U+E0B4, same glyph family as Mocha/Archcraft/Aline/Marisol)
-; that match each cluster's own content background rather than a vivid
-; accent - the workspace cluster, and a rainbow-icon cluster where every
-; widget gets its OWN distinct vivid icon-chip color (blue/aqua/green/
-; purple/yellow/red) against one shared neutral value-chip background,
-; confirmed by reading the source's own real per-widget files directly
-; (each sets format-prefix-background to a different accent, format-
-; background to the same neutral bg1 throughout). Modeled directly on
-; github.com/Murzchnvok/polybar-collection's real "hidrot" theme (themes/
-; hidrot/*.ini, read from a full local clone) - like its sibling "murz"
-; (this rice's own theme by the same name, later removed by request),
-; colors come from a separate, swappable colorscheme file; its three
-; bundled colorschemes (gruvbox/nord/onedark) are all already used
-; elsewhere in this rice's set, so this port uses a fresh graphite-blue
-; palette instead. The source's own background is semi-transparent - but
-; this rice's own Marisol theme already went fully transparent once and
-; had to be walked back after real feedback found it illegible against
-; an actual wallpaper, so hidrot ships at a safer ~90% opacity from the
-; start instead of repeating that mistake. Workspace state icons and the
-; system tray both get real attention up front for the same reason:
-; explicit padding and a comfortably large font on the workspace glyphs
-; (this rice's own Jan/Karla/Varinka all needed that fixed in after the
-; fact), and a dedicated dark, opaque tray backdrop independent of the
-; rest of the palette (Aline/Brenda both needed that fixed in after the
-; fact too, since most tray icons are drawn expecting a dark bar).
-[colors]
-base   = #E61B1E24
-mantle = #E61B1E24
-surface0 = #262B33
-surface1 = #262B33
-text   = #D6DCE5
-subtext = #6E7684
-green0 = #7CB88F
-purple0 = #B08FD1
-blue0  = #6E93C7
-red0   = #D9707A
-blue1  = #5E8FCC
-aqua1  = #4FB0A6
-green1 = #7BBF7E
-purple1 = #B08FD1
-yellow1 = #D9B25C
-red1   = #D9707A
-tray-bg = #14161A
-
-[bar/base]
-monitor = ${env:MONITOR:}
-width = 100%
-height = 30
-background = ${colors.base}
-foreground = ${colors.text}
-radius = 8
-padding-left = 2
-padding-right = 2
-module-margin = 0
-font-0 = "JetBrainsMono Nerd Font:size=10;2"
-font-1 = "JetBrainsMono Nerd Font:size=14;4"
-font-2 = "JetBrains Mono:size=10;2"
-modules-left = bi i3 bd
-
-[bar/top-primary]
-inherit = bar/base
-modules-center = bi date-icon date bd
-modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bluetooth bd sep bi caffeine dnd bd sep bi battery memory cpu bd sep bi updates layout bd sep tray
-
-[bar/top-secondary]
-inherit = bar/base
-modules-center = bi date-icon date bd
-modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless memory cpu updates bd
-
-[module/bi]
-type = custom/text
-format = <label>
-label = ""
-label-font = 2
-label-foreground = ${colors.surface0}
-
-[module/bd]
-type = custom/text
-format = <label>
-label = ""
-label-font = 2
-label-foreground = ${colors.surface0}
-
-[module/sep]
-type = custom/text
-format = <label>
-label = "  "
-
-; --- real widgets ------------------------------------------------------------
-[module/i3]
-type = internal/i3
-format = <label-state>
-format-background = ${colors.surface0}
-index-sort = true
-wrapping-scroll = false
-label-focused = "●"
-label-focused-foreground = ${colors.green0}
-label-focused-font = 2
-label-focused-padding = 2
-label-unfocused = "●"
-label-unfocused-foreground = ${colors.purple0}
-label-unfocused-font = 2
-label-unfocused-padding = 2
-label-urgent = "●"
-label-urgent-foreground = ${colors.red0}
-label-urgent-font = 2
-label-urgent-padding = 2
-
-[module/date-icon]
-type = custom/text
-format = <label>
-format-background = ${colors.surface0}
-label = "󱑎"
-label-foreground = ${colors.green1}
-
-[module/date]
-type = internal/date
-interval = 1
-date = %Y-%m-%d
-time = %H:%M
-format-background = ${colors.surface0}
-label = "%{A1:GTK_THEME=Rice-hidrot gnome-calendar &:} %date%  %time% %{A}"
-
-[module/backlight]
-type = custom/script
-exec = ~/.local/bin/polybar-backlight.sh
-interval = 1
-scroll-up = brightnessctl set +5% &
-scroll-down = brightnessctl set 5%- &
-format = <label>
-format-background = ${colors.surface0}
-format-prefix = "󰖨 "
-format-prefix-background = ${colors.blue1}
-format-prefix-foreground = ${colors.base}
-label = " %output%% "
-
-[module/pulseaudio]
-type = internal/pulseaudio
-format-volume-background = ${colors.surface0}
-format-volume-prefix = "󰕾 "
-format-volume-prefix-background = ${colors.yellow1}
-format-volume-prefix-foreground = ${colors.base}
-format-muted-background = ${colors.surface0}
-format-muted-prefix = "󰖁 "
-format-muted-prefix-background = ${colors.red1}
-format-muted-prefix-foreground = ${colors.base}
-label-volume = " %percentage%% "
-label-muted = " muted "
-
-; Split wired/wireless so whichever is actually up is the only one that
-; renders anything - format-disconnected is left blank so the inactive one
-; takes up no space instead of showing a permanent "offline" label.
-[module/media]
-type = custom/script
-exec = ~/.local/bin/polybar-media.sh
-interval = 1
-label-foreground = ${colors.yellow1}
-format-background = ${colors.surface0}
-format = <label>
-
-[module/cliamp]
-type = custom/script
-exec = ~/.local/bin/polybar-cliamp.sh
-interval = 3
-click-left = ~/.local/bin/cliamp-toggle.sh &
-label-foreground = ${colors.yellow1}
-format-background = ${colors.surface0}
-format = <label>
-
-[module/network-wired]
-type = internal/network
-interface-type = wired
-interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = "󰒍 "
-format-connected-prefix-background = ${colors.green1}
-format-connected-prefix-foreground = ${colors.base}
-label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
-format-disconnected-background = ${colors.surface0}
-format-disconnected-prefix = "󰒎 "
-format-disconnected-prefix-background = ${colors.red1}
-format-disconnected-prefix-foreground = ${colors.base}
-format-disconnected =
-
-[module/network-wireless]
-type = internal/network
-interface-type = wireless
-interval = 3
-format-connected-background = ${colors.surface0}
-format-connected-prefix = "󰖩 "
-format-connected-prefix-background = ${colors.green1}
-format-connected-prefix-foreground = ${colors.base}
-label-connected = "%{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:nmcli radio wifi toggle &:} %essid% %{A}%{A}%{A}"
-format-disconnected =
-
-[module/bluetooth]
-type = custom/script
-exec = ~/.local/bin/polybar-bluetooth.sh
-interval = 5
-click-left = blueman-manager &
-format = <label>
-format-background = ${colors.surface0}
-
-[module/caffeine]
-type = custom/script
-exec = ~/.local/bin/polybar-caffeine.sh
-interval = 3
-click-left = ~/.local/bin/caffeine-toggle.sh &
-click-right = xset s activate &
-format = <label>
-format-background = ${colors.surface0}
-label-foreground = ${colors.green0}
-
-[module/dnd]
-type = custom/script
-exec = ~/.local/bin/polybar-dnd.sh
-interval = 2
-click-left = ~/.local/bin/dnd-toggle.sh &
-format = <label>
-format-background = ${colors.surface0}
-label-foreground = ${colors.red0}
-
-[module/battery]
-type = internal/battery
-battery = BAT0
-adapter = AC
-format-charging-background = ${colors.surface0}
-format-charging-prefix = "󰠠 "
-format-charging-prefix-background = ${colors.aqua1}
-format-charging-prefix-foreground = ${colors.base}
-format-discharging-background = ${colors.surface0}
-format-discharging-prefix = "󰠠 "
-format-discharging-prefix-background = ${colors.blue1}
-format-discharging-prefix-foreground = ${colors.base}
-format-full-background = ${colors.surface0}
-format-full-prefix = "󰠠 "
-format-full-prefix-background = ${colors.green1}
-format-full-prefix-foreground = ${colors.base}
-label-charging = " %percentage%% "
-label-discharging = " %percentage%% "
-label-full = " Full "
-
-[module/memory]
-type = internal/memory
-interval = 2
-format-background = ${colors.surface0}
-format-prefix = "󰘚 "
-format-prefix-background = ${colors.green1}
-format-prefix-foreground = ${colors.base}
-label = " %percentage_used%% "
-
-[module/cpu]
-type = internal/cpu
-interval = 2
-format-background = ${colors.surface0}
-format-prefix = "󰍛 "
-format-prefix-background = ${colors.purple1}
-format-prefix-foreground = ${colors.base}
-label = " %percentage%% "
-
-; Explicit dark, opaque tray backdrop - most tray icons (Discord,
-; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
-; and this theme's own bar background is only ~90% opaque, not a fully
-; reliable backdrop by itself.
-[module/updates]
-type = custom/script
-exec = ~/.local/bin/polybar-updates.sh
-tail = true
-click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
-label-foreground = ${colors.yellow1}
-format-background = ${colors.surface0}
-format = <label>
-
-[module/layout]
-type = custom/script
-exec = ~/.local/bin/polybar-layout.sh
-interval = 1
-format = <label>
-
-[module/tray]
-type = internal/tray
-tray-spacing = 8
-tray-padding = 6
-tray-background = ${colors.tray-bg}
-format-background = ${colors.tray-bg}
 
 [settings]
 screenchange-reload = true
@@ -17179,18 +16238,131 @@ fi
 EOF
 chmod +x "$BIN/dnd-toggle.sh"
 
+cat > "$BIN/wifi-toggle.sh" <<'EOF'
+#!/usr/bin/env bash
+# Wifi radio on/off toggle for the network-wireless widget's right-click
+# action. `nmcli radio wifi` only accepts on/off, not "toggle" - confirmed
+# live: `nmcli radio wifi toggle` errors with "invalid 'wifi' argument:
+# 'toggle' (use on/off)", and since the click action backgrounds it with
+# `&`, that error went nowhere visible - right-click silently never
+# toggled anything. Checking the current state first instead.
+if [ "$(nmcli radio wifi)" = "enabled" ]; then
+  nmcli radio wifi off
+  notify-send -h string:x-dunst-stack-tag:wifi "Wi-Fi" "Disabled"
+else
+  nmcli radio wifi on
+  notify-send -h string:x-dunst-stack-tag:wifi "Wi-Fi" "Enabled"
+fi
+EOF
+chmod +x "$BIN/wifi-toggle.sh"
+
+cat > "$BIN/polybar-wifi.sh" <<'EOF'
+#!/usr/bin/env bash
+# polybar custom/script module replacing internal/network for the wireless
+# widget - needed to show a distinct "off" state when the radio is
+# explicitly disabled (~/.local/bin/wifi-toggle.sh, right-click) WITHOUT
+# also showing it any time wireless simply isn't connected (e.g. only
+# using the wired connection right now) - internal/network's own
+# format-disconnected can't tell those two states apart, and reusing it
+# for this would make the indicator appear any time wireless just isn't in
+# use, undoing the reason it was left blank in the first place (so only
+# the active interface's widget shows - see network-wired/-wireless
+# above). Per-theme prefix/suffix spacing and colors come in via
+# WIFI_PREFIX/WIFI_SUFFIX/WIFI_CONNECTED_FG/WIFI_OFF_FG env vars set in
+# each theme's own exec= line (literal hex, not ${colors.x} - baked in at
+# generation time), using polybar's inline %{F#hex}...%{F-} tag so one
+# shared script still renders every theme's own colors without a separate
+# copy per theme.
+if [ "$(nmcli radio wifi 2>/dev/null)" != "enabled" ]; then
+  printf '%s%%{F%s}wifi off%%{F-}%s' "$WIFI_PREFIX" "$WIFI_OFF_FG" "$WIFI_SUFFIX"
+  exit 0
+fi
+essid=$(nmcli -t -f active,ssid dev wifi 2>/dev/null | awk -F: '$1=="yes"{print $2}' | head -1)
+[ -n "$essid" ] && printf '%s%%{F%s}%s%%{F-}%s' "$WIFI_PREFIX" "$WIFI_CONNECTED_FG" "$essid" "$WIFI_SUFFIX"
+EOF
+chmod +x "$BIN/polybar-wifi.sh"
+
 cat > "$BIN/polybar-dnd.sh" <<'EOF'
 #!/usr/bin/env bash
 # polybar custom/script module: prints notification state (on/off), not
 # dunst pause-mode state - "off" / bell-slash means silenced (dunst paused).
+# Also prefixes the dunst notification-history count to the left of the
+# bell when non-zero, rather than a second separate bell/module for it -
+# one shared bell reads cleaner and sidesteps a real polybar layout bug
+# (confirmed live) where two custom/script modules placed directly
+# adjacent with no separator between them can leave the first one's
+# content stuck invisible even though it keeps polling correctly.
+# click-left (bound in each theme's .ini) toggles dnd; click-middle opens
+# notification-center.sh's rofi browser to see/clear individually;
+# click-right clears everything at once via dunstctl history-clear.
+n=$(dunstctl count history 2>/dev/null)
+[ -z "$n" ] && n=0
+count=""
+[ "$n" -gt 0 ] && count="$n "
 if [ "$(dunstctl is-paused)" = "true" ]; then
-  printf '  @@ICO_BELL_OFF@@ off '
+  printf '  %s@@ICO_BELL_OFF@@ off ' "$count"
 else
-  printf '  @@ICO_BELL@@ on '
+  printf '  %s@@ICO_BELL@@ on ' "$count"
 fi
 EOF
 chmod +x "$BIN/polybar-dnd.sh"
 sed -i "s/@@ICO_BELL_OFF@@/$ICO_BELL_OFF/; s/@@ICO_BELL@@/$ICO_BELL/" "$BIN/polybar-dnd.sh"
+
+cat > "$BIN/polybar-notifications.sh" <<'EOF'
+#!/usr/bin/env bash
+# polybar custom/script module: shows dunst's notification-history count
+# with its own bell icon - used only by themes with no dnd module to sit
+# next to (float), where there's no existing bell for the count to attach
+# to (everywhere else, the count is prefixed onto polybar-dnd.sh's own
+# bell instead, see polybar-dnd.sh). Click-left opens
+# notification-center.sh's rofi browser to see/clear individually;
+# click-right clears everything at once via `dunstctl history-clear`.
+n=$(dunstctl count history 2>/dev/null)
+[ -z "$n" ] && n=0
+if [ "$n" -gt 0 ]; then
+  printf "\uf0f3 %s" "$n"
+else
+  printf "\uf0f3"
+fi
+EOF
+chmod +x "$BIN/polybar-notifications.sh"
+
+cat > "$BIN/notification-center.sh" <<'EOF'
+#!/usr/bin/env bash
+# Rofi-based browser for dunst's notification history. dunst itself has no
+# "list view" of its own - dunstctl history-pop only recalls the single
+# latest notification at a time, re-displayed as a live popup - so this
+# parses `dunstctl history`'s real JSON (confirmed structure: .data[0] is
+# an array of notification objects, already newest-first) into a rofi
+# list. Selecting an entry removes just that one from history
+# (dunstctl history-rm); a "Clear all" entry at the top wipes everything.
+set -euo pipefail
+
+HIST_JSON="$(dunstctl history)"
+mapfile -t IDS < <(jq -r '.data[0][].id.data' <<<"$HIST_JSON")
+
+if [ "${#IDS[@]}" -eq 0 ]; then
+  notify-send "Notification Center" "No notification history"
+  exit 0
+fi
+
+mapfile -t LABELS < <(jq -r '.data[0][] | "\(.appname.data): \(.summary.data)"' <<<"$HIST_JSON")
+
+MENU="Clear all (${#IDS[@]})"
+for l in "${LABELS[@]}"; do
+  MENU+=$'\n'"$l"
+done
+
+CHOSEN_IDX="$(printf '%s\n' "$MENU" | rofi -dmenu -i -p "Notifications" -format i -theme ~/.config/rofi/current.rasi)"
+[ -z "$CHOSEN_IDX" ] && exit 0
+
+if [ "$CHOSEN_IDX" -eq 0 ]; then
+  dunstctl history-clear
+else
+  dunstctl history-rm "${IDS[$((CHOSEN_IDX - 1))]}"
+fi
+EOF
+chmod +x "$BIN/notification-center.sh"
 
 log "Writing polybar brightness widget script..."
 cat > "$BIN/polybar-backlight.sh" <<'EOF'
@@ -17309,7 +16481,6 @@ import subprocess
 import sys
 import time
 
-
 def _local_timezone():
     # Fallback for a genuinely floating ICalTime (get_timezone() returns
     # None) - see floating_safe_as_timet() below for the actual bug this
@@ -17326,9 +16497,7 @@ def _local_timezone():
         pass
     return ICalGLib.Timezone.get_utc_timezone()
 
-
 LOCAL_TZ = _local_timezone()
-
 
 def floating_safe_as_timet(ical_time):
     # ICalTime.as_timet() (no zone argument) ALWAYS interprets the wall-
@@ -17351,7 +16520,6 @@ def floating_safe_as_timet(ical_time):
     tz = ical_time.get_timezone() or LOCAL_TZ
     return ical_time.as_timet_with_zone(tz)
 
-
 STATE_FILE = os.path.expanduser("~/.cache/calendar-reminder-notified.json")
 POLL_INTERVAL = 30  # seconds between polls
 LOOKBACK = 120  # seconds - catches alarms that became due since the last poll, with margin
@@ -17370,14 +16538,12 @@ INSTANCE_WINDOW = 14 * 24 * 3600  # how far ahead to expand recurring instances 
 QUERY_LOOKBACK = 24 * 3600
 STATE_MAX_AGE = 3 * 24 * 3600  # prune notified-keys older than this
 
-
 def load_notified():
     try:
         with open(STATE_FILE, encoding="utf-8") as f:
             return json.load(f)
     except Exception:
         return {}
-
 
 def save_notified(notified):
     now = time.time()
@@ -17389,7 +16555,6 @@ def save_notified(notified):
     except Exception:
         pass
     return pruned
-
 
 def notify(summary, location, start_ts):
     when = time.strftime("%H:%M", time.localtime(start_ts))
@@ -17411,7 +16576,6 @@ def notify(summary, location, start_ts):
         ],
         check=False,
     )
-
 
 def find_due(sources, now):
     due = []
@@ -17454,7 +16618,6 @@ def find_due(sources, now):
 
     return due
 
-
 def main():
     notified = load_notified()
     while True:
@@ -17478,7 +16641,6 @@ def main():
         except Exception as e:
             print(f"calendar-reminder-daemon: error: {e}", file=sys.stderr)
         time.sleep(POLL_INTERVAL)
-
 
 if __name__ == "__main__":
     main()
@@ -19262,114 +18424,6 @@ element-text {
 }
 EOF
 
-cat > "$CONF/rofi/themes/float.rasi" <<'EOF'
-* {
-    base:     #282828ff;
-    mantle:   #1D2021ff;
-    text:     #EBDBB2ff;
-    subtext:  #A89984ff;
-    accent:   #8EC07Cff;
-    surface0: #3C3836ff;
-
-    background-color: @mantle;
-    text-color: @text;
-    font: "JetBrainsMono Nerd Font 11";
-}
-
-window {
-    width: 30%;
-    border-radius: 12px;
-    background-color: @base;
-}
-
-inputbar {
-    padding: 10px;
-    background-color: @mantle;
-    border-radius: 8px;
-    children: [prompt, entry];
-}
-
-prompt { text-color: @accent; padding: 0 8px 0 0; }
-entry  { text-color: @text; }
-
-listview {
-    lines: 14;
-    padding: 8px 0;
-}
-
-element {
-    padding: 6px 10px;
-    border-radius: 6px;
-}
-element-text, element-icon {
-    background-color: inherit;
-    text-color: inherit;
-}
-
-element selected {
-    background-color: @surface0;
-    text-color: @accent;
-}
-EOF
-cat > "$CONF/rofi/themes/float-powermenu.rasi" <<'EOF'
-* {
-    base:     #282828ff;
-    mantle:   #1D2021ff;
-    text:     #EBDBB2ff;
-    subtext:  #A89984ff;
-    accent:   #8EC07Cff;
-    surface0: #3C3836ff;
-
-    background-color: @mantle;
-    text-color: @text;
-    font: "JetBrainsMono Nerd Font 11";
-}
-
-window {
-    width: 560px;
-    background-color: @base;
-    border: 2px;
-    border-color: @accent;
-    border-radius: 18px;
-    padding: 24px;
-}
-
-mainbox {
-    children: [ listview ];
-}
-
-listview {
-    columns: 5;
-    lines: 1;
-    spacing: 10px;
-    fixed-columns: true;
-    scrollbar: false;
-}
-
-element {
-    children: [ element-text ];
-    padding: 26px;
-    border-radius: 16px;
-    background-color: @mantle;
-}
-element normal.normal {
-    text-color: @text;
-}
-element selected {
-    background-color: @surface0;
-    border: 2px;
-    border-color: @accent;
-    border-radius: 14px;
-}
-element-text {
-    font: "JetBrainsMono Nerd Font 26";
-    background-color: transparent;
-    text-color: inherit;
-    horizontal-align: 0.32;
-    vertical-align: 0.5;
-}
-EOF
-
 cat > "$CONF/rofi/themes/h4ck3r.rasi" <<'EOF'
 * {
     base:     #0C1018ff;
@@ -19378,118 +18432,6 @@ cat > "$CONF/rofi/themes/h4ck3r.rasi" <<'EOF'
     subtext:  #578A29ff;
     mauve:    #76EA00ff;
     surface0: #1B2333ff;
-
-    background-color: @base;
-    text-color: @text;
-    font: "JetBrainsMono Nerd Font 11";
-}
-
-window {
-    width: 30%;
-    border-radius: 12px;
-    background-color: @base;
-}
-
-inputbar {
-    padding: 10px;
-    background-color: @mantle;
-    border-radius: 8px;
-    children: [prompt, entry];
-}
-
-prompt { text-color: @mauve; padding: 0 8px 0 0; }
-entry  { text-color: @text; }
-
-listview {
-    lines: 14;
-    padding: 8px 0;
-}
-
-element {
-    padding: 6px 10px;
-    border-radius: 6px;
-}
-element-text, element-icon {
-    background-color: inherit;
-    text-color: inherit;
-}
-
-element selected {
-    background-color: @surface0;
-    text-color: @mauve;
-}
-EOF
-
-cat > "$CONF/rofi/themes/hidrot-powermenu.rasi" <<'EOF'
-* {
-    base:     #1B1E24ff;
-    mantle:   #1B1E24ff;
-    text:     #D6DCE5ff;
-    subtext:  #6E7684ff;
-    mauve:    #7CB88Fff;
-    surface0: #262B33ff;
-
-    background-color: @base;
-    text-color: @text;
-    font: "JetBrainsMono Nerd Font 11";
-}
-
-window {
-    width: 560px;
-    background-color: @base;
-    border: 2px;
-    border-color: @mauve;
-    border-radius: 18px;
-    padding: 24px;
-}
-
-mainbox {
-    children: [ listview ];
-}
-
-listview {
-    columns: 5;
-    lines: 1;
-    spacing: 10px;
-    fixed-columns: true;
-    scrollbar: false;
-}
-
-element {
-    children: [ element-text ];
-    padding: 26px;
-    border-radius: 16px;
-    background-color: @mantle;
-}
-element normal.normal {
-    text-color: @text;
-}
-element selected {
-    background-color: @surface0;
-    border: 2px;
-    border-color: @mauve;
-    border-radius: 14px;
-}
-element-text {
-    font: "JetBrainsMono Nerd Font 26";
-    background-color: transparent;
-    text-color: inherit;
-    /* Nerd Font glyphs' advance width isn't visually symmetric around their
-       ink - 0.5 (true center) renders visibly right-of-center, so this is
-       nudged left. */
-    horizontal-align: 0.32;
-    vertical-align: 0.5;
-}
-EOF
-
-cat > "$CONF/rofi/themes/hidrot.rasi" <<'EOF'
-* {
-    base:     #1B1E24ff;
-    mantle:   #1B1E24ff;
-    text:     #D6DCE5ff;
-    subtext:  #6E7684ff;
-    mauve:    #7CB88Fff;
-    surface0: #262B33ff;
 
     background-color: @base;
     text-color: @text;
@@ -22546,114 +21488,6 @@ element-text {
 }
 EOF
 
-cat > "$CONF/rofi/themes/float-square.rasi" <<'EOF'
-* {
-    base:     #282828ff;
-    mantle:   #1D2021ff;
-    text:     #EBDBB2ff;
-    subtext:  #A89984ff;
-    accent:   #8EC07Cff;
-    surface0: #3C3836ff;
-
-    background-color: @mantle;
-    text-color: @text;
-    font: "JetBrainsMono Nerd Font 11";
-}
-
-window {
-    width: 30%;
-    border-radius: 0px;
-    background-color: @base;
-}
-
-inputbar {
-    padding: 10px;
-    background-color: @mantle;
-    border-radius: 0px;
-    children: [prompt, entry];
-}
-
-prompt { text-color: @accent; padding: 0 8px 0 0; }
-entry  { text-color: @text; }
-
-listview {
-    lines: 14;
-    padding: 8px 0;
-}
-
-element {
-    padding: 6px 10px;
-    border-radius: 0px;
-}
-element-text, element-icon {
-    background-color: inherit;
-    text-color: inherit;
-}
-
-element selected {
-    background-color: @surface0;
-    text-color: @accent;
-}
-EOF
-cat > "$CONF/rofi/themes/float-square-powermenu.rasi" <<'EOF'
-* {
-    base:     #282828ff;
-    mantle:   #1D2021ff;
-    text:     #EBDBB2ff;
-    subtext:  #A89984ff;
-    accent:   #8EC07Cff;
-    surface0: #3C3836ff;
-
-    background-color: @mantle;
-    text-color: @text;
-    font: "JetBrainsMono Nerd Font 11";
-}
-
-window {
-    width: 560px;
-    background-color: @base;
-    border: 2px;
-    border-color: @accent;
-    border-radius: 0px;
-    padding: 24px;
-}
-
-mainbox {
-    children: [ listview ];
-}
-
-listview {
-    columns: 5;
-    lines: 1;
-    spacing: 10px;
-    fixed-columns: true;
-    scrollbar: false;
-}
-
-element {
-    children: [ element-text ];
-    padding: 26px;
-    border-radius: 0px;
-    background-color: @mantle;
-}
-element normal.normal {
-    text-color: @text;
-}
-element selected {
-    background-color: @surface0;
-    border: 2px;
-    border-color: @accent;
-    border-radius: 0px;
-}
-element-text {
-    font: "JetBrainsMono Nerd Font 26";
-    background-color: transparent;
-    text-color: inherit;
-    horizontal-align: 0.32;
-    vertical-align: 0.5;
-}
-EOF
-
 cat > "$CONF/rofi/themes/h4ck3r-square.rasi" <<'EOF'
 * {
     base:     #0C1018ff;
@@ -22712,118 +21546,6 @@ cat > "$CONF/rofi/themes/h4ck3r-square-powermenu.rasi" <<'EOF'
     subtext:  #578A29ff;
     mauve:    #76EA00ff;
     surface0: #1B2333ff;
-
-    background-color: @base;
-    text-color: @text;
-    font: "JetBrainsMono Nerd Font 11";
-}
-
-window {
-    width: 560px;
-    background-color: @base;
-    border: 2px;
-    border-color: @mauve;
-    border-radius: 0px;
-    padding: 24px;
-}
-
-mainbox {
-    children: [ listview ];
-}
-
-listview {
-    columns: 5;
-    lines: 1;
-    spacing: 10px;
-    fixed-columns: true;
-    scrollbar: false;
-}
-
-element {
-    children: [ element-text ];
-    padding: 26px;
-    border-radius: 0px;
-    background-color: @mantle;
-}
-element normal.normal {
-    text-color: @text;
-}
-element selected {
-    background-color: @surface0;
-    border: 2px;
-    border-color: @mauve;
-    border-radius: 0px;
-}
-element-text {
-    font: "JetBrainsMono Nerd Font 26";
-    background-color: transparent;
-    text-color: inherit;
-    /* Nerd Font glyphs' advance width isn't visually symmetric around their
-       ink - 0.5 (true center) renders visibly right-of-center, so this is
-       nudged left. */
-    horizontal-align: 0.32;
-    vertical-align: 0.5;
-}
-EOF
-
-cat > "$CONF/rofi/themes/hidrot-square.rasi" <<'EOF'
-* {
-    base:     #1B1E24ff;
-    mantle:   #1B1E24ff;
-    text:     #D6DCE5ff;
-    subtext:  #6E7684ff;
-    mauve:    #7CB88Fff;
-    surface0: #262B33ff;
-
-    background-color: @base;
-    text-color: @text;
-    font: "JetBrainsMono Nerd Font 11";
-}
-
-window {
-    width: 30%;
-    border-radius: 0px;
-    background-color: @base;
-}
-
-inputbar {
-    padding: 10px;
-    background-color: @mantle;
-    border-radius: 0px;
-    children: [prompt, entry];
-}
-
-prompt { text-color: @mauve; padding: 0 8px 0 0; }
-entry  { text-color: @text; }
-
-listview {
-    lines: 14;
-    padding: 8px 0;
-}
-
-element {
-    padding: 6px 10px;
-    border-radius: 0px;
-}
-element-text, element-icon {
-    background-color: inherit;
-    text-color: inherit;
-}
-
-element selected {
-    background-color: @surface0;
-    text-color: @mauve;
-}
-EOF
-
-cat > "$CONF/rofi/themes/hidrot-square-powermenu.rasi" <<'EOF'
-* {
-    base:     #1B1E24ff;
-    mantle:   #1B1E24ff;
-    text:     #D6DCE5ff;
-    subtext:  #6E7684ff;
-    mauve:    #7CB88Fff;
-    surface0: #262B33ff;
 
     background-color: @base;
     text-color: @text;
@@ -24329,10 +23051,8 @@ element-text {
 }
 EOF
 
-
 cp "$CONF/rofi/themes/catppuccin-mocha.rasi" "$CONF/rofi/current.rasi"
 cp "$CONF/rofi/themes/catppuccin-mocha-powermenu.rasi" "$CONF/rofi/current-powermenu.rasi"
-
 
 # ----------------------------------------------------------------------------
 # 8. dunst
@@ -24353,6 +23073,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#313244"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1e1e2e"
@@ -24768,32 +23491,6 @@ color7  #9C8F7D
 color15 #E8DCC8
 EOF
 
-cat > "$CONF/kitty/themes/float.conf" <<'EOF'
-foreground              #EBDBB2
-background              #282828
-selection_foreground    #282828
-selection_background    #EBDBB2
-cursor                  #8EC07C
-cursor_text_color       #282828
-
-color0  #3C3836
-color8  #928374
-color1  #FB4934
-color9  #FB4934
-color2  #B8BB26
-color10 #B8BB26
-color3  #FABD2F
-color11 #FABD2F
-color4  #83A598
-color12 #83A598
-color5  #D3869B
-color13 #D3869B
-color6  #8EC07C
-color14 #8EC07C
-color7  #EBDBB2
-color15 #FBF1C7
-EOF
-
 cat > "$CONF/kitty/themes/h4ck3r.conf" <<'EOF'
 foreground              #00FA5C
 background              #0C1018
@@ -24818,32 +23515,6 @@ color6  #9CF542
 color14 #9CF542
 color7  #578A29
 color15 #00FA5C
-EOF
-
-cat > "$CONF/kitty/themes/hidrot.conf" <<'EOF'
-foreground              #D6DCE5
-background              #1B1E24
-selection_foreground    #1B1E24
-selection_background    #D6DCE5
-cursor                  #7CB88F
-cursor_text_color       #1B1E24
-
-color0  #262B33
-color8  #6E7684
-color1  #D9707A
-color9  #D9707A
-color2  #7BBF7E
-color10 #7BBF7E
-color3  #D9B25C
-color11 #D9B25C
-color4  #5E8FCC
-color12 #5E8FCC
-color5  #B08FD1
-color13 #B08FD1
-color6  #4FB0A6
-color14 #4FB0A6
-color7  #6E7684
-color15 #D6DCE5
 EOF
 
 cat > "$CONF/kitty/themes/isabel.conf" <<'EOF'
@@ -25546,32 +24217,6 @@ color7  #9C8F7D
 color15 #E8DCC8
 EOF
 
-cat > "$CONF/kitty/themes/float-square.conf" <<'EOF'
-foreground              #EBDBB2
-background              #282828
-selection_foreground    #282828
-selection_background    #EBDBB2
-cursor                  #8EC07C
-cursor_text_color       #282828
-
-color0  #3C3836
-color8  #928374
-color1  #FB4934
-color9  #FB4934
-color2  #B8BB26
-color10 #B8BB26
-color3  #FABD2F
-color11 #FABD2F
-color4  #83A598
-color12 #83A598
-color5  #D3869B
-color13 #D3869B
-color6  #8EC07C
-color14 #8EC07C
-color7  #EBDBB2
-color15 #FBF1C7
-EOF
-
 cat > "$CONF/kitty/themes/h4ck3r-square.conf" <<'EOF'
 foreground              #00FA5C
 background              #0C1018
@@ -25596,32 +24241,6 @@ color6  #9CF542
 color14 #9CF542
 color7  #578A29
 color15 #00FA5C
-EOF
-
-cat > "$CONF/kitty/themes/hidrot-square.conf" <<'EOF'
-foreground              #D6DCE5
-background              #1B1E24
-selection_foreground    #1B1E24
-selection_background    #D6DCE5
-cursor                  #7CB88F
-cursor_text_color       #1B1E24
-
-color0  #262B33
-color8  #6E7684
-color1  #D9707A
-color9  #D9707A
-color2  #7BBF7E
-color10 #7BBF7E
-color3  #D9B25C
-color11 #D9B25C
-color4  #5E8FCC
-color12 #5E8FCC
-color5  #B08FD1
-color13 #B08FD1
-color6  #4FB0A6
-color14 #4FB0A6
-color7  #6E7684
-color15 #D6DCE5
 EOF
 
 cat > "$CONF/kitty/themes/isabel-square.conf" <<'EOF'
@@ -25960,9 +24579,7 @@ color7  #6E8DB4
 color15 #A5B6CF
 EOF
 
-
 cp "$CONF/kitty/themes/catppuccin-mocha.conf" "$CONF/kitty/current.conf"
-
 
 # ----------------------------------------------------------------------------
 # 6f. i3 border-color theming - matches window border/title colors to
@@ -26084,25 +24701,11 @@ client.focused_inactive #9c8f7d  #1e1a17  #9c8f7d  #9c8f7d   #9c8f7d
 client.urgent           #d9736a  #1e1a17  #e8dcc8  #d9736a   #d9736a
 EOF
 
-cat > "$CONF/i3/themes/float.conf" <<'EOF'
-client.focused          #8EC07C  #8EC07C  #282828  #8EC07C   #8EC07C
-client.unfocused        #3C3836  #282828  #EBDBB2  #3C3836   #3C3836
-client.focused_inactive #3C3836  #282828  #EBDBB2  #3C3836   #3C3836
-client.urgent           #FB4934  #FB4934  #282828  #FB4934   #FB4934
-EOF
-
 cat > "$CONF/i3/themes/h4ck3r.conf" <<'EOF'
 client.focused          #76ea00  #0c1018  #00fa5c  #76ea00   #76ea00
 client.unfocused        #578a29  #0c1018  #578a29  #578a29   #578a29
 client.focused_inactive #578a29  #0c1018  #578a29  #578a29   #578a29
 client.urgent           #6dde00  #0c1018  #00fa5c  #6dde00   #6dde00
-EOF
-
-cat > "$CONF/i3/themes/hidrot.conf" <<'EOF'
-client.focused          #7cb88f  #1b1e24  #d6dce5  #7cb88f   #7cb88f
-client.unfocused        #6e7684  #1b1e24  #6e7684  #6e7684   #6e7684
-client.focused_inactive #6e7684  #1b1e24  #6e7684  #6e7684   #6e7684
-client.urgent           #d9707a  #1b1e24  #d6dce5  #d9707a   #d9707a
 EOF
 
 cat > "$CONF/i3/themes/isabel.conf" <<'EOF'
@@ -29870,130 +28473,6 @@ style = "bg:#7FA5B5"
 format = '[ $time ]($style)'
 EOF
 
-cat > "$CONF/starship/themes/float.toml" <<'EOF'
-format = """
-[](#282828)\
-$python\
-$username\
-[](bg:#3C3836 fg:#282828)\
-$directory\
-[](fg:#3C3836 bg:#504945)\
-$git_branch\
-$git_status\
-[](fg:#504945 bg:#8EC07C)\
-$c\
-$elixir\
-$elm\
-$golang\
-$haskell\
-$java\
-$julia\
-$nodejs\
-$nim\
-$rust\
-[](fg:#8EC07C bg:#B8BB26)\
-$docker_context\
-[](fg:#B8BB26 bg:#FABD2F)\
-$time\
-[ ](fg:#FABD2F)\
-"""
-command_timeout = 5000
-# Disable the blank line at the start of the prompt
-# add_newline = false
-
-[username]
-show_always = true
-style_user = "bg:#282828"
-style_root = "bg:#282828"
-format = '[$user ]($style)'
-
-[directory]
-style = "bg:#3C3836"
-format = "[ $path ]($style)"
-truncation_length = 3
-truncation_symbol = "…/"
-
-[directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
-
-[c]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[docker_context]
-symbol = " "
-style = "bg:#B8BB26"
-format = '[ $symbol $context ]($style)$path'
-
-[elixir]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[elm]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[git_branch]
-symbol = ""
-style = "bg:#504945"
-format = '[ $symbol $branch ]($style)'
-
-[git_status]
-style = "bg:#504945"
-format = '[$all_status$ahead_behind ]($style)'
-
-[golang]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[haskell]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[java]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[julia]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[nodejs]
-symbol = ""
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[nim]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[python]
-style = "bg:#282828"
-format = '[(\($virtualenv\) )]($style)'
-
-[rust]
-symbol = ""
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[time]
-disabled = false
-time_format = "%R"
-style = "bg:#FABD2F"
-format = '[ $time ]($style)'
-EOF
-
 cat > "$CONF/starship/themes/h4ck3r.toml" <<'EOF'
 format = """
 [](#0C1018)\
@@ -30126,130 +28605,6 @@ style = "bg:#9CF542"
 format = '[ $time ]($style)'
 EOF
 
-cat > "$CONF/starship/themes/float-square.toml" <<'EOF'
-format = """
-[](#282828)\
-$python\
-$username\
-[](bg:#3C3836 fg:#282828)\
-$directory\
-[](fg:#3C3836 bg:#504945)\
-$git_branch\
-$git_status\
-[](fg:#504945 bg:#8EC07C)\
-$c\
-$elixir\
-$elm\
-$golang\
-$haskell\
-$java\
-$julia\
-$nodejs\
-$nim\
-$rust\
-[](fg:#8EC07C bg:#B8BB26)\
-$docker_context\
-[](fg:#B8BB26 bg:#FABD2F)\
-$time\
-[ ](fg:#FABD2F)\
-"""
-command_timeout = 5000
-# Disable the blank line at the start of the prompt
-# add_newline = false
-
-[username]
-show_always = true
-style_user = "bg:#282828"
-style_root = "bg:#282828"
-format = '[$user ]($style)'
-
-[directory]
-style = "bg:#3C3836"
-format = "[ $path ]($style)"
-truncation_length = 3
-truncation_symbol = "…/"
-
-[directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
-
-[c]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[docker_context]
-symbol = " "
-style = "bg:#B8BB26"
-format = '[ $symbol $context ]($style)$path'
-
-[elixir]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[elm]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[git_branch]
-symbol = ""
-style = "bg:#504945"
-format = '[ $symbol $branch ]($style)'
-
-[git_status]
-style = "bg:#504945"
-format = '[$all_status$ahead_behind ]($style)'
-
-[golang]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[haskell]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[java]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[julia]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[nodejs]
-symbol = ""
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[nim]
-symbol = " "
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[python]
-style = "bg:#282828"
-format = '[(\($virtualenv\) )]($style)'
-
-[rust]
-symbol = ""
-style = "bg:#8EC07C"
-format = '[ $symbol ($version) ]($style)'
-
-[time]
-disabled = false
-time_format = "%R"
-style = "bg:#FABD2F"
-format = '[ $time ]($style)'
-EOF
-
 cat > "$CONF/starship/themes/h4ck3r-square.toml" <<'EOF'
 format = """
 [](#0C1018)\
@@ -30379,270 +28734,6 @@ format = '[ $symbol ($version) ]($style)'
 disabled = false
 time_format = "%R" # Hour:Minute Format
 style = "bg:#9CF542"
-format = '[ $time ]($style)'
-EOF
-
-cat > "$CONF/starship/themes/hidrot.toml" <<'EOF'
-format = """
-[](#1B1E24)\
-$python\
-$username\
-[](bg:#36393E fg:#1B1E24)\
-$directory\
-[](fg:#36393E bg:#525459)\
-$git_branch\
-$git_status\
-[](fg:#525459 bg:#4FB0A6)\
-$c\
-$elixir\
-$elm\
-$golang\
-$haskell\
-$java\
-$julia\
-$nodejs\
-$nim\
-$rust\
-[](fg:#4FB0A6 bg:#B08FD1)\
-$docker_context\
-[](fg:#B08FD1 bg:#5E8FCC)\
-$time\
-[ ](fg:#5E8FCC)\
-"""
-command_timeout = 5000
-# Disable the blank line at the start of the prompt
-# add_newline = false
-
-# You can also replace your username with a neat symbol like  to save some space
-[username]
-show_always = true
-style_user = "bg:#1B1E24"
-style_root = "bg:#1B1E24"
-format = '[$user ]($style)'
-
-[directory]
-style = "bg:#36393E"
-format = "[ $path ]($style)"
-truncation_length = 3
-truncation_symbol = "…/"
-
-# Here is how you can shorten some long paths by text replacement
-# similar to mapped_locations in Oh My Posh:
-[directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
-# Keep in mind that the order matters. For example:
-# "Important Documents" = "  "
-# will not be replaced, because "Documents" was already substituted before.
-# So either put "Important Documents" before "Documents" or use the substituted version:
-# "Important  " = "  "
-
-[c]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[docker_context]
-symbol = " "
-style = "bg:#B08FD1"
-format = '[ $symbol $context ]($style)$path'
-
-[elixir]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[elm]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[git_branch]
-symbol = ""
-style = "bg:#525459"
-format = '[ $symbol $branch ]($style)'
-
-[git_status]
-style = "bg:#525459"
-format = '[$all_status$ahead_behind ]($style)'
-
-[golang]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[haskell]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[java]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[julia]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[nodejs]
-symbol = ""
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[nim]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[python]
-style = "bg:#1B1E24"
-format = '[(\($virtualenv\) )]($style)'
-
-[rust]
-symbol = ""
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[time]
-disabled = false
-time_format = "%R" # Hour:Minute Format
-style = "bg:#5E8FCC"
-format = '[ $time ]($style)'
-EOF
-
-cat > "$CONF/starship/themes/hidrot-square.toml" <<'EOF'
-format = """
-[](#1B1E24)\
-$python\
-$username\
-[](bg:#36393E fg:#1B1E24)\
-$directory\
-[](fg:#36393E bg:#525459)\
-$git_branch\
-$git_status\
-[](fg:#525459 bg:#4FB0A6)\
-$c\
-$elixir\
-$elm\
-$golang\
-$haskell\
-$java\
-$julia\
-$nodejs\
-$nim\
-$rust\
-[](fg:#4FB0A6 bg:#B08FD1)\
-$docker_context\
-[](fg:#B08FD1 bg:#5E8FCC)\
-$time\
-[ ](fg:#5E8FCC)\
-"""
-command_timeout = 5000
-# Disable the blank line at the start of the prompt
-# add_newline = false
-
-# You can also replace your username with a neat symbol like  to save some space
-[username]
-show_always = true
-style_user = "bg:#1B1E24"
-style_root = "bg:#1B1E24"
-format = '[$user ]($style)'
-
-[directory]
-style = "bg:#36393E"
-format = "[ $path ]($style)"
-truncation_length = 3
-truncation_symbol = "…/"
-
-# Here is how you can shorten some long paths by text replacement
-# similar to mapped_locations in Oh My Posh:
-[directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
-# Keep in mind that the order matters. For example:
-# "Important Documents" = "  "
-# will not be replaced, because "Documents" was already substituted before.
-# So either put "Important Documents" before "Documents" or use the substituted version:
-# "Important  " = "  "
-
-[c]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[docker_context]
-symbol = " "
-style = "bg:#B08FD1"
-format = '[ $symbol $context ]($style)$path'
-
-[elixir]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[elm]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[git_branch]
-symbol = ""
-style = "bg:#525459"
-format = '[ $symbol $branch ]($style)'
-
-[git_status]
-style = "bg:#525459"
-format = '[$all_status$ahead_behind ]($style)'
-
-[golang]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[haskell]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[java]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[julia]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[nodejs]
-symbol = ""
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[nim]
-symbol = " "
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[python]
-style = "bg:#1B1E24"
-format = '[(\($virtualenv\) )]($style)'
-
-[rust]
-symbol = ""
-style = "bg:#4FB0A6"
-format = '[ $symbol ($version) ]($style)'
-
-[time]
-disabled = false
-time_format = "%R" # Hour:Minute Format
-style = "bg:#5E8FCC"
 format = '[ $time ]($style)'
 EOF
 
@@ -34043,7 +32134,6 @@ EOF
 [ -L "$HOME/.config/starship.toml" ] && rm "$HOME/.config/starship.toml"
 cp "$CONF/starship/themes/catppuccin-mocha.toml" "$HOME/.config/starship.toml"
 
-
 # ----------------------------------------------------------------------------
 # 9b. flameshot
 
@@ -34072,6 +32162,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#F2E9E1"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#FAF4ED"
@@ -34105,6 +32198,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#F2E9E1"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#FAF4ED"
@@ -34138,6 +32234,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#282A36"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#282A36"
@@ -34172,6 +32271,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#282828"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#282828"
@@ -34206,6 +32308,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#292E39"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1E222A"
@@ -34239,6 +32344,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#282A36"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#282A36"
@@ -34273,6 +32381,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#282828"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#282828"
@@ -34307,6 +32418,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#292E39"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1E222A"
@@ -34340,6 +32454,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#1A1B26"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1A1B26"
@@ -34377,6 +32494,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#3D454B"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#2D353B"
@@ -34410,6 +32530,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#1A1B26"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1A1B26"
@@ -34447,6 +32570,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#3D454B"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#2D353B"
@@ -34480,6 +32606,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#45475A"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1E1E2E"
@@ -34513,6 +32642,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#45475A"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1E1E2E"
@@ -34546,6 +32678,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#282828"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#282828"
@@ -34579,6 +32714,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#282828"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#282828"
@@ -34613,6 +32751,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#232136"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#232136"
@@ -34646,6 +32787,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#282828"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#282828"
@@ -34679,6 +32823,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#282828"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#282828"
@@ -34713,6 +32860,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#232136"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#232136"
@@ -34746,6 +32896,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#242121"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#181616"
@@ -34779,6 +32932,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#242121"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#181616"
@@ -34812,6 +32968,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#1A1B26"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1A1B26"
@@ -34845,6 +33004,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#1A1B26"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1A1B26"
@@ -34878,6 +33040,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#44475A"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#282A36"
@@ -34911,6 +33076,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#44475A"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#282A36"
@@ -34944,6 +33112,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#2B241F"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1E1A17"
@@ -34977,6 +33148,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#2B241F"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1E1A17"
@@ -34996,39 +33170,6 @@ foreground = "#D9736A"
 frame_color = "#D9736A"
 timeout = 0
 EOF
-cat > "$CONF/dunst/themes/float-square.dunstrc" <<'EOF'
-[global]
-font = JetBrainsMono Nerd Font 10
-frame_width = 2
-frame_color = "#8EC07C"
-corner_radius = 0
-background = "#282828"
-foreground = "#EBDBB2"
-width = 320
-height = 100
-offset = 12x40
-padding = 12
-horizontal_padding = 12
-separator_color = "#282828"
-
-[urgency_low]
-background = "#282828"
-foreground = "#A89984"
-frame_color = "#282828"
-timeout = 4
-
-[urgency_normal]
-background = "#282828"
-foreground = "#EBDBB2"
-frame_color = "#8EC07C"
-timeout = 6
-
-[urgency_critical]
-background = "#282828"
-foreground = "#EBDBB2"
-frame_color = "#FB4934"
-timeout = 0
-EOF
 
 cat > "$CONF/dunst/themes/h4ck3r-square.dunstrc" <<'EOF'
 [global]
@@ -35044,6 +33185,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#1B2333"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#0C1018"
@@ -35061,39 +33205,6 @@ timeout = 6
 background = "#0C1018"
 foreground = "#6DDE00"
 frame_color = "#6DDE00"
-timeout = 0
-EOF
-cat > "$CONF/dunst/themes/float.dunstrc" <<'EOF'
-[global]
-font = JetBrainsMono Nerd Font 10
-frame_width = 2
-frame_color = "#8EC07C"
-corner_radius = 12
-background = "#282828"
-foreground = "#EBDBB2"
-width = 320
-height = 100
-offset = 12x40
-padding = 12
-horizontal_padding = 12
-separator_color = "#282828"
-
-[urgency_low]
-background = "#282828"
-foreground = "#A89984"
-frame_color = "#282828"
-timeout = 4
-
-[urgency_normal]
-background = "#282828"
-foreground = "#EBDBB2"
-frame_color = "#8EC07C"
-timeout = 6
-
-[urgency_critical]
-background = "#282828"
-foreground = "#EBDBB2"
-frame_color = "#FB4934"
 timeout = 0
 EOF
 
@@ -35111,6 +33222,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#1B2333"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#0C1018"
@@ -35130,72 +33244,6 @@ foreground = "#6DDE00"
 frame_color = "#6DDE00"
 timeout = 0
 EOF
-cat > "$CONF/dunst/themes/hidrot-square.dunstrc" <<'EOF'
-[global]
-font = JetBrainsMono Nerd Font 10
-frame_width = 2
-frame_color = "#B08FD1"
-corner_radius = 0
-background = "#1B1E24"
-foreground = "#D6DCE5"
-width = 320
-height = 100
-offset = 12x40
-padding = 12
-horizontal_padding = 12
-separator_color = "#262B33"
-
-[urgency_low]
-background = "#1B1E24"
-foreground = "#6E7684"
-frame_color = "#262B33"
-timeout = 4
-
-[urgency_normal]
-background = "#1B1E24"
-foreground = "#D6DCE5"
-frame_color = "#B08FD1"
-timeout = 6
-
-[urgency_critical]
-background = "#1B1E24"
-foreground = "#D9707A"
-frame_color = "#D9707A"
-timeout = 0
-EOF
-cat > "$CONF/dunst/themes/hidrot.dunstrc" <<'EOF'
-[global]
-font = JetBrainsMono Nerd Font 10
-frame_width = 2
-frame_color = "#B08FD1"
-corner_radius = 10
-background = "#1B1E24"
-foreground = "#D6DCE5"
-width = 320
-height = 100
-offset = 12x40
-padding = 12
-horizontal_padding = 12
-separator_color = "#262B33"
-
-[urgency_low]
-background = "#1B1E24"
-foreground = "#6E7684"
-frame_color = "#262B33"
-timeout = 4
-
-[urgency_normal]
-background = "#1B1E24"
-foreground = "#D6DCE5"
-frame_color = "#B08FD1"
-timeout = 6
-
-[urgency_critical]
-background = "#1B1E24"
-foreground = "#D9707A"
-frame_color = "#D9707A"
-timeout = 0
-EOF
 cat > "$CONF/dunst/themes/isabel-square.dunstrc" <<'EOF'
 [global]
 font = JetBrainsMono Nerd Font 10
@@ -35210,6 +33258,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#10181A"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#10181A"
@@ -35243,6 +33294,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#10181A"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#10181A"
@@ -35276,6 +33330,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#212A4C"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#212A4C"
@@ -35309,6 +33366,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#212A4C"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#212A4C"
@@ -35342,6 +33402,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#0E1113"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#0E1113"
@@ -35375,6 +33438,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#0E1113"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#0E1113"
@@ -35408,6 +33474,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#332727"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#241C1C"
@@ -35441,6 +33510,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#332727"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#241C1C"
@@ -35474,6 +33546,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#3B4252"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#2E3440"
@@ -35507,6 +33582,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#3B4252"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#2E3440"
@@ -35540,6 +33618,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#3D435C"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1D1F28"
@@ -35573,6 +33654,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#3D435C"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1D1F28"
@@ -35606,6 +33690,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#504945"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#3C3836"
@@ -35639,6 +33726,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#504945"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#3C3836"
@@ -35672,6 +33762,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#1E1E2E"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1E1E2E"
@@ -35706,6 +33799,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#343A40"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#212529"
@@ -35739,6 +33835,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#1E1E2E"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#1E1E2E"
@@ -35773,6 +33872,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#343A40"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#212529"
@@ -35806,6 +33908,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#262626"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#161616"
@@ -35839,6 +33944,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#4C566A"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#2E3440"
@@ -35872,6 +33980,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#3B4252"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#ECEFF4"
@@ -35905,6 +34016,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#262626"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#161616"
@@ -35938,6 +34052,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#4C566A"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#2E3440"
@@ -35971,6 +34088,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#3B4252"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#ECEFF4"
@@ -36004,6 +34124,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#1C1E27"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#0D0F18"
@@ -36037,6 +34160,9 @@ offset = 12x40
 padding = 12
 horizontal_padding = 12
 separator_color = "#1C1E27"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
 
 [urgency_low]
 background = "#0D0F18"

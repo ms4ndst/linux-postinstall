@@ -32,7 +32,7 @@ EXTENSION_DIR = os.path.expanduser("~/.vscode/extensions/linux-postinstall-rice-
 THEMES = [
     "aline", "alireza", "archblur", "archcraft", "breddie", "brenda",
     "catppuccin-mocha", "cherryblocks", "classic", "cristina", "cynthia",
-    "daniela", "dracula", "emilia", "float", "h4ck3r", "hidrot", "isabel",
+    "daniela", "dracula", "emilia", "h4ck3r", "isabel",
     "jan", "karla", "marisol", "nord", "pamela", "silvia", "tobi", "varinka",
     "yael", "yucklys", "yucklys-light", "z0mbi3",
 ]
@@ -45,8 +45,7 @@ LIGHT_THEMES = {"aline"}
 # Semantic role -> ordered list of [colors] keys to try, most-specific first.
 # Built by reading every theme's real [colors] block (not guessed) - most
 # themes share common names (red/green/yellow/blue/purple), a few have their
-# own naming (hidrot's red0/red1/blue0/blue1/purple0/purple1/yellow1/aqua1,
-# jan/z0mbi3's magenta, cristina/yael's indigo) or omit a role entirely
+# own naming (jan/z0mbi3's magenta, cristina/yael's indigo) or omit a role entirely
 # (aline/varinka/isabel/h4ck3r have no orange-ish token at all). Falling
 # back through the chain, and ultimately to text/subtext, guarantees every
 # theme produces a complete, valid result with no missing-key crashes -
@@ -58,7 +57,7 @@ ROLE_CHAINS = {
     "yellow": ["yellow", "yellow1"],
     "blue":   ["blue", "blue1", "blue0", "blue-light"],
     "accent": ["mauve", "purple", "purple1", "purple0", "magenta", "indigo", "pink"],
-    "cyan":   ["teal", "cyan", "sky", "aqua1"],
+    "cyan":   ["teal", "cyan", "sky"],
     "orange": ["peach", "orange"],
     "pink":   ["pink", "magenta", "lavender"],
 }
@@ -72,7 +71,7 @@ def resolve(colors, role, default_role="text"):
 
 
 def parse_theme_colors(ini_path):
-    # Several themes (jan, karla, marisol, pamela, varinka, hidrot) set a
+    # Several themes (jan, karla, marisol, pamela, varinka) set a
     # real alpha channel on base/mantle - meaningful for a polybar bar
     # floating over the desktop, meaningless (and actively bad) for a VS
     # Code editor: an editor.background with alpha renders as an actually
