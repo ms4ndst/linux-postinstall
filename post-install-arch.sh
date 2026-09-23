@@ -651,13 +651,12 @@ flatpak_install_flathub() {
 # `command -v <tool>` first, so on Omarchy those checks succeed immediately
 # and the function just logs "already installed" and returns, exactly the
 # idempotency behavior the rest of this script relies on everywhere else.
-# Ollama, Alpaca, Claude Desktop, Cursor, and LM Studio aren't among
+# Ollama, Jan, Claude Desktop, Cursor, and LM Studio aren't among
 # Omarchy's nine stubs, so those still genuinely install something new even
 # there.
 install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
-    install_alpaca
     install_jan
     install_localai
     install_claude_code
@@ -683,14 +682,9 @@ install_ollama() {
     fi
 }
 
-# Alpaca - native GTK4/libadwaita Ollama client, Flathub-only (no AUR
-# package that stays reliably current), same conclusion as Fedora/Ubuntu.
-install_alpaca() { flatpak_install_flathub com.jeffser.Alpaca "Alpaca"; }
-
 # Jan (https://www.jan.ai/) - local-first, OpenAI-alternative desktop chat
 # client with its own local model runner (llama.cpp-based) plus support for
-# remote providers. Flathub-only (no vendor rpm/deb/AUR package), same
-# pattern as Alpaca above.
+# remote providers. Flathub-only (no AUR package that stays reliably current).
 install_jan() { flatpak_install_flathub ai.jan.Jan "Jan"; }
 
 # LocalAI (https://github.com/mudler/LocalAI) - OpenAI-compatible local

@@ -645,14 +645,14 @@ Note: `libreoffice` is a meta-package that resolves to **seven separate real app
 | Tool                | Installation Method | Description                                              |
 | -------------------- | --------------------- | ----------------------------------------------------------- |
 | **Ollama**          | Official install script | Local LLM runner, auto-detects GPU/CPU                  |
-| **Alpaca**           | Flathub (`com.jeffser.Alpaca`) | Native GTK4 GUI client for Ollama                |
+| **Jan**              | Flathub (`ai.jan.Jan`) | Local-first, OpenAI-alternative desktop chat client        |
 | **Claude Code**     | Official native installer (`claude.ai/install.sh`), npm fallback | Anthropic's CLI code assistant (provides the `claude` command) |
 | **Gemini CLI**       | `npm install -g @google/gemini-cli` | Google's official CLI code assistant (provides the `gemini` command) |
 | **Mistral Vibe CLI** | Official installer script (`mistral.ai/vibe/install.sh`), installs the `mistral-vibe` Python package via `uv`/`pip` | Mistral's terminal coding agent (provides the `vibe` command) |
 | **OpenCode**         | Official native installer (`opencode.ai/install`), npm fallback (`opencode-ai`) | Provider-agnostic terminal AI coding agent (provides the `opencode` command) |
 | **Cursor**           | `.deb` download       | AI-powered code editor                                    |
 
-All of these register in the installed/skipped/failed tracking, so they appear in the summary and are fed to the app-folder resolver. **Cursor** ships its own `cursor.desktop` and **Alpaca** exports a Flatpak launcher, so both are grouped into the AI Tools folder. **Ollama**, **Claude Code**, **Gemini CLI**, **Mistral Vibe CLI**, and **OpenCode** are command-line only (no launcher), so they're tracked but don't get a folder icon — expected, same as `docker`/`adb`.
+All of these register in the installed/skipped/failed tracking, so they appear in the summary and are fed to the app-folder resolver. **Cursor** ships its own `cursor.desktop` and **Jan** exports a Flatpak launcher, so both are grouped into the AI Tools folder. **Ollama**, **Claude Code**, **Gemini CLI**, **Mistral Vibe CLI**, and **OpenCode** are command-line only (no launcher), so they're tracked but don't get a folder icon — expected, same as `docker`/`adb`.
 
 ---
 
@@ -1047,7 +1047,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 
 - ✅ **No per-domain metapackages, so Ubuntu Studio becomes "Creative Suite"**: Fedora has nothing like `ubuntustudio-video/audio/graphics/...`. Instead, **Creative Suite** uses Fedora's own comps groups — `dnf group install audio` (Fedora Jam) and `dnf group install design-suite` — plus a hand-curated Video Editing list and small Photography/Publishing picks. See [Fedora: Creative Suite](#fedora-creative-suite).
 - ✅ **"Ultramarine" → Terra, "Nobara" → nothing**: Ultramarine Linux has no repo installable on stock Fedora (it's a full OS spin); its parent project Fyra Labs' **Terra** repo is the practical substitute, scoped to its `extras` subrepo only. Nobara's own repo is **deliberately not added** — its maintainers document it as unsafe on a non-Nobara install, and its gaming-relevant packages are all natively available via RPM Fusion/Fedora anyway.
-- ✅ **Flatpak minimized**: every category was individually re-researched against vendor RPM repos, RPM Fusion, and COPR before falling back to Flatpak. It's used only for Signal, Floorp, Zen Browser, Spotify, Bruno, and Alpaca — confirmed via live research to be the only real option for each.
+- ✅ **Flatpak minimized**: every category was individually re-researched against vendor RPM repos, RPM Fusion, and COPR before falling back to Flatpak. It's used only for Signal, Floorp, Zen Browser, Spotify, Bruno, and Jan — confirmed via live research to be the only real option for each.
 - ✅ **Zero Snap usage**: both of the Ubuntu script's Snap-only escape hatches (IntelliJ IDEA Community, LXD) have real Fedora-native equivalents here (Flathub, Incus) — nothing in this script touches Snap.
 - ✅ **New: proprietary NVIDIA driver support**: the Ubuntu script has no GPU-driver category at all. Fedora's is an explicit opt-in with build-status polling and a flagged (not faked) Secure Boot step — see [Fedora: Drivers & Extra Repos](#fedora-drivers--extra-repos).
 - ✅ **Robust Error Handling**: same `package_exists`-before-`safe_install` safety net as the Ubuntu script — an unavailable package is skipped and logged, never a hard failure.
@@ -1082,7 +1082,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 - **Third-Party/Vendor Repos:** Brave, Vivaldi, Google Chrome, Microsoft Edge, LibreWolf, TeamViewer, 1Password, Cursor, Slack, VS Code, Sublime Text, Microsoft Azure CLI, Microsoft Teams (teams-for-linux) — all real vendor `dnf`/yum repos
 - **RPM Fusion-Native Apps:** Steam, Discord, Telegram Desktop (better coverage than the Ubuntu script gets from apt for the latter two)
 - **COPR-Sourced:** DBeaver CE (`copart/dbeaver`)
-- **Flatpak-Only (confirmed no better source exists):** Signal, Floorp, Zen Browser, Spotify, Bruno, Alpaca
+- **Flatpak-Only (confirmed no better source exists):** Signal, Floorp, Zen Browser, Spotify, Bruno, Jan
 - **Snap-Only Tools:** 0 — zero, by design
 - **Estimated Install Time:** 15 minutes – several hours (depending on selections; "EVERYTHING" is a long run)
 - **Estimated Disk Space:** 5–30GB+ (depending on selections)
@@ -1162,7 +1162,7 @@ sudo ./post-install-fedora.sh
 
 ### 🗂️ Fedora GNOME App Folders (Super Key Groups)
 
-Exactly the same headline feature as the Ubuntu script — see [GNOME App Folders](#️-gnome-app-folders-super-key-groups) above for the full explanation of how it works (D-Bus session detection, `.desktop` resolution tiers, `NoDisplay`/`Hidden` filtering, snap/flatpak directory scanning). The only real difference: **tier 1** of `.desktop` resolution uses `rpm -ql <pkg>` instead of `dpkg -L`, and the meta-package dependency walk (**tier 2**) uses `rpm -q --requires` instead of `apt-cache depends --recurse --important`. Flatpak-exported app resolution (for Signal, Floorp, Zen, Spotify, Bruno, Alpaca) works identically to the Ubuntu script.
+Exactly the same headline feature as the Ubuntu script — see [GNOME App Folders](#️-gnome-app-folders-super-key-groups) above for the full explanation of how it works (D-Bus session detection, `.desktop` resolution tiers, `NoDisplay`/`Hidden` filtering, snap/flatpak directory scanning). The only real difference: **tier 1** of `.desktop` resolution uses `rpm -ql <pkg>` instead of `dpkg -L`, and the meta-package dependency walk (**tier 2**) uses `rpm -q --requires` instead of `apt-cache depends --recurse --important`. Flatpak-exported app resolution (for Signal, Floorp, Zen, Spotify, Bruno, Jan) works identically to the Ubuntu script.
 
 ---
 
@@ -1348,7 +1348,7 @@ Same tool set as the Ubuntu script — almost entirely package-manager-agnostic 
 | Tool | Installation Method |
 |------|---------------------|
 | **Ollama** | Official install script |
-| **Alpaca** | Flathub (`com.jeffser.Alpaca`) |
+| **Jan** | Flathub (`ai.jan.Jan`) |
 | **Claude Code** | Official native installer, npm fallback |
 | **Gemini CLI** | `npm install -g @google/gemini-cli` |
 | **Mistral Vibe CLI** | Official installer script |
@@ -1639,7 +1639,7 @@ On startup the script runs **`zypper dup --no-allow-vendor-change`** before anyt
 - **Third-Party/Vendor Repos:** Microsoft (VS Code, Azure CLI, Edge), Brave, Vivaldi, Google Chrome, LibreWolf, Cursor, TeamViewer, Charm (glow), teams-for-linux, an unofficial Claude Desktop rpm repo — all real, zypper-compatible yum/zypper repos, each individually confirmed
 - **OBS Projects Used:** `hardware` (Solaar), `security` (pentest tooling), `devel:languages:go` (lazygit), `home:ecsos` (scrcpy — a lower-trust personal project, flagged)
 - **Packman-Sourced:** the full multimedia codec swap (ffmpeg/GStreamer/vlc-codecs)
-- **Flatpak-Only (confirmed no better source exists):** Signal, Discord, Telegram, Zen Browser, Floorp, Spotify, Bruno, Alpaca, LM Studio, IntelliJ IDEA Community — Flathub's remote is added by the script itself, since Tumbleweed doesn't preconfigure it
+- **Flatpak-Only (confirmed no better source exists):** Signal, Discord, Telegram, Zen Browser, Floorp, Spotify, Bruno, Jan, LM Studio, IntelliJ IDEA Community — Flathub's remote is added by the script itself, since Tumbleweed doesn't preconfigure it
 - **Standalone/Vendor-Binary Fallbacks:** 1Password (AppImage — vendor blocks zypper access outright), DBeaver CE (vendor's own generic standalone rpm), Zed/Gram/CLIamp/Neural Inverse/LocalAI (vendor installer script or GitHub release binary)
 - **Native Snapshot Tooling:** Snapper + Btrfs (already default on Tumbleweed), Timeshift as the rsync-mode fallback for a non-Btrfs root
 - **Snap Usage:** 0
@@ -1909,7 +1909,7 @@ Almost entirely package-manager-agnostic (vendor curl-installer scripts, npm glo
 | Tool | Installation Method |
 |------|---------------------|
 | **Ollama** | Official install script |
-| **Alpaca** | Flathub (`com.jeffser.Alpaca`) |
+| **Jan** | Flathub (`ai.jan.Jan`) |
 | **LocalAI** | GitHub release binary, resolved via the GitHub API, dropped into `/usr/local/bin` |
 | **Claude Code** | Official native installer, npm fallback |
 | **Claude Desktop** | Unofficial rpm repo ([aaddrick/claude-desktop-debian](https://github.com/aaddrick/claude-desktop-debian)) — same repo the Fedora script uses, zypper consumes the same INI file |
@@ -2235,7 +2235,7 @@ Everywhere Omarchy already provides a first-party wrapper for something this scr
 - **Package Front-End:** `pacman`, with `yay` bootstrapped automatically for AUR fallback
 - **AUR-Sourced Tools (no official-repo package exists):** VS Code, Sublime Text, Cursor, most browsers (Brave, Edge, Chrome, Zen, Floorp), Spotify, Slack, TeamViewer, 1Password, teams-for-linux, virtio-win, DisplayLink driver, and several security tools (`whatweb`, `wfuzz`, `sleuthkit-git`, `steghide`, `chkrootkit`, `aide`, `suricata`)
 - **Official-Repo Wins Over Fedora/Ubuntu:** Vivaldi, LibreWolf, Signal, Discord, Telegram, DBeaver, Azure CLI, lazygit, scrcpy, and most of the Security Tools "Firewall & Privacy" batch all land directly in Arch's `[extra]` repo — no vendor repo, COPR, or RPM Fusion dance needed
-- **Flatpak-Only (last resort, no reliable repo/AUR alternative):** Alpaca, Bruno, IntelliJ IDEA Community, Windows App for Linux
+- **Flatpak-Only (last resort, no reliable repo/AUR alternative):** Jan, Bruno, IntelliJ IDEA Community, Windows App for Linux
 - **Estimated Install Time:** 15 minutes – several hours (AUR builds compile from source, so individual packages can be noticeably slower than Fedora/Ubuntu's prebuilt binaries, especially without Chaotic-AUR enabled)
 - **Estimated Disk Space:** 5–30GB+ (depending on selections)
 
@@ -2321,7 +2321,7 @@ sudo ./post-install-arch.sh
 
 ### 🗂️ Arch GNOME App Folders (Super Key Groups)
 
-Same feature and same `org.gnome.desktop.app-folders` gsettings mechanism as the Ubuntu/Fedora scripts, with an Arch-specific resolution order: a package's own file list (`pacman -Qlq`) first, then a dependency walk for meta-packages with no launcher of their own, then a reverse-DNS prefix guess, then a Flatpak-exports match for Flatpak-only tools (Alpaca, Bruno, IntelliJ, Windows App).
+Same feature and same `org.gnome.desktop.app-folders` gsettings mechanism as the Ubuntu/Fedora scripts, with an Arch-specific resolution order: a package's own file list (`pacman -Qlq`) first, then a dependency walk for meta-packages with no launcher of their own, then a reverse-DNS prefix guess, then a Flatpak-exports match for Flatpak-only tools (Jan, Bruno, IntelliJ, Windows App).
 
 **On Omarchy this feature is a deliberate, explicit no-op.** `prompt_menu_category` detects Omarchy and, instead of prompting, logs: *"Omarchy's app launcher (Super+Space) already fuzzy-searches every installed app — no GNOME-style menu folder needed"* — then does a bare pause so the category's install summary doesn't flash by and vanish (the confirmation prompt that normally provides that pause is what's being skipped). Bulk-run categories (`A`/`B`/`C`) call `create_menu_category` directly and unprompted either way — still a no-op if no GNOME `app-folders` schema is present.
 
@@ -2338,7 +2338,7 @@ Below is a breakdown of what each category installs. Packages are tagged **(AUR)
 | Tool | Installation Method |
 | --- | --- |
 | **Ollama** | Official install script |
-| **Alpaca** | Flathub (`com.jeffser.Alpaca`) — no reliable AUR package |
+| **Jan** | Flathub (`ai.jan.Jan`) — no reliable AUR package |
 | **Claude Code** | Official native installer, npm fallback |
 | **Claude Desktop** | AppImage downloaded directly from [aaddrick/claude-desktop-debian](https://github.com/aaddrick/claude-desktop-debian)'s GitHub Releases — its own AUR package (`claude-desktop-appimage`) was deleted 2026-08-01 in an AUR duplicate-package cleanup and is pending reinstatement, so the script hand-writes a `.desktop` launcher instead of waiting on it |
 | **Gemini CLI** | `npm install -g @google/gemini-cli` |
@@ -2346,7 +2346,7 @@ Below is a breakdown of what each category installs. Packages are tagged **(AUR)
 | **OpenCode** | Official native installer, npm fallback |
 | **Cursor** | **(AUR)** `cursor-bin` — simpler than Fedora's yum-repo bootstrap, no repo registration needed |
 
-**Omarchy note:** it pre-wires nine coding-agent CLIs (`claude`, `codex`, `opencode`, `gemini`, `copilot`, `crush`, `grok`, `pi`, `omp`) as lazy-loading mise stubs already on `$PATH` — no special-casing needed, every function here already gates on `command -v` first and just reports "already installed." Ollama, Alpaca, Claude Desktop, and Cursor aren't among those nine stubs, so they still install fresh even on Omarchy.
+**Omarchy note:** it pre-wires nine coding-agent CLIs (`claude`, `codex`, `opencode`, `gemini`, `copilot`, `crush`, `grok`, `pi`, `omp`) as lazy-loading mise stubs already on `$PATH` — no special-casing needed, every function here already gates on `command -v` first and just reports "already installed." Ollama, Jan, Claude Desktop, and Cursor aren't among those nine stubs, so they still install fresh even on Omarchy.
 
 ---
 

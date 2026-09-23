@@ -468,11 +468,11 @@ create_menu_category() {
             [ -z "$snap_match" ] && snap_match=$(compgen -G "/var/lib/snapd/desktop/applications/${app}.desktop" 2>/dev/null | head -1)
             [ -n "$snap_match" ] && found+=("$(basename "$snap_match")")
         fi
-        # Flatpak-exported apps (Alpaca, Windows App, ...) live in export dirs that
+        # Flatpak-exported apps (Jan, Windows App, ...) live in export dirs that
         # dpkg/snap/prefix guessing never see - system-wide under /var/lib/flatpak
         # and per-user under ~/.local/share/flatpak. Their .desktop filename is a
-        # reverse-DNS app-id (com.jeffser.Alpaca.desktop) with no relation to the
-        # display name callers track them by ("Alpaca", "Windows App"), so match on
+        # reverse-DNS app-id (ai.jan.Jan.desktop) with no relation to the
+        # display name callers track them by ("Jan", "Windows App"), so match on
         # the launcher's own [Desktop Entry] Name= (the first Name= in the file),
         # falling back to a filename match. Honor NoDisplay/Hidden like every stage.
         if [ ${#found[@]} -eq 0 ]; then
@@ -1773,7 +1773,6 @@ install_dev_tools() {
 install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
-    install_alpaca
     install_jan
     install_localai
     install_claude_code
@@ -1807,23 +1806,16 @@ install_ollama() {
     fi
 }
 
-# Alpaca (com.jeffser.Alpaca) - a native GTK4/libadwaita graphical CLIENT for
-# Ollama, replacing the buggy JHubi1 Flutter app. Ollama ships NO official desktop
-# app on Linux (its GUI is macOS/Windows only); Alpaca is the standout GNOME-native
-# client, actively maintained and distributed on Flathub. It talks to the Ollama
-# server install_ollama sets up (and can manage its own). Installed system-wide as
-# a Flatpak, same tooling the Windows App installer uses. Tracking name "Alpaca".
-#
-# NOTE: Flatpak apps export their launcher under /var/lib/flatpak/exports (per-user
-# ones under ~/.local/share/flatpak/exports). create_menu_category's resolver now
-# scans both and matches on the launcher's Name=, so Alpaca (installed system-wide
-# here) DOES get grouped into the AI Tools app-folder.
-install_alpaca() { flatpak_install_flathub com.jeffser.Alpaca "Alpaca"; }
-
 # Jan (https://www.jan.ai/) - local-first, OpenAI-alternative desktop chat
 # client with its own local model runner (llama.cpp-based) plus support for
-# remote providers. Flathub-only (no vendor rpm/deb/AUR package), same
-# pattern as Alpaca above.
+# remote providers. Flathub-only (no vendor rpm/deb/AUR package). Installed
+# system-wide as a Flatpak, same tooling the Windows App installer uses.
+# Tracking name "Jan".
+#
+# NOTE: Flatpak apps export their launcher under /var/lib/flatpak/exports (per-user
+# ones under ~/.local/share/flatpak/exports). create_menu_category's resolver
+# scans both and matches on the launcher's Name=, so Jan (installed system-wide
+# here) DOES get grouped into the AI Tools app-folder.
 install_jan() { flatpak_install_flathub ai.jan.Jan "Jan"; }
 
 # LocalAI (https://github.com/mudler/LocalAI) - OpenAI-compatible local
@@ -3829,7 +3821,7 @@ install_zoom()    { flatpak_install_flathub us.zoom.Zoom "Zoom"; }
 # Shared helper: install a Flathub app system-wide, tracking it under a friendly
 # display name (matched by the app-folder resolver's Flatpak stage). Pulls flatpak +
 # a GTK portal first if absent, adds the Flathub remote, then installs. Best-effort
-# and self-skipping, same shape as install_alpaca.
+# and self-skipping, same shape as install_discord.
 flatpak_install_flathub() {
     local app_id="$1" label="$2"
     if ! command -v flatpak &>/dev/null; then

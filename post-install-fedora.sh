@@ -1552,7 +1552,6 @@ install_android_tools() {
 install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
-    install_alpaca
     install_jan
     install_localai
     install_claude_code
@@ -1578,14 +1577,9 @@ install_ollama() {
     fi
 }
 
-# Alpaca - native GTK4/libadwaita Ollama client, Flathub-only (no vendor
-# rpm/COPR exists), same as the Ubuntu script.
-install_alpaca() { flatpak_install_flathub com.jeffser.Alpaca "Alpaca"; }
-
 # Jan (https://www.jan.ai/) - local-first, OpenAI-alternative desktop chat
 # client with its own local model runner (llama.cpp-based) plus support for
-# remote providers. Flathub-only (no vendor rpm/deb/AUR package), same
-# pattern as Alpaca above.
+# remote providers. Flathub-only (no vendor rpm/COPR package exists).
 install_jan() { flatpak_install_flathub ai.jan.Jan "Jan"; }
 
 # LocalAI (https://github.com/mudler/LocalAI) - OpenAI-compatible local
@@ -2532,7 +2526,7 @@ EOF
 # the box (unlike Ubuntu, which needs both added) - so this is even more of a
 # no-op-if-already-there than the Ubuntu equivalent. Kept for the handful of
 # apps researched to have NO better Fedora-native source (Signal, Floorp, Zen
-# Browser, Spotify, Bruno, Alpaca) - everything else in this script goes
+# Browser, Spotify, Bruno, Jan) - everything else in this script goes
 # through a real dnf repo, RPM Fusion, or COPR first.
 flatpak_install_flathub() {
     local app_id="$1" label="$2"

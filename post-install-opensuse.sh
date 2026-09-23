@@ -1623,7 +1623,6 @@ install_android_tools() {
 install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
-    install_alpaca
     install_jan
     install_localai
     install_claude_code
@@ -1649,14 +1648,10 @@ install_ollama() {
     fi
 }
 
-# Alpaca - native GTK4/libadwaita Ollama client, Flathub-only (no vendor
-# rpm/OBS package exists), same as the Fedora/Ubuntu/Arch scripts.
-install_alpaca() { flatpak_install_flathub com.jeffser.Alpaca "Alpaca"; }
-
 # Jan (https://www.jan.ai/) - local-first, OpenAI-alternative desktop chat
 # client with its own local model runner (llama.cpp-based) plus support for
-# remote providers. Flathub-only (no vendor rpm/deb/AUR package), same
-# pattern as Alpaca above.
+# remote providers. Flathub-only (no vendor rpm/OBS package exists), same
+# as the Fedora/Ubuntu/Arch scripts.
 install_jan() { flatpak_install_flathub ai.jan.Jan "Jan"; }
 
 # LocalAI - OpenAI-compatible local inference server. No rpm/OBS package
@@ -2557,7 +2552,7 @@ EOF
 # remote (confirmed live during development against Flathub's own openSUSE
 # setup page) - closer to the Ubuntu script's situation than Fedora's. Kept
 # for the same handful of apps with NO better openSUSE-native source
-# (Signal, Telegram, Spotify, Zen Browser, Floorp, Bruno, Alpaca, LM Studio,
+# (Signal, Telegram, Spotify, Zen Browser, Floorp, Bruno, Jan, LM Studio,
 # IntelliJ IDEA CE) - everything else in this script goes through zypper, an
 # OBS project, or a vendor repo first.
 flatpak_install_flathub() {
