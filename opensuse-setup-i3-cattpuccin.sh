@@ -170,7 +170,7 @@ log "Installing base X11 stack + i3 + rice toolkit via zypper..."
 #     `set -e` (confirmed: this exact failure mode is why it's split out
 #     into its own best-effort install right after this batch instead).
 sudo zypper --non-interactive install --allow-vendor-change \
-  xorg-x11-server xinit xauth xrandr xset \
+  xorg-x11-server xinit xauth xrandr xset xsetroot \
   i3 i3lock \
   picom polybar rofi dunst kitty \
   xss-lock NetworkManager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
@@ -1064,6 +1064,14 @@ bindsym $mod+r mode "resize"
 # graphical-session.target's state. The busctl check keeps `i3 restart`
 # (which re-runs exec, not just exec_always) from spawning a second
 # instance on top of one that's already claimed the name.
+# i3 never sets a root-window cursor of its own - without this, the
+# desktop background (anywhere with no window under the pointer) shows
+# X11's stock default cursor regardless of XCURSOR_THEME/gtk-cursor-theme-
+# name above, since those only cover apps that ask libXcursor/GTK for a
+# themed cursor, not the root window itself. `left_ptr` still resolves
+# through the current XCURSOR_THEME, so this picks up the Catppuccin
+# cursor theme too, not a hardcoded fallback shape.
+exec --no-startup-id xsetroot -cursor_name left_ptr
 exec --no-startup-id dbus-update-activation-environment --systemd --all
 exec --no-startup-id sh -c 'busctl --user status org.freedesktop.portal.Desktop >/dev/null 2>&1 || systemd-run --user --unit=xdg-desktop-portal-manual --collect /usr/libexec/xdg-desktop-portal'
 exec --no-startup-id sh -c 'busctl --user status org.freedesktop.impl.portal.desktop.gtk >/dev/null 2>&1 || systemd-run --user --unit=xdg-desktop-portal-gtk-manual --collect /usr/libexec/xdg-desktop-portal-gtk'
@@ -35600,6 +35608,31 @@ else
   log "Catppuccin GTK theme already present, skipping download."
 fi
 
+# Catppuccin cursor theme (Mocha, mauve accent - matching GTK_THEME_NAME
+# above). i3 itself has no cursor-theme concept of its own - it's a bare
+# window manager that never sets one, so without this the pointer just
+# falls back to X11's stock default everywhere (GTK apps too: gtk-cursor-
+# theme-size was already being set below, but never gtk-cursor-theme-name,
+# so the size applied to a theme that was never actually chosen). Same
+# prebuilt-download-and-drop-in approach as the GTK theme above - the
+# official catppuccin/cursors releases ship a ready-to-use XCursor theme
+# folder (cursors/ + index.theme), no build step.
+CURSOR_THEME_NAME="catppuccin-mocha-mauve-cursors"
+if [ ! -d "$HOME/.local/share/icons/$CURSOR_THEME_NAME" ]; then
+  log "Downloading Catppuccin cursor theme (Mocha, mauve accent)..."
+  CURSOR_THEME_TMPZIP="$(mktemp --suffix=.zip)"
+  if curl -fLo "$CURSOR_THEME_TMPZIP" \
+      "https://github.com/catppuccin/cursors/releases/download/v2.0.0/${CURSOR_THEME_NAME}.zip" 2>/dev/null; then
+    mkdir -p "$HOME/.local/share/icons"
+    unzip -o "$CURSOR_THEME_TMPZIP" -d "$HOME/.local/share/icons" >/dev/null
+  else
+    warn "Catppuccin cursor theme download failed (network issue?) - the pointer will fall back to whatever's already configured; install it manually later from https://github.com/catppuccin/cursors/releases."
+  fi
+  rm -f "$CURSOR_THEME_TMPZIP"
+else
+  log "Catppuccin cursor theme already present, skipping download."
+fi
+
 mkdir -p "$CONF/gtk-3.0" "$CONF/gtk-4.0"
 for gtk_settings in "$CONF/gtk-3.0/settings.ini" "$CONF/gtk-4.0/settings.ini"; do
   cat > "$gtk_settings" <<EOF
@@ -35608,6 +35641,7 @@ gtk-theme-name=$GTK_THEME_NAME
 gtk-icon-theme-name=Papirus-Dark
 gtk-application-prefer-dark-theme=1
 gtk-font-name=Sans 10
+gtk-cursor-theme-name=$CURSOR_THEME_NAME
 gtk-cursor-theme-size=24
 EOF
 done
@@ -35636,6 +35670,16 @@ fi
 mkdir -p "$CONF/environment.d"
 cat > "$CONF/environment.d/gtk-theme.conf" <<EOF
 GTK_THEME=$GTK_THEME_NAME
+EOF
+
+# XCURSOR_THEME/XCURSOR_SIZE - read by libXcursor, which is what actually
+# resolves the pointer shape for X11-native apps and anything GTK/Qt-based
+# that doesn't go through gtk-cursor-theme-name specifically (set above,
+# but that alone doesn't cover non-GTK apps or the root window). Same
+# once-per-login caveat as GTK_THEME above.
+cat > "$CONF/environment.d/cursor-theme.conf" <<EOF
+XCURSOR_THEME=$CURSOR_THEME_NAME
+XCURSOR_SIZE=24
 EOF
 
 # ----------------------------------------------------------------------------

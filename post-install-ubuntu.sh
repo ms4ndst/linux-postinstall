@@ -1774,6 +1774,7 @@ install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
     install_alpaca
+    install_jan
     install_localai
     install_claude_code
     install_claude_desktop
@@ -1818,6 +1819,12 @@ install_ollama() {
 # scans both and matches on the launcher's Name=, so Alpaca (installed system-wide
 # here) DOES get grouped into the AI Tools app-folder.
 install_alpaca() { flatpak_install_flathub com.jeffser.Alpaca "Alpaca"; }
+
+# Jan (https://www.jan.ai/) - local-first, OpenAI-alternative desktop chat
+# client with its own local model runner (llama.cpp-based) plus support for
+# remote providers. Flathub-only (no vendor rpm/deb/AUR package), same
+# pattern as Alpaca above.
+install_jan() { flatpak_install_flathub ai.jan.Jan "Jan"; }
 
 # LocalAI (https://github.com/mudler/LocalAI) - OpenAI-compatible local
 # inference server. No apt/PPA package exists; the GitHub release ships a

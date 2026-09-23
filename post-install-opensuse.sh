@@ -1624,6 +1624,7 @@ install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
     install_alpaca
+    install_jan
     install_localai
     install_claude_code
     install_claude_desktop
@@ -1651,6 +1652,12 @@ install_ollama() {
 # Alpaca - native GTK4/libadwaita Ollama client, Flathub-only (no vendor
 # rpm/OBS package exists), same as the Fedora/Ubuntu/Arch scripts.
 install_alpaca() { flatpak_install_flathub com.jeffser.Alpaca "Alpaca"; }
+
+# Jan (https://www.jan.ai/) - local-first, OpenAI-alternative desktop chat
+# client with its own local model runner (llama.cpp-based) plus support for
+# remote providers. Flathub-only (no vendor rpm/deb/AUR package), same
+# pattern as Alpaca above.
+install_jan() { flatpak_install_flathub ai.jan.Jan "Jan"; }
 
 # LocalAI - OpenAI-compatible local inference server. No rpm/OBS package
 # exists; the GitHub release ships a plain, self-contained binary per arch,
