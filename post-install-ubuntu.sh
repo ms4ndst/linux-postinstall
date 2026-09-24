@@ -1390,6 +1390,88 @@ install_containers() {
     install_docker_libvirt_forward_fix
 }
 
+# Elgato Wave:3 USB mic - pins the card to WirePlumber's "pro-audio" profile.
+# Symptom confirmed on this hardware (Fedora 44, PipeWire 1.6.9, WirePlumber
+# 0.5.17): with the auto-picked "analog-stereo + mono-fallback" profile, OBS
+# linked to the mic fine (pw-top: running, ERR 0) yet received silence, while
+# raw ALSA capture (arecord -D plughw:<card>,0 with PipeWire stopped) showed
+# full signal. Resetting ~/.local/state/wireplumber + switching to pro-audio
+# fixed it and survived reboot. Reboots alone never helped because WirePlumber
+# restores its saved profile choice.
+#
+# CONFIDENCE NOTE: the fix was applied as reset + pro-audio together, so it's
+# not proven which of the two was the actual cure - pro-audio is pinned here
+# because it's the half that can be made persistent.
+#
+# Needs WirePlumber >= 0.5 (SPA-JSON .conf drop-ins); 0.4 used Lua config
+# and is refused loudly rather than half-configured.
+#
+# Written system-wide (/etc/wireplumber/wireplumber.conf.d/) so it needs no
+# $SUDO_USER home handling, and matched on USB vendor/product ID (0fd9:0070,
+# as reported by `pactl list cards`) instead of device.name, which embeds the
+# unit's serial number and would silently stop matching a replacement mic.
+# Harmless when the mic isn't plugged in - the rule just never matches.
+#
+# After this, OBS must use the source named "Elgato Wave 3 Pro" (the source
+# name changes with the profile) - re-select it in the source's properties.
+fix_elgato_wave3_profile() {
+    local conf_dir="/etc/wireplumber/wireplumber.conf.d"
+    local conf="$conf_dir/51-elgato-wave3-pro-audio.conf"
+
+    if ! command -v wireplumber &>/dev/null; then
+        log WARNING "WirePlumber not installed - skipping Elgato Wave:3 profile fix"
+        return 1
+    fi
+
+    local wp_ver; wp_ver=$(wireplumber --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | tail -1)
+    if [ -n "$wp_ver" ] && [ "$(printf '%s\n' 0.5.0 "$wp_ver" | sort -V | head -1)" != "0.5.0" ]; then
+        log WARNING "WirePlumber $wp_ver is older than 0.5 - this fix uses 0.5-style config, skipping"
+        return 1
+    fi
+
+    mkdir -p "$conf_dir"
+    if cat > "$conf" <<'WPEOF'
+# Managed by post-install-ubuntu.sh (fix_elgato_wave3_profile)
+# Elgato Wave:3: force the pro-audio profile - the default mono-fallback
+# profile delivered silence to OBS on this hardware.
+monitor.alsa.rules = [
+  {
+    matches = [
+      { device.vendor.id = "0x0fd9", device.product.id = "0x0070" }
+    ]
+    actions = {
+      update-props = {
+        device.profile = "pro-audio"
+      }
+    }
+  }
+]
+WPEOF
+    then
+        log SUCCESS "Wrote $conf"
+    else
+        log ERROR "Could not write $conf"
+        return 1
+    fi
+
+    # Apply now for the invoking user's session, if there is one.
+    if [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; then
+        local uid; uid=$(id -u "$SUDO_USER")
+        if [ -S "/run/user/$uid/bus" ] && \
+           sudo -u "$SUDO_USER" XDG_RUNTIME_DIR="/run/user/$uid" \
+               DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+               systemctl --user restart wireplumber 2>/dev/null; then
+            log SUCCESS "Restarted WirePlumber for $SUDO_USER - Wave:3 should now show as 'Elgato Wave 3 Pro'"
+        else
+            log INFO "Could not restart WirePlumber for $SUDO_USER - log out/in or reboot to apply"
+        fi
+    fi
+    log INFO "Verify: pactl list cards | grep -A60 Elgato | grep 'Active Profile'  (expect: pro-audio)"
+    log INFO "In OBS: set the mic source's Device to 'Elgato Wave 3 Pro'"
+    [ -t 0 ] && read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _
+    return 0
+}
+
 # ========== PRINTERS (HP/CUPS) ==========
 # CUPS + HPLIP cover the open-source rendering path for most printers, but
 # several HP models - especially older "host-based" LaserJets/inkjets like
@@ -4002,11 +4084,12 @@ show_drivers_menu() {
     ui_header "DRIVERS & EXTRA REPOS"
     echo
     ui_item 1 "DisplayLink Driver (USB/dock display adapters)"
+    ui_item 2 "Fix Elgato Wave:3 silent in OBS (pin WirePlumber pro-audio profile)"
     echo
     ui_item 0 "Back to Main Menu"
     echo
     ui_rule
-    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-1]${NC}${LAVENDER}: ${NC}"
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-2]${NC}${LAVENDER}: ${NC}"
 }
 
 show_printers_menu() {
@@ -4256,6 +4339,7 @@ main() {
                 case "$drv_choice" in
                     0) continue ;;
                     1) reset_tracking; install_displaylink_driver; display_summary ;;
+                    2) fix_elgato_wave3_profile ;;
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
