@@ -3082,7 +3082,7 @@ Sorted alphabetically by key; where a key has more than one binding, the plain `
 | `Mod+v` | Split vertical (for next window) |
 | `Mod+shift+v` | Clipboard history (`copyq toggle`, opens as a floating window) |
 | `Mod+shift+w` | Wallpaper picker (`nitrogen`) |
-| `Mod+shift+XF86Assistant` | Launch Claude Desktop (hardware AI-assistant key, if your keyboard has one) |
+| `Mod+shift+XF86Assistant` | Toggle Claude Desktop show/hide (hardware AI-assistant key, if your keyboard has one) |
 | `XF86Audio{Play,Next,Prev}` | Media control via `playerctl` |
 | `XF86Audio{Raise,Lower,Mute}Volume` | Volume via `pactl`, with a dunst level popup |
 | `XF86MonBrightness{Up,Down}` | Brightness via `brightnessctl`, with a dunst level popup |

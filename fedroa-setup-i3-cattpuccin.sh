@@ -675,6 +675,14 @@ for_window [class="^KeybindingsHelp$"] floating enable, resize set 950 850, move
 for_window [class="^UpdatesTask$"] floating enable, resize set 1000 550, move position center
 for_window [class="^gnome-calendar$"] floating enable, resize set 700 550, move position center
 for_window [class="^System-config-printer\.py$"] floating enable, resize set 750 550, move position center
+# Sized so the sidebar (chat list/projects), the chat input's model/mode
+# selectors, and the scheduled-tasks section below it are all visible at
+# once without clipping - confirmed live at this size (a tighter one left
+# the scheduled-tasks list cut off at the bottom).
+for_window [class="^com\.anthropic\.Claude$"] floating enable, resize set 1200 850, move position center
+# Own line, not chained onto the rule above - same "a chained `mark`
+# silently never applies" gotcha as the AIVibe/Cliamp rules.
+for_window [class="^com\.anthropic\.Claude$"] mark claude-desktop-scratch
 for_window [class="^Screensaver$"] fullscreen enable
 
 # --- launch ---
@@ -758,7 +766,7 @@ bindsym XF86AudioPrev exec --no-startup-id playerctl previous
 # one burst every time, so the modifiers here have to match that exactly
 # rather than binding XF86Assistant alone (which would require it to be
 # pressed with no modifiers held, which this hardware never actually does).
-bindsym $mod+shift+XF86Assistant exec --no-startup-id claude-desktop-unofficial
+bindsym $mod+shift+XF86Assistant exec --no-startup-id ~/.local/bin/claude-desktop-toggle.sh
 
 # --- focus / movement ---
 bindsym $mod+h focus left
@@ -35096,7 +35104,7 @@ ROWS=(
   "Mod+v|Split vertical (for next window)"
   "Mod+shift+v|Clipboard history (copyq)"
   "Mod+shift+w|Wallpaper picker (nitrogen)"
-  "Mod+shift+XF86Assistant|Launch Claude Desktop"
+  "Mod+shift+XF86Assistant|Claude Desktop, toggle show/hide"
   "XF86Audio Play/Next/Prev|Media control (playerctl)"
   "XF86Audio Raise/Lower/Mute Volume|Volume, with a dunst level popup"
   "XF86MonBrightness Up/Down|Brightness, with a dunst level popup"
@@ -35290,6 +35298,43 @@ else
 fi
 EOF
 chmod +x "$BIN/ai-window-toggle.sh"
+
+log "Writing claude-desktop-toggle.sh..."
+cat > "$BIN/claude-desktop-toggle.sh" <<'EOF'
+#!/usr/bin/env bash
+# Toggles Claude Desktop via i3's scratchpad - same show/hide-without-
+# killing pattern as ai-window-toggle.sh/cliamp-toggle.sh, so an
+# in-progress conversation isn't lost by just tucking the window away.
+# Same direct "ask i3 which workspace the marked container is on right
+# now" approach as ai-window-toggle.sh, for the same reason: `scratchpad
+# show`'s own success:true return doesn't reliably mean the window is
+# actually visible.
+mark=claude-desktop-scratch
+
+current_ws=$(i3-msg -t get_tree | python3 -c "
+import json, sys
+t = json.load(sys.stdin)
+def walk(n, ws=None):
+    if n.get('type') == 'workspace':
+        ws = n.get('name')
+    if 'claude-desktop-scratch' in n.get('marks', []):
+        print(ws or '')
+        sys.exit(0)
+    for c in n.get('nodes', []) + n.get('floating_nodes', []):
+        walk(c, ws)
+walk(t)
+")
+
+if [ -z "$current_ws" ]; then
+  exec claude-desktop-unofficial
+elif [ "$current_ws" = "__i3_scratch" ]; then
+  i3-msg "[con_mark=\"$mark\"] scratchpad show" >/dev/null
+  i3-msg "[con_mark=\"$mark\"] resize set 1200 850, move position center" >/dev/null
+else
+  i3-msg "[con_mark=\"$mark\"] move scratchpad" >/dev/null
+fi
+EOF
+chmod +x "$BIN/claude-desktop-toggle.sh"
 
 # ----------------------------------------------------------------------------
 # 12. Wallpaper fallback (solid Catppuccin base color) if none exists
