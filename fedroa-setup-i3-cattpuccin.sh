@@ -35226,6 +35226,7 @@ LABELS=(
   $'  Set Screensaver Text/Image'
   $'  Preview Screensaver'
   $'  Set AI Window Folder'
+  $'  AI API Keys'
   $'  Toggle Caffeine'
   $'  Toggle Do Not Disturb'
   $'  Music Player'
@@ -35243,6 +35244,7 @@ COMMANDS=(
   "kitty --class AppMenuTask -e ~/.local/bin/set-screensaver-text.sh"
   "kitty --class Screensaver -e ~/.local/bin/screensaver.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/set-ai-window-folder.sh"
+  "if [ -x ~/.local/bin/ai-key-manager ]; then ~/.local/bin/ai-key-manager; else ai-key-manager; fi"
   "~/.local/bin/caffeine-toggle.sh"
   "~/.local/bin/dnd-toggle.sh"
   "~/.local/bin/cliamp-toggle.sh"

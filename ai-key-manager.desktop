@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=AI API Keys
+GenericName=API Key Manager
+Comment=Store and test Anthropic (Claude) and Mistral API keys in the keyring
+Exec=ai-key-manager
+Icon=dialog-password
+Terminal=false
+Categories=Utility;Security;Settings;
+Keywords=claude;anthropic;mistral;api;key;crush;secret;
