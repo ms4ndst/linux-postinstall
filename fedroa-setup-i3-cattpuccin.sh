@@ -73,7 +73,7 @@ fi
 # ----------------------------------------------------------------------------
 log "Installing base X11 stack + i3 + rice toolkit via dnf..."
 sudo dnf install -y \
-  xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-xauth xrandr xset xsetroot \
+  xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-xauth xrandr xset xsetroot xrdb \
   i3 i3lock \
   picom polybar rofi dunst kitty \
   xss-lock network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
@@ -868,6 +868,13 @@ bindsym $mod+r mode "resize"
 # graphical-session.target's state. The busctl check keeps `i3 restart`
 # (which re-runs exec, not just exec_always) from spawning a second
 # instance on top of one that's already claimed the name.
+# Loads Xcursor.theme/Xcursor.size (written to ~/.Xresources during setup)
+# into the X RESOURCE_MANAGER - some xcb-cursor-based apps (confirmed:
+# polybar) resolve the cursor theme through these X resources rather than
+# (or in addition to) the XCURSOR_THEME/XCURSOR_SIZE environment variables,
+# and this rice never used Xresources/xrdb before so nothing ever loaded
+# them. Must run before xsetroot/polybar below, not after.
+exec --no-startup-id xrdb -merge ~/.Xresources
 # i3 never sets a root-window cursor of its own - without this, the
 # desktop background (anywhere with no window under the pointer) shows
 # X11's stock default cursor regardless of XCURSOR_THEME/gtk-cursor-theme-
@@ -35038,6 +35045,74 @@ EOF
 chmod +x "$BIN/polybar-theme.sh"
 
 # ----------------------------------------------------------------------------
+# 11c2. Cursor theme switcher (Mod+alt+space -> Cursor Theme) - switches
+#       between the 6 Qogir variants installed above.
+# ----------------------------------------------------------------------------
+log "Writing cursor-theme.sh..."
+cat > "$BIN/cursor-theme.sh" <<'EOF'
+#!/usr/bin/env bash
+# Switches the X11/GTK mouse cursor theme between the 6 real Qogir variants
+# installed during setup (see the Qogir cursor theme step) - the -Light
+# suffix variants aren't offered since they're cursor-identical aliases of
+# their non-Light counterpart. Applies live via the same mechanisms that
+# made polybar/GTK actually pick up a cursor theme in the first place
+# (Xresources via xrdb, gtk-cursor-theme-name), not just next login.
+#
+# i3 itself needs a real restart (not just polybar) - confirmed live: i3
+# is its own xcb/cursor-library client, same as polybar, and loads its
+# cursor (used for window borders/decorations) once rather than
+# re-checking it live, so a theme switch alone left i3's own borders
+# showing the previous theme even after Xresources/gtk-cursor-theme-name
+# were already updated and GTK apps had already picked up the new one.
+# `i3-msg restart` preserves the running session/layout (unlike `exit`)
+# and re-runs i3's own `exec` lines, which also relaunches polybar - so a
+# separate polybar-launch.sh call isn't needed on top of this.
+#
+# Usage:
+#   cursor-theme.sh          # prompts via rofi
+#   cursor-theme.sh <name>   # applies directly, no prompt
+set -euo pipefail
+
+THEMES=(Qogir Qogir-Dark Qogir-Manjaro Qogir-Manjaro-Dark Qogir-Ubuntu Qogir-Ubuntu-Dark)
+
+CHOSEN="${1:-}"
+if [ -z "$CHOSEN" ]; then
+  CHOSEN="$(printf '%s\n' "${THEMES[@]}" | rofi -dmenu -i -p "Cursor Theme" -theme ~/.config/rofi/current.rasi)"
+  [ -z "$CHOSEN" ] && exit 0
+fi
+
+valid=0
+for t in "${THEMES[@]}"; do [ "$t" = "$CHOSEN" ] && valid=1; done
+if [ "$valid" -ne 1 ]; then
+  notify-send "Cursor Theme" "Unknown theme: $CHOSEN"
+  exit 1
+fi
+
+mkdir -p "$HOME/.config/environment.d"
+cat > "$HOME/.config/environment.d/cursor-theme.conf" <<CONF
+XCURSOR_THEME=$CHOSEN
+XCURSOR_SIZE=24
+CONF
+
+cat > "$HOME/.Xresources" <<RES
+Xcursor.theme: $CHOSEN
+Xcursor.size: 24
+RES
+xrdb -merge "$HOME/.Xresources"
+
+for gtk_settings in "$HOME/.config/gtk-3.0/settings.ini" "$HOME/.config/gtk-4.0/settings.ini"; do
+  [ -f "$gtk_settings" ] && sed -i "s/^gtk-cursor-theme-name=.*/gtk-cursor-theme-name=$CHOSEN/" "$gtk_settings"
+done
+gsettings set org.gnome.desktop.interface cursor-theme "$CHOSEN" 2>/dev/null || true
+
+XCURSOR_THEME="$CHOSEN" xsetroot -cursor_name left_ptr
+i3-msg restart >/dev/null
+
+notify-send "Cursor Theme" "Switched to $CHOSEN"
+EOF
+chmod +x "$BIN/cursor-theme.sh"
+
+# ----------------------------------------------------------------------------
 # 11d2. Keybinding cheat sheet (Mod+alt+space -> Keybinding Help) - printed in
 #       a floating kitty window, dismissed on any keypress.
 # ----------------------------------------------------------------------------
@@ -35147,6 +35222,7 @@ cat > "$BIN/app-menu.sh" <<'EOF'
 # copyq/cliamp already float; everything else just runs directly.
 LABELS=(
   $'  Desktop Theme'
+  $'  Cursor Theme'
   $'  Set Screensaver Text/Image'
   $'  Preview Screensaver'
   $'  Set AI Window Folder'
@@ -35163,6 +35239,7 @@ LABELS=(
 )
 COMMANDS=(
   "~/.local/bin/polybar-theme.sh"
+  "~/.local/bin/cursor-theme.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/set-screensaver-text.sh"
   "kitty --class Screensaver -e ~/.local/bin/screensaver.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/set-ai-window-folder.sh"
@@ -35379,30 +35456,72 @@ else
   log "Catppuccin GTK theme already present, skipping download."
 fi
 
-# Catppuccin cursor theme (Mocha, mauve accent - matching GTK_THEME_NAME
-# above). i3 itself has no cursor-theme concept of its own - it's a bare
-# window manager that never sets one, so without this the pointer just
-# falls back to X11's stock default everywhere (GTK apps too: gtk-cursor-
-# theme-size was already being set below, but never gtk-cursor-theme-name,
-# so the size applied to a theme that was never actually chosen). Same
-# prebuilt-download-and-drop-in approach as the GTK theme above - the
-# official catppuccin/cursors releases ship a ready-to-use XCursor theme
-# folder (cursors/ + index.theme), no build step.
-CURSOR_THEME_NAME="catppuccin-mocha-mauve-cursors"
-if [ ! -d "$HOME/.local/share/icons/$CURSOR_THEME_NAME" ]; then
-  log "Downloading Catppuccin cursor theme (Mocha, mauve accent)..."
-  CURSOR_THEME_TMPZIP="$(mktemp --suffix=.zip)"
-  if curl -fLo "$CURSOR_THEME_TMPZIP" \
-      "https://github.com/catppuccin/cursors/releases/download/v2.0.0/${CURSOR_THEME_NAME}.zip" 2>/dev/null; then
+# Qogir cursor theme (all 6 real variants - the upstream -Light suffix
+# variants are skipped, since they're just aliases with identical cursor
+# art to their non-Light counterpart, differing only in icon-theme colors
+# this cursor-only install never uses). i3 itself has no cursor-theme
+# concept of its own - it's a bare window manager that never sets one, so
+# without this the pointer just falls back to X11's stock default
+# everywhere (GTK apps too: gtk-cursor-theme-size was already being set
+# below, but never gtk-cursor-theme-name, so the size applied to a theme
+# that was never actually chosen). No prebuilt cursor-only release exists
+# upstream - vinceliuice/Qogir-icon-theme ships cursors bundled inside its
+# own combined icon+cursor install.sh, which would also drag in the full
+# icon set (this rice already uses Papirus for icons) - so this extracts
+# just the cursors/ directory per variant directly from a shallow clone
+# instead of running that script, writing a minimal index.theme itself
+# (a real Xcursor theme only needs cursors/ + an index.theme with a Name=
+# line; the full icon-listing index.theme upstream ships is for the icon
+# theme half, not needed here). CURSOR_THEME_NAME below is the default
+# active variant - cursor-theme.sh (11e2 below) switches between all 6
+# later without re-running this install.
+CURSOR_THEME_NAME="Qogir"
+if [ ! -d "$HOME/.local/share/icons/Qogir" ]; then
+  log "Downloading Qogir cursor theme (6 variants)..."
+  QOGIR_TMPDIR="$(mktemp -d)"
+  if git clone --depth 1 -q https://github.com/vinceliuice/Qogir-icon-theme.git "$QOGIR_TMPDIR" 2>/dev/null; then
     mkdir -p "$HOME/.local/share/icons"
-    unzip -o "$CURSOR_THEME_TMPZIP" -d "$HOME/.local/share/icons" >/dev/null
+    QOGIR_THEME_SUFFIXES=("" "-Manjaro" "-Ubuntu" "" "-Manjaro" "-Ubuntu")
+    QOGIR_COLOR_SUFFIXES=("" "" "" "-Dark" "-Dark" "-Dark")
+    for i in "${!QOGIR_THEME_SUFFIXES[@]}"; do
+      qname="Qogir${QOGIR_THEME_SUFFIXES[$i]}${QOGIR_COLOR_SUFFIXES[$i]}"
+      qdest="$HOME/.local/share/icons/$qname"
+      rm -rf "$qdest"
+      mkdir -p "$qdest"
+      cp "$QOGIR_TMPDIR/COPYING" "$QOGIR_TMPDIR/AUTHORS" "$qdest/"
+      cp -r "$QOGIR_TMPDIR/src/cursors/dist${QOGIR_THEME_SUFFIXES[$i]}${QOGIR_COLOR_SUFFIXES[$i]}/cursors" "$qdest/"
+      printf '[Icon Theme]\nName=%s\n' "$qname" > "$qdest/index.theme"
+    done
   else
-    warn "Catppuccin cursor theme download failed (network issue?) - the pointer will fall back to whatever's already configured; install it manually later from https://github.com/catppuccin/cursors/releases."
+    warn "Qogir cursor theme download failed (network issue?) - the pointer will fall back to whatever's already configured; install it manually later from https://github.com/vinceliuice/Qogir-icon-theme."
   fi
-  rm -f "$CURSOR_THEME_TMPZIP"
+  rm -rf "$QOGIR_TMPDIR"
 else
-  log "Catppuccin cursor theme already present, skipping download."
+  log "Qogir cursor theme already present, skipping download."
 fi
+
+# Two real, live-confirmed gaps beyond XCURSOR_THEME/gtk-cursor-theme-name
+# above - GTK apps picked up the theme fine, but polybar (and bare X11/XCB
+# toolkit apps generally) kept showing the plain stock X cursor over their
+# own windows:
+#   1. libxcb-cursor's theme lookup only checks the legacy ~/.icons path,
+#      not the XDG ~/.local/share/icons one the theme was actually
+#      installed to above - symlinking every variant into ~/.icons too
+#      (confirmed via real-world reports of this exact polybar symptom)
+#      covers both, and lets cursor-theme.sh switch to any of them later
+#      without needing to re-symlink.
+#   2. Some xcb-cursor-based apps resolve the theme via the Xcursor.theme/
+#      Xcursor.size X resources (X RESOURCE_MANAGER, set by `xrdb`) rather
+#      than (or in addition to) the environment variables - this rice never
+#      used Xresources/xrdb for anything before, so nothing ever set them.
+mkdir -p "$HOME/.icons"
+for qvariant in Qogir Qogir-Dark Qogir-Manjaro Qogir-Manjaro-Dark Qogir-Ubuntu Qogir-Ubuntu-Dark; do
+  [ -d "$HOME/.local/share/icons/$qvariant" ] && ln -sfn "$HOME/.local/share/icons/$qvariant" "$HOME/.icons/$qvariant"
+done
+cat > "$HOME/.Xresources" <<EOF
+Xcursor.theme: $CURSOR_THEME_NAME
+Xcursor.size: 24
+EOF
 
 mkdir -p "$CONF/gtk-3.0" "$CONF/gtk-4.0"
 for gtk_settings in "$CONF/gtk-3.0/settings.ini" "$CONF/gtk-4.0/settings.ini"; do

@@ -860,17 +860,20 @@ fix_logitech_hires_scroll() {
 }
 
 # Elgato Wave:3 USB mic - pins the card to WirePlumber's "pro-audio" profile.
-# Symptom confirmed on this hardware (Fedora 44, PipeWire 1.6.9, WirePlumber
-# 0.5.17): with the auto-picked "analog-stereo + mono-fallback" profile, OBS
-# linked to the mic fine (pw-top: running, ERR 0) yet received silence, while
-# raw ALSA capture (arecord -D plughw:<card>,0 with PipeWire stopped) showed
-# full signal. Resetting ~/.local/state/wireplumber + switching to pro-audio
-# fixed it and survived reboot. Reboots alone never helped because WirePlumber
-# restores its saved profile choice.
 #
-# CONFIDENCE NOTE: the fix was applied as reset + pro-audio together, so it's
-# not proven which of the two was the actual cure - pro-audio is pinned here
-# because it's the half that can be made persistent.
+# ROOT CAUSE NOTE (corrected 2026-09-25): this is NOT the fix for "OBS records
+# silence from the Wave:3". That was diagnosed on Fedora 44 (PipeWire 1.6.9,
+# WirePlumber 0.5.17) as a stale OBS audio source: in the broken state
+# pw-record from the default source peaked normally and pw-link showed the
+# mic linked into OBS, yet OBS's meter stayed flat. Deleting and re-adding
+# the OBS "Audio Input Capture" source (or re-selecting its Device) fixed it;
+# reboots, PipeWire/WirePlumber restarts and the profile switch did not.
+# If it recurs: re-create/re-select the source in OBS first.
+#
+# What this function still does: pin pro-audio so the mic always shows up as
+# the stable "Elgato Wave 3 Pro" source instead of the auto-picked
+# "analog-stereo + mono-fallback" profile. Kept because it works and is
+# harmless - not because it is proven necessary.
 #
 # Needs WirePlumber >= 0.5 (SPA-JSON .conf drop-ins); 0.4 used Lua config
 # and is refused loudly rather than half-configured.
@@ -901,8 +904,8 @@ fix_elgato_wave3_profile() {
     mkdir -p "$conf_dir"
     if cat > "$conf" <<'WPEOF'
 # Managed by post-install-opensuse.sh (fix_elgato_wave3_profile)
-# Elgato Wave:3: force the pro-audio profile - the default mono-fallback
-# profile delivered silence to OBS on this hardware.
+# Elgato Wave:3: pin the pro-audio profile (stable source name).
+# Silence in OBS was a stale OBS source, not this - re-create it in OBS.
 monitor.alsa.rules = [
   {
     matches = [
@@ -937,6 +940,7 @@ WPEOF
     fi
     log INFO "Verify: pactl list cards | grep -A60 Elgato | grep 'Active Profile'  (expect: pro-audio)"
     log INFO "In OBS: set the mic source's Device to 'Elgato Wave 3 Pro'"
+    log INFO "If OBS ever records silence from the mic: delete + re-add the OBS audio source (reboots don't fix it)"
     [ -t 0 ] && read -p "$(printf "${DIM}${SUBTEXT}  Press [Enter] to continue…${NC}")" _
     return 0
 }
@@ -3246,7 +3250,7 @@ show_peripherals_menu() {
     echo
     ui_item 1 "Install Solaar (peripheral manager)"
     ui_item 2 "Fix slow scroll wheel (MX Anywhere 3S - enable Scroll Wheel Resolution)"
-    ui_item 3 "Fix Elgato Wave:3 silent in OBS (pin WirePlumber pro-audio profile)"
+    ui_item 3 "Pin Elgato Wave:3 to pro-audio profile (WirePlumber)"
     echo
     ui_item 0 "Back to Main Menu"
     echo
