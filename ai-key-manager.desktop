@@ -7,4 +7,4 @@ Exec=ai-key-manager
 Icon=dialog-password
 Terminal=false
 Categories=Utility;Security;Settings;
-Keywords=claude;anthropic;mistral;api;key;crush;secret;
+Keywords=claude;anthropic;mistral;api;key;secret;

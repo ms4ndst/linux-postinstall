@@ -1394,14 +1394,14 @@ inherit = bar/base
 ; the only one carrying the battery widget. polybar-launch.sh launches this
 ; bar name on whichever output xrandr reports as primary. Clock is the very
 ; last segment, farthest right.
-modules-right = sep-base-mauve-cap tray-cap sep-mauve-cap-surface0 tray sep-surface0-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-teal bluetooth sep-teal-green caffeine sep-green-red dnd sep-red-peach battery sep-peach-yellow memory sep-yellow-green cpu sep-green-yellow updates sep-yellow-lavender layout sep-yellow-lavender date-icon date
+modules-right = sep-base-mauve-cap tray-cap sep-mauve-cap-surface0 tray sep-surface0-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-teal bluetooth sep-teal-green caffeine sep-green-red dnd sep-red-peach battery sep-peach-yellow memory sep-yellow-green cpu gpu sep-green-yellow updates sep-yellow-lavender layout sep-yellow-lavender date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
 ; same as top-primary minus tray/battery - without this split every extra
 ; monitor showed a permanently empty tray slot since only one instance can
 ; ever win the X11 tray selection.
-modules-right = sep-base-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-yellow memory sep-yellow-green cpu sep-green-yellow updates sep-yellow-lavender date-icon date
+modules-right = sep-base-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-yellow memory sep-yellow-green cpu gpu sep-green-yellow updates sep-yellow-lavender date-icon date
 
 ; --- powerline separators ---------------------------------------------------
 ; Each is a plain glyph rendered in the color of the segment being LEFT
@@ -1739,6 +1739,16 @@ label = "   %percentage%% "
 label-foreground = ${colors.base}
 format-background = ${colors.green}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.green}
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.base}
+label = " %output%% "
+label-foreground = ${colors.base}
 [module/layout]
 type = custom/script
 exec = ~/.local/bin/polybar-layout.sh
@@ -2019,11 +2029,11 @@ inherit = bar/base
 ; area - everything else here is flat text, so a small muted box (Current
 ; Line, not an accent) reads as "a container", not "another pill in a
 ; powerline chain" the way Mocha's mauve tray-cap did.
-modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain updates sep-plain layout sep-plain date-icon date
+modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu gpu sep-plain updates sep-plain layout sep-plain date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain updates sep-plain date-icon date
+modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain memory sep-plain cpu gpu sep-plain updates sep-plain date-icon date
 
 [module/sep-plain]
 type = custom/text
@@ -2176,6 +2186,13 @@ interval = 2
 label = "  %percentage%%"
 label-foreground = ${colors.green}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+label = " 󰢮 %output%%"
+label-foreground = ${colors.green}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -2260,11 +2277,11 @@ inherit = bar/base
 ; single shared-background island with its own widgets packed tight inside
 ; (no divider between them - only the icon color tells them apart), a real
 ; empty gap-nord module between islands instead of a colored separator.
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu updates gap-nord layout gap-nord tray gap-nord date-icon date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gpu updates gap-nord layout gap-nord tray gap-nord date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless gap-nord memory cpu updates gap-nord date-icon date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless gap-nord memory cpu gpu updates gap-nord date-icon date
 
 [module/gap-nord]
 type = custom/text
@@ -2431,6 +2448,14 @@ label = "  %percentage%% "
 label-foreground = ${colors.green}
 format-background = ${colors.surface0}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+label = " 󰢮 %output%% "
+label-foreground = ${colors.green}
+format-background = ${colors.surface0}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -2517,11 +2542,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Plain white text throughout, matching the source's actual near-monochrome
@@ -2668,6 +2693,15 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.text}
+label = "%output%%"
+label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -2743,11 +2777,11 @@ modules-center = media
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date power
+modules-right = tray backlight pulseaudio cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio cliamp network-wired network-wireless memory cpu gpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -2902,6 +2936,15 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.text}
+label = "%output%%"
+label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -2999,11 +3042,11 @@ inherit = bar/base
 ; since it's primary-only. Every widget on the right is plain/unfilled,
 ; dot-separated, with one final LD/RD-bracketed group for the clock.
 modules-left = LD i3 RD dot LD tray RD
-modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot updates dot layout dot LD date-icon date RD
+modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu gpu dot updates dot layout dot LD date-icon date RD
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot memory dot cpu dot updates dot LD date-icon date RD
+modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot memory dot cpu gpu dot updates dot LD date-icon date RD
 
 [module/LD]
 type = custom/text
@@ -3181,6 +3224,13 @@ interval = 2
 label = "  %percentage%% "
 label-foreground = ${colors.green}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+label = " 󰢮 %output%% "
+label-foreground = ${colors.green}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -3275,11 +3325,11 @@ modules-center = bi date bd
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi bluetooth caffeine dnd bd sep bi battery memory cpu filesystem updates layout bd sep bi-tray tray bd-tray
+modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi bluetooth caffeine dnd bd sep bi battery memory cpu gpu filesystem updates layout bd sep bi-tray tray bd-tray
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi memory cpu filesystem updates bd
+modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi memory cpu gpu filesystem updates bd
 
 [module/bi]
 type = custom/text
@@ -3485,6 +3535,15 @@ format-prefix = " "
 format-prefix-foreground = ${colors.text}
 label = " %percentage%% "
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.text}
+label = " %output%% "
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -3580,11 +3639,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -3727,6 +3786,15 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.text}
+label = "%output%%"
+label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -3818,11 +3886,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep updates sep layout sep tray sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu gpu-icon gpu sep updates sep layout sep tray sep date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep updates sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu gpu-icon gpu sep updates sep date-icon date
 
 [module/sep]
 type = custom/text
@@ -4041,6 +4109,27 @@ label-foreground = ${colors.base}
 ; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
 ; dark bar and become invisible against a light chip (caught via direct
 ; feedback, not assumed).
+
+[module/gpu-icon]
+type = custom/text
+format = <label>
+format-background = ${colors.red}
+label = " 󰢮 "
+label-foreground = ${colors.base}
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.surface0}
+label = " %output%% "
+label-foreground = ${colors.base}
+
+; Tray specifically uses the theme's own dark base, not the light cream
+; surface0 every other widget's value-chip uses - most tray icons
+; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
+; dark bar and become invisible against a light chip (caught via direct
+; feedback, not assumed).
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -4119,11 +4208,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray gap-cb backlight pulseaudio media cliamp gap-cb network-wired network-wireless bluetooth gap-cb caffeine dnd battery gap-cb memory cpu updates layout gap-cb date
+modules-right = tray gap-cb backlight pulseaudio media cliamp gap-cb network-wired network-wireless bluetooth gap-cb caffeine dnd battery gap-cb memory cpu gpu updates layout gap-cb date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp gap-cb network-wired network-wireless gap-cb memory cpu updates gap-cb date
+modules-right = backlight pulseaudio media cliamp gap-cb network-wired network-wireless gap-cb memory cpu gpu updates gap-cb date
 
 ; --- real widgets ------------------------------------------------------------
 [module/gap-cb]
@@ -4280,6 +4369,16 @@ format-background = ${colors.aqua}
 label = "%percentage%%"
 label-foreground = ${colors.base}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.aqua}
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.base}
+label = "%output%%"
+label-foreground = ${colors.base}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -4357,11 +4456,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -4502,6 +4601,15 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.text}
+label = "%output%%"
+label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -4580,11 +4688,11 @@ modules-center = title
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep bluetooth sep caffeine sep dnd sep battery sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep layout sep tray sep dti date dtd
+modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep bluetooth sep caffeine sep dnd sep battery sep memi memory memd sep cpi cpu gpu cpd sep fsi filesystem fsd sep updates sep layout sep tray sep dti date dtd
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep dti date dtd
+modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep memi memory memd sep cpi cpu gpu cpd sep fsi filesystem fsd sep updates sep dti date dtd
 
 ; --- bracket pairs -------------------------------------------------------
 [module/sep]
@@ -4856,6 +4964,14 @@ format-prefix = " "
 format-prefix-foreground = ${colors.yellow}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.yellow}
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -4935,11 +5051,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bi memory cpu filesystem bd sep bi network-wired network-wireless bd sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
+modules-right = bi memory cpu gpu filesystem bd sep bi network-wired network-wireless bd sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bi memory cpu filesystem bd sep bi network-wired network-wireless bd sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
+modules-right = bi memory cpu gpu filesystem bd sep bi network-wired network-wireless bd sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
 
 [module/bi]
 type = custom/text
@@ -5104,6 +5220,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -5187,11 +5310,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu filesystem updates layout tray date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu filesystem updates layout tray date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu filesystem updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
@@ -5340,6 +5463,15 @@ format-prefix-font = 1
 format-prefix-foreground = ${colors.blue}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-font = 1
+format-prefix-foreground = ${colors.blue}
+label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -5427,11 +5559,11 @@ modules-center = bi i3 bd
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = neti network-wired network-wireless netd sep bti bluetooth btd sep cafi caffeine cafd sep dndi dnd dndd sep bati battery batd sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep layout sep tray sep dti date dtd
+modules-right = neti network-wired network-wireless netd sep bti bluetooth btd sep cafi caffeine cafd sep dndi dnd dndd sep bati battery batd sep memi memory memd sep cpi cpu gpu cpd sep fsi filesystem fsd sep updates sep layout sep tray sep dti date dtd
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep dti date dtd
+modules-right = neti network-wired network-wireless netd sep memi memory memd sep cpi cpu gpu cpd sep fsi filesystem fsd sep updates sep dti date dtd
 
 [module/bi]
 type = custom/text
@@ -5786,6 +5918,14 @@ format-background = ${colors.surface0}
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -5861,11 +6001,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -5995,6 +6135,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -6078,11 +6225,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu gpu dots updates dots layout dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu dots updates dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu gpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -6208,6 +6355,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -6282,11 +6436,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -6451,6 +6605,14 @@ format-prefix = " "
 format-prefix-foreground = ${colors.magenta}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.magenta}
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -6529,11 +6691,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -6691,6 +6853,14 @@ format-prefix = " "
 format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.pink}
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -6773,11 +6943,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -6940,6 +7110,18 @@ label = "%percentage%%"
 ; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
 ; and this theme's own bar background is only ~90% opaque, not a fully
 ; reliable backdrop by itself.
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
+
+; Explicit dark, opaque tray backdrop - most tray icons (Discord,
+; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
+; and this theme's own bar background is only ~90% opaque, not a fully
+; reliable backdrop by itself.
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -7024,11 +7206,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -7181,6 +7363,14 @@ format-prefix = " "
 format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.pink}
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -7257,11 +7447,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date dots power
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu gpu dots updates dots layout dots tray dots date dots power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu dots updates dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu gpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -7415,6 +7605,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -7497,11 +7694,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu filesystem updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu filesystem updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu filesystem updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -7644,6 +7841,15 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.text}
+label = "%output%%"
+label-foreground = ${colors.text}
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -7720,11 +7926,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -7873,6 +8079,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -7943,11 +8156,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -8107,6 +8320,14 @@ format-prefix = " "
 format-prefix-foreground = ${colors.red}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.red}
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -8201,11 +8422,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu temperature updates layout tray date powermenu
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu temperature updates date
 
 ; --- real widgets, from the source's own nord-top/nord-down -----------------
 [module/i3]
@@ -8293,6 +8514,16 @@ format = <label>
 label = "  %percentage%%"
 label-foreground = ${colors.green}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format = <label>
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.green}
+label = "%output%%"
+label-foreground = ${colors.green}
 [module/memory]
 type = internal/memory
 interval = 2
@@ -8490,11 +8721,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu temperature updates layout tray date powermenu
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu temperature updates date
 
 ; --- real widgets, from the source's own nord-top/nord-down -----------------
 [module/i3]
@@ -8579,6 +8810,16 @@ format = <label>
 label = "  %percentage%%"
 label-foreground = ${colors.green}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format = <label>
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.green}
+label = "%output%%"
+label-foreground = ${colors.green}
 [module/memory]
 type = internal/memory
 interval = 2
@@ -8774,11 +9015,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -8938,6 +9179,14 @@ format-background = ${colors.surface0}
 format-prefix = " "
 label = " %percentage%% "
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = "󰢮 "
+label = " %output%% "
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -9033,11 +9282,11 @@ modules-center = date
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu filesystem updates sep layout sep tray
+modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu gpu filesystem updates sep layout sep tray
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep memory cpu filesystem updates
+modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep memory cpu gpu filesystem updates
 
 [module/sep]
 type = custom/text
@@ -9208,6 +9457,15 @@ format-prefix = " "
 format-prefix-foreground = ${colors.text}
 label = " %percentage%% "
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.text}
+label = " %output%% "
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -9303,11 +9561,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Plain white text throughout, matching the source's actual near-monochrome
@@ -9454,6 +9712,15 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.text}
+label = "%output%%"
+label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -9529,11 +9796,11 @@ modules-center = media
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date power
+modules-right = tray backlight pulseaudio cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio cliamp network-wired network-wireless memory cpu gpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -9688,6 +9955,15 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.text}
+label = "%output%%"
+label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -9785,11 +10061,11 @@ inherit = bar/base
 ; since it's primary-only. Every widget on the right is plain/unfilled,
 ; dot-separated, with one final LD/RD-bracketed group for the clock.
 modules-left = i3 dot tray
-modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot updates dot layout dot date-icon date
+modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu gpu dot updates dot layout dot date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot memory dot cpu dot updates dot date-icon date
+modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot memory dot cpu gpu dot updates dot date-icon date
 
 [module/dot]
 type = custom/text
@@ -9953,6 +10229,13 @@ interval = 2
 label = "  %percentage%% "
 label-foreground = ${colors.green}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+label = " 󰢮 %output%% "
+label-foreground = ${colors.green}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -10038,11 +10321,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -10185,6 +10468,15 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.text}
+label = "%output%%"
+label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -10276,11 +10568,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep updates sep layout sep tray sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu gpu-icon gpu sep updates sep layout sep tray sep date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep updates sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu gpu-icon gpu sep updates sep date-icon date
 
 [module/sep]
 type = custom/text
@@ -10499,6 +10791,27 @@ label-foreground = ${colors.base}
 ; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
 ; dark bar and become invisible against a light chip (caught via direct
 ; feedback, not assumed).
+
+[module/gpu-icon]
+type = custom/text
+format = <label>
+format-background = ${colors.red}
+label = " 󰢮 "
+label-foreground = ${colors.base}
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.surface0}
+label = " %output%% "
+label-foreground = ${colors.base}
+
+; Tray specifically uses the theme's own dark base, not the light cream
+; surface0 every other widget's value-chip uses - most tray icons
+; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
+; dark bar and become invisible against a light chip (caught via direct
+; feedback, not assumed).
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -10572,14 +10885,14 @@ inherit = bar/base
 ; the only one carrying the battery widget. polybar-launch.sh launches this
 ; bar name on whichever output xrandr reports as primary. Clock is the very
 ; last segment, farthest right.
-modules-right = tray-cap tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date-icon date
+modules-right = tray-cap tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
 ; same as top-primary minus tray/battery - without this split every extra
 ; monitor showed a permanently empty tray slot since only one instance can
 ; ever win the X11 tray selection.
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date-icon date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date-icon date
 
 ; --- powerline separators ---------------------------------------------------
 ; Each is a plain glyph rendered in the color of the segment being LEFT
@@ -10775,6 +11088,16 @@ label = "   %percentage%% "
 label-foreground = ${colors.base}
 format-background = ${colors.green}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.green}
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.base}
+label = " %output%% "
+label-foreground = ${colors.base}
 [module/layout]
 type = custom/script
 exec = ~/.local/bin/polybar-layout.sh
@@ -10850,11 +11173,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray gap-cb backlight pulseaudio media cliamp gap-cb network-wired network-wireless bluetooth gap-cb caffeine dnd battery gap-cb memory cpu updates layout gap-cb date
+modules-right = tray gap-cb backlight pulseaudio media cliamp gap-cb network-wired network-wireless bluetooth gap-cb caffeine dnd battery gap-cb memory cpu gpu updates layout gap-cb date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp gap-cb network-wired network-wireless gap-cb memory cpu updates gap-cb date
+modules-right = backlight pulseaudio media cliamp gap-cb network-wired network-wireless gap-cb memory cpu gpu updates gap-cb date
 
 ; --- real widgets ------------------------------------------------------------
 [module/gap-cb]
@@ -11011,6 +11334,16 @@ format-background = ${colors.aqua}
 label = "%percentage%%"
 label-foreground = ${colors.base}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.aqua}
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.base}
+label = "%output%%"
+label-foreground = ${colors.base}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -11088,11 +11421,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -11233,6 +11566,15 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.text}
+label = "%output%%"
+label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -11311,11 +11653,11 @@ modules-center = title
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep filesystem sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep filesystem sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep filesystem sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep filesystem sep updates sep date
 
 ; --- bracket pairs -------------------------------------------------------
 [module/sep]
@@ -11459,6 +11801,14 @@ format-prefix = " "
 format-prefix-foreground = ${colors.yellow}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.yellow}
+label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -11552,11 +11902,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = memory cpu filesystem sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
+modules-right = memory cpu gpu filesystem sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = memory cpu filesystem sep network-wired network-wireless sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
+modules-right = memory cpu gpu filesystem sep network-wired network-wireless sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -11705,6 +12055,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -11788,11 +12145,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu filesystem updates layout tray date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu filesystem updates layout tray date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu filesystem updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
@@ -11941,6 +12298,15 @@ format-prefix-font = 1
 format-prefix-foreground = ${colors.blue}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-font = 1
+format-prefix-foreground = ${colors.blue}
+label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -12026,11 +12392,11 @@ inherit = bar/base
 ; area - everything else here is flat text, so a small muted box (Current
 ; Line, not an accent) reads as "a container", not "another pill in a
 ; powerline chain" the way Mocha's mauve tray-cap did.
-modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain updates sep-plain layout sep-plain date-icon date
+modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu gpu sep-plain updates sep-plain layout sep-plain date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain updates sep-plain date-icon date
+modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain memory sep-plain cpu gpu sep-plain updates sep-plain date-icon date
 
 [module/sep-plain]
 type = custom/text
@@ -12183,6 +12549,13 @@ interval = 2
 label = "  %percentage%%"
 label-foreground = ${colors.green}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+label = " 󰢮 %output%%"
+label-foreground = ${colors.green}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -12263,11 +12636,11 @@ modules-center = i3
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep filesystem sep updates sep layout sep tray sep date
+modules-right = network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep filesystem sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = network-wired network-wireless sep memory sep cpu sep filesystem sep updates sep date
+modules-right = network-wired network-wireless sep memory sep cpu gpu sep filesystem sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -12421,6 +12794,14 @@ format-background = ${colors.surface0}
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -12504,11 +12885,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -12638,6 +13019,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -12715,11 +13103,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu gpu dots updates dots layout dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu dots updates dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu gpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -12845,6 +13233,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -12919,11 +13314,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -13088,6 +13483,14 @@ format-prefix = " "
 format-prefix-foreground = ${colors.magenta}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.magenta}
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -13166,11 +13569,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -13328,6 +13731,14 @@ format-prefix = " "
 format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.pink}
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -13410,11 +13821,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -13562,6 +13973,18 @@ label = "%percentage%%"
 ; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
 ; and this theme's own bar background is only ~90% opaque, not a fully
 ; reliable backdrop by itself.
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
+
+; Explicit dark, opaque tray backdrop - most tray icons (Discord,
+; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
+; and this theme's own bar background is only ~90% opaque, not a fully
+; reliable backdrop by itself.
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -13646,11 +14069,11 @@ inherit = bar/base
 ; single shared-background island with its own widgets packed tight inside
 ; (no divider between them - only the icon color tells them apart), a real
 ; empty gap-nord module between islands instead of a colored separator.
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu updates gap-nord layout gap-nord tray gap-nord date-icon date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gpu updates gap-nord layout gap-nord tray gap-nord date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless gap-nord memory cpu updates gap-nord date-icon date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless gap-nord memory cpu gpu updates gap-nord date-icon date
 
 [module/gap-nord]
 type = custom/text
@@ -13817,6 +14240,14 @@ label = "  %percentage%% "
 label-foreground = ${colors.green}
 format-background = ${colors.surface0}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+label = " 󰢮 %output%% "
+label-foreground = ${colors.green}
+format-background = ${colors.surface0}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -13902,11 +14333,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -14059,6 +14490,14 @@ format-prefix = " "
 format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.pink}
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -14135,11 +14574,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date dots power
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu gpu dots updates dots layout dots tray dots date dots power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu dots updates dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu gpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -14293,6 +14732,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -14375,11 +14821,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu filesystem updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu filesystem updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu filesystem updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -14522,6 +14968,15 @@ interval = 2
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.text}
+label = "%output%%"
+label-foreground = ${colors.text}
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -14598,11 +15053,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -14751,6 +15206,13 @@ interval = 2
 format-prefix = " "
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -14821,11 +15283,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -14985,6 +15447,14 @@ format-prefix = " "
 format-prefix-foreground = ${colors.red}
 label = "%percentage%%"
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-prefix = "󰢮 "
+format-prefix-foreground = ${colors.red}
+label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -15079,11 +15549,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu temperature updates layout tray date powermenu
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu temperature updates date
 
 ; --- real widgets, from the source's own nord-top/nord-down -----------------
 [module/i3]
@@ -15171,6 +15641,16 @@ format = <label>
 label = "  %percentage%%"
 label-foreground = ${colors.green}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format = <label>
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.green}
+label = "%output%%"
+label-foreground = ${colors.green}
 [module/memory]
 type = internal/memory
 interval = 2
@@ -15368,11 +15848,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu temperature updates layout tray date powermenu
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu temperature updates date
 
 ; --- real widgets, from the source's own nord-top/nord-down -----------------
 [module/i3]
@@ -15457,6 +15937,16 @@ format = <label>
 label = "  %percentage%%"
 label-foreground = ${colors.green}
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format = <label>
+format-prefix = "GPU "
+format-prefix-foreground = ${colors.green}
+label = "%output%%"
+label-foreground = ${colors.green}
 [module/memory]
 type = internal/memory
 interval = 2
@@ -15652,11 +16142,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -15816,6 +16306,14 @@ format-background = ${colors.surface0}
 format-prefix = " "
 label = " %percentage%% "
 
+
+[module/gpu]
+type = custom/script
+exec = ~/.local/bin/polybar-gpu.sh
+interval = 2
+format-background = ${colors.surface0}
+format-prefix = "󰢮 "
+label = " %output%% "
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -16186,6 +16684,35 @@ while true; do
 done
 EOF
 chmod +x "$BIN/polybar-updates.sh"
+
+log "Writing polybar-gpu.sh..."
+cat > "$BIN/polybar-gpu.sh" <<'EOF'
+#!/usr/bin/env bash
+# polybar custom/script module: shows GPU load percentage. Tries NVIDIA
+# first (nvidia-smi, works without root), then the amdgpu kernel driver's
+# own sysfs gpu_busy_percent (also no-root) - covers the two GPU vendors
+# that expose utilization without special permissions. Intel's own
+# equivalent (intel_gpu_top) commonly needs root or a perf_event_paranoid
+# adjustment on a stock install, so it's deliberately not attempted here
+# rather than shipping a widget that silently never works on most
+# Intel-only machines. Prints nothing (module renders empty, taking no bar
+# space) if neither path is available, matching how the network/media
+# widgets already hide themselves rather than show a placeholder for
+# hardware that isn't there.
+if command -v nvidia-smi &>/dev/null; then
+  pct=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1)
+fi
+if [ -z "$pct" ]; then
+  for f in /sys/class/drm/card*/device/gpu_busy_percent; do
+    [ -f "$f" ] || continue
+    pct=$(cat "$f" 2>/dev/null)
+    [ -n "$pct" ] && break
+  done
+fi
+[ -z "$pct" ] && exit 0
+printf "%s\n" "$pct"
+EOF
+chmod +x "$BIN/polybar-gpu.sh"
 
 log "Writing software-update.sh (zypper dup + reboot-required check)..."
 cat > "$BIN/software-update.sh" <<'EOF'

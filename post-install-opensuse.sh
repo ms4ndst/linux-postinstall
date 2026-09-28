@@ -1710,7 +1710,6 @@ install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
     install_jan
-    install_crush
     install_ai_key_manager
     install_localai
     install_claude_code
@@ -1742,39 +1741,10 @@ install_ollama() {
 # as the Fedora/Ubuntu/Arch scripts.
 install_jan() { flatpak_install_flathub ai.jan.Jan "Jan"; }
 
-# Crush (https://github.com/charmbracelet/crush) - Charm's terminal AI coding
-# agent (multi-provider: Anthropic, OpenAI, Gemini, OpenRouter, etc. - pick
-# one with ctrl+l inside the app). Charm's own yum-style repo needs a GPG
-# key/repo file added for an ongoing subscription to updates; simpler and
-# consistent with how this script handles other GitHub-released tools
-# (install_slack above) to just grab the current release's own .rpm and let
-# zypper resolve it, no new repo to manage.
-install_crush() {
-    if command -v crush &>/dev/null; then
-        SKIPPED_PACKAGES+=("crush"); ((TOTAL_SKIPPED++)); log INFO "Already installed: crush"; return 0
-    fi
-    log INFO "Looking up the latest Crush release..."
-    local url
-    url=$(curl -fsSL "https://api.github.com/repos/charmbracelet/crush/releases/latest" 2>/dev/null \
-        | grep -oP '"browser_download_url":\s*"\K[^"]*\.x86_64\.rpm(?=")' | head -1)
-    if [ -z "$url" ]; then
-        FAILED_PACKAGES+=("crush"); ((TOTAL_FAILED++))
-        log WARNING "No prebuilt Crush rpm found - get it from https://github.com/charmbracelet/crush/releases"; return 0
-    fi
-    local t; t=$(mktemp -d)
-    if curl -fL --retry 2 -o "$t/crush.rpm" "$url" 2>/dev/null && zypper --non-interactive install "$t/crush.rpm" 2>/dev/null; then
-        rm -rf "$t"
-        INSTALLED_PACKAGES+=("crush"); ((TOTAL_INSTALLED++))
-        log SUCCESS "Installed: crush (run 'crush' - ctrl+l to pick a provider)"; return 0
-    fi
-    rm -rf "$t"
-    FAILED_PACKAGES+=("crush"); ((TOTAL_FAILED++))
-    log WARNING "Crush install failed - get it from https://github.com/charmbracelet/crush/releases"; return 0
-}
-
 # AI API key manager - GUI (zenity) for storing/testing/removing Anthropic and
 # Mistral API keys in the Secret Service keyring (service=anthropic|mistral),
-# which ~/.config/crush/crushrc reads via `secret-tool lookup`. Keys never touch
+# readable by any tool that shells out to `secret-tool lookup` for its own
+# credentials. Keys never touch
 # argv, disk or shell history. Installs /usr/local/bin/ai-key-manager plus a
 # launcher so it shows up in rofi drun / any app menu as "AI API Keys".
 # Prefers the repo copy (ai-key-manager.sh next to this script) so edits live
@@ -1792,7 +1762,8 @@ install_ai_key_manager() {
         cat > /usr/local/bin/ai-key-manager <<'AIKEYMGR_EOF'
 #!/usr/bin/env bash
 # ai-key-manager — store/test/remove Anthropic + Mistral API keys in the
-# Secret Service keyring (GNOME Keyring). Used by ~/.config/crush/crushrc:
+# Secret Service keyring (GNOME Keyring). Readable by any tool that shells
+# out to secret-tool for its own credentials, e.g.:
 #   secret-tool lookup service anthropic|mistral
 # Keys never touch argv, disk, or shell history: zenity -> stdin -> secret-tool,
 # and curl reads its auth header from a process-substitution fd.
@@ -1914,7 +1885,7 @@ Exec=/usr/local/bin/ai-key-manager
 Icon=dialog-password
 Terminal=false
 Categories=Utility;Security;Settings;
-Keywords=claude;anthropic;mistral;api;key;crush;secret;
+Keywords=claude;anthropic;mistral;api;key;secret;
 AIKEYMGR_EOF
     chmod 644 /usr/share/applications/ai-key-manager.desktop
 

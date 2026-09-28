@@ -658,7 +658,6 @@ install_ai_tools() {
     log INFO "Installing AI Tools..."
     install_ollama
     install_jan
-    install_crush
     install_ai_key_manager
     install_localai
     install_claude_code
@@ -689,28 +688,10 @@ install_ollama() {
 # remote providers. Flathub-only (no AUR package that stays reliably current).
 install_jan() { flatpak_install_flathub ai.jan.Jan "Jan"; }
 
-# Crush (https://github.com/charmbracelet/crush) - Charm's terminal AI coding
-# agent (multi-provider: Anthropic, OpenAI, Gemini, OpenRouter, etc. - pick
-# one with ctrl+l inside the app). Packaged in the AUR as crush-bin (a
-# prebuilt-binary package, not a from-source build), so this goes through
-# the same aur_install helper as everything else in this script that isn't
-# in the official repos, rather than hand-rolling a release-binary download.
-install_crush() {
-    if command -v crush &>/dev/null; then
-        SKIPPED_PACKAGES+=("crush"); ((TOTAL_SKIPPED++)); log INFO "Already installed: crush"; return 0
-    fi
-    log INFO "Installing Crush (AUR: crush-bin)..."
-    if aur_install crush-bin && command -v crush &>/dev/null; then
-        INSTALLED_PACKAGES+=("crush"); ((TOTAL_INSTALLED++))
-        log SUCCESS "Installed: crush (run 'crush' - ctrl+l to pick a provider)"; return 0
-    fi
-    FAILED_PACKAGES+=("crush"); ((TOTAL_FAILED++))
-    log WARNING "Crush install failed - try manually: yay -S crush-bin"; return 0
-}
-
 # AI API key manager - GUI (zenity) for storing/testing/removing Anthropic and
 # Mistral API keys in the Secret Service keyring (service=anthropic|mistral),
-# which ~/.config/crush/crushrc reads via `secret-tool lookup`. Keys never touch
+# readable by any tool that shells out to `secret-tool lookup` for its own
+# credentials. Keys never touch
 # argv, disk or shell history. Installs /usr/local/bin/ai-key-manager plus a
 # launcher so it shows up in rofi drun / any app menu as "AI API Keys".
 # Prefers the repo copy (ai-key-manager.sh next to this script) so edits live
@@ -728,7 +709,8 @@ install_ai_key_manager() {
         cat > /usr/local/bin/ai-key-manager <<'AIKEYMGR_EOF'
 #!/usr/bin/env bash
 # ai-key-manager — store/test/remove Anthropic + Mistral API keys in the
-# Secret Service keyring (GNOME Keyring). Used by ~/.config/crush/crushrc:
+# Secret Service keyring (GNOME Keyring). Readable by any tool that shells
+# out to secret-tool for its own credentials, e.g.:
 #   secret-tool lookup service anthropic|mistral
 # Keys never touch argv, disk, or shell history: zenity -> stdin -> secret-tool,
 # and curl reads its auth header from a process-substitution fd.
@@ -850,7 +832,7 @@ Exec=/usr/local/bin/ai-key-manager
 Icon=dialog-password
 Terminal=false
 Categories=Utility;Security;Settings;
-Keywords=claude;anthropic;mistral;api;key;crush;secret;
+Keywords=claude;anthropic;mistral;api;key;secret;
 AIKEYMGR_EOF
     chmod 644 /usr/share/applications/ai-key-manager.desktop
 

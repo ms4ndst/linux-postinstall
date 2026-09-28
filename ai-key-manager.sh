@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ai-key-manager — store/test/remove Anthropic + Mistral API keys in the
-# Secret Service keyring (GNOME Keyring). Used by ~/.config/crush/crushrc:
+# Secret Service keyring (GNOME Keyring). Readable by any tool that shells
+# out to secret-tool for its own credentials, e.g.:
 #   secret-tool lookup service anthropic|mistral
 # Keys never touch argv, disk, or shell history: zenity -> stdin -> secret-tool,
 # and curl reads its auth header from a process-substitution fd.
