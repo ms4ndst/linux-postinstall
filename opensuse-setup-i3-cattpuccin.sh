@@ -1394,14 +1394,14 @@ inherit = bar/base
 ; the only one carrying the battery widget. polybar-launch.sh launches this
 ; bar name on whichever output xrandr reports as primary. Clock is the very
 ; last segment, farthest right.
-modules-right = sep-base-mauve-cap tray-cap sep-mauve-cap-surface0 tray sep-surface0-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-teal bluetooth sep-teal-green caffeine sep-green-red dnd sep-red-peach battery sep-peach-yellow memory sep-yellow-green cpu gpu sep-green-yellow updates sep-yellow-lavender layout sep-yellow-lavender date-icon date
+modules-right = sep-base-mauve-cap tray-cap sep-mauve-cap-surface0 tray sep-surface0-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-teal bluetooth sep-teal-green caffeine sep-green-red dnd sep-red-peach battery sep-peach-yellow memory sep-yellow-green cpu sep-green-yellow updates sep-yellow-lavender layout sep-yellow-lavender date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
 ; same as top-primary minus tray/battery - without this split every extra
 ; monitor showed a permanently empty tray slot since only one instance can
 ; ever win the X11 tray selection.
-modules-right = sep-base-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-yellow memory sep-yellow-green cpu gpu sep-green-yellow updates sep-yellow-lavender date-icon date
+modules-right = sep-base-sky backlight sep-sky-mauve pulseaudio sep-mauve-teal media sep-teal-blue network-wired network-wireless sep-blue-yellow memory sep-yellow-green cpu sep-green-yellow updates sep-yellow-lavender date-icon date
 
 ; --- powerline separators ---------------------------------------------------
 ; Each is a plain glyph rendered in the color of the segment being LEFT
@@ -1740,15 +1740,6 @@ label-foreground = ${colors.base}
 format-background = ${colors.green}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.green}
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.base}
-label = " %output%% "
-label-foreground = ${colors.base}
 [module/layout]
 type = custom/script
 exec = ~/.local/bin/polybar-layout.sh
@@ -2029,11 +2020,11 @@ inherit = bar/base
 ; area - everything else here is flat text, so a small muted box (Current
 ; Line, not an accent) reads as "a container", not "another pill in a
 ; powerline chain" the way Mocha's mauve tray-cap did.
-modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu gpu sep-plain updates sep-plain layout sep-plain date-icon date
+modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain updates sep-plain layout sep-plain date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain memory sep-plain cpu gpu sep-plain updates sep-plain date-icon date
+modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain updates sep-plain date-icon date
 
 [module/sep-plain]
 type = custom/text
@@ -2187,12 +2178,6 @@ label = "  %percentage%%"
 label-foreground = ${colors.green}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-label = " 󰢮 %output%%"
-label-foreground = ${colors.green}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -2277,11 +2262,11 @@ inherit = bar/base
 ; single shared-background island with its own widgets packed tight inside
 ; (no divider between them - only the icon color tells them apart), a real
 ; empty gap-nord module between islands instead of a colored separator.
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gpu updates gap-nord layout gap-nord tray gap-nord date-icon date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu updates gap-nord layout gap-nord tray gap-nord date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless gap-nord memory cpu gpu updates gap-nord date-icon date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless gap-nord memory cpu updates gap-nord date-icon date
 
 [module/gap-nord]
 type = custom/text
@@ -2449,13 +2434,6 @@ label-foreground = ${colors.green}
 format-background = ${colors.surface0}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-label = " 󰢮 %output%% "
-label-foreground = ${colors.green}
-format-background = ${colors.surface0}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -2542,11 +2520,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Plain white text throughout, matching the source's actual near-monochrome
@@ -2694,14 +2672,6 @@ label = "%percentage%%"
 label-foreground = ${colors.text}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.text}
-label = "%output%%"
-label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -2777,11 +2747,11 @@ modules-center = media
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date power
+modules-right = tray backlight pulseaudio cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio cliamp network-wired network-wireless memory cpu gpu updates date
+modules-right = backlight pulseaudio cliamp network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -2937,14 +2907,6 @@ label = "%percentage%%"
 label-foreground = ${colors.text}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.text}
-label = "%output%%"
-label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -3042,11 +3004,11 @@ inherit = bar/base
 ; since it's primary-only. Every widget on the right is plain/unfilled,
 ; dot-separated, with one final LD/RD-bracketed group for the clock.
 modules-left = LD i3 RD dot LD tray RD
-modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu gpu dot updates dot layout dot LD date-icon date RD
+modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot updates dot layout dot LD date-icon date RD
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot memory dot cpu gpu dot updates dot LD date-icon date RD
+modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot memory dot cpu dot updates dot LD date-icon date RD
 
 [module/LD]
 type = custom/text
@@ -3225,12 +3187,6 @@ label = "  %percentage%% "
 label-foreground = ${colors.green}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-label = " 󰢮 %output%% "
-label-foreground = ${colors.green}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -3325,11 +3281,11 @@ modules-center = bi date bd
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi bluetooth caffeine dnd bd sep bi battery memory cpu gpu filesystem updates layout bd sep bi-tray tray bd-tray
+modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi bluetooth caffeine dnd bd sep bi battery memory cpu filesystem updates layout bd sep bi-tray tray bd-tray
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi memory cpu gpu filesystem updates bd
+modules-right = bi backlight pulseaudio media cliamp bd sep bi network-wired network-wireless bd sep bi memory cpu filesystem updates bd
 
 [module/bi]
 type = custom/text
@@ -3536,14 +3492,6 @@ format-prefix-foreground = ${colors.text}
 label = " %percentage%% "
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.surface0}
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.text}
-label = " %output%% "
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -3639,11 +3587,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -3787,14 +3735,6 @@ label = "%percentage%%"
 label-foreground = ${colors.text}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.text}
-label = "%output%%"
-label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -3886,11 +3826,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu gpu-icon gpu sep updates sep layout sep tray sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep updates sep layout sep tray sep date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu gpu-icon gpu sep updates sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep updates sep date-icon date
 
 [module/sep]
 type = custom/text
@@ -4110,26 +4050,6 @@ label-foreground = ${colors.base}
 ; dark bar and become invisible against a light chip (caught via direct
 ; feedback, not assumed).
 
-[module/gpu-icon]
-type = custom/text
-format = <label>
-format-background = ${colors.red}
-label = " 󰢮 "
-label-foreground = ${colors.base}
-
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.surface0}
-label = " %output%% "
-label-foreground = ${colors.base}
-
-; Tray specifically uses the theme's own dark base, not the light cream
-; surface0 every other widget's value-chip uses - most tray icons
-; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
-; dark bar and become invisible against a light chip (caught via direct
-; feedback, not assumed).
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -4208,11 +4128,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray gap-cb backlight pulseaudio media cliamp gap-cb network-wired network-wireless bluetooth gap-cb caffeine dnd battery gap-cb memory cpu gpu updates layout gap-cb date
+modules-right = tray gap-cb backlight pulseaudio media cliamp gap-cb network-wired network-wireless bluetooth gap-cb caffeine dnd battery gap-cb memory cpu updates layout gap-cb date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp gap-cb network-wired network-wireless gap-cb memory cpu gpu updates gap-cb date
+modules-right = backlight pulseaudio media cliamp gap-cb network-wired network-wireless gap-cb memory cpu updates gap-cb date
 
 ; --- real widgets ------------------------------------------------------------
 [module/gap-cb]
@@ -4370,15 +4290,6 @@ label = "%percentage%%"
 label-foreground = ${colors.base}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.aqua}
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.base}
-label = "%output%%"
-label-foreground = ${colors.base}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -4456,11 +4367,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -4602,14 +4513,6 @@ label = "%percentage%%"
 label-foreground = ${colors.text}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.text}
-label = "%output%%"
-label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -4688,11 +4591,11 @@ modules-center = title
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep bluetooth sep caffeine sep dnd sep battery sep memi memory memd sep cpi cpu gpu cpd sep fsi filesystem fsd sep updates sep layout sep tray sep dti date dtd
+modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep bluetooth sep caffeine sep dnd sep battery sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep layout sep tray sep dti date dtd
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep memi memory memd sep cpi cpu gpu cpd sep fsi filesystem fsd sep updates sep dti date dtd
+modules-right = bli backlight bld sep voli pulseaudio vold sep media sep cliamp sep neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep dti date dtd
 
 ; --- bracket pairs -------------------------------------------------------
 [module/sep]
@@ -4965,13 +4868,6 @@ format-prefix-foreground = ${colors.yellow}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.yellow}
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -5051,11 +4947,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = bi memory cpu gpu filesystem bd sep bi network-wired network-wireless bd sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
+modules-right = bi memory cpu filesystem bd sep bi network-wired network-wireless bd sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = bi memory cpu gpu filesystem bd sep bi network-wired network-wireless bd sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
+modules-right = bi memory cpu filesystem bd sep bi network-wired network-wireless bd sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
 
 [module/bi]
 type = custom/text
@@ -5221,12 +5117,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -5310,11 +5200,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu filesystem updates layout tray date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu filesystem updates layout tray date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu filesystem updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
@@ -5464,14 +5354,6 @@ format-prefix-foreground = ${colors.blue}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-font = 1
-format-prefix-foreground = ${colors.blue}
-label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -5559,11 +5441,11 @@ modules-center = bi i3 bd
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = neti network-wired network-wireless netd sep bti bluetooth btd sep cafi caffeine cafd sep dndi dnd dndd sep bati battery batd sep memi memory memd sep cpi cpu gpu cpd sep fsi filesystem fsd sep updates sep layout sep tray sep dti date dtd
+modules-right = neti network-wired network-wireless netd sep bti bluetooth btd sep cafi caffeine cafd sep dndi dnd dndd sep bati battery batd sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep layout sep tray sep dti date dtd
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = neti network-wired network-wireless netd sep memi memory memd sep cpi cpu gpu cpd sep fsi filesystem fsd sep updates sep dti date dtd
+modules-right = neti network-wired network-wireless netd sep memi memory memd sep cpi cpu cpd sep fsi filesystem fsd sep updates sep dti date dtd
 
 [module/bi]
 type = custom/text
@@ -5919,13 +5801,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.surface0}
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -6001,11 +5876,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -6136,12 +6011,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -6225,11 +6094,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu gpu dots updates dots layout dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu gpu dots updates dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -6356,12 +6225,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -6436,11 +6299,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -6606,13 +6469,6 @@ format-prefix-foreground = ${colors.magenta}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.magenta}
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -6691,11 +6547,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -6854,13 +6710,6 @@ format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.pink}
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -6943,11 +6792,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -7111,17 +6960,6 @@ label = "%percentage%%"
 ; and this theme's own bar background is only ~90% opaque, not a fully
 ; reliable backdrop by itself.
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
-
-; Explicit dark, opaque tray backdrop - most tray icons (Discord,
-; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
-; and this theme's own bar background is only ~90% opaque, not a fully
-; reliable backdrop by itself.
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -7206,11 +7044,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -7364,13 +7202,6 @@ format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.pink}
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -7447,11 +7278,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu gpu dots updates dots layout dots tray dots date dots power
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date dots power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu gpu dots updates dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -7606,12 +7437,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -7689,16 +7514,19 @@ overline-size = 2
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
+; mid-size icon font for the meters and the cpu/memory/disk trio - 14pt
+; (font-1) is oversized next to 10pt text, 10pt makes glyphs look tiny.
+font-3 = "JetBrainsMono Nerd Font:size=12;3"
 modules-left = i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu filesystem updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery cpu memory filesystem updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu filesystem updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless cpu memory filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -7734,22 +7562,38 @@ time = %H:%M
 label = "%{A1:GTK_THEME=Rice-tobi gnome-calendar &:}%date%  %time%%{A}"
 label-foreground = ${colors.text}
 
+; Bar-meter instead of a percentage, via polybar-backlight.sh's opt-in
+; BACKLIGHT_BAR mode (same as Forest).
 [module/backlight]
 type = custom/script
-exec = ~/.local/bin/polybar-backlight.sh
+exec = BACKLIGHT_BAR=1 BACKLIGHT_BAR_FILL_FG='#FAE3B0' BACKLIGHT_BAR_EMPTY_FG='#6E6C7E' ~/.local/bin/polybar-backlight.sh
 interval = 1
 scroll-up = brightnessctl set +5% &
 scroll-down = brightnessctl set 5%- &
 format = <label>
-format-prefix = "󰃟 "
+format-prefix = "󰽥 "
 format-prefix-foreground = ${colors.yellow}
-label = "%output%%"
+format-prefix-font = 4
+label = "%output%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
-format-volume-prefix = " "
-format-volume-prefix-foreground = ${colors.green}
-label-volume = "%percentage%%"
+format-volume = <ramp-volume> <bar-volume>
+format-muted-prefix = "󰝟 "
+format-muted-prefix-foreground = ${colors.red}
+format-muted-prefix-font = 4
+ramp-volume-0 = 󰕿
+ramp-volume-1 = 󰖀
+ramp-volume-2 = 󰕾
+ramp-volume-foreground = ${colors.green}
+ramp-volume-font = 4
+bar-volume-width = 10
+bar-volume-indicator = |
+bar-volume-indicator-foreground = ${colors.green}
+bar-volume-fill = |
+bar-volume-fill-foreground = ${colors.green}
+bar-volume-empty = |
+bar-volume-empty-foreground = ${colors.subtext}
 label-muted = "muted"
 label-muted-foreground = ${colors.subtext}
 
@@ -7832,30 +7676,32 @@ label-low-foreground = ${colors.red}
 [module/memory]
 type = internal/memory
 interval = 2
-label = "%percentage_used%%"
+format-prefix = "󰄫 "
+format-prefix-foreground = ${colors.blue}
+format-prefix-font = 4
+label = "%mb_used%"
 label-foreground = ${colors.text}
 
 [module/cpu]
 type = internal/cpu
 interval = 2
+format-prefix = "󰘚 "
+format-prefix-foreground = ${colors.yellow}
+format-prefix-font = 4
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
-
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.text}
-label = "%output%%"
-label-foreground = ${colors.text}
 [module/filesystem]
 type = internal/fs
 mount-0 = /
 interval = 30
-label-mounted = "%percentage_used%%"
-label-mounted-foreground = ${colors.blue}
+fixed-values = true
+format-mounted-prefix = " "
+format-mounted-prefix-foreground = ${colors.red}
+format-mounted-prefix-font = 4
+label-mounted = "%free%"
+label-mounted-foreground = ${colors.text}
+format-unmounted =
 
 [module/updates]
 type = custom/script
@@ -7926,11 +7772,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -8080,12 +7926,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -8156,11 +7996,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -8321,13 +8161,6 @@ format-prefix-foreground = ${colors.red}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.red}
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -8422,11 +8255,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu temperature updates layout tray date powermenu
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu temperature updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
 
 ; --- real widgets, from the source's own nord-top/nord-down -----------------
 [module/i3]
@@ -8515,15 +8348,6 @@ label = "  %percentage%%"
 label-foreground = ${colors.green}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format = <label>
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.green}
-label = "%output%%"
-label-foreground = ${colors.green}
 [module/memory]
 type = internal/memory
 interval = 2
@@ -8721,11 +8545,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu temperature updates layout tray date powermenu
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu temperature updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
 
 ; --- real widgets, from the source's own nord-top/nord-down -----------------
 [module/i3]
@@ -8811,15 +8635,6 @@ label = "  %percentage%%"
 label-foreground = ${colors.green}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format = <label>
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.green}
-label = "%output%%"
-label-foreground = ${colors.green}
 [module/memory]
 type = internal/memory
 interval = 2
@@ -9015,11 +8830,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -9180,13 +8995,6 @@ format-prefix = " "
 label = " %percentage%% "
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.surface0}
-format-prefix = "󰢮 "
-label = " %output%% "
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -9282,11 +9090,11 @@ modules-center = date
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu gpu filesystem updates sep layout sep tray
+modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep bluetooth caffeine dnd sep battery memory cpu filesystem updates sep layout sep tray
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep memory cpu gpu filesystem updates
+modules-right = backlight pulseaudio media sep cliamp sep network-wired network-wireless sep memory cpu filesystem updates
 
 [module/sep]
 type = custom/text
@@ -9458,14 +9266,6 @@ format-prefix-foreground = ${colors.text}
 label = " %percentage%% "
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.surface0}
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.text}
-label = " %output%% "
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -9561,11 +9361,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Plain white text throughout, matching the source's actual near-monochrome
@@ -9713,14 +9513,6 @@ label = "%percentage%%"
 label-foreground = ${colors.text}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.text}
-label = "%output%%"
-label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -9796,11 +9588,11 @@ modules-center = media
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date power
+modules-right = tray backlight pulseaudio cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio cliamp network-wired network-wireless memory cpu gpu updates date
+modules-right = backlight pulseaudio cliamp network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -9956,14 +9748,6 @@ label = "%percentage%%"
 label-foreground = ${colors.text}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.text}
-label = "%output%%"
-label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -10061,11 +9845,11 @@ inherit = bar/base
 ; since it's primary-only. Every widget on the right is plain/unfilled,
 ; dot-separated, with one final LD/RD-bracketed group for the clock.
 modules-left = i3 dot tray
-modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu gpu dot updates dot layout dot date-icon date
+modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot bluetooth dot caffeine dot dnd dot battery dot memory dot cpu dot updates dot layout dot date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot memory dot cpu gpu dot updates dot date-icon date
+modules-right = backlight dot pulseaudio dot media dot cliamp dot network-wired network-wireless dot memory dot cpu dot updates dot date-icon date
 
 [module/dot]
 type = custom/text
@@ -10230,12 +10014,6 @@ label = "  %percentage%% "
 label-foreground = ${colors.green}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-label = " 󰢮 %output%% "
-label-foreground = ${colors.green}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -10321,11 +10099,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -10469,14 +10247,6 @@ label = "%percentage%%"
 label-foreground = ${colors.text}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.text}
-label = "%output%%"
-label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -10568,11 +10338,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu gpu-icon gpu sep updates sep layout sep tray sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery-icon battery sep memory-icon memory sep cpu-icon cpu sep updates sep layout sep tray sep date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu gpu-icon gpu sep updates sep date-icon date
+modules-right = backlight-icon backlight sep pulseaudio-icon pulseaudio sep media sep cliamp sep network-icon network-wired network-wireless sep memory-icon memory sep cpu-icon cpu sep updates sep date-icon date
 
 [module/sep]
 type = custom/text
@@ -10792,26 +10562,6 @@ label-foreground = ${colors.base}
 ; dark bar and become invisible against a light chip (caught via direct
 ; feedback, not assumed).
 
-[module/gpu-icon]
-type = custom/text
-format = <label>
-format-background = ${colors.red}
-label = " 󰢮 "
-label-foreground = ${colors.base}
-
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.surface0}
-label = " %output%% "
-label-foreground = ${colors.base}
-
-; Tray specifically uses the theme's own dark base, not the light cream
-; surface0 every other widget's value-chip uses - most tray icons
-; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
-; dark bar and become invisible against a light chip (caught via direct
-; feedback, not assumed).
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -10885,14 +10635,14 @@ inherit = bar/base
 ; the only one carrying the battery widget. polybar-launch.sh launches this
 ; bar name on whichever output xrandr reports as primary. Clock is the very
 ; last segment, farthest right.
-modules-right = tray-cap tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date-icon date
+modules-right = tray-cap tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
 ; same as top-primary minus tray/battery - without this split every extra
 ; monitor showed a permanently empty tray slot since only one instance can
 ; ever win the X11 tray selection.
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date-icon date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date-icon date
 
 ; --- powerline separators ---------------------------------------------------
 ; Each is a plain glyph rendered in the color of the segment being LEFT
@@ -11089,15 +10839,6 @@ label-foreground = ${colors.base}
 format-background = ${colors.green}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.green}
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.base}
-label = " %output%% "
-label-foreground = ${colors.base}
 [module/layout]
 type = custom/script
 exec = ~/.local/bin/polybar-layout.sh
@@ -11173,11 +10914,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray gap-cb backlight pulseaudio media cliamp gap-cb network-wired network-wireless bluetooth gap-cb caffeine dnd battery gap-cb memory cpu gpu updates layout gap-cb date
+modules-right = tray gap-cb backlight pulseaudio media cliamp gap-cb network-wired network-wireless bluetooth gap-cb caffeine dnd battery gap-cb memory cpu updates layout gap-cb date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp gap-cb network-wired network-wireless gap-cb memory cpu gpu updates gap-cb date
+modules-right = backlight pulseaudio media cliamp gap-cb network-wired network-wireless gap-cb memory cpu updates gap-cb date
 
 ; --- real widgets ------------------------------------------------------------
 [module/gap-cb]
@@ -11335,15 +11076,6 @@ label = "%percentage%%"
 label-foreground = ${colors.base}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.aqua}
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.base}
-label = "%output%%"
-label-foreground = ${colors.base}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -11421,11 +11153,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -11567,14 +11299,6 @@ label = "%percentage%%"
 label-foreground = ${colors.text}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.text}
-label = "%output%%"
-label-foreground = ${colors.text}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -11653,11 +11377,11 @@ modules-center = title
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep filesystem sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep filesystem sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep filesystem sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep filesystem sep updates sep date
 
 ; --- bracket pairs -------------------------------------------------------
 [module/sep]
@@ -11802,13 +11526,6 @@ format-prefix-foreground = ${colors.yellow}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.yellow}
-label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -11902,11 +11619,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = memory cpu gpu filesystem sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
+modules-right = memory cpu filesystem sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep backlight sep pulseaudio sep media sep cliamp sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = memory cpu gpu filesystem sep network-wired network-wireless sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
+modules-right = memory cpu filesystem sep network-wired network-wireless sep backlight sep pulseaudio sep media sep cliamp sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -12056,12 +11773,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -12145,11 +11856,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu filesystem updates layout tray date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu filesystem updates layout tray date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu filesystem updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 [module/i3]
@@ -12299,14 +12010,6 @@ format-prefix-foreground = ${colors.blue}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-font = 1
-format-prefix-foreground = ${colors.blue}
-label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -12392,11 +12095,11 @@ inherit = bar/base
 ; area - everything else here is flat text, so a small muted box (Current
 ; Line, not an accent) reads as "a container", not "another pill in a
 ; powerline chain" the way Mocha's mauve tray-cap did.
-modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu gpu sep-plain updates sep-plain layout sep-plain date-icon date
+modules-right = tray sep-plain backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain bluetooth sep-plain caffeine sep-plain dnd sep-plain battery sep-plain memory sep-plain cpu sep-plain updates sep-plain layout sep-plain date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain memory sep-plain cpu gpu sep-plain updates sep-plain date-icon date
+modules-right = backlight sep-plain pulseaudio sep-plain media sep-plain cliamp sep-plain network-wired network-wireless sep-plain memory sep-plain cpu sep-plain updates sep-plain date-icon date
 
 [module/sep-plain]
 type = custom/text
@@ -12550,12 +12253,6 @@ label = "  %percentage%%"
 label-foreground = ${colors.green}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-label = " 󰢮 %output%%"
-label-foreground = ${colors.green}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -12636,11 +12333,11 @@ modules-center = i3
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep filesystem sep updates sep layout sep tray sep date
+modules-right = network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep filesystem sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = network-wired network-wireless sep memory sep cpu gpu sep filesystem sep updates sep date
+modules-right = network-wired network-wireless sep memory sep cpu sep filesystem sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -12795,13 +12492,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.surface0}
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/filesystem]
 type = internal/fs
 mount-0 = /
@@ -12885,11 +12575,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -13020,12 +12710,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -13103,11 +12787,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu gpu dots updates dots layout dots tray dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu gpu dots updates dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -13234,12 +12918,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -13314,11 +12992,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -13484,13 +13162,6 @@ format-prefix-foreground = ${colors.magenta}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.magenta}
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -13569,11 +13240,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -13732,13 +13403,6 @@ format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.pink}
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -13821,11 +13485,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -13974,17 +13638,6 @@ label = "%percentage%%"
 ; and this theme's own bar background is only ~90% opaque, not a fully
 ; reliable backdrop by itself.
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
-
-; Explicit dark, opaque tray backdrop - most tray icons (Discord,
-; 1Password, etc.) are drawn in white/light colors expecting a dark bar,
-; and this theme's own bar background is only ~90% opaque, not a fully
-; reliable backdrop by itself.
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -14069,11 +13722,11 @@ inherit = bar/base
 ; single shared-background island with its own widgets packed tight inside
 ; (no divider between them - only the icon color tells them apart), a real
 ; empty gap-nord module between islands instead of a colored separator.
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu gpu updates gap-nord layout gap-nord tray gap-nord date-icon date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless bluetooth gap-nord caffeine dnd battery gap-nord memory cpu updates gap-nord layout gap-nord tray gap-nord date-icon date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless gap-nord memory cpu gpu updates gap-nord date-icon date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless gap-nord memory cpu updates gap-nord date-icon date
 
 [module/gap-nord]
 type = custom/text
@@ -14241,13 +13894,6 @@ label-foreground = ${colors.green}
 format-background = ${colors.surface0}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-label = " 󰢮 %output%% "
-label-foreground = ${colors.green}
-format-background = ${colors.surface0}
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -14333,11 +13979,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -14491,13 +14137,6 @@ format-prefix-foreground = ${colors.pink}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.pink}
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -14574,11 +14213,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu gpu dots updates dots layout dots tray dots date dots power
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots bluetooth dots caffeine dots dnd dots battery dots memory dots cpu dots updates dots layout dots tray dots date dots power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu gpu dots updates dots date
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots memory dots cpu dots updates dots date
 
 [module/dots]
 type = custom/text
@@ -14733,12 +14372,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -14816,16 +14449,19 @@ overline-size = 2
 font-0 = "JetBrainsMono Nerd Font:size=10;2"
 font-1 = "JetBrainsMono Nerd Font:size=14;4"
 font-2 = "JetBrains Mono:size=10;2"
+; mid-size icon font for the meters and the cpu/memory/disk trio - 14pt
+; (font-1) is oversized next to 10pt text, 10pt makes glyphs look tiny.
+font-3 = "JetBrainsMono Nerd Font:size=12;3"
 modules-left = i3
 modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu filesystem updates layout date
+modules-right = tray backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery cpu memory filesystem updates layout date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu filesystem updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless cpu memory filesystem updates date
 
 ; --- real widgets ------------------------------------------------------------
 ; Frame (underline+overline), not a solid fill, for focused - a filled chip
@@ -14861,22 +14497,38 @@ time = %H:%M
 label = "%{A1:GTK_THEME=Rice-tobi gnome-calendar &:}%date%  %time%%{A}"
 label-foreground = ${colors.text}
 
+; Bar-meter instead of a percentage, via polybar-backlight.sh's opt-in
+; BACKLIGHT_BAR mode (same as Forest).
 [module/backlight]
 type = custom/script
-exec = ~/.local/bin/polybar-backlight.sh
+exec = BACKLIGHT_BAR=1 BACKLIGHT_BAR_FILL_FG='#FAE3B0' BACKLIGHT_BAR_EMPTY_FG='#6E6C7E' ~/.local/bin/polybar-backlight.sh
 interval = 1
 scroll-up = brightnessctl set +5% &
 scroll-down = brightnessctl set 5%- &
 format = <label>
-format-prefix = "󰃟 "
+format-prefix = "󰽥 "
 format-prefix-foreground = ${colors.yellow}
-label = "%output%%"
+format-prefix-font = 4
+label = "%output%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
-format-volume-prefix = " "
-format-volume-prefix-foreground = ${colors.green}
-label-volume = "%percentage%%"
+format-volume = <ramp-volume> <bar-volume>
+format-muted-prefix = "󰝟 "
+format-muted-prefix-foreground = ${colors.red}
+format-muted-prefix-font = 4
+ramp-volume-0 = 󰕿
+ramp-volume-1 = 󰖀
+ramp-volume-2 = 󰕾
+ramp-volume-foreground = ${colors.green}
+ramp-volume-font = 4
+bar-volume-width = 10
+bar-volume-indicator = |
+bar-volume-indicator-foreground = ${colors.green}
+bar-volume-fill = |
+bar-volume-fill-foreground = ${colors.green}
+bar-volume-empty = |
+bar-volume-empty-foreground = ${colors.subtext}
 label-muted = "muted"
 label-muted-foreground = ${colors.subtext}
 
@@ -14959,30 +14611,32 @@ label-low-foreground = ${colors.red}
 [module/memory]
 type = internal/memory
 interval = 2
-label = "%percentage_used%%"
+format-prefix = "󰄫 "
+format-prefix-foreground = ${colors.blue}
+format-prefix-font = 4
+label = "%mb_used%"
 label-foreground = ${colors.text}
 
 [module/cpu]
 type = internal/cpu
 interval = 2
+format-prefix = "󰘚 "
+format-prefix-foreground = ${colors.yellow}
+format-prefix-font = 4
 label = "%percentage%%"
 label-foreground = ${colors.text}
 
-
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.text}
-label = "%output%%"
-label-foreground = ${colors.text}
 [module/filesystem]
 type = internal/fs
 mount-0 = /
 interval = 30
-label-mounted = "%percentage_used%%"
-label-mounted-foreground = ${colors.blue}
+fixed-values = true
+format-mounted-prefix = " "
+format-mounted-prefix-foreground = ${colors.red}
+format-mounted-prefix-font = 4
+label-mounted = "%free%"
+label-mounted-foreground = ${colors.text}
+format-unmounted =
 
 [module/updates]
 type = custom/script
@@ -15053,11 +14707,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -15207,12 +14861,6 @@ format-prefix = " "
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -15283,11 +14931,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date sep power
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date sep power
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -15448,13 +15096,6 @@ format-prefix-foreground = ${colors.red}
 label = "%percentage%%"
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-prefix = "󰢮 "
-format-prefix-foreground = ${colors.red}
-label = "%output%%"
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -15549,11 +15190,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu temperature updates layout tray date powermenu
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu temperature updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
 
 ; --- real widgets, from the source's own nord-top/nord-down -----------------
 [module/i3]
@@ -15642,15 +15283,6 @@ label = "  %percentage%%"
 label-foreground = ${colors.green}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format = <label>
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.green}
-label = "%output%%"
-label-foreground = ${colors.green}
 [module/memory]
 type = internal/memory
 interval = 2
@@ -15848,11 +15480,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu gpu temperature updates layout tray date powermenu
+modules-right = keyboard backlight pulseaudio media cliamp network-wired network-wireless bluetooth caffeine dnd battery memory cpu temperature updates layout tray date powermenu
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu gpu temperature updates date
+modules-right = backlight pulseaudio media cliamp network-wired network-wireless memory cpu temperature updates date
 
 ; --- real widgets, from the source's own nord-top/nord-down -----------------
 [module/i3]
@@ -15938,15 +15570,6 @@ label = "  %percentage%%"
 label-foreground = ${colors.green}
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format = <label>
-format-prefix = "GPU "
-format-prefix-foreground = ${colors.green}
-label = "%output%%"
-label-foreground = ${colors.green}
 [module/memory]
 type = internal/memory
 interval = 2
@@ -16142,11 +15765,11 @@ modules-center =
 
 [bar/top-primary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu gpu sep updates sep layout sep tray sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep bluetooth sep caffeine sep dnd sep battery sep memory sep cpu sep updates sep layout sep tray sep date
 
 [bar/top-secondary]
 inherit = bar/base
-modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu gpu sep updates sep date
+modules-right = backlight sep pulseaudio sep media sep cliamp sep network-wired network-wireless sep memory sep cpu sep updates sep date
 
 [module/sep]
 type = custom/text
@@ -16307,13 +15930,6 @@ format-prefix = " "
 label = " %percentage%% "
 
 
-[module/gpu]
-type = custom/script
-exec = ~/.local/bin/polybar-gpu.sh
-interval = 2
-format-background = ${colors.surface0}
-format-prefix = "󰢮 "
-label = " %output%% "
 [module/updates]
 type = custom/script
 exec = ~/.local/bin/polybar-updates.sh
@@ -16335,6 +15951,1170 @@ tray-spacing = 8
 tray-padding = 6
 tray-background = ${colors.surface0}
 format-background = ${colors.surface0}
+
+[settings]
+screenchange-reload = true
+EOF
+cat > "$CONF/polybar/themes/blocks.ini" <<'EOF'
+; Blocks - a direct port of adi1090x/polybar-themes' real "blocks" theme
+; (github.com/adi1090x/polybar-themes/tree/master/simple/blocks, read from
+; its actual colors.ini and modules.ini). A dark slate background (#2f343f)
+; with a light cream "background-alt" (#C4C7C5) reused here as this rice's
+; own surface0 - the neutral value-chip color every two-tone widget below
+; sits on. The source's own real "foreground" field (#1C1E20) turned out to
+; be near-illegible painted directly on its own background (#2f343f is not
+; light enough for that dark a text color to read cleanly) - deviated from
+; here the same way this rice already deviates when a source choice turns
+; out to be genuinely broken rather than just unfamiliar: base doubles as
+; both the bar's own dark background AND the on-chip text color (this
+; rice's own standing convention, e.g. Brenda/Cherryblocks), and
+; background-alt carries the bar's plain text instead of the source's own
+; dark foreground field.
+; Per-widget styling is the source's own real, and NOT uniform, choices,
+; read directly out of its modules.ini rather than flattened into one look:
+; cpu/memory/date get a full two-tone chip (colored icon half fused to a
+; neutral value half); battery/network/pulseaudio/layout(keyboard) get ONLY
+; a colored icon chip with plain text after it (no value chip at all);
+; backlight gets ONLY a neutral value chip with a plain, uncolored icon.
+; Every widget this rice has that the source doesn't (media, cliamp,
+; bluetooth, caffeine, dnd, updates) uses the full two-tone chip - the
+; theme's own signature look - since there's no source choice to defer to
+; there. Every color reused below is one of the source's own real per-
+; widget assignments (cpu=teal, memory=brown, date=amber, battery=green,
+; network=purple, pulseaudio(alsa)=red, layout(keyboard)=blue-gray) or,
+; for the rice-only widgets, one of its otherwise-unused remaining accents.
+; Two real, live-tested polybar bugs (found building this rice's earlier
+; Forestblocks theme, both apply here too): (1) label-background silently
+; kills a custom/script module's whole render unless that module also has
+; an explicit `label = ...` line - every custom/script widget below that
+; uses label-background sets one. (2) network-wireless reuses this rice's
+; shared polybar-wifi.sh, whose own output already embeds inline
+; %{F#hex}...%{F-} tags - adding label-background on top of that breaks
+; the module with no error logged anywhere, so it (like every source
+; widget of this style) gets format-background/format-prefix-background
+; only, never label-background.
+[colors]
+base      = #2F343F
+mantle    = #2F343F
+surface0  = #C4C7C5
+text      = #C4C7C5
+subtext   = #6D8895
+primary   = #B4BC67
+red       = #EC7875
+pink      = #EC6798
+purple    = #BE78D1
+blue      = #75A4CD
+cyan      = #00C7DF
+teal      = #00B19F
+green     = #61C766
+lime      = #B9C244
+yellow    = #EBD369
+amber     = #EDB83F
+orange    = #E57C46
+brown     = #AC8476
+indigo    = #6C77BB
+blue-gray = #6D8895
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 8
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight gap-bl pulseaudio gap-bl media gap-bl cliamp gap-bl network-wired network-wireless gap-bl bluetooth gap-bl caffeine gap-bl dnd gap-bl battery gap-bl memory gap-bl cpu gap-bl gap-bl updates gap-bl layout gap-bl tray gap-bl date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight gap-bl pulseaudio gap-bl media gap-bl cliamp gap-bl network-wired network-wireless gap-bl memory gap-bl cpu gap-bl gap-bl updates gap-bl date
+
+[module/gap-bl]
+type = custom/text
+format = <label>
+label = " "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+label-focused = " 󰄯 "
+label-focused-foreground = ${colors.primary}
+label-focused-padding = 1
+label-unfocused = " 󰧞 "
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = " 󰧞 "
+label-urgent-foreground = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " 󰃭 "
+format-prefix-background = ${colors.amber}
+format-prefix-foreground = ${colors.base}
+label = "%{A1:GTK_THEME=Rice-blocks gnome-calendar &:} %date%  %time% %{A}"
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+format-prefix = " 󰃟 "
+label = " %output%% "
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " 󰕾 "
+format-volume-prefix-background = ${colors.red}
+format-volume-prefix-foreground = ${colors.base}
+format-muted-prefix = " 󰝟 "
+format-muted-prefix-background = ${colors.red}
+format-muted-prefix-foreground = ${colors.base}
+label-volume = " %percentage%% "
+label-muted = " muted "
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label. Media/
+; cliamp are dynamic-content widgets (no fixed icon/value pair), so they
+; keep a single neutral chip rather than the two-tone split - matching how
+; this rice's own Brenda handles the same two widgets.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media-boxed.sh
+interval = 1
+click-left = playerctl previous &
+click-middle = playerctl play-pause &
+click-right = playerctl next &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
+label-padding = 1
+
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " 󰈀 "
+format-connected-prefix-background = ${colors.purple}
+format-connected-prefix-foreground = ${colors.base}
+label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#C4C7C5' WIFI_OFF_FG='#EC7875' ~/.local/bin/polybar-wifi.sh
+interval = 3
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = ${colors.purple}
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+format-prefix = " 󰂯 "
+format-prefix-background = ${colors.cyan}
+format-prefix-foreground = ${colors.base}
+label = " %output% "
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+format-prefix = " 󰅶 "
+format-prefix-background = ${colors.lime}
+format-prefix-foreground = ${colors.base}
+label = " %output%"
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
+format = <label>
+format-prefix = " 󰂛 "
+format-prefix-background = ${colors.pink}
+format-prefix-foreground = ${colors.base}
+label = " %output%"
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " 󰂅 "
+format-charging-prefix-background = ${colors.green}
+format-charging-prefix-foreground = ${colors.base}
+format-discharging-prefix = " 󰁹 "
+format-discharging-prefix-background = ${colors.green}
+format-discharging-prefix-foreground = ${colors.base}
+format-full-prefix = " 󰁹 "
+format-full-prefix-background = ${colors.green}
+format-full-prefix-foreground = ${colors.base}
+label-charging = " %percentage%% "
+label-discharging = " %percentage%% "
+label-full = " Full "
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " 󰍛 "
+format-prefix-background = ${colors.brown}
+format-prefix-foreground = ${colors.base}
+label = " %percentage_used%% "
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " 󰻠 "
+format-prefix-background = ${colors.teal}
+format-prefix-foreground = ${colors.base}
+label = " %percentage%% "
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.orange}
+label-padding = 1
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+format-background = ${colors.blue-gray}
+label-foreground = ${colors.base}
+label-padding = 1
+
+; Tray specifically uses the theme's own dark base, not the light cream
+; surface0 every other widget's value-chip uses - most tray icons
+; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
+; dark bar and become invisible against a light chip (already established
+; elsewhere in this rice, applied here for the same reason).
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.base}
+format-background = ${colors.base}
+
+[settings]
+screenchange-reload = true
+EOF
+cat > "$CONF/polybar/themes/blocks-square.ini" <<'EOF'
+; Blocks - a direct port of adi1090x/polybar-themes' real "blocks" theme
+; (github.com/adi1090x/polybar-themes/tree/master/simple/blocks, read from
+; its actual colors.ini and modules.ini). A dark slate background (#2f343f)
+; with a light cream "background-alt" (#C4C7C5) reused here as this rice's
+; own surface0 - the neutral value-chip color every two-tone widget below
+; sits on. The source's own real "foreground" field (#1C1E20) turned out to
+; be near-illegible painted directly on its own background (#2f343f is not
+; light enough for that dark a text color to read cleanly) - deviated from
+; here the same way this rice already deviates when a source choice turns
+; out to be genuinely broken rather than just unfamiliar: base doubles as
+; both the bar's own dark background AND the on-chip text color (this
+; rice's own standing convention, e.g. Brenda/Cherryblocks), and
+; background-alt carries the bar's plain text instead of the source's own
+; dark foreground field.
+; Per-widget styling is the source's own real, and NOT uniform, choices,
+; read directly out of its modules.ini rather than flattened into one look:
+; cpu/memory/date get a full two-tone chip (colored icon half fused to a
+; neutral value half); battery/network/pulseaudio/layout(keyboard) get ONLY
+; a colored icon chip with plain text after it (no value chip at all);
+; backlight gets ONLY a neutral value chip with a plain, uncolored icon.
+; Every widget this rice has that the source doesn't (media, cliamp,
+; bluetooth, caffeine, dnd, updates) uses the full two-tone chip - the
+; theme's own signature look - since there's no source choice to defer to
+; there. Every color reused below is one of the source's own real per-
+; widget assignments (cpu=teal, memory=brown, date=amber, battery=green,
+; network=purple, pulseaudio(alsa)=red, layout(keyboard)=blue-gray) or,
+; for the rice-only widgets, one of its otherwise-unused remaining accents.
+; Two real, live-tested polybar bugs (found building this rice's earlier
+; Forestblocks theme, both apply here too): (1) label-background silently
+; kills a custom/script module's whole render unless that module also has
+; an explicit `label = ...` line - every custom/script widget below that
+; uses label-background sets one. (2) network-wireless reuses this rice's
+; shared polybar-wifi.sh, whose own output already embeds inline
+; %{F#hex}...%{F-} tags - adding label-background on top of that breaks
+; the module with no error logged anywhere, so it (like every source
+; widget of this style) gets format-background/format-prefix-background
+; only, never label-background.
+[colors]
+base      = #2F343F
+mantle    = #2F343F
+surface0  = #C4C7C5
+text      = #C4C7C5
+subtext   = #6D8895
+primary   = #B4BC67
+red       = #EC7875
+pink      = #EC6798
+purple    = #BE78D1
+blue      = #75A4CD
+cyan      = #00C7DF
+teal      = #00B19F
+green     = #61C766
+lime      = #B9C244
+yellow    = #EBD369
+amber     = #EDB83F
+orange    = #E57C46
+brown     = #AC8476
+indigo    = #6C77BB
+blue-gray = #6D8895
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight gap-bl pulseaudio gap-bl media gap-bl cliamp gap-bl network-wired network-wireless gap-bl bluetooth gap-bl caffeine gap-bl dnd gap-bl battery gap-bl memory gap-bl cpu gap-bl gap-bl updates gap-bl layout gap-bl tray gap-bl date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight gap-bl pulseaudio gap-bl media gap-bl cliamp gap-bl network-wired network-wireless gap-bl memory gap-bl cpu gap-bl gap-bl updates gap-bl date
+
+[module/gap-bl]
+type = custom/text
+format = <label>
+label = " "
+
+; --- real widgets ------------------------------------------------------------
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+label-focused = " 󰄯 "
+label-focused-foreground = ${colors.primary}
+label-focused-padding = 1
+label-unfocused = " 󰧞 "
+label-unfocused-foreground = ${colors.subtext}
+label-unfocused-padding = 1
+label-urgent = " 󰧞 "
+label-urgent-foreground = ${colors.red}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+date = %Y-%m-%d
+time = %H:%M
+format-prefix = " 󰃭 "
+format-prefix-background = ${colors.amber}
+format-prefix-foreground = ${colors.base}
+label = "%{A1:GTK_THEME=Rice-blocks gnome-calendar &:} %date%  %time% %{A}"
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/backlight]
+type = custom/script
+exec = ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+format-prefix = " 󰃟 "
+label = " %output%% "
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-prefix = " 󰕾 "
+format-volume-prefix-background = ${colors.red}
+format-volume-prefix-foreground = ${colors.base}
+format-muted-prefix = " 󰝟 "
+format-muted-prefix-background = ${colors.red}
+format-muted-prefix-foreground = ${colors.base}
+label-volume = " %percentage%% "
+label-muted = " muted "
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label. Media/
+; cliamp are dynamic-content widgets (no fixed icon/value pair), so they
+; keep a single neutral chip rather than the two-tone split - matching how
+; this rice's own Brenda handles the same two widgets.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media-boxed.sh
+interval = 1
+click-left = playerctl previous &
+click-middle = playerctl play-pause &
+click-right = playerctl next &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.base}
+label-padding = 1
+
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " 󰈀 "
+format-connected-prefix-background = ${colors.purple}
+format-connected-prefix-foreground = ${colors.base}
+label-connected = "%{A1:nm-connection-editor &:} %ifname% %{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = custom/script
+exec = WIFI_PREFIX=' ' WIFI_SUFFIX=' ' WIFI_CONNECTED_FG='#C4C7C5' WIFI_OFF_FG='#EC7875' ~/.local/bin/polybar-wifi.sh
+interval = 3
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+format-background = ${colors.purple}
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+format-prefix = " 󰂯 "
+format-prefix-background = ${colors.cyan}
+format-prefix-foreground = ${colors.base}
+label = " %output% "
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+format-prefix = " 󰅶 "
+format-prefix-background = ${colors.lime}
+format-prefix-foreground = ${colors.base}
+label = " %output%"
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
+format = <label>
+format-prefix = " 󰂛 "
+format-prefix-background = ${colors.pink}
+format-prefix-foreground = ${colors.base}
+label = " %output%"
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " 󰂅 "
+format-charging-prefix-background = ${colors.green}
+format-charging-prefix-foreground = ${colors.base}
+format-discharging-prefix = " 󰁹 "
+format-discharging-prefix-background = ${colors.green}
+format-discharging-prefix-foreground = ${colors.base}
+format-full-prefix = " 󰁹 "
+format-full-prefix-background = ${colors.green}
+format-full-prefix-foreground = ${colors.base}
+label-charging = " %percentage%% "
+label-discharging = " %percentage%% "
+label-full = " Full "
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = " 󰍛 "
+format-prefix-background = ${colors.brown}
+format-prefix-foreground = ${colors.base}
+label = " %percentage_used%% "
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = " 󰻠 "
+format-prefix-background = ${colors.teal}
+format-prefix-foreground = ${colors.base}
+label = " %percentage%% "
+label-background = ${colors.surface0}
+label-foreground = ${colors.base}
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+format = <label>
+format-background = ${colors.surface0}
+label-foreground = ${colors.orange}
+label-padding = 1
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+format-background = ${colors.blue-gray}
+label-foreground = ${colors.base}
+label-padding = 1
+
+; Tray specifically uses the theme's own dark base, not the light cream
+; surface0 every other widget's value-chip uses - most tray icons
+; (Discord, 1Password, etc.) are drawn in white/light colors expecting a
+; dark bar and become invisible against a light chip (already established
+; elsewhere in this rice, applied here for the same reason).
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+tray-background = ${colors.base}
+format-background = ${colors.base}
+
+[settings]
+screenchange-reload = true
+EOF
+cat > "$CONF/polybar/themes/forest.ini" <<'EOF'
+; Forest - a direct port of adi1090x/polybar-themes' real "forest" theme
+; (github.com/adi1090x/polybar-themes/tree/master/simple/forest, read from
+; its actual colors.ini and modules.ini, not guessed from the name). A dark
+; blue-green "forest at night" background (#212B30), muted blue-gray
+; foreground, and the theme's own real 15-color accent set. Structurally
+; the plainest theme in this rice on purpose, because that's what the real
+; source actually is: reading its modules.ini confirms NOT ONE widget sets
+; a format-background or label-background anywhere - every widget is just
+; a colored icon glyph (format-prefix-foreground only) directly in front of
+; plain text, no chip/box anywhere. Cloned from this rice's own Isabel
+; (already the closest existing match to that same "no chips" structure)
+; for the mechanical exec/click/interval details, not from forest's own
+; bspwm-flavored module set directly.
+; Per-widget icon colors are the source's own real choices, read directly
+; out of its modules.ini rather than invented: cpu=yellow, memory=blue,
+; battery=green, network=purple, pulseaudio(alsa)=red, media(mpd)=green,
+; date=red, layout(keyboard)=blue-gray. This rice has several widgets the
+; source doesn't (backlight, bluetooth, caffeine, dnd, updates) - each
+; of those gets one of the source's own remaining, otherwise-unused accent
+; colors (amber/orange/cyan/lime/indigo) rather than a newly-invented hue.
+[colors]
+base      = #212B30
+mantle    = #212B30
+surface0  = #313B40
+text      = #C4C7C5
+subtext   = #3F5360
+red       = #EC7875
+pink      = #EC407A
+purple    = #BA68C8
+blue      = #42A5F5
+cyan      = #4DD0E1
+teal      = #00B19F
+green     = #61C766
+lime      = #B9C244
+yellow    = #FDD835
+amber     = #FBC02D
+orange    = #E57C46
+brown     = #AC8476
+indigo    = #6C77BB
+blue-gray = #6D8895
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 8
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+; mid-size icon font for the cpu/memory/disk trio - font-1 (14pt) was
+; oversized next to 10pt text, font-0 made the glyphs look tiny.
+font-3 = "JetBrainsMono Nerd Font:size=12;3"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots-tight bluetooth dots-tight caffeine dots-tight dnd dots-tight battery dots cpu dots memory dots filesystem dots updates dots layout dots tray dots date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots cpu dots memory dots filesystem dots updates dots date
+
+[module/dots]
+type = custom/text
+format = <label>
+label = " 󰇙"
+label-foreground = ${colors.subtext}
+
+; A bare separator glyph, no leading space at all - used only around
+; bluetooth/caffeine/dnd below. Those three share one script convention
+; across every theme in this rice (each one's own printf already opens
+; with 2 literal spaces before its icon), so tightening "dots" itself
+; there stacks with that existing padding instead of fighting it, without
+; touching the shared scripts and affecting every other theme that also
+; uses them.
+[module/dots-tight]
+type = custom/text
+format = <label>
+label = "󰇙"
+label-foreground = ${colors.subtext}
+
+; --- real widgets ------------------------------------------------------------
+; label-*-padding was dropped from the workspace labels below - it was a
+; second, redundant layer of spacing stacked on top of the literal leading/
+; trailing space already in each label string, doubling the effective gap
+; around every workspace icon. Barely noticeable with 5-6 workspaces open;
+; wide enough with 9 to push the date module off the bar's own right edge
+; entirely. The literal space alone is enough breathing room - nothing
+; here sits on a colored background box the way Blocks' chips do, so
+; there's no clipping risk from trimming it.
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+label-focused = "  "
+label-focused-foreground = ${colors.teal}
+label-unfocused = "  "
+label-unfocused-foreground = ${colors.subtext}
+label-urgent = "  "
+label-urgent-foreground = ${colors.red}
+
+[module/date]
+type = internal/date
+interval = 1
+date = "%a, %d %B at %H:%M"
+format-prefix = " "
+format-prefix-foreground = ${colors.red}
+label = "%{A1:GTK_THEME=Rice-forest gnome-calendar &:}%date%%{A}"
+
+; Bar-meter (not a percentage number) via BACKLIGHT_BAR - opts into the
+; shared script's bar-rendering branch (see polybar-backlight.sh's own
+; comment), the same "one shared script, per-theme look via env vars"
+; convention polybar-wifi.sh already established for its own colors.
+[module/backlight]
+type = custom/script
+exec = BACKLIGHT_BAR=1 BACKLIGHT_BAR_FILL_FG='#61C766' BACKLIGHT_BAR_EMPTY_FG='#3F5360' ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+format-prefix = "󰽥 "
+label = "%output%"
+
+; Bar-meter (not a percentage number), matching this rice's own reference
+; screenshot for Forest - <bar-volume> is a real polybar tag (native to
+; internal/pulseaudio, unlike backlight's custom/script module, so no
+; wrapper script is needed here).
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume = <ramp-volume> <bar-volume>
+format-muted-prefix = " "
+format-muted-prefix-foreground = ${colors.red}
+ramp-volume-0 = 󰕿
+ramp-volume-1 = 󰖀
+ramp-volume-2 = 󰕾
+bar-volume-width = 10
+bar-volume-indicator = |
+bar-volume-indicator-foreground = ${colors.amber}
+bar-volume-fill = |
+bar-volume-fill-foreground = ${colors.amber}
+bar-volume-empty = |
+bar-volume-empty-foreground = ${colors.subtext}
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+click-left = playerctl previous &
+click-middle = playerctl play-pause &
+click-right = playerctl next &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+format = <label>
+
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.purple}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#C4C7C5' WIFI_OFF_FG='#EC7875' ~/.local/bin/polybar-wifi.sh
+interval = 3
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.lime}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
+format = <label>
+label-foreground = ${colors.red}
+
+; Icon left at the bar's own default foreground (neutral, not per-state
+; colored) - this rice's own Forest reference screenshot shows a plain
+; battery glyph, not a red/green/pink-coded one.
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-discharging-prefix = " "
+format-full-prefix = " "
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = "󰄫 "
+format-prefix-foreground = ${colors.blue}
+format-prefix-font = 4
+label = "%mb_used%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = "󰘚 "
+format-prefix-foreground = ${colors.yellow}
+format-prefix-font = 4
+label = "%percentage%%"
+
+; Disk free space on / - the source's own filesystem widget (orange
+; drive icon, %free%), added here on request.
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+fixed-values = true
+format-mounted-prefix = " "
+format-mounted-prefix-foreground = ${colors.orange}
+format-mounted-prefix-font = 4
+label-mounted = "%free%"
+format-unmounted =
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+format = <label>
+label-foreground = ${colors.pink}
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.blue-gray}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
+
+[settings]
+screenchange-reload = true
+EOF
+cat > "$CONF/polybar/themes/forest-square.ini" <<'EOF'
+; Forest - a direct port of adi1090x/polybar-themes' real "forest" theme
+; (github.com/adi1090x/polybar-themes/tree/master/simple/forest, read from
+; its actual colors.ini and modules.ini, not guessed from the name). A dark
+; blue-green "forest at night" background (#212B30), muted blue-gray
+; foreground, and the theme's own real 15-color accent set. Structurally
+; the plainest theme in this rice on purpose, because that's what the real
+; source actually is: reading its modules.ini confirms NOT ONE widget sets
+; a format-background or label-background anywhere - every widget is just
+; a colored icon glyph (format-prefix-foreground only) directly in front of
+; plain text, no chip/box anywhere. Cloned from this rice's own Isabel
+; (already the closest existing match to that same "no chips" structure)
+; for the mechanical exec/click/interval details, not from forest's own
+; bspwm-flavored module set directly.
+; Per-widget icon colors are the source's own real choices, read directly
+; out of its modules.ini rather than invented: cpu=yellow, memory=blue,
+; battery=green, network=purple, pulseaudio(alsa)=red, media(mpd)=green,
+; date=red, layout(keyboard)=blue-gray. This rice has several widgets the
+; source doesn't (backlight, bluetooth, caffeine, dnd, updates) - each
+; of those gets one of the source's own remaining, otherwise-unused accent
+; colors (amber/orange/cyan/lime/indigo) rather than a newly-invented hue.
+[colors]
+base      = #212B30
+mantle    = #212B30
+surface0  = #313B40
+text      = #C4C7C5
+subtext   = #3F5360
+red       = #EC7875
+pink      = #EC407A
+purple    = #BA68C8
+blue      = #42A5F5
+cyan      = #4DD0E1
+teal      = #00B19F
+green     = #61C766
+lime      = #B9C244
+yellow    = #FDD835
+amber     = #FBC02D
+orange    = #E57C46
+brown     = #AC8476
+indigo    = #6C77BB
+blue-gray = #6D8895
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+background = ${colors.base}
+foreground = ${colors.text}
+radius = 0
+padding-left = 2
+padding-right = 2
+module-margin = 0
+font-0 = "JetBrainsMono Nerd Font:size=10;2"
+font-1 = "JetBrainsMono Nerd Font:size=14;4"
+font-2 = "JetBrains Mono:size=10;2"
+; mid-size icon font for the cpu/memory/disk trio - font-1 (14pt) was
+; oversized next to 10pt text, font-0 made the glyphs look tiny.
+font-3 = "JetBrainsMono Nerd Font:size=12;3"
+modules-left = i3
+modules-center =
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots-tight bluetooth dots-tight caffeine dots-tight dnd dots-tight battery dots cpu dots memory dots filesystem dots updates dots layout dots tray dots date
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = backlight dots pulseaudio dots media dots cliamp dots network-wired network-wireless dots cpu dots memory dots filesystem dots updates dots date
+
+[module/dots]
+type = custom/text
+format = <label>
+label = " 󰇙"
+label-foreground = ${colors.subtext}
+
+; A bare separator glyph, no leading space at all - used only around
+; bluetooth/caffeine/dnd below. Those three share one script convention
+; across every theme in this rice (each one's own printf already opens
+; with 2 literal spaces before its icon), so tightening "dots" itself
+; there stacks with that existing padding instead of fighting it, without
+; touching the shared scripts and affecting every other theme that also
+; uses them.
+[module/dots-tight]
+type = custom/text
+format = <label>
+label = "󰇙"
+label-foreground = ${colors.subtext}
+
+; --- real widgets ------------------------------------------------------------
+; label-*-padding was dropped from the workspace labels below - it was a
+; second, redundant layer of spacing stacked on top of the literal leading/
+; trailing space already in each label string, doubling the effective gap
+; around every workspace icon. Barely noticeable with 5-6 workspaces open;
+; wide enough with 9 to push the date module off the bar's own right edge
+; entirely. The literal space alone is enough breathing room - nothing
+; here sits on a colored background box the way Blocks' chips do, so
+; there's no clipping risk from trimming it.
+[module/i3]
+type = internal/i3
+format = <label-state>
+index-sort = true
+wrapping-scroll = false
+label-focused = "  "
+label-focused-foreground = ${colors.teal}
+label-unfocused = "  "
+label-unfocused-foreground = ${colors.subtext}
+label-urgent = "  "
+label-urgent-foreground = ${colors.red}
+
+[module/date]
+type = internal/date
+interval = 1
+date = "%a, %d %B at %H:%M"
+format-prefix = " "
+format-prefix-foreground = ${colors.red}
+label = "%{A1:GTK_THEME=Rice-forest gnome-calendar &:}%date%%{A}"
+
+; Bar-meter (not a percentage number) via BACKLIGHT_BAR - opts into the
+; shared script's bar-rendering branch (see polybar-backlight.sh's own
+; comment), the same "one shared script, per-theme look via env vars"
+; convention polybar-wifi.sh already established for its own colors.
+[module/backlight]
+type = custom/script
+exec = BACKLIGHT_BAR=1 BACKLIGHT_BAR_FILL_FG='#61C766' BACKLIGHT_BAR_EMPTY_FG='#3F5360' ~/.local/bin/polybar-backlight.sh
+interval = 1
+scroll-up = brightnessctl set +5% &
+scroll-down = brightnessctl set 5%- &
+format = <label>
+format-prefix = "󰽥 "
+label = "%output%"
+
+; Bar-meter (not a percentage number), matching this rice's own reference
+; screenshot for Forest - <bar-volume> is a real polybar tag (native to
+; internal/pulseaudio, unlike backlight's custom/script module, so no
+; wrapper script is needed here).
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume = <ramp-volume> <bar-volume>
+format-muted-prefix = " "
+format-muted-prefix-foreground = ${colors.red}
+ramp-volume-0 = 󰕿
+ramp-volume-1 = 󰖀
+ramp-volume-2 = 󰕾
+bar-volume-width = 10
+bar-volume-indicator = |
+bar-volume-indicator-foreground = ${colors.amber}
+bar-volume-fill = |
+bar-volume-fill-foreground = ${colors.amber}
+bar-volume-empty = |
+bar-volume-empty-foreground = ${colors.subtext}
+label-muted = "muted"
+
+; Split wired/wireless so whichever is actually up is the only one that
+; renders anything - format-disconnected is left blank so the inactive one
+; takes up no space instead of showing a permanent "offline" label.
+[module/media]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+click-left = playerctl previous &
+click-middle = playerctl play-pause &
+click-right = playerctl next &
+format = <label>
+label-foreground = ${colors.green}
+
+[module/cliamp]
+type = custom/script
+exec = ~/.local/bin/polybar-cliamp.sh
+interval = 3
+click-left = ~/.local/bin/cliamp-toggle.sh &
+format = <label>
+
+[module/network-wired]
+type = internal/network
+interface-type = wired
+interval = 3
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.purple}
+label-connected = "%{A1:nm-connection-editor &:}%ifname%%{A}"
+format-disconnected =
+
+[module/network-wireless]
+type = custom/script
+exec = WIFI_PREFIX='' WIFI_SUFFIX='' WIFI_CONNECTED_FG='#C4C7C5' WIFI_OFF_FG='#EC7875' ~/.local/bin/polybar-wifi.sh
+interval = 3
+click-left = ~/.local/bin/wifi-menu.sh &
+click-middle = nm-connection-editor &
+click-right = ~/.local/bin/wifi-toggle.sh &
+format = <label>
+
+[module/bluetooth]
+type = custom/script
+exec = ~/.local/bin/polybar-bluetooth.sh
+interval = 5
+click-left = blueman-manager &
+format = <label>
+
+[module/caffeine]
+type = custom/script
+exec = ~/.local/bin/polybar-caffeine.sh
+interval = 3
+click-left = ~/.local/bin/caffeine-toggle.sh &
+click-right = xset s activate &
+format = <label>
+label-foreground = ${colors.lime}
+
+[module/dnd]
+type = custom/script
+exec = ~/.local/bin/polybar-dnd.sh
+interval = 2
+click-left = ~/.local/bin/dnd-toggle.sh &
+click-middle = ~/.local/bin/notification-center.sh &
+click-right = dunstctl history-clear
+format = <label>
+label-foreground = ${colors.red}
+
+; Icon left at the bar's own default foreground (neutral, not per-state
+; colored) - this rice's own Forest reference screenshot shows a plain
+; battery glyph, not a red/green/pink-coded one.
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = AC
+format-charging-prefix = " "
+format-discharging-prefix = " "
+format-full-prefix = " "
+label-charging = "%percentage%%"
+label-discharging = "%percentage%%"
+label-full = "Full"
+
+[module/memory]
+type = internal/memory
+interval = 2
+format-prefix = "󰄫 "
+format-prefix-foreground = ${colors.blue}
+format-prefix-font = 4
+label = "%mb_used%"
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = "󰘚 "
+format-prefix-foreground = ${colors.yellow}
+format-prefix-font = 4
+label = "%percentage%%"
+
+; Disk free space on / - the source's own filesystem widget (orange
+; drive icon, %free%), added here on request.
+[module/filesystem]
+type = internal/fs
+mount-0 = /
+interval = 30
+fixed-values = true
+format-mounted-prefix = " "
+format-mounted-prefix-foreground = ${colors.orange}
+format-mounted-prefix-font = 4
+label-mounted = "%free%"
+format-unmounted =
+
+[module/updates]
+type = custom/script
+exec = ~/.local/bin/polybar-updates.sh
+tail = true
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+format = <label>
+label-foreground = ${colors.pink}
+
+[module/layout]
+type = custom/script
+exec = ~/.local/bin/polybar-layout.sh
+interval = 1
+format = <label>
+label-foreground = ${colors.blue-gray}
+
+[module/tray]
+type = internal/tray
+tray-spacing = 8
+tray-padding = 6
 
 [settings]
 screenchange-reload = true
@@ -16685,34 +17465,6 @@ done
 EOF
 chmod +x "$BIN/polybar-updates.sh"
 
-log "Writing polybar-gpu.sh..."
-cat > "$BIN/polybar-gpu.sh" <<'EOF'
-#!/usr/bin/env bash
-# polybar custom/script module: shows GPU load percentage. Tries NVIDIA
-# first (nvidia-smi, works without root), then the amdgpu kernel driver's
-# own sysfs gpu_busy_percent (also no-root) - covers the two GPU vendors
-# that expose utilization without special permissions. Intel's own
-# equivalent (intel_gpu_top) commonly needs root or a perf_event_paranoid
-# adjustment on a stock install, so it's deliberately not attempted here
-# rather than shipping a widget that silently never works on most
-# Intel-only machines. Prints nothing (module renders empty, taking no bar
-# space) if neither path is available, matching how the network/media
-# widgets already hide themselves rather than show a placeholder for
-# hardware that isn't there.
-if command -v nvidia-smi &>/dev/null; then
-  pct=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1)
-fi
-if [ -z "$pct" ]; then
-  for f in /sys/class/drm/card*/device/gpu_busy_percent; do
-    [ -f "$f" ] || continue
-    pct=$(cat "$f" 2>/dev/null)
-    [ -n "$pct" ] && break
-  done
-fi
-[ -z "$pct" ] && exit 0
-printf "%s\n" "$pct"
-EOF
-chmod +x "$BIN/polybar-gpu.sh"
 
 log "Writing software-update.sh (zypper dup + reboot-required check)..."
 cat > "$BIN/software-update.sh" <<'EOF'
@@ -16931,7 +17683,27 @@ cat > "$BIN/polybar-backlight.sh" <<'EOF'
 # as this user with no sudo) and is already this rice's own mechanism for
 # the XF86MonBrightness keys (osd-brightness.sh), so reusing it here
 # instead of polybar's own backlight backend actually works.
-brightnessctl -m info 2>/dev/null | cut -d, -f4 | tr -d '%'
+pct=$(brightnessctl -m info 2>/dev/null | cut -d, -f4 | tr -d '%')
+
+# Opt-in bar-meter rendering, off by default (every existing theme keeps
+# the plain percentage above with no changes needed) - set via env vars
+# in a theme's own exec= line, the same "one shared script, per-theme
+# look via env vars" convention already used by polybar-wifi.sh's
+# WIFI_PREFIX/SUFFIX/FG vars. Uses polybar's inline %{F#hex}...%{F-} tag
+# so one script still renders every theme's own bar colors.
+if [ -n "$BACKLIGHT_BAR" ]; then
+  width="${BACKLIGHT_BAR_WIDTH:-10}"
+  filled=$(( (pct * width + 50) / 100 ))
+  [ "$filled" -gt "$width" ] && filled="$width"
+  bar=""
+  for ((i = 0; i < filled; i++)); do bar+="|"; done
+  bar="%{F${BACKLIGHT_BAR_FILL_FG:-#61C766}}${bar}%{F-}"
+  for ((i = filled; i < width; i++)); do bar+="%{F${BACKLIGHT_BAR_EMPTY_FG:-#6D8895}}|%{F-}"; done
+  printf '%s\n' "$bar"
+  exit 0
+fi
+
+printf '%s\n' "$pct"
 EOF
 chmod +x "$BIN/polybar-backlight.sh"
 
@@ -23600,6 +24372,446 @@ element-text {
     vertical-align: 0.5;
 }
 EOF
+cat > "$CONF/rofi/themes/blocks.rasi" <<'EOF'
+* {
+    base:     #2F343Fff;
+    mantle:   #2F343Fff;
+    text:     #C4C7C5ff;
+    subtext:  #6D8895ff;
+    mauve:    #B4BC67ff;
+    surface0: #3F444Fff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/blocks-powermenu.rasi" <<'EOF'
+* {
+    base:     #2F343Fff;
+    mantle:   #2F343Fff;
+    text:     #C4C7C5ff;
+    subtext:  #6D8895ff;
+    mauve:    #B4BC67ff;
+    surface0: #3F444Fff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/rofi/themes/forest.rasi" <<'EOF'
+* {
+    base:     #212B30ff;
+    mantle:   #212B30ff;
+    text:     #C4C7C5ff;
+    subtext:  #3F5360ff;
+    mauve:    #00B19Fff;
+    surface0: #313B40ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/forest-powermenu.rasi" <<'EOF'
+* {
+    base:     #212B30ff;
+    mantle:   #212B30ff;
+    text:     #C4C7C5ff;
+    subtext:  #3F5360ff;
+    mauve:    #00B19Fff;
+    surface0: #313B40ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/rofi/themes/blocks-square.rasi" <<'EOF'
+* {
+    base:     #2F343Fff;
+    mantle:   #2F343Fff;
+    text:     #C4C7C5ff;
+    subtext:  #6D8895ff;
+    mauve:    #B4BC67ff;
+    surface0: #3F444Fff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/blocks-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #2F343Fff;
+    mantle:   #2F343Fff;
+    text:     #C4C7C5ff;
+    subtext:  #6D8895ff;
+    mauve:    #B4BC67ff;
+    surface0: #3F444Fff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/rofi/themes/forest-square.rasi" <<'EOF'
+* {
+    base:     #212B30ff;
+    mantle:   #212B30ff;
+    text:     #C4C7C5ff;
+    subtext:  #3F5360ff;
+    mauve:    #00B19Fff;
+    surface0: #313B40ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 0px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 0px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 0px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/forest-square-powermenu.rasi" <<'EOF'
+* {
+    base:     #212B30ff;
+    mantle:   #212B30ff;
+    text:     #C4C7C5ff;
+    subtext:  #3F5360ff;
+    mauve:    #00B19Fff;
+    surface0: #313B40ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 0px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 0px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
 
 cp "$CONF/rofi/themes/catppuccin-mocha.rasi" "$CONF/rofi/current.rasi"
 cp "$CONF/rofi/themes/catppuccin-mocha-powermenu.rasi" "$CONF/rofi/current-powermenu.rasi"
@@ -25128,6 +26340,106 @@ color14 #93CEE9
 color7  #6E8DB4
 color15 #A5B6CF
 EOF
+cat > "$CONF/kitty/themes/blocks.conf" <<'EOF'
+foreground              #C4C7C5
+background              #2F343F
+selection_foreground    #2F343F
+selection_background    #C4C7C5
+cursor                  #B4BC67
+cursor_text_color       #2F343F
+
+color0  #3F444F
+color8  #6D8895
+color1  #EC7875
+color9  #EC7875
+color2  #61C766
+color10 #61C766
+color3  #EBD369
+color11 #EBD369
+color4  #75A4CD
+color12 #75A4CD
+color5  #BE78D1
+color13 #BE78D1
+color6  #00C7DF
+color14 #00C7DF
+color7  #6D8895
+color15 #C4C7C5
+EOF
+cat > "$CONF/kitty/themes/blocks-square.conf" <<'EOF'
+foreground              #C4C7C5
+background              #2F343F
+selection_foreground    #2F343F
+selection_background    #C4C7C5
+cursor                  #B4BC67
+cursor_text_color       #2F343F
+
+color0  #3F444F
+color8  #6D8895
+color1  #EC7875
+color9  #EC7875
+color2  #61C766
+color10 #61C766
+color3  #EBD369
+color11 #EBD369
+color4  #75A4CD
+color12 #75A4CD
+color5  #BE78D1
+color13 #BE78D1
+color6  #00C7DF
+color14 #00C7DF
+color7  #6D8895
+color15 #C4C7C5
+EOF
+cat > "$CONF/kitty/themes/forest.conf" <<'EOF'
+foreground              #C4C7C5
+background              #212B30
+selection_foreground    #212B30
+selection_background    #C4C7C5
+cursor                  #00B19F
+cursor_text_color       #212B30
+
+color0  #313B40
+color8  #6D8895
+color1  #EC7875
+color9  #EC7875
+color2  #61C766
+color10 #61C766
+color3  #FDD835
+color11 #FDD835
+color4  #42A5F5
+color12 #42A5F5
+color5  #BA68C8
+color13 #BA68C8
+color6  #4DD0E1
+color14 #4DD0E1
+color7  #6D8895
+color15 #C4C7C5
+EOF
+cat > "$CONF/kitty/themes/forest-square.conf" <<'EOF'
+foreground              #C4C7C5
+background              #212B30
+selection_foreground    #212B30
+selection_background    #C4C7C5
+cursor                  #00B19F
+cursor_text_color       #212B30
+
+color0  #313B40
+color8  #6D8895
+color1  #EC7875
+color9  #EC7875
+color2  #61C766
+color10 #61C766
+color3  #FDD835
+color11 #FDD835
+color4  #42A5F5
+color12 #42A5F5
+color5  #BA68C8
+color13 #BA68C8
+color6  #4DD0E1
+color14 #4DD0E1
+color7  #6D8895
+color15 #C4C7C5
+EOF
 
 cp "$CONF/kitty/themes/catppuccin-mocha.conf" "$CONF/kitty/current.conf"
 
@@ -25345,6 +26657,18 @@ client.focused          #86aaec  #0d0f18  #a5b6cf  #86aaec   #86aaec
 client.unfocused        #6e8db4  #0d0f18  #6e8db4  #6e8db4   #6e8db4
 client.focused_inactive #6e8db4  #0d0f18  #6e8db4  #6e8db4   #6e8db4
 client.urgent           #dd6777  #0d0f18  #a5b6cf  #dd6777   #dd6777
+EOF
+cat > "$CONF/i3/themes/blocks.conf" <<'EOF'
+client.focused          #B4BC67  #2F343F  #C4C7C5  #B4BC67   #B4BC67
+client.unfocused        #6D8895  #2F343F  #6D8895  #6D8895   #6D8895
+client.focused_inactive #6D8895  #2F343F  #6D8895  #6D8895   #6D8895
+client.urgent           #EC7875  #2F343F  #C4C7C5  #EC7875   #EC7875
+EOF
+cat > "$CONF/i3/themes/forest.conf" <<'EOF'
+client.focused          #00B19F  #212B30  #C4C7C5  #00B19F   #00B19F
+client.unfocused        #3F5360  #212B30  #3F5360  #3F5360   #3F5360
+client.focused_inactive #3F5360  #212B30  #3F5360  #3F5360   #3F5360
+client.urgent           #EC7875  #212B30  #C4C7C5  #EC7875   #EC7875
 EOF
 
 cp "$CONF/i3/themes/catppuccin-mocha.conf" "$CONF/i3/current-borders.conf"
@@ -25643,15 +26967,15 @@ EOF
 
 cat > "$CONF/starship/themes/alireza.toml" <<'EOF'
 format = """
-[](#282A36)\
+[](#282A36)\
 $python\
 $username\
-[](bg:#383A4A fg:#282A36)\
+[](bg:#383A4A fg:#282A36)\
 $directory\
-[](fg:#383A4A bg:#44475A)\
+[](fg:#383A4A bg:#44475A)\
 $git_branch\
 $git_status\
-[](fg:#44475A bg:#8BE9FD)\
+[](fg:#44475A bg:#8BE9FD)\
 $c\
 $elixir\
 $elm\
@@ -25662,17 +26986,17 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#8BE9FD bg:#BD93F9)\
+[](fg:#8BE9FD bg:#BD93F9)\
 $docker_context\
-[](fg:#BD93F9 bg:#FF79C6)\
+[](fg:#BD93F9 bg:#FF79C6)\
 $time\
-[ ](fg:#FF79C6)\
+[ ](fg:#FF79C6)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
 # add_newline = false
 
-# You can also replace your username with a neat symbol like  to save some space
+# You can also replace your username with a neat symbol like  to save some space
 [username]
 show_always = true
 style_user = "bg:#282A36"
@@ -25689,37 +27013,37 @@ truncation_symbol = "…/"
 # similar to mapped_locations in Oh My Posh:
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 # Keep in mind that the order matters. For example:
-# "Important Documents" = "  "
+# "Important Documents" = "  "
 # will not be replaced, because "Documents" was already substituted before.
 # So either put "Important Documents" before "Documents" or use the substituted version:
-# "Important  " = "  "
+# "Important  " = "  "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#BD93F9"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#44475A"
 format = '[ $symbol $branch ]($style)'
 
@@ -25728,32 +27052,32 @@ style = "bg:#44475A"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
@@ -25762,7 +27086,7 @@ style = "bg:#282A36"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
@@ -25775,15 +27099,15 @@ EOF
 
 cat > "$CONF/starship/themes/archblur.toml" <<'EOF'
 format = """
-[](#282828)\
+[](#282828)\
 $python\
 $username\
-[](bg:#3C3836 fg:#282828)\
+[](bg:#3C3836 fg:#282828)\
 $directory\
-[](fg:#3C3836 bg:#504945)\
+[](fg:#3C3836 bg:#504945)\
 $git_branch\
 $git_status\
-[](fg:#504945 bg:#FE8019)\
+[](fg:#504945 bg:#FE8019)\
 $c\
 $elixir\
 $elm\
@@ -25794,11 +27118,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#FE8019 bg:#B8BB26)\
+[](fg:#FE8019 bg:#B8BB26)\
 $docker_context\
-[](fg:#B8BB26 bg:#FABD2F)\
+[](fg:#B8BB26 bg:#FABD2F)\
 $time\
-[ ](fg:#FABD2F)\
+[ ](fg:#FABD2F)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
@@ -25818,32 +27142,32 @@ truncation_symbol = "…/"
 
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#B8BB26"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#504945"
 format = '[ $symbol $branch ]($style)'
 
@@ -25852,32 +27176,32 @@ style = "bg:#504945"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
@@ -25886,7 +27210,7 @@ style = "bg:#282828"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
@@ -26031,15 +27355,15 @@ EOF
 
 cat > "$CONF/starship/themes/alireza-square.toml" <<'EOF'
 format = """
-[](#282A36)\
+[](#282A36)\
 $python\
 $username\
-[](bg:#383A4A fg:#282A36)\
+[](bg:#383A4A fg:#282A36)\
 $directory\
-[](fg:#383A4A bg:#44475A)\
+[](fg:#383A4A bg:#44475A)\
 $git_branch\
 $git_status\
-[](fg:#44475A bg:#8BE9FD)\
+[](fg:#44475A bg:#8BE9FD)\
 $c\
 $elixir\
 $elm\
@@ -26050,17 +27374,17 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#8BE9FD bg:#BD93F9)\
+[](fg:#8BE9FD bg:#BD93F9)\
 $docker_context\
-[](fg:#BD93F9 bg:#FF79C6)\
+[](fg:#BD93F9 bg:#FF79C6)\
 $time\
-[ ](fg:#FF79C6)\
+[ ](fg:#FF79C6)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
 # add_newline = false
 
-# You can also replace your username with a neat symbol like  to save some space
+# You can also replace your username with a neat symbol like  to save some space
 [username]
 show_always = true
 style_user = "bg:#282A36"
@@ -26077,37 +27401,37 @@ truncation_symbol = "…/"
 # similar to mapped_locations in Oh My Posh:
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 # Keep in mind that the order matters. For example:
-# "Important Documents" = "  "
+# "Important Documents" = "  "
 # will not be replaced, because "Documents" was already substituted before.
 # So either put "Important Documents" before "Documents" or use the substituted version:
-# "Important  " = "  "
+# "Important  " = "  "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#BD93F9"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#44475A"
 format = '[ $symbol $branch ]($style)'
 
@@ -26116,32 +27440,32 @@ style = "bg:#44475A"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
@@ -26150,7 +27474,7 @@ style = "bg:#282A36"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#8BE9FD"
 format = '[ $symbol ($version) ]($style)'
 
@@ -26163,15 +27487,15 @@ EOF
 
 cat > "$CONF/starship/themes/archblur-square.toml" <<'EOF'
 format = """
-[](#282828)\
+[](#282828)\
 $python\
 $username\
-[](bg:#3C3836 fg:#282828)\
+[](bg:#3C3836 fg:#282828)\
 $directory\
-[](fg:#3C3836 bg:#504945)\
+[](fg:#3C3836 bg:#504945)\
 $git_branch\
 $git_status\
-[](fg:#504945 bg:#FE8019)\
+[](fg:#504945 bg:#FE8019)\
 $c\
 $elixir\
 $elm\
@@ -26182,11 +27506,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#FE8019 bg:#B8BB26)\
+[](fg:#FE8019 bg:#B8BB26)\
 $docker_context\
-[](fg:#B8BB26 bg:#FABD2F)\
+[](fg:#B8BB26 bg:#FABD2F)\
 $time\
-[ ](fg:#FABD2F)\
+[ ](fg:#FABD2F)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
@@ -26206,32 +27530,32 @@ truncation_symbol = "…/"
 
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#B8BB26"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#504945"
 format = '[ $symbol $branch ]($style)'
 
@@ -26240,32 +27564,32 @@ style = "bg:#504945"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
@@ -26274,7 +27598,7 @@ style = "bg:#282828"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
@@ -26419,15 +27743,15 @@ EOF
 
 cat > "$CONF/starship/themes/breddie.toml" <<'EOF'
 format = """
-[](#1A1B26)\
+[](#1A1B26)\
 $python\
 $username\
-[](bg:#292A44 fg:#1A1B26)\
+[](bg:#292A44 fg:#1A1B26)\
 $directory\
-[](fg:#292A44 bg:#444B61)\
+[](fg:#292A44 bg:#444B61)\
 $git_branch\
 $git_status\
-[](fg:#444B61 bg:#7AA2F7)\
+[](fg:#444B61 bg:#7AA2F7)\
 $c\
 $elixir\
 $elm\
@@ -26438,11 +27762,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#7AA2F7 bg:#BB9AF7)\
+[](fg:#7AA2F7 bg:#BB9AF7)\
 $docker_context\
-[](fg:#BB9AF7 bg:#EBCB8C)\
+[](fg:#BB9AF7 bg:#EBCB8C)\
 $time\
-[ ](fg:#EBCB8C)\
+[ ](fg:#EBCB8C)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
@@ -26465,9 +27789,9 @@ truncation_symbol = "…/"
 # similar to mapped_locations in Oh My Posh:
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 # Keep in mind that the order matters. For example:
 # "Important Documents" = "  "
 # will not be replaced, because "Documents" was already substituted before.
@@ -26475,27 +27799,27 @@ truncation_symbol = "…/"
 # "Important  " = "  "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#BB9AF7"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#444B61"
 format = '[ $symbol $branch ]($style)'
 
@@ -26504,32 +27828,32 @@ style = "bg:#444B61"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
@@ -26538,7 +27862,7 @@ style = "bg:#1A1B26"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
@@ -26683,15 +28007,15 @@ EOF
 
 cat > "$CONF/starship/themes/breddie-square.toml" <<'EOF'
 format = """
-[](#1A1B26)\
+[](#1A1B26)\
 $python\
 $username\
-[](bg:#292A44 fg:#1A1B26)\
+[](bg:#292A44 fg:#1A1B26)\
 $directory\
-[](fg:#292A44 bg:#444B61)\
+[](fg:#292A44 bg:#444B61)\
 $git_branch\
 $git_status\
-[](fg:#444B61 bg:#7AA2F7)\
+[](fg:#444B61 bg:#7AA2F7)\
 $c\
 $elixir\
 $elm\
@@ -26702,11 +28026,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#7AA2F7 bg:#BB9AF7)\
+[](fg:#7AA2F7 bg:#BB9AF7)\
 $docker_context\
-[](fg:#BB9AF7 bg:#EBCB8C)\
+[](fg:#BB9AF7 bg:#EBCB8C)\
 $time\
-[ ](fg:#EBCB8C)\
+[ ](fg:#EBCB8C)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
@@ -26729,9 +28053,9 @@ truncation_symbol = "…/"
 # similar to mapped_locations in Oh My Posh:
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 # Keep in mind that the order matters. For example:
 # "Important Documents" = "  "
 # will not be replaced, because "Documents" was already substituted before.
@@ -26739,27 +28063,27 @@ truncation_symbol = "…/"
 # "Important  " = "  "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#BB9AF7"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#444B61"
 format = '[ $symbol $branch ]($style)'
 
@@ -26768,32 +28092,32 @@ style = "bg:#444B61"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
@@ -26802,7 +28126,7 @@ style = "bg:#1A1B26"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#7AA2F7"
 format = '[ $symbol ($version) ]($style)'
 
@@ -27211,15 +28535,15 @@ EOF
 
 cat > "$CONF/starship/themes/cherryblocks.toml" <<'EOF'
 format = """
-[](#282828)\
+[](#282828)\
 $python\
 $username\
-[](bg:#3C3836 fg:#282828)\
+[](bg:#3C3836 fg:#282828)\
 $directory\
-[](fg:#3C3836 bg:#504945)\
+[](fg:#3C3836 bg:#504945)\
 $git_branch\
 $git_status\
-[](fg:#504945 bg:#FB4934)\
+[](fg:#504945 bg:#FB4934)\
 $c\
 $elixir\
 $elm\
@@ -27230,11 +28554,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#FB4934 bg:#B8BB26)\
+[](fg:#FB4934 bg:#B8BB26)\
 $docker_context\
-[](fg:#B8BB26 bg:#FABD2F)\
+[](fg:#B8BB26 bg:#FABD2F)\
 $time\
-[ ](fg:#FABD2F)\
+[ ](fg:#FABD2F)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
@@ -27254,32 +28578,32 @@ truncation_symbol = "…/"
 
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#B8BB26"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#504945"
 format = '[ $symbol $branch ]($style)'
 
@@ -27288,32 +28612,32 @@ style = "bg:#504945"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
@@ -27322,7 +28646,7 @@ style = "bg:#282828"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
@@ -27334,15 +28658,15 @@ format = '[ $time ]($style)'
 EOF
 cat > "$CONF/starship/themes/classic.toml" <<'EOF'
 format = """
-[](#282828)\
+[](#282828)\
 $python\
 $username\
-[](bg:#3C3836 fg:#282828)\
+[](bg:#3C3836 fg:#282828)\
 $directory\
-[](fg:#3C3836 bg:#504945)\
+[](fg:#3C3836 bg:#504945)\
 $git_branch\
 $git_status\
-[](fg:#504945 bg:#FE8019)\
+[](fg:#504945 bg:#FE8019)\
 $c\
 $elixir\
 $elm\
@@ -27353,11 +28677,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#FE8019 bg:#B8BB26)\
+[](fg:#FE8019 bg:#B8BB26)\
 $docker_context\
-[](fg:#B8BB26 bg:#FABD2F)\
+[](fg:#B8BB26 bg:#FABD2F)\
 $time\
-[ ](fg:#FABD2F)\
+[ ](fg:#FABD2F)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
@@ -27377,32 +28701,32 @@ truncation_symbol = "…/"
 
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#B8BB26"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#504945"
 format = '[ $symbol $branch ]($style)'
 
@@ -27411,32 +28735,32 @@ style = "bg:#504945"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
@@ -27445,7 +28769,7 @@ style = "bg:#282828"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
@@ -27590,15 +28914,15 @@ EOF
 
 cat > "$CONF/starship/themes/cherryblocks-square.toml" <<'EOF'
 format = """
-[](#282828)\
+[](#282828)\
 $python\
 $username\
-[](bg:#3C3836 fg:#282828)\
+[](bg:#3C3836 fg:#282828)\
 $directory\
-[](fg:#3C3836 bg:#504945)\
+[](fg:#3C3836 bg:#504945)\
 $git_branch\
 $git_status\
-[](fg:#504945 bg:#FB4934)\
+[](fg:#504945 bg:#FB4934)\
 $c\
 $elixir\
 $elm\
@@ -27609,11 +28933,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#FB4934 bg:#B8BB26)\
+[](fg:#FB4934 bg:#B8BB26)\
 $docker_context\
-[](fg:#B8BB26 bg:#FABD2F)\
+[](fg:#B8BB26 bg:#FABD2F)\
 $time\
-[ ](fg:#FABD2F)\
+[ ](fg:#FABD2F)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
@@ -27633,32 +28957,32 @@ truncation_symbol = "…/"
 
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#B8BB26"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#504945"
 format = '[ $symbol $branch ]($style)'
 
@@ -27667,32 +28991,32 @@ style = "bg:#504945"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
@@ -27701,7 +29025,7 @@ style = "bg:#282828"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#FB4934"
 format = '[ $symbol ($version) ]($style)'
 
@@ -27713,15 +29037,15 @@ format = '[ $time ]($style)'
 EOF
 cat > "$CONF/starship/themes/classic-square.toml" <<'EOF'
 format = """
-[](#282828)\
+[](#282828)\
 $python\
 $username\
-[](bg:#3C3836 fg:#282828)\
+[](bg:#3C3836 fg:#282828)\
 $directory\
-[](fg:#3C3836 bg:#504945)\
+[](fg:#3C3836 bg:#504945)\
 $git_branch\
 $git_status\
-[](fg:#504945 bg:#FE8019)\
+[](fg:#504945 bg:#FE8019)\
 $c\
 $elixir\
 $elm\
@@ -27732,11 +29056,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#FE8019 bg:#B8BB26)\
+[](fg:#FE8019 bg:#B8BB26)\
 $docker_context\
-[](fg:#B8BB26 bg:#FABD2F)\
+[](fg:#B8BB26 bg:#FABD2F)\
 $time\
-[ ](fg:#FABD2F)\
+[ ](fg:#FABD2F)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
@@ -27756,32 +29080,32 @@ truncation_symbol = "…/"
 
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#B8BB26"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#504945"
 format = '[ $symbol $branch ]($style)'
 
@@ -27790,32 +29114,32 @@ style = "bg:#504945"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
@@ -27824,7 +29148,7 @@ style = "bg:#282828"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#FE8019"
 format = '[ $symbol ($version) ]($style)'
 
@@ -31137,15 +32461,15 @@ EOF
 
 cat > "$CONF/starship/themes/tobi.toml" <<'EOF'
 format = """
-[](#1E1E2E)\
+[](#1E1E2E)\
 $python\
 $username\
-[](bg:#313244 fg:#1E1E2E)\
+[](bg:#313244 fg:#1E1E2E)\
 $directory\
-[](fg:#313244 bg:#6E6C7E)\
+[](fg:#313244 bg:#6E6C7E)\
 $git_branch\
 $git_status\
-[](fg:#6E6C7E bg:#62B4F9)\
+[](fg:#6E6C7E bg:#62B4F9)\
 $c\
 $elixir\
 $elm\
@@ -31156,11 +32480,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#62B4F9 bg:#F5C2E7)\
+[](fg:#62B4F9 bg:#F5C2E7)\
 $docker_context\
-[](fg:#F5C2E7 bg:#FAE3B0)\
+[](fg:#F5C2E7 bg:#FAE3B0)\
 $time\
-[ ](fg:#FAE3B0)\
+[ ](fg:#FAE3B0)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
@@ -31183,9 +32507,9 @@ truncation_symbol = "…/"
 # similar to mapped_locations in Oh My Posh:
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 # Keep in mind that the order matters. For example:
 # "Important Documents" = "  "
 # will not be replaced, because "Documents" was already substituted before.
@@ -31193,27 +32517,27 @@ truncation_symbol = "…/"
 # "Important  " = "  "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#F5C2E7"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#6E6C7E"
 format = '[ $symbol $branch ]($style)'
 
@@ -31222,32 +32546,32 @@ style = "bg:#6E6C7E"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
@@ -31256,7 +32580,7 @@ style = "bg:#1E1E2E"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
@@ -31401,15 +32725,15 @@ EOF
 
 cat > "$CONF/starship/themes/tobi-square.toml" <<'EOF'
 format = """
-[](#1E1E2E)\
+[](#1E1E2E)\
 $python\
 $username\
-[](bg:#313244 fg:#1E1E2E)\
+[](bg:#313244 fg:#1E1E2E)\
 $directory\
-[](fg:#313244 bg:#6E6C7E)\
+[](fg:#313244 bg:#6E6C7E)\
 $git_branch\
 $git_status\
-[](fg:#6E6C7E bg:#62B4F9)\
+[](fg:#6E6C7E bg:#62B4F9)\
 $c\
 $elixir\
 $elm\
@@ -31420,11 +32744,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#62B4F9 bg:#F5C2E7)\
+[](fg:#62B4F9 bg:#F5C2E7)\
 $docker_context\
-[](fg:#F5C2E7 bg:#FAE3B0)\
+[](fg:#F5C2E7 bg:#FAE3B0)\
 $time\
-[ ](fg:#FAE3B0)\
+[ ](fg:#FAE3B0)\
 """
 command_timeout = 5000
 # Disable the blank line at the start of the prompt
@@ -31447,9 +32771,9 @@ truncation_symbol = "…/"
 # similar to mapped_locations in Oh My Posh:
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 # Keep in mind that the order matters. For example:
 # "Important Documents" = "  "
 # will not be replaced, because "Documents" was already substituted before.
@@ -31457,27 +32781,27 @@ truncation_symbol = "…/"
 # "Important  " = "  "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#F5C2E7"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#6E6C7E"
 format = '[ $symbol $branch ]($style)'
 
@@ -31486,32 +32810,32 @@ style = "bg:#6E6C7E"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
@@ -31520,7 +32844,7 @@ style = "bg:#1E1E2E"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#62B4F9"
 format = '[ $symbol ($version) ]($style)'
 
@@ -31796,15 +33120,15 @@ format = '[ $time ]($style)'
 EOF
 cat > "$CONF/starship/themes/yucklys.toml" <<'EOF'
 format = """
-[](#2E3440)\
+[](#2E3440)\
 $python\
 $username\
-[](bg:#4C566A fg:#2E3440)\
+[](bg:#4C566A fg:#2E3440)\
 $directory\
-[](fg:#4C566A bg:#81A1C1)\
+[](fg:#4C566A bg:#81A1C1)\
 $git_branch\
 $git_status\
-[](fg:#81A1C1 bg:#8FBCBB)\
+[](fg:#81A1C1 bg:#8FBCBB)\
 $c\
 $elixir\
 $elm\
@@ -31815,11 +33139,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#8FBCBB bg:#B48EAD)\
+[](fg:#8FBCBB bg:#B48EAD)\
 $docker_context\
-[](fg:#B48EAD bg:#2E3440)\
+[](fg:#B48EAD bg:#2E3440)\
 $time\
-[ ](fg:#2E3440)\
+[ ](fg:#2E3440)\
 """
 command_timeout = 5000
 
@@ -31836,33 +33160,33 @@ truncation_length = 3
 truncation_symbol = "…/"
 
 [directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Documents" = "󰈙󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#B48EAD"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#81A1C1"
 format = '[ $symbol $branch ]($style)'
 
@@ -31871,32 +33195,32 @@ style = "bg:#81A1C1"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
@@ -31905,7 +33229,7 @@ style = "bg:#2E3440"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
@@ -31917,15 +33241,15 @@ format = '[ $time ]($style)'
 EOF
 cat > "$CONF/starship/themes/yucklys-light.toml" <<'EOF'
 format = """
-[](#ECEFF4)\
+[](#ECEFF4)\
 $python\
 $username\
-[](bg:#3B4252 fg:#ECEFF4)\
+[](bg:#3B4252 fg:#ECEFF4)\
 $directory\
-[](fg:#3B4252 bg:#81A1C1)\
+[](fg:#3B4252 bg:#81A1C1)\
 $git_branch\
 $git_status\
-[](fg:#81A1C1 bg:#8FBCBB)\
+[](fg:#81A1C1 bg:#8FBCBB)\
 $c\
 $elixir\
 $elm\
@@ -31936,11 +33260,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#8FBCBB bg:#B48EAD)\
+[](fg:#8FBCBB bg:#B48EAD)\
 $docker_context\
-[](fg:#B48EAD bg:#ECEFF4)\
+[](fg:#B48EAD bg:#ECEFF4)\
 $time\
-[ ](fg:#ECEFF4)\
+[ ](fg:#ECEFF4)\
 """
 command_timeout = 5000
 
@@ -31957,33 +33281,33 @@ truncation_length = 3
 truncation_symbol = "…/"
 
 [directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Documents" = "󰈙󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#B48EAD fg:#2E3440"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#81A1C1 fg:#2E3440"
 format = '[ $symbol $branch ]($style)'
 
@@ -31992,32 +33316,32 @@ style = "bg:#81A1C1 fg:#2E3440"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
@@ -32026,7 +33350,7 @@ style = "bg:#ECEFF4 fg:#2E3440"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
@@ -32170,15 +33494,15 @@ format = '[ $time ]($style)'
 EOF
 cat > "$CONF/starship/themes/yucklys-square.toml" <<'EOF'
 format = """
-[](#2E3440)\
+[](#2E3440)\
 $python\
 $username\
-[](bg:#4C566A fg:#2E3440)\
+[](bg:#4C566A fg:#2E3440)\
 $directory\
-[](fg:#4C566A bg:#81A1C1)\
+[](fg:#4C566A bg:#81A1C1)\
 $git_branch\
 $git_status\
-[](fg:#81A1C1 bg:#8FBCBB)\
+[](fg:#81A1C1 bg:#8FBCBB)\
 $c\
 $elixir\
 $elm\
@@ -32189,11 +33513,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#8FBCBB bg:#B48EAD)\
+[](fg:#8FBCBB bg:#B48EAD)\
 $docker_context\
-[](fg:#B48EAD bg:#2E3440)\
+[](fg:#B48EAD bg:#2E3440)\
 $time\
-[ ](fg:#2E3440)\
+[ ](fg:#2E3440)\
 """
 command_timeout = 5000
 
@@ -32210,33 +33534,33 @@ truncation_length = 3
 truncation_symbol = "…/"
 
 [directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Documents" = "󰈙󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#B48EAD"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#81A1C1"
 format = '[ $symbol $branch ]($style)'
 
@@ -32245,32 +33569,32 @@ style = "bg:#81A1C1"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
@@ -32279,7 +33603,7 @@ style = "bg:#2E3440"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#8FBCBB"
 format = '[ $symbol ($version) ]($style)'
 
@@ -32291,15 +33615,15 @@ format = '[ $time ]($style)'
 EOF
 cat > "$CONF/starship/themes/yucklys-light-square.toml" <<'EOF'
 format = """
-[](#ECEFF4)\
+[](#ECEFF4)\
 $python\
 $username\
-[](bg:#3B4252 fg:#ECEFF4)\
+[](bg:#3B4252 fg:#ECEFF4)\
 $directory\
-[](fg:#3B4252 bg:#81A1C1)\
+[](fg:#3B4252 bg:#81A1C1)\
 $git_branch\
 $git_status\
-[](fg:#81A1C1 bg:#8FBCBB)\
+[](fg:#81A1C1 bg:#8FBCBB)\
 $c\
 $elixir\
 $elm\
@@ -32310,11 +33634,11 @@ $julia\
 $nodejs\
 $nim\
 $rust\
-[](fg:#8FBCBB bg:#B48EAD)\
+[](fg:#8FBCBB bg:#B48EAD)\
 $docker_context\
-[](fg:#B48EAD bg:#ECEFF4)\
+[](fg:#B48EAD bg:#ECEFF4)\
 $time\
-[ ](fg:#ECEFF4)\
+[ ](fg:#ECEFF4)\
 """
 command_timeout = 5000
 
@@ -32331,33 +33655,33 @@ truncation_length = 3
 truncation_symbol = "…/"
 
 [directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Documents" = "󰈙󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
 
 [c]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
-symbol = " "
+symbol = " "
 style = "bg:#B48EAD fg:#2E3440"
 format = '[ $symbol $context ]($style)$path'
 
 [elixir]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "bg:#81A1C1 fg:#2E3440"
 format = '[ $symbol $branch ]($style)'
 
@@ -32366,32 +33690,32 @@ style = "bg:#81A1C1 fg:#2E3440"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
-symbol = ""
+symbol = ""
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
-symbol = " "
+symbol = " "
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
@@ -32400,7 +33724,7 @@ style = "bg:#ECEFF4 fg:#2E3440"
 format = '[(\($virtualenv\) )]($style)'
 
 [rust]
-symbol = ""
+symbol = ""
 style = "bg:#8FBCBB fg:#2E3440"
 format = '[ $symbol ($version) ]($style)'
 
@@ -32672,6 +33996,530 @@ format = '[ $symbol ($version) ]($style)'
 disabled = false
 time_format = "%R" # Hour:Minute Format
 style = "bg:#86AAEC"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/starship/themes/blocks.toml" <<'EOF'
+format = """
+[](#2F343F)\
+$python\
+$username\
+[](bg:#3F444F fg:#2F343F)\
+$directory\
+[](fg:#3F444F bg:#4F5661)\
+$git_branch\
+$git_status\
+[](fg:#4F5661 bg:#B9C244)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#B9C244 bg:#EC6798)\
+$docker_context\
+[](fg:#EC6798 bg:#00B19F)\
+$time\
+[ ](fg:#00B19F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#2F343F"
+style_root = "bg:#2F343F"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3F444F"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#EC6798"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#4F5661"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#4F5661"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#2F343F"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#00B19F"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/starship/themes/forest.toml" <<'EOF'
+format = """
+[](#212B30)\
+$python\
+$username\
+[](bg:#313B40 fg:#212B30)\
+$directory\
+[](fg:#313B40 bg:#4A5760)\
+$git_branch\
+$git_status\
+[](fg:#4A5760 bg:#B9C244)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#B9C244 bg:#EC407A)\
+$docker_context\
+[](fg:#EC407A bg:#00B19F)\
+$time\
+[ ](fg:#00B19F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#212B30"
+style_root = "bg:#212B30"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#313B40"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#EC407A"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#4A5760"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#4A5760"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#212B30"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#00B19F"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/starship/themes/blocks-square.toml" <<'EOF'
+format = """
+[](#2F343F)\
+$python\
+$username\
+[](bg:#3F444F fg:#2F343F)\
+$directory\
+[](fg:#3F444F bg:#4F5661)\
+$git_branch\
+$git_status\
+[](fg:#4F5661 bg:#B9C244)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#B9C244 bg:#EC6798)\
+$docker_context\
+[](fg:#EC6798 bg:#00B19F)\
+$time\
+[ ](fg:#00B19F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#2F343F"
+style_root = "bg:#2F343F"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#3F444F"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#EC6798"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#4F5661"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#4F5661"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#2F343F"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#00B19F"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/starship/themes/forest-square.toml" <<'EOF'
+format = """
+[](#212B30)\
+$python\
+$username\
+[](bg:#313B40 fg:#212B30)\
+$directory\
+[](fg:#313B40 bg:#4A5760)\
+$git_branch\
+$git_status\
+[](fg:#4A5760 bg:#B9C244)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#B9C244 bg:#EC407A)\
+$docker_context\
+[](fg:#EC407A bg:#00B19F)\
+$time\
+[ ](fg:#00B19F)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#212B30"
+style_root = "bg:#212B30"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#313B40"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#EC407A"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#4A5760"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#4A5760"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#212B30"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#B9C244"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#00B19F"
 format = '[ $time ]($style)'
 EOF
 
@@ -34732,6 +36580,150 @@ foreground = "#DD6777"
 frame_color = "#DD6777"
 timeout = 0
 EOF
+cat > "$CONF/dunst/themes/blocks.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B4BC67"
+corner_radius = 10
+background = "#2F343F"
+foreground = "#C4C7C5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3F444F"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#2F343F"
+foreground = "#6D8895"
+frame_color = "#3F444F"
+timeout = 4
+
+[urgency_normal]
+background = "#2F343F"
+foreground = "#C4C7C5"
+frame_color = "#B4BC67"
+timeout = 6
+
+[urgency_critical]
+background = "#2F343F"
+foreground = "#EC7875"
+frame_color = "#EC7875"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/forest.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#00B19F"
+corner_radius = 10
+background = "#212B30"
+foreground = "#C4C7C5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3F5360"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#212B30"
+foreground = "#3F5360"
+frame_color = "#3F5360"
+timeout = 4
+
+[urgency_normal]
+background = "#212B30"
+foreground = "#C4C7C5"
+frame_color = "#00B19F"
+timeout = 6
+
+[urgency_critical]
+background = "#212B30"
+foreground = "#EC7875"
+frame_color = "#EC7875"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/blocks-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#B4BC67"
+corner_radius = 0
+background = "#2F343F"
+foreground = "#C4C7C5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3F444F"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#2F343F"
+foreground = "#6D8895"
+frame_color = "#3F444F"
+timeout = 4
+
+[urgency_normal]
+background = "#2F343F"
+foreground = "#C4C7C5"
+frame_color = "#B4BC67"
+timeout = 6
+
+[urgency_critical]
+background = "#2F343F"
+foreground = "#EC7875"
+frame_color = "#EC7875"
+timeout = 0
+EOF
+cat > "$CONF/dunst/themes/forest-square.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#00B19F"
+corner_radius = 0
+background = "#212B30"
+foreground = "#C4C7C5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#3F5360"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#212B30"
+foreground = "#3F5360"
+frame_color = "#3F5360"
+timeout = 4
+
+[urgency_normal]
+background = "#212B30"
+foreground = "#C4C7C5"
+frame_color = "#00B19F"
+timeout = 6
+
+[urgency_critical]
+background = "#212B30"
+foreground = "#EC7875"
+frame_color = "#EC7875"
+timeout = 0
+EOF
 
 # dunst has no config-reload-on-file-change of its own the way starship
 # does (it reads dunstrc once at startup, unlike starship which re-reads
@@ -35053,6 +37045,25 @@ else
 fi
 EOF
 chmod +x "$BIN/lock.sh"
+
+# ----------------------------------------------------------------------------
+# sudo password feedback: show a "*" per keystroke at sudo's password
+# prompt instead of nothing. Written via a temp file checked with
+# `visudo -cf` before install - a malformed file in /etc/sudoers.d breaks
+# sudo for everyone, so it's never written straight into place. Safe on
+# any sudo >= 1.8.31 (the pwfeedback buffer overflow, CVE-2019-18634, was
+# fixed there). Only affects sudo's own prompt - passwd/su/ssh/pinentry
+# use their own prompts with no such option.
+# ----------------------------------------------------------------------------
+log "Enabling sudo password feedback (stars) (needs sudo)..."
+PWFB_TMP="$(mktemp)"
+echo 'Defaults pwfeedback' > "$PWFB_TMP"
+if sudo visudo -cf "$PWFB_TMP" >/dev/null; then
+  sudo install -m 0440 -o root -g root "$PWFB_TMP" /etc/sudoers.d/pwfeedback
+else
+  log "WARNING: pwfeedback sudoers snippet failed visudo validation, skipped"
+fi
+rm -f "$PWFB_TMP"
 
 # ----------------------------------------------------------------------------
 # 10c. DPMS-wake-after-resume fix - a systemd-sleep hook, not a user script.
@@ -35706,6 +37717,10 @@ DUNST_THEMES_DIR="$HOME/.config/dunst/themes"
 DUNST_CURRENT="$HOME/.config/dunst/dunstrc"
 I3_THEMES_DIR="$HOME/.config/i3/themes"
 I3_CURRENT="$HOME/.config/i3/current-borders.conf"
+NVIM_COLORS_DIR="$HOME/.config/nvim/colors"
+NVIM_CURRENT="$NVIM_COLORS_DIR/current.lua"
+CURRENT_THEME_FILE="$HOME/.config/polybar/current-theme-name"
+MARK=" "
 
 mapfile -t THEME_FILES < <(find "$POLY_THEMES_DIR" -maxdepth 1 -name '*.ini' 2>/dev/null | sort)
 if [ "${#THEME_FILES[@]}" -eq 0 ]; then
@@ -35718,9 +37733,31 @@ for f in "${THEME_FILES[@]}"; do
   NAMES+=("$(basename "$f" .ini)")
 done
 
+# Marks whichever entry matches the last theme actually applied (written at
+# the bottom of this script on every successful switch) with a leading
+# check icon, so the rofi list itself shows what's currently active instead
+# of requiring a trip to config.ini to work that out. Compared against a
+# saved name rather than diffing config.ini's own live content against
+# every themes/*.ini - a name is exact and can't accidentally match two
+# themes that happen to share bytes after a hand edit.
+ACTIVE=""
+[ -f "$CURRENT_THEME_FILE" ] && ACTIVE="$(cat "$CURRENT_THEME_FILE")"
+
 CHOSEN="${1:-}"
 if [ -z "$CHOSEN" ]; then
-  CHOSEN="$(printf '%s\n' "${NAMES[@]}" | rofi -dmenu -i -p "Desktop Theme" -theme "$ROFI_CURRENT")"
+  DISPLAY_LINES=()
+  for n in "${NAMES[@]}"; do
+    if [ "$n" = "$ACTIVE" ]; then
+      DISPLAY_LINES+=("$MARK$n")
+    else
+      DISPLAY_LINES+=("  $n")
+    fi
+  done
+  PICKED="$(printf '%s\n' "${DISPLAY_LINES[@]}" | rofi -dmenu -i -p "Desktop Theme" -theme "$ROFI_CURRENT")"
+  # Strip the leading marker-or-indent (both exactly 2 characters: check
+  # icon + space, or two plain spaces) back off before using the selection
+  # as a real theme name.
+  CHOSEN="${PICKED#??}"
 fi
 [ -z "$CHOSEN" ] && exit 0
 
@@ -35839,6 +37876,30 @@ if [ -f "$I3_FILE" ]; then
 else
   notify-send "Desktop Theme" "No i3 border theme for $CHOSEN, keeping previous"
 fi
+
+# No "-square" Neovim equivalent either (same reasoning as I3_FILE above -
+# corner rounding has no editor-colorscheme concept), so strip the suffix
+# the same way before looking up the generated colors/rice-<name>.lua.
+NVIM_FILE="$NVIM_COLORS_DIR/rice-${CHOSEN%-square}.lua"
+if [ -f "$NVIM_FILE" ]; then
+  cp "$NVIM_FILE" "$NVIM_CURRENT"
+  # Unlike kitty'''s `kitty @ set-colors`, there'''s no dedicated retint API -
+  # push a live `:colorscheme current` into every already-open instance via
+  # its own RPC socket instead (started by lua/config/autocmds.lua, named
+  # like kitty'''s own /tmp/kitty-mgns-<PID> sockets). --remote-expr (an RPC
+  # eval), not --remote-send (synthetic keystrokes): the latter would type
+  # the command literally into whatever buffer the user is mid-edit in if
+  # they'''re in insert mode when a switch happens. A fresh nvim just picks
+  # up current.lua on its own next launch, no push needed.
+  for sock in /tmp/nvim-mgns-*; do
+    [ -S "$sock" ] || continue
+    nvim --server "$sock" --remote-expr '''v:lua.vim.cmd("colorscheme current")''' >/dev/null 2>&1 || true
+  done
+else
+  notify-send "Desktop Theme" "No neovim theme for ${CHOSEN%-square}, keeping previous"
+fi
+
+echo "$CHOSEN" > "$CURRENT_THEME_FILE"
 
 notify-send "Desktop Theme" "Switched to $CHOSEN"
 EOF

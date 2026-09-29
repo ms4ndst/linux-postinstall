@@ -30,9 +30,9 @@ POLYBAR_THEMES_DIR = os.path.expanduser("~/.config/polybar/themes")
 EXTENSION_DIR = os.path.expanduser("~/.vscode/extensions/linux-postinstall-rice-themes")
 
 THEMES = [
-    "aline", "alireza", "archblur", "archcraft", "breddie", "brenda",
+    "aline", "alireza", "archblur", "archcraft", "blocks", "breddie", "brenda",
     "catppuccin-mocha", "cherryblocks", "classic", "cristina", "cynthia",
-    "daniela", "dracula", "emilia", "h4ck3r", "isabel",
+    "daniela", "dracula", "emilia", "forest", "h4ck3r", "isabel",
     "jan", "karla", "marisol", "nord", "pamela", "silvia", "tobi", "varinka",
     "yael", "yucklys", "yucklys-light", "z0mbi3",
 ]
