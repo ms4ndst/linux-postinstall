@@ -3019,6 +3019,36 @@ sudo plymouth-set-default-theme -R bgrt
 
 ---
 
+### 🔵 OpenMandriva Port: What's Actually Different
+
+`openmandriva-setup-i3-cattpuccin.sh` was produced by mirroring `fedroa-setup-i3-cattpuccin.sh` directly to OpenMandriva Linux (Cooker / Rolling / Rock / Release). The overwhelming majority of the file (every heredoc-generated config, all 42 theme variants, the calendar-reminder daemon, every helper script) has **zero** distro dependency and is untouched. What changed:
+
+**Repository tree & architecture handling:**
+- OpenMandriva uses a 4-tier repository structure (`cooker`, `rolling`, `rock`, `release`) split into subrepos (`main`, `unsupported`, `restricted`, `non-free`). Community tiling window managers like `i3-wm` live in **`unsupported`**.
+- The script detects the active branch and architecture (`x86_64`, `znver1`, etc.) via `detect_repo_tree` and automatically enables `unsupported`, `restricted`, and `non-free` repositories idempotently.
+
+**Package name deltas:**
+- `xorg-x11-server-Xorg` → `x11-server-xorg` (OpenMandriva's X server package).
+- `xorg-x11-xinit` / `xorg-x11-xauth` → plain `xinit` / `xauth`.
+- `i3` → `i3-wm` (OpenMandriva packages i3 as `i3-wm`, which provides the `i3` binary).
+- `network-manager-applet` → `NetworkManager-applet` (preserves CamelCase package name).
+- `pipewire-pulseaudio` → `pipewire-pulse` (OpenMandriva's PulseAudio emulation layer).
+- `libdbusmenu-devel` → `libdbusmenu-glib-devel`.
+- `pipx` → `python3-pipx`.
+- `dnf-utils` → `dnf-plugins-core` / `dnf5-plugins`.
+
+**i3lock-color — official package with source build fallback:**
+- OpenMandriva maintains an official package in its repository tree (`OpenMandrivaAssociation/i3lock-color`). The script attempts direct installation via `sudo dnf install -y --allowerasing i3lock-color`. If the active mirror does not carry the binary package, it falls back to compiling from source ([Raymo111/i3lock-color](https://github.com/Raymo111/i3lock-color)) into `~/.local/bin/i3lock`. `lock.sh` supports both seamlessly.
+
+**Autostart:**
+- Replaced `dex-autostart` with systemd's built-in `xdg-desktop-autostart.target` (via `systemctl --user`), matching the proven pattern from openSUSE.
+
+**Distro branding & assets:**
+- **Screensaver:** Reads `/usr/share/icons/hicolor/scalable/apps/openmandriva.svg` (with symlink fallback to `/usr/share/icons/openmandriva.svg` and `distributor-logo.svg`) to generate half-block terminal art, with `fastfetch --logo OpenMandriva` fallback. `set-screensaver-text.sh reset` regenerates this OpenMandriva logo.
+- **Plymouth boot splash:** Unlike the openSUSE port which kept Fedora's wordmark, OpenMandriva features a brand-new pixel-art `"OPENMANDRIVA"` wordmark generated at native resolution (1072x168) in Catppuccin Mocha Mauve (`#cba6f7`) with nearest-neighbor 8x upscaling and alpha-thresholding, cleanly embedded as base64.
+
+---
+
 ### 📥 i3 Script Installation & Usage
 
 ```bash
@@ -3029,6 +3059,10 @@ sudo ./fedroa-setup-i3-cattpuccin.sh
 # openSUSE Tumbleweed
 chmod +x opensuse-setup-i3-cattpuccin.sh
 sudo ./opensuse-setup-i3-cattpuccin.sh
+
+# OpenMandriva Linux
+chmod +x openmandriva-setup-i3-cattpuccin.sh
+sudo ./openmandriva-setup-i3-cattpuccin.sh
 ```
 
 After it finishes:

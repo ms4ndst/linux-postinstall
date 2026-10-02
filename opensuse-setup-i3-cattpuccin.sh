@@ -869,6 +869,10 @@ for_window [class="^KeybindingsHelp$"] floating enable, resize set 950 850, move
 for_window [class="^UpdatesTask$"] floating enable, resize set 1000 550, move position center
 for_window [class="^gnome-calendar$"] floating enable, resize set 700 550, move position center
 for_window [class="^System-config-printer\.py$"] floating enable, resize set 750 550, move position center
+# pavucontrol, opened by middle-clicking the polybar volume widget. Its
+# own device/stream lists scroll inside the window, so a fixed size that
+# fits the widest row (port dropdown + slider + dB readout) is enough.
+for_window [class="^pavucontrol$"] floating enable, resize set 1100 650, move position center
 # Sized so the sidebar (chat list/projects), the chat input's model/mode
 # selectors, and the scheduled-tasks section below it are all visible at
 # once without clipping - confirmed live at this size (a tighter one left
@@ -1634,8 +1638,9 @@ format-background = ${colors.sky}
 
 [module/pulseaudio]
 type = internal/pulseaudio
-label-volume = "   %percentage%% "
-label-muted = "   muted "
+click-middle = pavucontrol &
+label-volume = "  󰕾 %percentage%% "
+label-muted = "  󰖁 muted "
 label-volume-foreground = ${colors.base}
 label-muted-foreground = ${colors.base}
 format-volume-background = ${colors.mauve}
@@ -1715,9 +1720,9 @@ format-background = ${colors.red}
 type = internal/battery
 battery = BAT0
 adapter = AC
-label-charging = "   %percentage%% "
-label-discharging = "   %percentage%% "
-label-full = "   Full "
+label-charging = "  󰂄 %percentage%% "
+label-discharging = "  󰁹 %percentage%% "
+label-full = "  󰁹 Full "
 label-charging-foreground = ${colors.base}
 label-discharging-foreground = ${colors.base}
 label-full-foreground = ${colors.base}
@@ -1728,14 +1733,14 @@ format-full-background = ${colors.peach}
 [module/memory]
 type = internal/memory
 interval = 2
-label = "   %percentage_used%% "
+label = "  󰍛 %percentage_used%% "
 label-foreground = ${colors.base}
 format-background = ${colors.yellow}
 
 [module/cpu]
 type = internal/cpu
 interval = 2
-label = "   %percentage%% "
+label = "  󰘚 %percentage%% "
 label-foreground = ${colors.base}
 format-background = ${colors.green}
 
@@ -2087,6 +2092,7 @@ label-foreground = ${colors.yellow}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "  %percentage%%"
 label-muted = "  muted"
 label-volume-foreground = ${colors.green}
@@ -2159,8 +2165,8 @@ type = internal/battery
 battery = BAT0
 adapter = AC
 label-charging = "  %percentage%%"
-label-discharging = "  %percentage%%"
-label-full = " Full"
+label-discharging = " 󰁹 %percentage%%"
+label-full = " 󰁹 Full"
 label-charging-foreground = ${colors.peach}
 label-discharging-foreground = ${colors.peach}
 label-full-foreground = ${colors.peach}
@@ -2329,6 +2335,7 @@ format-background = ${colors.surface0}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "  %percentage%% "
 label-muted = " muted "
 label-volume-foreground = ${colors.green}
@@ -2410,8 +2417,8 @@ type = internal/battery
 battery = BAT0
 adapter = AC
 label-charging = "  %percentage%% "
-label-discharging = "  %percentage%% "
-label-full = " Full "
+label-discharging = " 󰁹 %percentage%% "
+label-full = " 󰁹 Full "
 label-charging-foreground = ${colors.peach}
 label-discharging-foreground = ${colors.peach}
 label-full-foreground = ${colors.peach}
@@ -2575,6 +2582,7 @@ label-foreground = ${colors.text}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "%percentage%%"
 label-volume-foreground = ${colors.text}
 label-muted = "muted"
@@ -2658,6 +2666,18 @@ label-charging-foreground = ${colors.text}
 label-discharging-foreground = ${colors.text}
 label-full-foreground = ${colors.text}
 label-low-foreground = ${colors.red}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.text}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.text}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.text}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -2813,6 +2833,7 @@ label-foreground = ${colors.text}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "%percentage%%"
 label-volume-foreground = ${colors.text}
 label-muted = "muted"
@@ -2893,6 +2914,18 @@ label-charging-foreground = ${colors.text}
 label-discharging-foreground = ${colors.text}
 label-full-foreground = ${colors.text}
 label-low-foreground = ${colors.red}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.text}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.text}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.text}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -3096,6 +3129,7 @@ label-foreground = ${colors.yellow}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "  %percentage%% "
 label-muted = " muted "
 label-volume-foreground = ${colors.green}
@@ -3168,8 +3202,8 @@ type = internal/battery
 battery = BAT0
 adapter = AC
 label-charging = "  %percentage%% "
-label-discharging = "  %percentage%% "
-label-full = " Full "
+label-discharging = " 󰁹 %percentage%% "
+label-full = " 󰁹 Full "
 label-charging-foreground = ${colors.peach}
 label-discharging-foreground = ${colors.peach}
 label-full-foreground = ${colors.peach}
@@ -3382,6 +3416,7 @@ label = " %output%% "
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-background = ${colors.surface0}
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.teal}
@@ -3639,6 +3674,7 @@ label-foreground = ${colors.text}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "VOL %percentage%%"
 label-volume-foreground = ${colors.text}
 label-muted = "MUTED"
@@ -3721,6 +3757,18 @@ label-charging-foreground = ${colors.text}
 label-discharging-foreground = ${colors.text}
 label-full-foreground = ${colors.text}
 label-low-foreground = ${colors.red}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.text}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.text}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.text}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -3890,6 +3938,7 @@ label-foreground = ${colors.base}
 
 [module/pulseaudio-icon]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume = <label-volume>
 format-muted = <label-muted>
 format-volume-background = ${colors.orange}
@@ -3901,6 +3950,7 @@ label-muted-foreground = ${colors.base}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-background = ${colors.surface0}
 format-muted-background = ${colors.surface0}
 label-volume = " %percentage%% "
@@ -4186,6 +4236,7 @@ label-foreground = ${colors.base}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-background = ${colors.purple}
 label-volume = "%percentage%%"
 label-volume-foreground = ${colors.base}
@@ -4274,6 +4325,18 @@ label-charging-foreground = ${colors.base}
 label-discharging-foreground = ${colors.base}
 label-full-foreground = ${colors.base}
 label-low-foreground = ${colors.base}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.base}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.base}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.base}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -4419,6 +4482,7 @@ label-foreground = ${colors.text}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "%percentage%%"
 label-volume-foreground = ${colors.text}
 label-muted = "muted"
@@ -4499,6 +4563,18 @@ label-charging-foreground = ${colors.text}
 label-discharging-foreground = ${colors.text}
 label-full-foreground = ${colors.text}
 label-low-foreground = ${colors.red}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.text}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.text}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.text}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -4772,6 +4848,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.blue}
 label-volume = "%percentage%%"
@@ -5025,6 +5102,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 label-volume = "%percentage%%"
 label-muted = "muted"
@@ -5249,6 +5327,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = "VOL "
 format-volume-prefix-font = 1
 format-volume-prefix-foreground = ${colors.purple}
@@ -5693,6 +5772,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-background = ${colors.surface0}
 format-muted-background = ${colors.surface0}
 format-volume-prefix = " "
@@ -5924,6 +6004,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 label-volume = "%percentage%%"
 label-muted = "muted"
@@ -6140,6 +6221,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 label-volume = "%percentage%%"
 label-muted = "muted"
@@ -6372,6 +6454,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.blue}
 label-volume = "%percentage%%"
@@ -6612,6 +6695,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.blue}
 label-volume = "%percentage%%"
@@ -6862,6 +6946,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.purple}
 label-volume = "%percentage%%"
@@ -7106,6 +7191,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.purple}
 label-volume = "%percentage%%"
@@ -7342,6 +7428,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.pink}
 label-volume = "%percentage%%"
@@ -7578,6 +7665,7 @@ label = "%output%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume = <ramp-volume> <bar-volume>
 format-muted-prefix = "󰝟 "
 format-muted-prefix-foreground = ${colors.red}
@@ -7672,6 +7760,18 @@ label-charging-foreground = ${colors.text}
 label-discharging-foreground = ${colors.text}
 label-full-foreground = ${colors.text}
 label-low-foreground = ${colors.red}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.text}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.text}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.text}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -7840,6 +7940,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 label-volume = "%percentage%%"
 label-muted = "muted"
@@ -8064,6 +8165,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.purple}
 label-volume = "%percentage%%"
@@ -8313,9 +8415,10 @@ format-underline = ${colors.peach}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume = <label-volume>
 format-volume-underline = ${colors.lavender}
-label-volume = "  %percentage%%"
+label-volume = " 󰕾 %percentage%%"
 label-volume-foreground = ${colors.green}
 label-muted = " muted"
 label-muted-foreground = ${colors.red}
@@ -8344,7 +8447,7 @@ format = <label>
 type = internal/cpu
 interval = 2
 format = <label>
-label = "  %percentage%%"
+label = " 󰘚 %percentage%%"
 label-foreground = ${colors.green}
 
 
@@ -8352,7 +8455,7 @@ label-foreground = ${colors.green}
 type = internal/memory
 interval = 2
 format = <label>
-label = "  %percentage_used%%"
+label = " 󰍛 %percentage_used%%"
 label-foreground = ${colors.yellow}
 
 [module/temperature]
@@ -8378,7 +8481,7 @@ interval = 1
 scroll-up = brightnessctl set +5% &
 scroll-down = brightnessctl set 5%- &
 format = <label>
-label = "  %output%%"
+label = " 󰃟 %output%%"
 label-foreground = ${colors.mauve}
 
 [module/media]
@@ -8429,13 +8532,13 @@ battery = BAT0
 adapter = AC
 format-charging = <label-charging>
 format-charging-underline = ${colors.text}
-label-charging = "  %percentage%%"
+label-charging = " 󰂄 %percentage%%"
 label-charging-foreground = ${colors.text}
 format-discharging = <label-discharging>
 format-discharging-underline = ${colors.yellow}
-label-discharging = "  %percentage%%"
+label-discharging = " 󰁹 %percentage%%"
 label-discharging-foreground = ${colors.text}
-label-full = " Full"
+label-full = " 󰁹 Full"
 label-full-foreground = ${colors.green}
 format-full-underline = ${colors.green}
 
@@ -8603,9 +8706,10 @@ format-underline = ${colors.peach}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume = <label-volume>
 format-volume-underline = ${colors.lavender}
-label-volume = "  %percentage%%"
+label-volume = " 󰕾 %percentage%%"
 label-volume-foreground = ${colors.green}
 label-muted = " muted"
 label-muted-foreground = ${colors.red}
@@ -8631,7 +8735,7 @@ format = <label>
 type = internal/cpu
 interval = 2
 format = <label>
-label = "  %percentage%%"
+label = " 󰘚 %percentage%%"
 label-foreground = ${colors.green}
 
 
@@ -8639,7 +8743,7 @@ label-foreground = ${colors.green}
 type = internal/memory
 interval = 2
 format = <label>
-label = "  %percentage_used%%"
+label = " 󰍛 %percentage_used%%"
 label-foreground = ${colors.yellow}
 
 [module/temperature]
@@ -8665,7 +8769,7 @@ interval = 1
 scroll-up = brightnessctl set +5% &
 scroll-down = brightnessctl set 5%- &
 format = <label>
-label = "  %output%%"
+label = " 󰃟 %output%%"
 label-foreground = ${colors.mauve}
 
 [module/media]
@@ -8716,13 +8820,13 @@ battery = BAT0
 adapter = AC
 format-charging = <label-charging>
 format-charging-underline = ${colors.text}
-label-charging = "  %percentage%%"
+label-charging = " 󰂄 %percentage%%"
 label-charging-foreground = ${colors.text}
 format-discharging = <label-discharging>
 format-discharging-underline = ${colors.yellow}
-label-discharging = "  %percentage%%"
+label-discharging = " 󰁹 %percentage%%"
 label-discharging-foreground = ${colors.text}
-label-full = " Full"
+label-full = " 󰁹 Full"
 label-full-foreground = ${colors.green}
 format-full-underline = ${colors.green}
 
@@ -8886,6 +8990,7 @@ label = " %output%% "
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-background = ${colors.surface0}
 format-muted-background = ${colors.surface0}
 format-volume-prefix = " "
@@ -9156,6 +9261,7 @@ label = " %output%% "
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-background = ${colors.surface0}
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.teal}
@@ -9416,6 +9522,7 @@ label-foreground = ${colors.text}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "%percentage%%"
 label-volume-foreground = ${colors.text}
 label-muted = "muted"
@@ -9499,6 +9606,18 @@ label-charging-foreground = ${colors.text}
 label-discharging-foreground = ${colors.text}
 label-full-foreground = ${colors.text}
 label-low-foreground = ${colors.red}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.text}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.text}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.text}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -9654,6 +9773,7 @@ label-foreground = ${colors.text}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "%percentage%%"
 label-volume-foreground = ${colors.text}
 label-muted = "muted"
@@ -9734,6 +9854,18 @@ label-charging-foreground = ${colors.text}
 label-discharging-foreground = ${colors.text}
 label-full-foreground = ${colors.text}
 label-low-foreground = ${colors.red}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.text}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.text}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.text}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -9923,6 +10055,7 @@ label-foreground = ${colors.yellow}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "  %percentage%% "
 label-muted = " muted "
 label-volume-foreground = ${colors.green}
@@ -9995,8 +10128,8 @@ type = internal/battery
 battery = BAT0
 adapter = AC
 label-charging = "  %percentage%% "
-label-discharging = "  %percentage%% "
-label-full = " Full "
+label-discharging = " 󰁹 %percentage%% "
+label-full = " 󰁹 Full "
 label-charging-foreground = ${colors.peach}
 label-discharging-foreground = ${colors.peach}
 label-full-foreground = ${colors.peach}
@@ -10151,6 +10284,7 @@ label-foreground = ${colors.text}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "VOL %percentage%%"
 label-volume-foreground = ${colors.text}
 label-muted = "MUTED"
@@ -10233,6 +10367,18 @@ label-charging-foreground = ${colors.text}
 label-discharging-foreground = ${colors.text}
 label-full-foreground = ${colors.text}
 label-low-foreground = ${colors.red}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.text}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.text}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.text}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -10402,6 +10548,7 @@ label-foreground = ${colors.base}
 
 [module/pulseaudio-icon]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume = <label-volume>
 format-muted = <label-muted>
 format-volume-background = ${colors.orange}
@@ -10413,6 +10560,7 @@ label-muted-foreground = ${colors.base}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-background = ${colors.surface0}
 format-muted-background = ${colors.surface0}
 label-volume = " %percentage%% "
@@ -10724,8 +10872,9 @@ format-background = ${colors.sky}
 
 [module/pulseaudio]
 type = internal/pulseaudio
-label-volume = "   %percentage%% "
-label-muted = "   muted "
+click-middle = pavucontrol &
+label-volume = "  󰕾 %percentage%% "
+label-muted = "  󰖁 muted "
 label-volume-foreground = ${colors.base}
 label-muted-foreground = ${colors.base}
 format-volume-background = ${colors.mauve}
@@ -10814,9 +10963,9 @@ format-background = ${colors.red}
 type = internal/battery
 battery = BAT0
 adapter = AC
-label-charging = "   %percentage%% "
-label-discharging = "   %percentage%% "
-label-full = "   Full "
+label-charging = "  󰂄 %percentage%% "
+label-discharging = "  󰁹 %percentage%% "
+label-full = "  󰁹 Full "
 label-charging-foreground = ${colors.base}
 label-discharging-foreground = ${colors.base}
 label-full-foreground = ${colors.base}
@@ -10827,14 +10976,14 @@ format-full-background = ${colors.peach}
 [module/memory]
 type = internal/memory
 interval = 2
-label = "   %percentage_used%% "
+label = "  󰍛 %percentage_used%% "
 label-foreground = ${colors.base}
 format-background = ${colors.yellow}
 
 [module/cpu]
 type = internal/cpu
 interval = 2
-label = "   %percentage%% "
+label = "  󰘚 %percentage%% "
 label-foreground = ${colors.base}
 format-background = ${colors.green}
 
@@ -10972,6 +11121,7 @@ label-foreground = ${colors.base}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-background = ${colors.purple}
 label-volume = "%percentage%%"
 label-volume-foreground = ${colors.base}
@@ -11060,6 +11210,18 @@ label-charging-foreground = ${colors.base}
 label-discharging-foreground = ${colors.base}
 label-full-foreground = ${colors.base}
 label-low-foreground = ${colors.base}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.base}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.base}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.base}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -11205,6 +11367,7 @@ label-foreground = ${colors.text}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "%percentage%%"
 label-volume-foreground = ${colors.text}
 label-muted = "muted"
@@ -11285,6 +11448,18 @@ label-charging-foreground = ${colors.text}
 label-discharging-foreground = ${colors.text}
 label-full-foreground = ${colors.text}
 label-low-foreground = ${colors.red}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.text}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.text}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.text}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -11430,6 +11605,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.blue}
 label-volume = "%percentage%%"
@@ -11681,6 +11857,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 label-volume = "%percentage%%"
 label-muted = "muted"
@@ -11905,6 +12082,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = "VOL "
 format-volume-prefix-font = 1
 format-volume-prefix-foreground = ${colors.purple}
@@ -12162,6 +12340,7 @@ label-foreground = ${colors.yellow}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "  %percentage%%"
 label-muted = "  muted"
 label-volume-foreground = ${colors.green}
@@ -12234,8 +12413,8 @@ type = internal/battery
 battery = BAT0
 adapter = AC
 label-charging = "  %percentage%%"
-label-discharging = "  %percentage%%"
-label-full = " Full"
+label-discharging = " 󰁹 %percentage%%"
+label-full = " 󰁹 Full"
 label-charging-foreground = ${colors.peach}
 label-discharging-foreground = ${colors.peach}
 label-full-foreground = ${colors.peach}
@@ -12384,6 +12563,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-background = ${colors.surface0}
 format-muted-background = ${colors.surface0}
 format-volume-prefix = " "
@@ -12623,6 +12803,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 label-volume = "%percentage%%"
 label-muted = "muted"
@@ -12833,6 +13014,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 label-volume = "%percentage%%"
 label-muted = "muted"
@@ -13065,6 +13247,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.blue}
 label-volume = "%percentage%%"
@@ -13305,6 +13488,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.blue}
 label-volume = "%percentage%%"
@@ -13540,6 +13724,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.purple}
 label-volume = "%percentage%%"
@@ -13789,6 +13974,7 @@ format-background = ${colors.surface0}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 label-volume = "  %percentage%% "
 label-muted = " muted "
 label-volume-foreground = ${colors.green}
@@ -13870,8 +14056,8 @@ type = internal/battery
 battery = BAT0
 adapter = AC
 label-charging = "  %percentage%% "
-label-discharging = "  %percentage%% "
-label-full = " Full "
+label-discharging = " 󰁹 %percentage%% "
+label-full = " 󰁹 Full "
 label-charging-foreground = ${colors.peach}
 label-discharging-foreground = ${colors.peach}
 label-full-foreground = ${colors.peach}
@@ -14041,6 +14227,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.purple}
 label-volume = "%percentage%%"
@@ -14277,6 +14464,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.pink}
 label-volume = "%percentage%%"
@@ -14513,6 +14701,7 @@ label = "%output%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume = <ramp-volume> <bar-volume>
 format-muted-prefix = "󰝟 "
 format-muted-prefix-foreground = ${colors.red}
@@ -14607,6 +14796,18 @@ label-charging-foreground = ${colors.text}
 label-discharging-foreground = ${colors.text}
 label-full-foreground = ${colors.text}
 label-low-foreground = ${colors.red}
+format-charging-prefix = "󰂄 "
+format-charging-prefix-foreground = ${colors.text}
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+ramp-capacity-foreground = ${colors.text}
+format-full-prefix = "󰁹 "
+format-full-prefix-foreground = ${colors.text}
+format-low = <ramp-capacity> <label-low>
 
 [module/memory]
 type = internal/memory
@@ -14775,6 +14976,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 label-volume = "%percentage%%"
 label-muted = "muted"
@@ -14999,6 +15201,7 @@ label = "%output%%"
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " "
 format-volume-prefix-foreground = ${colors.purple}
 label-volume = "%percentage%%"
@@ -15248,9 +15451,10 @@ format-underline = ${colors.peach}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume = <label-volume>
 format-volume-underline = ${colors.lavender}
-label-volume = "  %percentage%%"
+label-volume = " 󰕾 %percentage%%"
 label-volume-foreground = ${colors.green}
 label-muted = " muted"
 label-muted-foreground = ${colors.red}
@@ -15279,7 +15483,7 @@ format = <label>
 type = internal/cpu
 interval = 2
 format = <label>
-label = "  %percentage%%"
+label = " 󰘚 %percentage%%"
 label-foreground = ${colors.green}
 
 
@@ -15287,7 +15491,7 @@ label-foreground = ${colors.green}
 type = internal/memory
 interval = 2
 format = <label>
-label = "  %percentage_used%%"
+label = " 󰍛 %percentage_used%%"
 label-foreground = ${colors.yellow}
 
 [module/temperature]
@@ -15313,7 +15517,7 @@ interval = 1
 scroll-up = brightnessctl set +5% &
 scroll-down = brightnessctl set 5%- &
 format = <label>
-label = "  %output%%"
+label = " 󰃟 %output%%"
 label-foreground = ${colors.mauve}
 
 [module/media]
@@ -15364,13 +15568,13 @@ battery = BAT0
 adapter = AC
 format-charging = <label-charging>
 format-charging-underline = ${colors.text}
-label-charging = "  %percentage%%"
+label-charging = " 󰂄 %percentage%%"
 label-charging-foreground = ${colors.text}
 format-discharging = <label-discharging>
 format-discharging-underline = ${colors.yellow}
-label-discharging = "  %percentage%%"
+label-discharging = " 󰁹 %percentage%%"
 label-discharging-foreground = ${colors.text}
-label-full = " Full"
+label-full = " 󰁹 Full"
 label-full-foreground = ${colors.green}
 format-full-underline = ${colors.green}
 
@@ -15538,9 +15742,10 @@ format-underline = ${colors.peach}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume = <label-volume>
 format-volume-underline = ${colors.lavender}
-label-volume = "  %percentage%%"
+label-volume = " 󰕾 %percentage%%"
 label-volume-foreground = ${colors.green}
 label-muted = " muted"
 label-muted-foreground = ${colors.red}
@@ -15566,7 +15771,7 @@ format = <label>
 type = internal/cpu
 interval = 2
 format = <label>
-label = "  %percentage%%"
+label = " 󰘚 %percentage%%"
 label-foreground = ${colors.green}
 
 
@@ -15574,7 +15779,7 @@ label-foreground = ${colors.green}
 type = internal/memory
 interval = 2
 format = <label>
-label = "  %percentage_used%%"
+label = " 󰍛 %percentage_used%%"
 label-foreground = ${colors.yellow}
 
 [module/temperature]
@@ -15600,7 +15805,7 @@ interval = 1
 scroll-up = brightnessctl set +5% &
 scroll-down = brightnessctl set 5%- &
 format = <label>
-label = "  %output%%"
+label = " 󰃟 %output%%"
 label-foreground = ${colors.mauve}
 
 [module/media]
@@ -15651,13 +15856,13 @@ battery = BAT0
 adapter = AC
 format-charging = <label-charging>
 format-charging-underline = ${colors.text}
-label-charging = "  %percentage%%"
+label-charging = " 󰂄 %percentage%%"
 label-charging-foreground = ${colors.text}
 format-discharging = <label-discharging>
 format-discharging-underline = ${colors.yellow}
-label-discharging = "  %percentage%%"
+label-discharging = " 󰁹 %percentage%%"
 label-discharging-foreground = ${colors.text}
-label-full = " Full"
+label-full = " 󰁹 Full"
 label-full-foreground = ${colors.green}
 format-full-underline = ${colors.green}
 
@@ -15821,6 +16026,7 @@ label = " %output%% "
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-background = ${colors.surface0}
 format-muted-background = ${colors.surface0}
 format-volume-prefix = " "
@@ -16086,6 +16292,7 @@ label-foreground = ${colors.base}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " 󰕾 "
 format-volume-prefix-background = ${colors.red}
 format-volume-prefix-foreground = ${colors.base}
@@ -16386,6 +16593,7 @@ label-foreground = ${colors.base}
 
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume-prefix = " 󰕾 "
 format-volume-prefix-background = ${colors.red}
 format-volume-prefix-foreground = ${colors.base}
@@ -16692,6 +16900,7 @@ label = "%output%"
 ; wrapper script is needed here).
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume = <ramp-volume> <bar-volume>
 format-muted-prefix = " "
 format-muted-prefix-foreground = ${colors.red}
@@ -16778,12 +16987,20 @@ label-foreground = ${colors.red}
 type = internal/battery
 battery = BAT0
 adapter = AC
-format-charging-prefix = " "
-format-discharging-prefix = " "
-format-full-prefix = " "
 label-charging = "%percentage%%"
 label-discharging = "%percentage%%"
 label-full = "Full"
+format-charging-prefix = "󰂄 "
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+format-full-prefix = "󰁹 "
+format-charging-prefix-font = 4
+format-full-prefix-font = 4
+ramp-capacity-font = 4
 
 [module/memory]
 type = internal/memory
@@ -16974,6 +17191,7 @@ label = "%output%"
 ; wrapper script is needed here).
 [module/pulseaudio]
 type = internal/pulseaudio
+click-middle = pavucontrol &
 format-volume = <ramp-volume> <bar-volume>
 format-muted-prefix = " "
 format-muted-prefix-foreground = ${colors.red}
@@ -17060,12 +17278,20 @@ label-foreground = ${colors.red}
 type = internal/battery
 battery = BAT0
 adapter = AC
-format-charging-prefix = " "
-format-discharging-prefix = " "
-format-full-prefix = " "
 label-charging = "%percentage%%"
 label-discharging = "%percentage%%"
 label-full = "Full"
+format-charging-prefix = "󰂄 "
+format-discharging = <ramp-capacity> <label-discharging>
+ramp-capacity-0 = 󰁺
+ramp-capacity-1 = 󰁼
+ramp-capacity-2 = 󰁾
+ramp-capacity-3 = 󰂀
+ramp-capacity-4 = 󰂂
+format-full-prefix = "󰁹 "
+format-charging-prefix-font = 4
+format-full-prefix-font = 4
+ramp-capacity-font = 4
 
 [module/memory]
 type = internal/memory

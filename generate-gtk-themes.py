@@ -447,6 +447,15 @@ def main():
         colors = parse_theme_colors(ini_path)
         roles = resolve_roles(colors)
         css = build_gtk_css(template, roles)
+        # A theme's own gtk-4.0/gtk.css *replaces* GTK4's built-in stylesheet
+        # rather than layering on it, so every widget the template doesn't
+        # style itself lost all styling - sliders (GtkScale) rendered with no
+        # trough or knob at all and expander/dropdown arrows vanished
+        # (pavucontrol's volume sliders were invisible). Importing GTK's own
+        # Default stylesheet first keeps every widget drawn; the template's
+        # @define-colors and rules below then override its colors.
+        base = "Default-light" if name in _vscode_gen.LIGHT_THEMES else "Default-dark"
+        css = f'@import url("resource:///org/gtk/libgtk/theme/Default/{base}.css");\n\n' + css
 
         theme_dir = os.path.join(THEMES_ROOT, f"Rice-{name}")
         gtk4_dir = os.path.join(theme_dir, "gtk-4.0")

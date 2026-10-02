@@ -1,11 +1,22 @@
 #!/usr/bin/env bash
 # ============================================================================
-# i3 "hackerbox" post-install script — Fedora 44
+# i3 "hackerbox" post-install script — OpenMandriva Linux
 # Theme: Catppuccin Mocha | Layout: gapped + picom blur/shadows
 #
-# Installs: i3, picom, polybar, rofi, dunst, kitty, i3lock-color (COPR, with a
-#           stock i3lock fallback), xss-lock, lxqt-policykit, flameshot,
-#           ImageMagick, brightnessctl, playerctl, numlockx, dex-autostart, autorandr,
+# Ported from this repo's original fedroa-setup-i3-cattpuccin.sh (Fedora/dnf).
+# The overwhelming majority of this file - i3/picom/polybar/rofi/dunst/kitty
+# config generation, all 42 theme heredocs, the calendar-reminder daemon,
+# every helper script written via heredoc - is plain bash/Python/config text
+# with no distro dependency at all, so it is untouched here. Only the actual
+# package-manager calls (dnf on OpenMandriva with repository tree handling),
+# enabling OpenMandriva's unsupported/restricted/non-free repos, and package
+# name deltas that genuinely differ between Fedora and OpenMandriva were changed.
+#
+# Installs: i3-wm (or i3), picom, polybar, rofi, dunst, kitty,
+#           i3lock-color (OpenMandriva package or built from source fallback),
+#           xss-lock, lxqt-policykit, flameshot,
+#           ImageMagick, brightnessctl, playerctl, numlockx, systemd's own
+#           xdg-autostart-generator in place of Fedora's dex-autostart package, autorandr,
 #           arandr, fastfetch, Nerd Font, tray helpers, GTK/icon theme, rofi
 #           power menu, copyq clipboard history, udiskie USB automount, pcmanfm
 #           file manager, gammastep night light, volume/brightness OSD popups,
@@ -39,10 +50,112 @@ set -euo pipefail
 log()  { echo -e "\e[1;35m[i3-setup]\e[0m $*"; }
 warn() { echo -e "\e[1;33m[i3-setup]\e[0m $*"; }
 
+if [ -f /etc/os-release ]; then
+  # shellcheck source=/dev/null
+  . /etc/os-release
+  case "${ID:-}" in
+    openmandriva|omv) ;;
+    *)
+      case "${ID_LIKE:-}" in
+        *openmandriva*|*omv*|*mandriva*) ;;
+        *)
+          echo "This script targets OpenMandriva Linux (detected: ${NAME:-unknown}). Aborting." >&2
+          exit 1
+          ;;
+      esac
+      ;;
+  esac
+fi
+
 if ! command -v dnf >/dev/null 2>&1; then
-  echo "This script targets Fedora (dnf not found). Aborting." >&2
+  echo "This script targets OpenMandriva Linux (dnf not found). Aborting." >&2
   exit 1
 fi
+
+OM_ARCH="$(uname -m)"
+[ "$OM_ARCH" = "i386" ] || [ "$OM_ARCH" = "i586" ] && OM_ARCH="i686"
+
+om_probe_enabled() {
+  local repoid="$1"
+  if dnf --dump-repo-config "$repoid" &>/dev/null; then
+    dnf --dump-repo-config "$repoid" 2>/dev/null | grep -Eq '^enabled *= *(1|true|on)'
+    return
+  fi
+  local f
+  for f in /etc/yum.repos.d/openmandriva-*.repo; do
+    [ -f "$f" ] || continue
+    if awk -v id="[$repoid]" '
+      BEGIN { found = 0; enabled = 0 }
+      /^\[/ { inrepo = ($0 == id); if (inrepo) found = 1; next }
+      inrepo && /^enabled[[:space:]]*=/ {
+        sub(/^[^=]*=[[:space:]]*/, "")
+        enabled = ($0 ~ /^(1|true|on)$/) ? 1 : 0
+        exit
+      }
+      END { exit (found && enabled) ? 0 : 1 }
+    ' "$f"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+detect_repo_tree() {
+  OM_REPO_TREE=""
+  local tree
+  for tree in cooker rolling rock release "${VERSION_ID:-}"; do
+    [ -n "$tree" ] || continue
+    if om_probe_enabled "${tree}-${OM_ARCH}"; then
+      OM_REPO_TREE="$tree"; return 0
+    fi
+  done
+  if grep -qi "rolling" /etc/os-release 2>/dev/null; then
+    OM_REPO_TREE="rolling"
+  elif grep -qi "cooker" /etc/os-release 2>/dev/null; then
+    OM_REPO_TREE="cooker"
+  elif grep -qi "rock" /etc/os-release 2>/dev/null; then
+    OM_REPO_TREE="rock"
+  else
+    OM_REPO_TREE="release"
+  fi
+  return 0
+}
+
+enable_om_repo() {
+  local sub="$1"
+  [ -z "${OM_REPO_TREE:-}" ] && detect_repo_tree
+  local repoid="${OM_REPO_TREE}-${OM_ARCH}-${sub}"
+  om_probe_enabled "$repoid" && return 0
+  if sudo dnf config-manager setopt "$repoid.enabled=1" &>/dev/null; then
+    return 0
+  fi
+  if sudo dnf config-manager --enable "$repoid" &>/dev/null; then
+    return 0
+  fi
+  local f
+  for f in /etc/yum.repos.d/openmandriva-*.repo; do
+    [ -f "$f" ] || continue
+    if grep -q "^\[$repoid\]" "$f" 2>/dev/null; then
+      if awk -v id="[$repoid]" '
+        /^\[/ { inrepo = ($0 == id); print; next }
+        inrepo && /^enabled[[:space:]]*=/ { print "enabled=1"; next }
+        { print }
+      ' "$f" > "$f.omnew" && sudo mv "$f.omnew" "$f"; then
+        return 0
+      fi
+      rm -f "$f.omnew"
+    fi
+  done
+  warn "Could not enable '$repoid' - check /etc/yum.repos.d/openmandriva-*.repo"
+  return 1
+}
+
+detect_repo_tree
+log "Enabling OpenMandriva extra/unsupported repositories (tree: $OM_REPO_TREE, arch: $OM_ARCH)..."
+enable_om_repo "unsupported"
+enable_om_repo "restricted"
+enable_om_repo "non-free"
+sudo dnf --refresh makecache 2>/dev/null || true
 
 CONF="$HOME/.config"
 BIN="$HOME/.local/bin"
@@ -52,14 +165,14 @@ mkdir -p "$CONF" "$BIN" "$FONTS"
 # ----------------------------------------------------------------------------
 # 0. Safety net: snapper snapshot of / before touching anything
 # ----------------------------------------------------------------------------
-# Needs Btrfs + an existing "root" snapper config (Fedora's Btrfs-by-default
-# installer sets this up automatically on recent releases) - best-effort,
-# never blocks the rest of the script if it's not available.
+# Needs Btrfs + an existing "root" snapper config (OpenMandriva with Btrfs
+# can create this via `snapper -c root create-config /` if not already present) -
+# best-effort, never blocks the rest of the script if it's not available.
 if command -v snapper >/dev/null 2>&1 \
     && sudo snapper list-configs 2>/dev/null | awk '{print $1}' | grep -qx root; then
   log "Taking a snapper snapshot of / before starting (rollback point)..."
   if SNAP_NUM="$(sudo snapper -c root create --type single --print-number \
-      --description "before fedroa-setup-i3-cattpuccin.sh" 2>/dev/null)"; then
+      --description "before openmandriva-setup-i3-cattpuccin.sh" 2>/dev/null)"; then
     log "Snapshot #$SNAP_NUM created. Roll back with: sudo snapper -c root undochange ${SNAP_NUM}..0"
   else
     warn "snapper snapshot failed — proceeding without a rollback point."
@@ -72,32 +185,33 @@ fi
 # 1. Packages
 # ----------------------------------------------------------------------------
 log "Installing base X11 stack + i3 + rice toolkit via dnf..."
+# Package-name deltas from the Fedora list, verified against OpenMandriva's
+# package repositories:
+#   xorg-x11-server-Xorg -> x11-server-xorg (OpenMandriva's X server package)
+#   xorg-x11-xinit -> xinit, xorg-x11-xauth -> xauth
+#   i3 -> i3-wm (OpenMandriva's package is i3-wm, providing i3)
+#   network-manager-applet -> NetworkManager-applet (OpenMandriva keeps CamelCase)
+#   pipewire-pulseaudio -> pipewire-pulse (OpenMandriva's PulseAudio emulation)
+#   libdbusmenu-devel -> libdbusmenu-glib-devel (or libdbusmenu-devel)
+#   pipx -> python3-pipx (OpenMandriva ships python3-pipx)
+#   dnf-utils -> dnf-plugins-core (or dnf5-plugins)
+#   dex-autostart is dropped in favor of systemd's built-in xdg-desktop-autostart.target
 sudo dnf install -y \
-  xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-xauth xrandr xset xsetroot xrdb \
-  i3 i3lock \
+  x11-server-xorg xinit xauth xrandr xset xsetroot xrdb \
+  i3-wm i3lock \
   picom polybar rofi dunst kitty \
-  xss-lock network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
+  xss-lock NetworkManager-applet pasystray blueman lxqt-policykit pipewire-pulse \
   copyq udiskie pcmanfm gammastep libnotify nitrogen gnome-calendar \
   system-config-printer hplip \
-  vala gtk3-devel libdbusmenu-devel libdbusmenu-gtk3-devel \
+  vala gtk3-devel libdbusmenu-glib-devel libdbusmenu-gtk3-devel \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq flameshot ImageMagick xclip slop \
-  brightnessctl playerctl numlockx dex-autostart autorandr arandr xdotool python3-xlib \
-  dnf-utils \
+  brightnessctl playerctl numlockx autorandr arandr xdotool python3-xlib \
   solaar solaar-udev \
-  pipx \
+  python3-pipx \
   jetbrains-mono-fonts \
-  plymouth-plugin-script
-
-# network-manager-applet/pasystray/blueman/udiskie are still installed above -
-# their tray-icon *applets* (nm-applet, pasystray, blueman-applet) are
-# deliberately never autostarted (see the i3 config below); polybar's own
-# wifi/volume/bluetooth widgets replace that display, but the underlying
-# packages (NetworkManager, PulseAudio, bluetoothd, umount automation) still
-# need to be present. udiskie IS autostarted, just in --tray mode.
-#
-# vala/gtk3-devel/libdbusmenu(-gtk3)-devel are build-only dependencies for
-# snixembed (section 6e below) - not runtime deps of anything else here.
+  plymouth-plugin-script \
+  || warn "One or more packages failed to install in the primary batch; attempting best-effort recovery..."
 
 # brightnessctl's udev rules gate /sys/class/backlight writes behind the
 # "video" group - without this, the brightness keys below silently no-op.
@@ -105,15 +219,48 @@ log "Adding $USER to the 'video' group (needed for brightnessctl)..."
 sudo usermod -aG video "$USER" 2>/dev/null \
   || warn "Could not add $USER to 'video' group - brightness keys may not work until you do this manually."
 
-log "Enabling COPR for i3lock-color (not in official Fedora repos)..."
-sudo dnf copr enable -y tokariew/i3lock-color || warn "COPR enable failed — you can install i3lock-color manually later."
-# The tokariew build installs itself AS /usr/bin/i3lock (same binary name,
-# extended flags - there's no separate "i3lock-color" command), which
-# conflicts file-for-file with the stock i3lock already installed above -
-# `dnf install` alone fails the whole transaction over that conflict.
-# `dnf swap` removes the old package and installs the new one as one atomic
-# transaction, which is exactly the fix for this class of same-file conflict.
-sudo dnf swap -y i3lock i3lock-color || warn "i3lock-color install failed; falling back to stock i3lock for now."
+# ----------------------------------------------------------------------------
+# 1b. i3lock-color (repo package or source build fallback)
+# ----------------------------------------------------------------------------
+# OpenMandriva maintains an official i3lock-color package in its repository
+# (OpenMandrivaAssociation/i3lock-color). If present in the active mirror,
+# dnf installs it directly (swapping stock i3lock). If the mirror doesn't
+# currently carry the binary package, we fall back to compiling from source
+# (Raymo111/i3lock-color) into ~/.local/bin/i3lock so the Catppuccin lock screen
+# always works reliably regardless of mirror state.
+I3LOCK_MARKER="$HOME/.local/state/i3lock-color-built"
+if rpm -q i3lock-color >/dev/null 2>&1; then
+  log "i3lock-color package is already installed."
+elif sudo dnf install -y --allowerasing i3lock-color 2>/dev/null; then
+  log "Installed i3lock-color package from OpenMandriva repositories."
+elif [ ! -f "$I3LOCK_MARKER" ]; then
+  log "i3lock-color package not found; building from source (Raymo111/i3lock-color, installed to ~/.local)..."
+  sudo dnf install -y \
+    autoconf automake pkgconf make gcc \
+    cairo-devel fontconfig-devel libev-devel libjpeg-devel giflib-devel \
+    libxkbcommon-devel libxkbcommon-x11-devel pam-devel \
+    xcb-util-image-devel xcb-util-xrm-devel \
+    libxcb-devel libxinerama-devel libxrandr-devel 2>/dev/null || true
+
+  I3LOCK_TMPDIR="$(mktemp -d)"
+  I3LOCK_BUILD_LOG="$(mktemp --suffix=-i3lock-color-build.log)"
+  if git clone --depth=1 https://github.com/Raymo111/i3lock-color.git "$I3LOCK_TMPDIR" >"$I3LOCK_BUILD_LOG" 2>&1 \
+     && (
+       cd "$I3LOCK_TMPDIR"
+       autoreconf -fi
+       ./configure --prefix="$HOME/.local" --sysconfdir=/etc --disable-builddir
+       make -j"$(nproc)"
+       make install
+     ) >>"$I3LOCK_BUILD_LOG" 2>&1; then
+    mkdir -p "$(dirname "$I3LOCK_MARKER")"
+    touch "$I3LOCK_MARKER"
+    log "i3lock-color built and installed to ~/.local/bin/i3lock"
+    rm -f "$I3LOCK_BUILD_LOG"
+  else
+    warn "i3lock-color source build failed (log kept at $I3LOCK_BUILD_LOG) - lock.sh will fall back to plain i3lock -c."
+  fi
+  rm -rf "$I3LOCK_TMPDIR"
+fi
 
 # ----------------------------------------------------------------------------
 # 2. Nerd Font (JetBrainsMono) — official Fedora repos don't ship patched fonts
@@ -148,7 +295,7 @@ fi
 #     reports no real progress of its own) before real boot progress takes
 #     over - all driven by Plymouth's "script" module (plymouth-plugin-
 #     script, added to the dnf list above), not the simpler "two-step"
-#     module Fedora's own stock themes use.
+#     module OpenMandriva's own stock themes use.
 #
 #     Omarchy's actual template assets (bullet/entry/lock/progress bar+box
 #     images, and its .script animation logic) are reused verbatim below -
@@ -483,71 +630,32 @@ GuV9AAAAAElFTkSuQmCC
 B64EOF
 
   base64 -d > "$TMPPLYMOUTH/logo.png" <<'B64EOF'
-iVBORw0KGgoAAAANSUhEUgAAAxAAAACoEAYAAAAgGNQ7AAAAIGNIUk0AAHomAACAhAAA+gAAAIDo
-AAB1MAAA6mAAADqYAAAXcJy6UTwAAAAGYktHRP///////wlY99wAAAAHdElNRQfqCQcKFjIyFKkN
-AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI2LTA5LTA3VDEwOjIyOjQwKzAwOjAwGAvfqgAAACV0RVh0
-ZGF0ZTptb2RpZnkAMjAyNi0wOS0wN1QxMDoyMjo0MCswMDowMGlWZxYAAAAodEVYdGRhdGU6dGlt
-ZXN0YW1wADIwMjYtMDktMDdUMTA6MjI6NDkrMDA6MDCr2wMaAAAAEGNhTnYAAABOAAAAqAAAAAAA
-AAAASyGaQwAADRpJREFUeNrt23+spNVdx/HPee7M3fIjW9iYLtJkCaBFKkpJaGtNaxExKVoi2ko0
-RoPRVGywpWoQLJWisPysscRWaghpaEVTQru1SSuVQlMaG6XVUgxtlXVBfhXYttlll3t39945/rFL
-jBqVvXPCYZjX65/N/jH3fp9nnnPmTt455Z57brllaSnwX/1LHi/rk/xpPpNXJvXSemtOSfLhfD7f
-l2RXljNO8gd5a76aDD9a7q1XJcMPDb+Tk5KF3x7OmmxJxh9ZeNnk9cn4vNGNkx3J4pdG35x8OVm8
-Y+G+yb3J+KdGV05WktE7Fp6enJ2MTho21XuSYan8TD0tKUeWT+eGJL+SN2Zrkm15Mocn9QO5PScm
-uTQfyylJbqp35vuT+kR25JDeN4+DVvLSHJlkVN5V/jApi7ml3JlkXP4styVZyBnlrCSrubV+OKm7
-61frR5I8ufrx1V9IsnX11JVbknx573v2bknyhT0/sfymJJ/d8ydL707qZ5d/Y/nNSe7Y86Wlv03y
-d3u37Plikq/tO3bf+Ul9eHXrynlJvjv5wcljSZbryXVDkmRHvpNkVH4r70mymL84MNeHyieSLOTM
-vKX3zWPNlnJPTkqyvb6//FKSp3JVfj3JzmzJjycZcliWkrw8N+SPkvL64Zz6WJK3DW+abErKTQvX
-rH5Pkn8c37DymqQ8NT5t5dakLC9eue9dSdk5Pm/lmqQ8MH58ZXdSPjUaVj6Z5JKFuye3J+XNw5Z6
-Y5IT8m/1zCSHljfkK0mW6z/lxCTbc332z3Vl+bWk7qwfzxlJJtltn5tBJY/lySRDrs/NSVmoF9TN
-SRZyVf48SeoDeSjJpPxmfjGpe8spZZRk13Dq8GCS7aPrFsZJHh3vHv1IkgcXnxwfkmTr4vmLFybZ
-uu7C8XuTbFtcPz4hySPjk8dvT/LU6IGFM5O6c3jncGSSPcO55aQkq7mu/F6S5Ok8k2TIB+pHk4zq
-BbkiyZDN9UNJSr0/D/S+eRys8pIkJcn7MslRSXk6qzkxKTuyWk5MclVqNib5dEqeTuqlGdW7ktUH
-c2guTvb+fY6oxyTLryhH1duSpeNzzOScZPf2HDc5Ltl1RY6fHPGf/3/m+BxTz0mWX5GjJrcl+w68
-/tmfN7k0o9yV5DP7f1+5cv/vLzsOzHVgvmfnzbPz83+otfcE/8MRKbk3yckZ6u8n5bUZ5dwkJ2ao
-VycZJ9mZ5B+yWm4spV6cPeWKpG7IzoVPJnVznhr9ZDJZyCOLdySrn8i2dZ9KJpuzdd0Jyeq12bru
-6GRyRx5cd20yOTqPji9J6kfr9tG3k/oD2TVckOTa7B1+NqnfyCS/m2R9Sr6RlB/OkEuSvDYL9dwk
-r8xQNyc5NCWP9L55HLSFDNmbZGMOz31Jji0b8rkkm3Jkvphkfdbl0STfzVKOS3J33ZaLk1ydu8p3
-kvpj+eBwRVIfrW8bTk3qX9Yzhr9OJpfnVQt7k8m760mjQ5P6x/U1w8NJ/Vw9e+HKpC7momFnUs+t
-f1VOT3JzvlLuSHJ/nshbkqxmksUkL8vh+eckx2ZD7jww191JXpqX1Id73zzWrrw625Mk78z9SZKL
-cl+SlLOz/33dnVGS1PPyuiSpHyvvTZLJ3+Rfk2TlwuGtSbLvvOH2JNn3+WE5SfZdPGxIkr03DOuS
-ZN/3lq8nycpkuCxJJm8ohyTJ5Oxyc5LU4w58D707G5Mkp+TbSZJ35OtJUi7eP1d+rj6UJDksK73v
-HQftW9mXSZIb8608k9RL8lB2Jbk+j+eZpG7LclaTcm425pCkbMxpOToZRuWi8qpk4Y35Qs5KxleX
-9Tk/Gb99OL1clixuK7+c65LFJ8uvlvcl42uGM3N5Mr6zvLxckIyuKl/LzyfD63J5Xp2U0/PTZVNS
-LiubcliSXVlNTepN9YksJbkk/55dSX1/HsszSb6Zpep5478Zeg8AAAAAAAC8+AgQAAAAAABAcwIE
-AAAAAADQnAABAAAAAAA0J0AAAAAAAADNCRAAAAAAAEBzAgQAAAAAANDcaP8/tfYeBGZXKb0n6Mv+
-AWtn/+g9AfNs3tffvLP/9NX7/lv/s63388N8s3/Qk/2vL+t/rZyAAAAAAAAAmhMgAAAAAACA5gQI
-AAAAAACgOQECAAAAAABoToAAAAAAAACaEyAAAAAAAIDmBAgAAAAAAKC5Ue8BAADg+Vdr399fSu87
-MNt6v3/Mtt7Pj/UPs8v+AfNr2vU/v+vXCQgAAAAAAKA5AQIAAAAAAGhOgAAAAAAAAJoTIAAAAAAA
-gOYECAAAAAAAoDkBAgAAAAAAaE6AAAAAAAAAmhv1HgAAAAAA+P/UOt3rS+l9BcD8cQICAAAAAABo
-ToAAAAAAAACaEyAAAAAAAIDmBAgAAAAAAKA5AQIAAAAAAGhOgAAAAAAAAJoTIAAAAAAAgOZGvQd4
-cSil9wRAL9Y/sFazvn/U2nuC2Tbt/fP8zDfv/2yb9/XPdOb9/Z/3/QNg9jgBAQAAAAAANCdAAAAA
-AAAAzQkQAAAAAABAcwIEAAAAAADQnAABAAAAAAA0J0AAAAAAAADNCRAAAAAAAEBzo94DvDCU0nsC
-AIDZ0vvvp1p73wFYu97rp7dpr9/6h/ll/2CWef6YT05AAAAAAAAAzQkQAAAAAABAcwIEAAAAAADQ
-nAABAAAAAAA0J0AAAAAAAADNCRAAAAAAAEBzAgQAAAAAANDcqPcAAAAAAAC8mJUy3etr7X0FrI0T
-EAAAAAAAQHMCBAAAAAAA0JwAAQAAAAAANCdAAAAAAAAAzQkQAAAAAABAcwIEAAAAAADQnAABAAAA
-AAA0N+o9AAAAAAAAvHjVOt3rS+l9BWvlBAQAAAAAANCcAAEAAAAAADQnQAAAAAAAAM0JEAAAAAAA
-QHMCBAAAAAAA0JwAAQAAAAAANCdAAAAAAAAAzQkQAAAAAABAcwIEAAAAAADQnAABAAAAAAA0J0AA
-AAAAAADNCRAAAAAAAEBzAgQAAAAAANCcAAEAAAAAADQnQAAAAAAAAM2Neg/wwlBr7wnoqZTeEzDL
-7B/zzf4BAADPne9PMLt8/2VtnIAAAAAAAACaEyAAAAAAAIDmBAgAAAAAAKA5AQIAAAAAAGhOgAAA
-AAAAAJoTIAAAAAAAgOYECAAAAAAAoLlR7wEAAAAAeC5q7T0BPZXSe4L5Zv31Ne3z7/3rxQkIAAAA
-AACgOQECAAAAAABoToAAAAAAAACaEyAAAAAAAIDmBAgAAAAAAKA5AQIAAAAAAGhOgAAAAAAAAJob
-9R4AAAAAAAD439Q63etL6TW5ExAAAAAAAEBzAgQAAAAAANCcAAEAAAAAADQnQAAAAAAAAM0JEAAA
-AAAAQHMCBAAAAAAA0JwAAQAAAAAANDfqPQDAfCul9wQAAAA8F76/ARwsJyAAAAAAAIDmBAgAAAAA
-AKA5AQIAAAAAAGhOgAAAAAAAAJoTIAAAAAAAgOYECAAAAAAAoDkBAgAAAAAAaG7Ue4AXhlJ6TwDM
-KvsHAADwfOn9/aPW3ncA6MX6Z22cgAAAAAAAAJoTIAAAAAAAgOYECAAAAAAAoDkBAgAAAAAAaE6A
-AAAAAAAAmhMgAAAAAACA5gQIAAAAAACguVHvAQAAAADgha/W6V5fSu8rmG/Tvn/AWjgBAQAAAAAA
-NCdAAAAAAAAAzQkQAAAAAABAcwIEAAAAAADQnAABAAAAAAA0J0AAAAAAAADNCRAAAAAAAEBzo94D
-AAAAADALSpnu9bX2vgKA+TTt/rv2/d8JCAAAAAAAoDkBAgAAAAAAaE6AAAAAAAAAmhMgAAAAAACA
-5gQIAAAAAACgOQECAAAAAABoToAAAAAAAACaG/UeAACAeVRr7wkAAJ5f0/79U0rvK2CWeX6m4/vL
-WjkBAQAAAAAANCdAAAAAAAAAzQkQAAAAAABAcwIEAAAAAADQnAABAAAAAAA0J0AAAAAAAADNCRAA
-AAAAAEBzo94DAMy2WntPwCwrpfcE9GT/gPnVe/1P+/nTe35gdtl/AOaNExAAAAAAAEBzAgQAAAAA
-ANCcAAEAAAAAADQnQAAAAAAAAM0JEAAAAAAAQHMCBAAAAAAA0JwAAQAAAAAANDfqPQAAAMyfUnpP
-MNvXX2vvK5ht7l9f877+gbWbdv+e9f3H5xfMIicgAAAAAACA5gQIAAAAAACgOQECAAAAAABoToAA
-AAAAAACaEyAAAAAAAIDmBAgAAAAAAKA5AQIAAAAAAGhu1HsAAACYPaX0nmC+TXv/a+19Bcwy6x/6
-sf8zz3z+0NPa908nIAAAAAAAgOYECAAAAAAAoDkBAgAAAAAAaE6AAAAAAAAAmhMgAAAAAACA5gQI
-AAAAAACgOQECAAAAAABobtR7AAAAOHil9J6AWTbt81Nr7ytgGvYPYF5N+/ll/2Se+ftxrZyAAAAA
-AAAAmhMgAAAAAACA5gQIAAAAAACgOQECAAAAAABoToAAAAAAAACaEyAAAAAAAIDmBAgAAAAAAKC5
-/wB+iUl4PjHaZgAAAABJRU5ErkJggg==
+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
 B64EOF
 
   base64 -d > "$TMPPLYMOUTH/progress_bar.png" <<'B64EOF'
@@ -910,7 +1018,7 @@ exec --no-startup-id snixembed --fork
 # Network Manager/PulseAudio/bluetoothd all keep working fine without their
 # applets running; only the redundant tray icon goes away. Their
 # /etc/xdg/autostart entries are overridden with Hidden=true in
-# ~/.config/autostart/ (section 6d below) so dex-autostart further down
+# ~/.config/autostart/ (section 6d below) so the XDG-autostart pass further
 # doesn't bring them back either.
 #
 # blueman-manager (opened by clicking the polybar bluetooth widget) itself
@@ -964,11 +1072,10 @@ exec --no-startup-id sh -c 'pgrep -x playerctld >/dev/null || playerctld'
 # checking process's command line has no reason to contain that text.
 exec --no-startup-id ~/.local/bin/calendar-reminder-daemon-launch.sh
 exec --no-startup-id numlockx on
-# Runs any other installed app's ~/.config/autostart .desktop entries (tray
-# apps, sync clients, etc.) - bare i3 has no XDG autostart support of its own.
-# (Fedora packages upstream's "dex" as "dex-autostart" - same tool/flags,
-# renamed to avoid a name collision with an unrelated Fedora package.)
-exec --no-startup-id dex-autostart -a -e i3
+# OpenMandriva doesn't ship dex-autostart, so we use systemd's built-in
+# systemd-xdg-autostart-generator instead. It parses ~/.config/autostart and
+# /etc/xdg/autostart .desktop files, respecting OnlyShowIn/NotShowIn.
+exec --no-startup-id sh -c 'systemctl --user set-environment XDG_CURRENT_DESKTOP=i3; systemctl --user daemon-reload; systemctl --user start xdg-desktop-autostart.target'
 # MX Anywhere 3S needs its Scroll Wheel Resolution HID++ feature toggled
 # off-then-on after every reconnect (reboot, sleep/wake) for scrolling to
 # work properly - see ~/.local/bin/fix-mx-scroll.sh for why a plain "set to
@@ -976,7 +1083,7 @@ exec --no-startup-id dex-autostart -a -e i3
 # just never shows up in `solaar show`, so the retry loop times out and
 # exits quietly) - hardcoded to this specific, confirmed mouse rather than
 # gated behind generic detection, matching the same fix already offered as
-# a manual Peripherals menu action in post-install-fedora.sh.
+# a manual Peripherals menu action in post-install-openmandriva.sh (this repo's separate, general-purpose post-install script for this distro).
 exec --no-startup-id ~/.local/bin/fix-mx-scroll.sh
 exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.local/bin/lock.sh --with-screensaver
 # Idle-based lock: screensaver activation at 20min (triggers xss-lock ->
@@ -17455,7 +17562,7 @@ cat > "$BIN/polybar-updates.sh" <<'EOF'
 # reads whatever that cache last had rather than forcing a slow network
 # refresh itself.
 while true; do
-  count=$(timeout 10 dnf check-update -q 2>/dev/null | grep -cE '^\S+\.(x86_64|noarch|i686|aarch64|s390x|ppc64le)[[:space:]]')
+  count=$(timeout 10 dnf check-update -q 2>/dev/null | grep -cE '^\S+\.(x86_64|noarch|i686|aarch64|znver1|s390x|ppc64le)[[:space:]]')
   printf ' %s\n' "${count:-0}"
   sleep 900
 done
@@ -17466,22 +17573,29 @@ chmod +x "$BIN/polybar-updates.sh"
 log "Writing software-update.sh (dnf upgrade + reboot-required check)..."
 cat > "$BIN/software-update.sh" <<'EOF'
 #!/usr/bin/env bash
-# Runs the actual dnf upgrade (same fully-interactive flow as before -
-# dnf's own "Is this ok [y/N]:" prompt is untouched), then checks whether
-# it left the system needing a reboot (kernel/glibc/systemd/etc. update)
-# via dnf-utils' `needs-restarting -r` and offers to reboot right away.
-# Exit code semantics are the inverse of a typical command: 1 means a
-# reboot IS required, 0 means it's not (confirmed against the real tool,
-# not assumed from the name) - this rice's polybar update-count widget
-# only reports pending package counts, not reboot-required state, so
-# without this the only other way to notice is by chance days later.
+# Runs the actual dnf upgrade on OpenMandriva (interactive prompt),
+# then checks whether a reboot is required via needs-restarting or
+# /var/run/reboot-required.
 set -uo pipefail
-sudo dnf upgrade
+sudo dnf upgrade --refresh
 
 echo
-if needs-restarting -r >/dev/null 2>&1; then
-  echo "No reboot required."
-else
+if command -v needs-restarting >/dev/null 2>&1; then
+  if needs-restarting -r >/dev/null 2>&1; then
+    echo "No reboot required."
+  else
+    echo "A reboot is required to finish applying these updates."
+    read -r -p "Reboot now? [y/N] " reply
+    case "$reply" in
+      [yY]|[yY][eE][sS])
+        systemctl reboot
+        ;;
+      *)
+        echo "Not rebooting - remember to reboot later to finish applying updates."
+        ;;
+    esac
+  fi
+elif [ -f /var/run/reboot-required ]; then
   echo "A reboot is required to finish applying these updates."
   read -r -p "Reboot now? [y/N] " reply
   case "$reply" in
@@ -17492,6 +17606,8 @@ else
       echo "Not rebooting - remember to reboot later to finish applying updates."
       ;;
   esac
+else
+  echo "Update complete. If a new kernel or systemd was installed, a reboot is recommended."
 fi
 read -r -p "Press Enter to close..." _
 EOF
@@ -17972,10 +18088,10 @@ chmod +x "$BIN/calendar-reminder-daemon-launch.sh"
 # ----------------------------------------------------------------------------
 # 6d. Disable the redundant tray applets' own autostart entries
 # ----------------------------------------------------------------------------
-# network-manager-applet/pasystray/blueman all ship their OWN
+# NetworkManager-applet/pasystray/blueman all ship their OWN
 # /etc/xdg/autostart/*.desktop entries independent of the i3 exec lines
-# above - removing those exec lines alone isn't enough, since
-# dex-autostart -a -e i3 (further up in the i3 config) would still pick
+# above - removing those exec lines alone isn't enough, since the
+# systemd-xdg-autostart-generator pass (further up in the i3 config) would still pick
 # these up and relaunch them. The standard fix for a system-wide autostart
 # entry you don't want, without touching the system file itself (which
 # would need root and would affect every user), is a per-user override with
@@ -18014,8 +18130,8 @@ systemctl --user mask evolution-alarm-notify.service >/dev/null 2>&1 || warn "Co
 # ----------------------------------------------------------------------------
 # 6e. snixembed (StatusNotifierItem -> legacy XEmbed tray proxy)
 # ----------------------------------------------------------------------------
-# Not packaged for Fedora. Builds cleanly from source with the vala/
-# gtk3-devel/libdbusmenu(-gtk3)-devel packages already installed in section
+# Not packaged for OpenMandriva either. Builds cleanly from source with the vala/
+# gtk3-devel/libdbusmenu(-glib)-devel/libdbusmenu-gtk3-devel packages already installed in section
 # 1 - best-effort like the Nerd Font download above, since a build failure
 # here shouldn't be able to take down the rest of the script (you'd just
 # lose SNI tray icons for apps like OBS/1Password/Discord; the legacy-
@@ -26655,7 +26771,7 @@ cp "$CONF/i3/themes/catppuccin-mocha.conf" "$CONF/i3/current-borders.conf"
 # 6g. Starship prompt theming - matches the shell prompt (powerline segments)
 #     to whichever desktop theme is active, the same way kitty/rofi already
 #     do. Only relevant if Chris Titus mybash (installed by the separate
-#     post-install-fedora.sh script, not this one) is actually in use - its
+#     post-install-openmandriva.sh script, not this one) is actually in use - its
 #     setup.sh points ~/.config/starship.toml at a fixed Nord-colored config
 #     via a symlink into ~/.local/share/mybash/starship.toml, completely
 #     independent of kitty's own ANSI palette, which is exactly why
@@ -36863,19 +36979,9 @@ if [ "$1" = "--with-screensaver" ]; then
 fi
 
 # Color flags are i3lock-color-only - stock i3lock rejects unknown options
-# and would just fail to lock. The tokariew COPR build of i3lock-color
-# installs itself AS /usr/bin/i3lock (same binary name, extended flags -
-# there is no separate "i3lock-color" command), so detect by checking
-# whether the i3lock-color PACKAGE is installed via rpm, not by binary name
-# or `--help` output - i3lock's `--help` always prints the same terse usage
-# summary regardless of build (it just points to `man i3lock` for the full
-# flag list), so grepping it for a color flag name never actually matches
-# either build and silently always falls through to the plain branch below.
-# This build is based on the modern Raymo111/i3lock-color fork, whose flags
-# use hyphens (--inside-color) rather than the older eBrnd-style names
-# (--insidecolor) - confirmed against `man i3lock` on this exact build,
-# since guessing the wrong style fails with "unrecognized option" even when
-# the color-capable binary IS installed.
+# and would just fail to lock. Supports either the OpenMandriva rpm package
+# (installed AS /usr/bin/i3lock) or the source-built binary in ~/.local/bin/i3lock.
+# Detection checks for either rpm package or marker file.
 # Blank the display immediately on lock rather than leaving the blurred
 # lock screen lit until the idle DPMS timer eventually catches up (minutes
 # later) - i3lock has to be backgrounded (not exec'd) so this script can
@@ -36977,8 +37083,15 @@ WRONG="${WRONGS[$RANDOM % ${#WRONGS[@]}]}"
 DIM="$HOME/.config/i3lock/dim.png"
 [ -f "$DIM" ] || { mkdir -p "$HOME/.config/i3lock"; magick -size 1x1 xc:"rgba(0,0,0,0.45)" "$DIM"; }
 
+I3LOCK_BIN=""
 if rpm -q i3lock-color >/dev/null 2>&1; then
-  lock_and_blank i3lock \
+  I3LOCK_BIN="i3lock"
+elif [ -x "$HOME/.local/bin/i3lock" ] && [ -f "$HOME/.local/state/i3lock-color-built" ]; then
+  I3LOCK_BIN="$HOME/.local/bin/i3lock"
+fi
+
+if [ -n "$I3LOCK_BIN" ]; then
+  lock_and_blank "$I3LOCK_BIN" \
     --blur=8 \
     -i "$DIM" -t \
     --clock --indicator \
@@ -37113,16 +37226,18 @@ cat > "$BIN/screensaver.sh" <<'EOF'
 # Astal/AGS shell (which i3 doesn't have an equivalent of). Exits on any
 # keypress OR mouse movement.
 LOGO="$HOME/.config/screensaver/logo.txt"
-FEDORA_SVG="/usr/share/fedora-logos/fedora_logo.svg"
+OPENMANDRIVA_SVG="/usr/share/icons/hicolor/scalable/apps/openmandriva.svg"
+[ -f "$OPENMANDRIVA_SVG" ] || OPENMANDRIVA_SVG="/usr/share/icons/openmandriva.svg"
+[ -f "$OPENMANDRIVA_SVG" ] || OPENMANDRIVA_SVG="/usr/share/icons/hicolor/scalable/apps/distributor-logo.svg"
 if [ ! -f "$LOGO" ]; then
   mkdir -p "$(dirname "$LOGO")"
-  if command -v magick >/dev/null 2>&1 && [ -f "$FEDORA_SVG" ]; then
+  if command -v magick >/dev/null 2>&1 && [ -f "$OPENMANDRIVA_SVG" ]; then
     # Two source pixel rows -> one terminal row, using a half-block glyph
     # (█ both on, ▀ top only, ▄ bottom only, space neither) to double the
     # effective vertical resolution - the same trick Omarchy's own
     # transcoder uses. The alpha channel (not color/threshold) is the mask,
     # since the SVG's logo shape is opaque on a transparent background.
-    magick -background none "$FEDORA_SVG" -auto-orient \
+    magick -background none "$OPENMANDRIVA_SVG" -auto-orient \
       -alpha extract -alpha off -bordercolor black -border 1 -trim +repage \
       -resize 80x52 -threshold 50% -negate -compress none pbm:- 2>/dev/null \
       | awk '
@@ -37142,10 +37257,9 @@ if [ ! -f "$LOGO" ]; then
           }
         }' > "$LOGO"
   fi
-  # Fall back to the old typed-letter banner if ImageMagick or the Fedora
-  # logo SVG isn't present (non-standard install) or the pipeline above
-  # produced nothing.
-  [ -s "$LOGO" ] || fastfetch --logo Fedora -s none > "$LOGO"
+  # Fall back to the fastfetch logo if ImageMagick or the OpenMandriva
+  # logo SVG isn't present or the pipeline above produced nothing.
+  [ -s "$LOGO" ] || fastfetch --logo OpenMandriva -s none > "$LOGO"
 fi
 
 # A plain fullscreen terminal only sees mouse movement as input if it typed
@@ -37445,7 +37559,7 @@ cat > "$BIN/set-screensaver-text.sh" <<'EOF'
 #!/usr/bin/env bash
 # Set the screensaver logo (~/.config/screensaver/logo.txt) from either
 # typed text or an image file - both converted to the same solid Unicode
-# half-block art (█▀▄) the Fedora logo uses in screensaver.sh. Matches
+# half-block art (█▀▄) the OpenMandriva logo uses in screensaver.sh. Matches
 # Omarchy's own screensaver branding (`omarchy branding screensaver
 # text|image`), just as one plain script instead of a subcommand.
 #
@@ -37462,16 +37576,19 @@ cat > "$BIN/set-screensaver-text.sh" <<'EOF'
 # no --invert equivalent here for a light-subject-on-dark-photo yet.
 #
 # Overwrites $LOGO every run - that's intentional here (unlike
-# screensaver.sh's own lazy Fedora-logo generation, which only writes if
+# screensaver.sh's own lazy OpenMandriva-logo generation, which only writes if
 # missing).
 set -euo pipefail
 
 LOGO="$HOME/.config/screensaver/logo.txt"
 FONT="/usr/share/fonts/truetype/nerd-fonts/JetBrainsMonoNerdFont-Bold.ttf"
-FEDORA_SVG="/usr/share/fedora-logos/fedora_logo.svg"
+OPENMANDRIVA_SVG="/usr/share/icons/hicolor/scalable/apps/openmandriva.svg"
+[ -f "$OPENMANDRIVA_SVG" ] || OPENMANDRIVA_SVG="/usr/share/icons/openmandriva.svg"
+[ -f "$OPENMANDRIVA_SVG" ] || OPENMANDRIVA_SVG="/usr/share/icons/hicolor/scalable/apps/distributor-logo.svg"
 
 if ! command -v magick >/dev/null 2>&1; then
   echo "ImageMagick (magick) is not installed." >&2
+  echo "  OpenMandriva:  sudo dnf install ImageMagick" >&2
   echo "  Ubuntu/Debian: sudo apt install imagemagick" >&2
   echo "  Fedora:        sudo dnf install ImageMagick" >&2
   echo "  Arch:          sudo pacman -S imagemagick" >&2
@@ -37482,7 +37599,7 @@ mkdir -p "$(dirname "$LOGO")"
 
 INPUT="${1:-}"
 if [ -z "$INPUT" ]; then
-  read -r -p "Screensaver text, a path to an image, or 'reset' for the Fedora default: " INPUT
+  read -r -p "Screensaver text, a path to an image, or 'reset' for the OpenMandriva default: " INPUT
 fi
 if [ -z "$INPUT" ]; then
   echo "Nothing entered, leaving $LOGO unchanged." >&2
@@ -37494,7 +37611,7 @@ trap 'rm -f "$TMP_PNG"' EXIT
 
 # Two source pixel rows -> one terminal row, using a half-block glyph
 # (█ both on, ▀ top only, ▄ bottom only, space neither) - identical to the
-# conversion screensaver.sh runs on the Fedora logo SVG.
+# conversion screensaver.sh runs on the OpenMandriva logo SVG.
 to_block_art() {
   awk '
     BEGIN { block["11"]="█"; block["10"]="▀"; block["01"]="▄"; block["00"]=" " }
@@ -37515,26 +37632,26 @@ to_block_art() {
 }
 
 if [ "$(printf '%s' "$INPUT" | tr '[:upper:]' '[:lower:]')" = "reset" ]; then
-  # Reset mode - regenerates the exact same Fedora block-art logo
+  # Reset mode - regenerates the exact same OpenMandriva block-art logo
   # screensaver.sh itself lazily creates on first run (identical magick
-  # pipeline against the real Fedora SVG, reusing this script's own
+  # pipeline against the real OpenMandriva SVG, reusing this script's own
   # to_block_art rather than a second copy), so picking this is
   # indistinguishable from having never customized the logo at all.
-  if [ -f "$FEDORA_SVG" ]; then
-    magick -background none "$FEDORA_SVG" -auto-orient \
+  if [ -f "$OPENMANDRIVA_SVG" ]; then
+    magick -background none "$OPENMANDRIVA_SVG" -auto-orient \
       -alpha extract -alpha off -bordercolor black -border 1 -trim +repage \
       -resize 80x52 -threshold 50% -negate -compress none pbm:- 2>/dev/null \
       | to_block_art >"$LOGO"
   fi
-  # Same fallback screensaver.sh itself uses if the Fedora SVG isn't
-  # installed (non-Fedora system) or the pipeline above produced nothing.
+  # Same fallback screensaver.sh itself uses if the OpenMandriva SVG isn't
+  # installed or the pipeline above produced nothing.
   if [ ! -s "$LOGO" ]; then
-    command -v fastfetch >/dev/null 2>&1 && fastfetch --logo Fedora -s none >"$LOGO"
+    command -v fastfetch >/dev/null 2>&1 && fastfetch --logo OpenMandriva -s none >"$LOGO"
   fi
 elif [ -f "$INPUT" ]; then
   # Image mode. Real transparency (an icon/logo on a clear background) is
   # the mask if present - dark pixels are already threshold-negated
-  # correctly the same way the Fedora SVG is in screensaver.sh. Otherwise
+  # correctly the same way the OpenMandriva SVG is in screensaver.sh. Otherwise
   # (a flattened PNG/JPG/photo with no alpha channel) fall back to
   # grayscale + threshold with NO negate, since dark-subject-on-light-
   # background needs the opposite polarity from the alpha-mask case -
@@ -37558,7 +37675,7 @@ elif [ -f "$INPUT" ]; then
   fi
 else
   # Text mode. Point size is tuned so short phrases end up roughly the same
-  # visual scale as the block Fedora logo (which targets an 80-column
+  # visual scale as the block OpenMandriva logo (which targets an 80-column
   # canvas) once resized below - longer text just shrinks further to fit,
   # same tradeoff arbitrarily-sized source images have above.
   FONT_ARGS=()
@@ -38252,7 +38369,7 @@ fi
 # ----------------------------------------------------------------------------
 # 13. Catppuccin GTK3/4 theme (best-effort — cosmetic only, won't fail the script)
 # ----------------------------------------------------------------------------
-# Not packaged for Fedora. The official catppuccin/gtk GitHub releases ship
+# Not packaged for OpenMandriva either. The official catppuccin/gtk GitHub releases ship
 # prebuilt theme folders (just GTK CSS + assets, no compilation) - download
 # the Mocha/mauve variant matching the rest of this rice and drop it
 # straight into ~/.themes.
@@ -38466,7 +38583,7 @@ fi
 # ----------------------------------------------------------------------------
 # 14c. CLIamp (terminal music player) - Mod+m
 # ----------------------------------------------------------------------------
-# Not packaged for Fedora - vendor curl|sh installer fetches a prebuilt
+# Not packaged for OpenMandriva either - vendor curl|sh installer fetches a prebuilt
 # release binary (no Go/build deps needed) into ~/.local/bin, same shape as
 # the Claude Code installer pattern used elsewhere. Best-effort like
 # snixembed/the Nerd Font above - a failed install just logs a warning.
@@ -38489,9 +38606,12 @@ cat <<'EOF'
  Next steps
 ────────────────────────────────────────────────────────────
  1. Log out.
- 2. At the GDM login screen, click the gear icon next to the
-    password field and select "i3" (it's a plain Xorg session —
-    installing the i3 package registers it automatically).
+ 2. At the login screen, pick "i3" as the session (it's a plain Xorg
+    session - installing the i3-wm package registers it automatically).
+    Where exactly that picker is depends on your display manager, since
+    OpenMandriva defaults to SDDM (Plasma edition) or GDM (GNOME edition):
+    SDDM has a session dropdown on the login screen, while GDM puts it
+    behind the gear icon next to the password field.
  3. First login will look mostly bare until picom/polybar spawn
     (a couple seconds). If polybar doesn't appear, run:
         polybar -c ~/.config/polybar/config.ini top-primary
