@@ -1352,6 +1352,14 @@ install_dbeaver() {
 }
 
 # ========== CONTAINERS & VMS ==========
+# Docker Desktop: Docker Inc publishes no package for OpenMandriva (its only
+# SUSE builds are SLES/s390x; Linux desktop packages exist for Ubuntu/Debian,
+# Fedora/RHEL and Arch only), so there's nothing safe to install here - the
+# Docker Engine + CLI + compose installed above are the supported route.
+configure_docker_desktop() {
+    log INFO "Docker Desktop: not available for OpenMandriva (Docker Inc only packages it for Ubuntu/Debian, Fedora/RHEL and Arch) - Docker Engine + CLI + compose are installed instead"
+}
+
 install_containers() {
     # Docker: no Fedora-style "moby-engine" package name here, and Docker
     # Inc's official yum repo only builds Fedora/openSUSE/CentOS RPMs - plain
@@ -1377,6 +1385,7 @@ install_containers() {
         install_virtio_win
     fi
     install_docker_libvirt_forward_fix
+    configure_docker_desktop
 }
 
 # Virtio-Win: the Windows guest drivers (network, disk, balloon, etc) needed

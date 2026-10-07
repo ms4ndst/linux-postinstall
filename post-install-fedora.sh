@@ -1417,26 +1417,89 @@ install_databases() {
     install_dbeaver
 }
 
-# DBeaver CE - no vendor rpm repo exists (dbeaver.io only ships a Debian apt
-# repo, a standalone rpm, and Snap/Flathub which DBeaver Corporation itself
-# says it doesn't support) - the community COPR is the best real option.
+# DBeaver CE from DBeaver's own standalone rpm (no vendor rpm repo exists).
+# The copart/dbeaver COPR used before is abandoned: its newest build is
+# 22.3.1 for Fedora 38 and requires java-1.8.0-openjdk, which current
+# Fedora no longer ships, so it can't install at all. The official rpm has
+# no dependencies (it bundles its own JRE). No repo means no automatic
+# updates - re-run this to upgrade, since "latest-stable" always points at
+# the newest release.
 install_dbeaver() {
     if is_installed dbeaver-ce; then
         SKIPPED_PACKAGES+=("dbeaver-ce"); ((TOTAL_SKIPPED++)); log INFO "Already installed: dbeaver-ce"; return 0
     fi
-    log INFO "Installing DBeaver CE (via COPR)..."
-    add_copr "copart/dbeaver" copart
-    batch_install "DBeaver" dbeaver-ce
+    # Drop the dead COPR if an earlier run enabled it - it only adds a
+    # broken dbeaver-ce candidate to every dnf transaction.
+    dnf copr remove -y copart/dbeaver &>/dev/null || true
+    log INFO "Installing DBeaver CE (official standalone rpm)..."
+    if dnf install -y https://dbeaver.io/files/dbeaver-ce-latest-stable.x86_64.rpm &>/dev/null \
+        && is_installed dbeaver-ce; then
+        INSTALLED_PACKAGES+=("dbeaver-ce"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: dbeaver-ce"
+    else
+        FAILED_PACKAGES+=("dbeaver-ce"); ((TOTAL_FAILED++))
+        log WARNING "DBeaver install failed - try manually: dnf install https://dbeaver.io/files/dbeaver-ce-latest-stable.x86_64.rpm"
+    fi
 }
 
 # ========== CONTAINERS & VMS ==========
+# Docker Desktop (opt-in prompt at the end of the Containers category).
+# Docker Inc's official Fedora RPM depends on its own docker-ce-cli, which
+# conflicts with Fedora's moby-engine/docker-cli (both own /usr/bin/docker),
+# so this swaps Fedora's Docker for Docker Inc's docker-ce from
+# download.docker.com - the plain system engine keeps working alongside
+# Desktop's own VM. Desktop runs that VM under KVM, hence the kvm group.
+configure_docker_desktop() {
+    local msg="Also install Docker Desktop (GUI)?\n\nThis replaces Fedora's moby-engine with Docker Inc's docker-ce\n(from download.docker.com), which Docker Desktop's RPM requires.\nFree for personal and small-business use; larger companies\nneed a paid Docker subscription."
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Install" --no-button "Skip" 15 74 && do_it=true
+    else
+        echo -e "$msg [y/N]:"
+        read -r REPLY
+        { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
+    fi
+    if $do_it; then install_docker_desktop; else log INFO "Skipped Docker Desktop"; fi
+}
+
+install_docker_desktop() {
+    if is_installed docker-desktop; then
+        SKIPPED_PACKAGES+=("docker-desktop"); ((TOTAL_SKIPPED++)); log INFO "Docker Desktop already installed"; return 0
+    fi
+    log INFO "Installing Docker Desktop (Docker Inc's repo + official RPM)..."
+    dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo --overwrite 2>/dev/null \
+        || dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo 2>/dev/null
+    if ! dnf install -y --allowerasing docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; then
+        FAILED_PACKAGES+=("docker-desktop"); ((TOTAL_FAILED++)); log ERROR "Could not install Docker Inc's docker-ce (required by Docker Desktop)"; return 1
+    fi
+    systemctl enable --now docker 2>/dev/null
+    local t; t=$(mktemp -d)
+    if curl -fL --retry 3 -o "$t/docker-desktop-x86_64.rpm" https://desktop.docker.com/linux/main/amd64/docker-desktop-x86_64.rpm \
+        && dnf install -y "$t/docker-desktop-x86_64.rpm"; then
+        INSTALLED_PACKAGES+=("docker-desktop"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: Docker Desktop"
+    else
+        FAILED_PACKAGES+=("docker-desktop"); ((TOTAL_FAILED++)); log ERROR "Docker Desktop download/install failed"; rm -rf "$t"; return 1
+    fi
+    rm -rf "$t"
+    if [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; then
+        usermod -aG kvm "$SUDO_USER" 2>/dev/null
+        log INFO "Added $SUDO_USER to the kvm group (Docker Desktop runs its engine in a KVM VM; log out/in to take effect)"
+    fi
+    log INFO "Start Docker Desktop from the app menu (or: systemctl --user enable --now docker-desktop)"
+}
+
 install_containers() {
     # Docker: Fedora's own moby-engine (upstream Moby, Docker-compatible),
     # not Docker Inc's official repo - mirroring the Ubuntu script's own
     # precedent of preferring the distro package (docker.io) over
     # download.docker.com there too, for consistency.
-    batch_install "Containers" moby-engine docker-compose podman
-    if is_installed moby-engine; then
+    # After Docker Desktop (below) swapped in Docker Inc's docker-ce, don't
+    # try to put moby-engine back - the two conflict.
+    if is_installed docker-ce; then
+        batch_install "Containers" podman
+    else
+        batch_install "Containers" moby-engine docker-compose podman
+    fi
+    if is_installed moby-engine || is_installed docker-ce; then
         systemctl enable --now docker 2>/dev/null
         [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ] && usermod -aG docker "$SUDO_USER" 2>/dev/null \
             && log INFO "Added $SUDO_USER to the docker group (log out/in to take effect)"
@@ -1454,6 +1517,7 @@ install_containers() {
         install_virtio_win
     fi
     install_docker_libvirt_forward_fix
+    configure_docker_desktop
 }
 
 # Virtio-Win: the Windows guest drivers (network, disk, balloon, etc) needed
@@ -1529,7 +1593,7 @@ download_virtio_win_iso() {
 # installs a tiny oneshot systemd unit that reapplies the two rules after
 # docker.service comes up, on every boot, not just once right now.
 install_docker_libvirt_forward_fix() {
-    if ! is_installed moby-engine || ! is_installed libvirt; then
+    if { ! is_installed moby-engine && ! is_installed docker-ce; } || ! is_installed libvirt; then
         log INFO "Skipping Docker/libvirt forwarding fix - both Containers and Virtualization need to be installed first"
         return 0
     fi
@@ -2688,8 +2752,8 @@ EOF
 }
 
 install_docker_standalone() {
-    batch_install "Docker (standalone)" moby-engine docker-compose
-    if is_installed moby-engine; then
+    is_installed docker-ce || batch_install "Docker (standalone)" moby-engine docker-compose
+    if is_installed moby-engine || is_installed docker-ce; then
         systemctl enable --now docker 2>/dev/null
         [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ] && usermod -aG docker "$SUDO_USER" 2>/dev/null
     fi

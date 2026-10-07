@@ -1330,11 +1330,74 @@ install_dbeaver() {
 }
 
 # ========== CONTAINERS ==========
+# Docker Desktop (opt-in prompt at the end of the Containers category).
+# Docker Inc's official .deb depends on its own docker-ce-cli, which
+# conflicts with Ubuntu's docker.io, so this adds Docker Inc's apt repo
+# (download.docker.com) and swaps docker.io for docker-ce - the plain
+# system engine keeps working (same /var/lib/docker, so images survive)
+# alongside Desktop's own VM. Desktop runs that VM under KVM, hence the
+# kvm group.
+configure_docker_desktop() {
+    local msg="Also install Docker Desktop (GUI)?\n\nThis replaces Ubuntu's docker.io with Docker Inc's docker-ce\n(from download.docker.com), which Docker Desktop's .deb requires.\nFree for personal and small-business use; larger companies\nneed a paid Docker subscription."
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Install" --no-button "Skip" 15 74 && do_it=true
+    else
+        echo -e "$msg [y/N]:"
+        read -r REPLY
+        { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
+    fi
+    if $do_it; then install_docker_desktop; else log INFO "Skipped Docker Desktop"; fi
+}
+
+install_docker_desktop() {
+    if is_installed docker-desktop; then
+        SKIPPED_PACKAGES+=("docker-desktop"); ((TOTAL_SKIPPED++)); log INFO "Docker Desktop already installed"; return 0
+    fi
+    log INFO "Installing Docker Desktop (Docker Inc's apt repo + official .deb)..."
+    local codename
+    codename=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+    install -m 0755 -d /etc/apt/keyrings
+    if ! curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc; then
+        FAILED_PACKAGES+=("docker-desktop"); ((TOTAL_FAILED++)); log ERROR "Could not fetch Docker's apt signing key"; return 1
+    fi
+    chmod a+r /etc/apt/keyrings/docker.asc
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $codename stable" \
+        > /etc/apt/sources.list.d/docker.list
+    apt-get update -qq
+    apt-get remove -y docker.io docker-compose docker-compose-v2 docker-buildx containerd runc 2>/dev/null
+    if ! apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; then
+        FAILED_PACKAGES+=("docker-desktop"); ((TOTAL_FAILED++)); log ERROR "Could not install Docker Inc's docker-ce (required by Docker Desktop)"; return 1
+    fi
+    systemctl enable --now docker 2>/dev/null
+    local t; t=$(mktemp -d); chmod 755 "$t"
+    # World-readable so apt's unprivileged _apt sandbox user can read it.
+    if curl -fL --retry 3 -o "$t/docker-desktop-amd64.deb" https://desktop.docker.com/linux/main/amd64/docker-desktop-amd64.deb \
+        && chmod 644 "$t/docker-desktop-amd64.deb" \
+        && apt-get install -y "$t/docker-desktop-amd64.deb"; then
+        INSTALLED_PACKAGES+=("docker-desktop"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: Docker Desktop"
+    else
+        FAILED_PACKAGES+=("docker-desktop"); ((TOTAL_FAILED++)); log ERROR "Docker Desktop download/install failed"; rm -rf "$t"; return 1
+    fi
+    rm -rf "$t"
+    if [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; then
+        usermod -aG kvm "$SUDO_USER" 2>/dev/null
+        log INFO "Added $SUDO_USER to the kvm group (Docker Desktop runs its engine in a KVM VM; log out/in to take effect)"
+    fi
+    log INFO "Start Docker Desktop from the app menu (or: systemctl --user enable --now docker-desktop)"
+}
+
 install_containers() {
     # lxd has no apt/deb package on Ubuntu anymore - Canonical ships it as a snap
     # only. Leaving it in safe_install always logs a FAILED result, even on a
     # perfectly healthy system, so it's handled separately below.
-    batch_install "Containers" docker.io docker-compose podman lxc
+    # After Docker Desktop (below) swapped in Docker Inc's docker-ce, don't
+    # try to put docker.io back - apt would remove docker-ce to do it.
+    if is_installed docker-ce; then
+        batch_install "Containers" podman lxc
+    else
+        batch_install "Containers" docker.io docker-compose podman lxc
+    fi
     if command -v docker &>/dev/null; then
         usermod -aG docker "$SUDO_USER" 2>/dev/null || true
         systemctl enable docker 2>/dev/null || true
@@ -1388,6 +1451,7 @@ install_containers() {
     fi
 
     install_docker_libvirt_forward_fix
+    configure_docker_desktop
 }
 
 # Elgato Wave:3 USB mic - pins the card to WirePlumber's "pro-audio" profile.
@@ -3575,7 +3639,7 @@ EOF
 # podman/lxc/KVM/Cockpit - this is just Docker for a dev box). Adds the invoking
 # user to the docker group and enables the service, same as the Containers path.
 install_docker_standalone() {
-    batch_install "Docker" docker.io docker-compose
+    is_installed docker-ce || batch_install "Docker" docker.io docker-compose
     if command -v docker &>/dev/null; then
         usermod -aG docker "$SUDO_USER" 2>/dev/null || true
         systemctl enable --now docker 2>/dev/null || true

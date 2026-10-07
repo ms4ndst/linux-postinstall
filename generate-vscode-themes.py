@@ -31,10 +31,10 @@ EXTENSION_DIR = os.path.expanduser("~/.vscode/extensions/linux-postinstall-rice-
 
 THEMES = [
     "aline", "alireza", "archblur", "archcraft", "blocks", "breddie", "brenda",
-    "catppuccin-mocha", "cherryblocks", "classic", "cristina", "cynthia",
-    "daniela", "dracula", "emilia", "forest", "h4ck3r", "isabel",
-    "jan", "karla", "marisol", "nord", "pamela", "silvia", "tobi", "varinka",
-    "yael", "yucklys", "yucklys-light", "z0mbi3",
+    "catppuccin-mocha", "classic", "cristina", "cynthia",
+    "daniela", "dracula", "emilia", "forest", "h4ck3r", "hidrot", "isabel",
+    "jan", "karla", "marisol", "murz", "nord", "pamela", "silvia", "tobi",
+    "varinka", "yael", "yucklys", "yucklys-light", "z0mbi3",
 ]
 
 # aline is the one light theme in the whole set (confirmed in this rice's own
@@ -338,6 +338,7 @@ def title_case(name):
 def main():
     themes_out_dir = os.path.join(EXTENSION_DIR, "themes")
     os.makedirs(themes_out_dir, exist_ok=True)
+    old_state = extension_state(themes_out_dir)
 
     contributed = []
     for name in THEMES:
@@ -361,19 +362,77 @@ def main():
         "name": "linux-postinstall-rice-themes",
         "displayName": "Linux Postinstall Rice Themes",
         "description": "VS Code themes matching this rice's polybar/rofi/kitty desktop themes",
-        "version": "1.0.0",
+        "version": "1.0.0",  # replaced below by next_version()
         "publisher": "local",
         "engines": {"vscode": "^1.60.0"},
         "categories": ["Themes"],
         "contributes": {"themes": contributed},
     }
+    # Drop theme files for themes no longer in THEMES (a removed rice would
+    # otherwise linger as an orphaned file nothing references).
+    keep = {os.path.basename(t["path"]) for t in contributed}
+    for fname in os.listdir(themes_out_dir):
+        if fname.endswith("-color-theme.json") and fname not in keep:
+            os.remove(os.path.join(themes_out_dir, fname))
+            print(f"removed stale {fname}")
+
     package_path = os.path.join(EXTENSION_DIR, "package.json")
+    package_json["version"] = next_version(package_path, old_state, extension_state(themes_out_dir), contributed)
     with open(package_path, "w", encoding="utf-8") as f:
         json.dump(package_json, f, indent=2)
         f.write("\n")
     print(f"wrote {package_path}")
-    print(f"\n{len(contributed)} themes installed to {EXTENSION_DIR}")
+    sync_extensions_json(package_json["version"])
+    print(f"\n{len(contributed)} themes installed to {EXTENSION_DIR} (version {package_json['version']})")
     print("Restart VS Code, then Ctrl+Shift+P -> \"Preferences: Color Theme\" to pick one.")
+
+
+# VS Code treats an installed extension as unchanged as long as its version
+# is - with a fixed "1.0.0" it kept showing the theme list from whenever
+# the extension was first loaded, so themes added later (hidrot, murz)
+# never appeared in the Color Theme picker even after a full restart.
+# Bump the patch version whenever anything this script writes actually
+# changed, and keep VS Code's own extensions.json registry entry in step.
+EXTENSIONS_JSON = os.path.expanduser("~/.vscode/extensions/extensions.json")
+EXTENSION_ID = "local.linux-postinstall-rice-themes"
+
+
+def extension_state(themes_out_dir):
+    state = {}
+    for fname in sorted(os.listdir(themes_out_dir)):
+        with open(os.path.join(themes_out_dir, fname), "rb") as f:
+            state[fname] = f.read()
+    return state
+
+
+def next_version(package_path, old_state, new_state, contributed):
+    try:
+        with open(package_path, encoding="utf-8") as f:
+            old = json.load(f)
+    except (OSError, ValueError):
+        return "1.0.0"
+    version = old.get("version", "1.0.0")
+    if old_state == new_state and old.get("contributes", {}).get("themes") == contributed:
+        return version
+    major, minor, patch = (version.split(".") + ["0", "0"])[:3]
+    return f"{major}.{minor}.{int(patch) + 1}"
+
+
+def sync_extensions_json(version):
+    try:
+        with open(EXTENSIONS_JSON, encoding="utf-8") as f:
+            entries = json.load(f)
+    except (OSError, ValueError):
+        return  # VS Code not run yet - it registers the folder itself on first scan
+    changed = False
+    for entry in entries:
+        if entry.get("identifier", {}).get("id", "").lower() == EXTENSION_ID and entry.get("version") != version:
+            entry["version"] = version
+            changed = True
+    if changed:
+        with open(EXTENSIONS_JSON, "w", encoding="utf-8") as f:
+            json.dump(entries, f, separators=(",", ":"))
+        print(f"updated {EXTENSIONS_JSON} -> {version}")
 
 
 if __name__ == "__main__":

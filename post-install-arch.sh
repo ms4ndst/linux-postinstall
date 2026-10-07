@@ -1523,6 +1523,45 @@ install_dbeaver() {
 }
 
 # ========== CONTAINERS & VMS ==========
+# Docker Desktop (opt-in prompt at the end of the Containers category).
+# Docker Inc publishes an official Arch package (still labeled experimental
+# upstream); it uses the `docker` client already installed above, so no
+# package swap is needed here. Desktop runs its engine in a KVM VM, hence
+# the kvm group.
+configure_docker_desktop() {
+    local msg="Also install Docker Desktop (GUI)?\n\nDocker Inc's official Arch package (marked experimental upstream),\ninstalled alongside the Docker Engine above.\nFree for personal and small-business use; larger companies\nneed a paid Docker subscription."
+    local do_it=false
+    if command -v whiptail &>/dev/null; then
+        whiptail --yesno "$msg" --yes-button "Install" --no-button "Skip" 15 74 && do_it=true
+    else
+        echo -e "$msg [y/N]:"
+        read -r REPLY
+        { [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; } && do_it=true
+    fi
+    if $do_it; then install_docker_desktop; else log INFO "Skipped Docker Desktop"; fi
+}
+
+install_docker_desktop() {
+    if is_installed docker-desktop; then
+        SKIPPED_PACKAGES+=("docker-desktop"); ((TOTAL_SKIPPED++)); log INFO "Docker Desktop already installed"; return 0
+    fi
+    log INFO "Installing Docker Desktop (Docker Inc's official Arch package)..."
+    is_installed docker || safe_install docker
+    local t; t=$(mktemp -d)
+    if curl -fL --retry 3 -o "$t/docker-desktop-x86_64.pkg.tar.zst" https://desktop.docker.com/linux/main/amd64/docker-desktop-x86_64.pkg.tar.zst \
+        && pacman -U --noconfirm "$t/docker-desktop-x86_64.pkg.tar.zst"; then
+        INSTALLED_PACKAGES+=("docker-desktop"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: Docker Desktop"
+    else
+        FAILED_PACKAGES+=("docker-desktop"); ((TOTAL_FAILED++)); log ERROR "Docker Desktop download/install failed"; rm -rf "$t"; return 1
+    fi
+    rm -rf "$t"
+    if [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; then
+        usermod -aG kvm "$SUDO_USER" 2>/dev/null
+        log INFO "Added $SUDO_USER to the kvm group (Docker Desktop runs its engine in a KVM VM; log out/in to take effect)"
+    fi
+    log INFO "Start Docker Desktop from the app menu (or: systemctl --user enable --now docker-desktop)"
+}
+
 install_containers() {
     # `iptables` is added explicitly: Arch's `docker` package now depends on
     # `nftables` directly rather than `iptables`, and libvirt only lists
@@ -1550,6 +1589,7 @@ install_containers() {
         install_virtio_win
     fi
     install_docker_libvirt_forward_fix
+    configure_docker_desktop
 }
 
 # Virtio-Win: the Windows guest drivers (network, disk, balloon, etc) needed
