@@ -213,9 +213,18 @@ log "Installing base X11 stack + i3 + rice toolkit via dnf..."
 #   pipx -> python3-pipx (OpenMandriva ships python3-pipx)
 #   dnf-utils -> dnf-plugins-core (or dnf5-plugins)
 #   dex-autostart is dropped in favor of systemd's built-in xdg-desktop-autostart.target
-sudo dnf install -y \
+#   python3-xlib -> python-xlib, python3-pipx -> python-pipx (Rolling only)
+#   solaar-udev dropped (no such package - solaar ships its own udev rules)
+#   i3lock NOT listed here: it conflicts with i3lock-color (step 1b), so on a
+#     re-run, with i3lock-color already installed, listing it failed the
+#     whole transaction. Plain i3lock is only the fallback in step 1b.
+# --setopt=strict=0: skip names that aren't available instead of aborting
+# the entire install (dnf's default) - works on both dnf 4 (Rock) and dnf5
+# (Rolling). Some of these aren't packaged for OpenMandriva at all (xss-lock,
+# pasystray, udiskie, slop, numlockx, autorandr; gammastep on Rock).
+sudo dnf install -y --setopt=strict=0 \
   x11-server-xorg xinit xauth xrandr xset xsetroot xrdb \
-  i3-wm i3lock \
+  i3-wm \
   picom polybar rofi dunst kitty \
   xss-lock NetworkManager-applet pasystray blueman lxqt-policykit pipewire-pulse \
   copyq udiskie pcmanfm gammastep libnotify nitrogen gnome-calendar \
@@ -223,12 +232,12 @@ sudo dnf install -y \
   vala gcc glibc-devel make lib64gtk+3.0-devel lib64dbusmenu-glib-devel lib64dbusmenu-gtk3-devel \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq flameshot imagemagick xclip slop \
-  brightnessctl playerctl numlockx autorandr arandr xdotool python3-xlib \
-  solaar solaar-udev \
-  python3-pipx \
+  brightnessctl playerctl numlockx autorandr arandr xdotool python-xlib \
+  solaar \
+  python-pipx \
   jetbrains-mono-fonts \
   plymouth-plugin-script \
-  || warn "One or more packages failed to install in the primary batch; attempting best-effort recovery..."
+  || warn "The base package install reported errors - check the dnf output above."
 
 # brightnessctl's udev rules gate /sys/class/backlight writes behind the
 # "video" group - without this, the brightness keys below silently no-op.
@@ -274,7 +283,8 @@ elif [ ! -f "$I3LOCK_MARKER" ]; then
     log "i3lock-color built and installed to ~/.local/bin/i3lock"
     rm -f "$I3LOCK_BUILD_LOG"
   else
-    warn "i3lock-color source build failed (log kept at $I3LOCK_BUILD_LOG) - lock.sh will fall back to plain i3lock -c."
+    warn "i3lock-color source build failed (log kept at $I3LOCK_BUILD_LOG) - installing plain i3lock; lock.sh will fall back to i3lock -c."
+    sudo dnf install -y i3lock 2>/dev/null || true
   fi
   rm -rf "$I3LOCK_TMPDIR"
 fi
@@ -17682,13 +17692,14 @@ fi
 # still work without it).
 # CC=gcc: valac compiles via the C compiler it finds as $CC, defaulting to
 # "cc" - which OpenMandriva doesn't provide when only gcc is installed
-# ("Failed to execute child process cc").
+# ("Failed to execute child process cc"). Needed on `make install` too:
+# snixembed's makefile marks version.vala .PHONY, so install rebuilds.
 if ! command -v snixembed >/dev/null 2>&1; then
   log "Building snixembed from source (proxies modern tray icons for polybar)..."
   SNIXEMBED_TMPDIR="$(mktemp -d)"
   if git clone --depth 1 https://git.sr.ht/~steef/snixembed "$SNIXEMBED_TMPDIR" >/dev/null 2>&1 \
       && CC=gcc make -C "$SNIXEMBED_TMPDIR" >/dev/null 2>&1 \
-      && make -C "$SNIXEMBED_TMPDIR" PREFIX="$HOME/.local" install >/dev/null 2>&1; then
+      && CC=gcc make -C "$SNIXEMBED_TMPDIR" PREFIX="$HOME/.local" install >/dev/null 2>&1; then
     log "snixembed built and installed to $BIN/snixembed."
   else
     warn "snixembed build failed (network issue, or a missing/renamed build dependency) - SNI-only tray icons (1Password, Discord, OBS, etc.) won't appear in the tray until you build it manually from https://git.sr.ht/~steef/snixembed."
