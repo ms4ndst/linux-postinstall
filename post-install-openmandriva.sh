@@ -320,7 +320,9 @@ batch_install() {
 # and marked skip_if_unavailable. Applied to the vendors' own repo files too:
 # the TeamViewer rpm ships teamviewer.repo, and the Cursor and 1Password
 # rpms write theirs on install, all with signature checking on.
-OM_UNVERIFIABLE_REPOS=(teamviewer cursor claude-desktop-unofficial 1password)
+# Charm (glow) too, but only on Rolling: Rock's rpm 4.20 reads Charm's key,
+# Rolling's rpm 6.1 doesn't (verified in both).
+OM_UNVERIFIABLE_REPOS=(teamviewer cursor claude-desktop-unofficial 1password charm)
 om_relax_vendor_repos() {
     local name f
     for name in "${OM_UNVERIFIABLE_REPOS[@]}"; do
@@ -1677,7 +1679,33 @@ install_office() {
     # gnome-papers is GNOME's replacement for Evince in newer GNOME releases;
     # both are listed since which one is present depends on the exact Fedora
     # release - package_exists skips whichever isn't there.
-    batch_install "Office" libreoffice okular evince papers zathura pandoc-cli
+    batch_install "Office" libreoffice okular evince papers zathura
+    install_pandoc_release
+}
+
+# pandoc - not packaged for OpenMandriva (neither pandoc nor pandoc-cli).
+# The official Linux release build (github.com/jgm/pandoc) is a static
+# binary whose tarball is laid out like a prefix (bin/, share/man/), so it
+# unpacks straight into /usr/local.
+install_pandoc_release() {
+    if command -v pandoc &>/dev/null || [ -x /usr/local/bin/pandoc ]; then
+        SKIPPED_PACKAGES+=("pandoc"); ((TOTAL_SKIPPED++)); log INFO "Already installed: pandoc"; return 0
+    fi
+    local tag t
+    tag=$(curl -fsSL https://api.github.com/repos/jgm/pandoc/releases/latest 2>/dev/null \
+        | grep -oE '"tag_name":[[:space:]]*"[0-9.]+"' | grep -oE '[0-9][0-9.]*')
+    [ -z "$tag" ] && tag="3.12"
+    log INFO "Installing pandoc $tag (official release build)..."
+    t=$(mktemp -d)
+    if curl -fsSL --retry 3 -o "$t/pandoc.tar.gz" \
+            "https://github.com/jgm/pandoc/releases/download/$tag/pandoc-$tag-linux-amd64.tar.gz" 2>/dev/null \
+        && tar -xzf "$t/pandoc.tar.gz" -C /usr/local --strip-components=1 \
+        && /usr/local/bin/pandoc --version &>/dev/null; then
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("pandoc"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: pandoc $tag (/usr/local/bin/pandoc)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("pandoc"); ((TOTAL_FAILED++)); log WARNING "pandoc install failed"; return 0
 }
 
 # ========== SYSTEM UTILITIES ==========
@@ -1685,6 +1713,8 @@ install_system_utils() {
     # Charm publishes their own yum repo for glow (a markdown-in-terminal
     # renderer) - no Fedora COPR/official build exists. Exact repo stanza
     # from their own install docs (github.com/charmbracelet/glow#installation).
+    # Unsigned here (see om_relax_vendor_repos): Rolling's rpm can't parse
+    # Charm's signing key ("Parsing armored OpenPGP packet(s) failed").
     if [ ! -f /etc/yum.repos.d/charm.repo ]; then
         log INFO "Adding Charm's yum repo (for glow)..."
         cat > /etc/yum.repos.d/charm.repo <<'REPOEOF'
@@ -1692,11 +1722,10 @@ install_system_utils() {
 name=Charm
 baseurl=https://repo.charm.sh/yum/
 enabled=1
-gpgcheck=1
-gpgkey=https://repo.charm.sh/yum/gpg.key
 REPOEOF
-        pm_update
     fi
+    om_relax_vendor_repos
+    pm_update
     # glances, ripgrep and vnstat are installed separately below: the first
     # two aren't packaged for OpenMandriva (Rolling's "rg" package is a
     # different program - a ripgrep-compatible GNU grep, not ripgrep), and
@@ -2794,27 +2823,193 @@ install_chris_titus_mybash() {
 # from either) - this list keeps the best-known RPM-world package names, but
 # expect more "Not in repos" skips here than in other categories. Real GUI
 # tools (firewall-config, keepassxc) do get folder icons.
+# Security tools that can't be installed from OpenMandriva's repos (checked
+# against Rock and Rolling): hping3's package is uninstallable on both (needs
+# libtcl8.6.so, which neither ships any more), and whatweb, radare2,
+# steghide, yara and ettercap aren't packaged at all. Recorded as skipped
+# with the reason, rather than as failures on every run. whatweb, radare2
+# and yara are built from source instead (install_*_source below).
+om_skip_unavailable() {  # <name> <reason>
+    SKIPPED_PACKAGES+=("$1 ($2)"); ((TOTAL_SKIPPED++))
+    log INFO "Skipping $1 - $2"
+}
+
+# gobuster - not packaged for OpenMandriva; official release build
+# (github.com/OJ/gobuster), checksum-verified against the release's own
+# checksums file.
+install_gobuster_release() {
+    if command -v gobuster &>/dev/null || [ -x /usr/local/bin/gobuster ]; then
+        SKIPPED_PACKAGES+=("gobuster"); ((TOTAL_SKIPPED++)); log INFO "Already installed: gobuster"; return 0
+    fi
+    local tag t
+    tag=$(curl -fsSL https://api.github.com/repos/OJ/gobuster/releases/latest 2>/dev/null \
+        | grep -oE '"tag_name":[[:space:]]*"v[0-9.]+"' | grep -oE 'v[0-9.]+')
+    [ -z "$tag" ] && tag="v3.8.2"
+    log INFO "Installing gobuster ${tag#v} (official release build)..."
+    t=$(mktemp -d)
+    if curl -fsSL --retry 3 -o "$t/gobuster_Linux_x86_64.tar.gz" \
+            "https://github.com/OJ/gobuster/releases/download/$tag/gobuster_Linux_x86_64.tar.gz" 2>/dev/null \
+        && curl -fsSL --retry 3 -o "$t/checksums.txt" \
+            "https://github.com/OJ/gobuster/releases/download/$tag/gobuster_${tag#v}_checksums.txt" 2>/dev/null \
+        && (cd "$t" && grep ' gobuster_Linux_x86_64.tar.gz$' checksums.txt | sha256sum -c - &>/dev/null) \
+        && tar -xzf "$t/gobuster_Linux_x86_64.tar.gz" -C "$t" \
+        && install -Dm755 "$t/gobuster" /usr/local/bin/gobuster; then
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("gobuster"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: gobuster ${tag#v} (/usr/local/bin/gobuster)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("gobuster"); ((TOTAL_FAILED++)); log WARNING "gobuster install failed"; return 0
+}
+
+# Source-built tools below install shared libraries into /usr/local/lib*,
+# which OpenMandriva's dynamic linker doesn't search by default.
+ensure_local_lib_path() {
+    [ -f /etc/ld.so.conf.d/usr-local.conf ] \
+        || printf '/usr/local/lib\n/usr/local/lib64\n' > /etc/ld.so.conf.d/usr-local.conf
+    ldconfig 2>/dev/null || true
+}
+
+# Latest release tag of a GitHub repo, or the given fallback.
+gh_latest_tag() {  # <owner/repo> <fallback>
+    local tag
+    tag=$(curl -fsSL "https://api.github.com/repos/$1/releases/latest" 2>/dev/null \
+        | grep -oE '"tag_name":[[:space:]]*"[^"]+"' | head -1 | sed -E 's/.*"([^"]+)"$/\1/')
+    echo "${tag:-$2}"
+}
+
+# yara - not packaged for OpenMandriva. Built from the release's source
+# archive (github.com/VirusTotal/yara publishes no release files, so there's
+# no separate checksum to verify against) as a static-libyara build, so the
+# yara/yarac binaries don't depend on a shared library in /usr/local.
+# LIBTOOLIZE=libtoolize: on Rolling, OpenMandriva's autoreconf defaults to
+# slibtool's slibtoolize (not installed), not GNU libtool's libtoolize.
+install_yara_source() {
+    if command -v yara &>/dev/null || [ -x /usr/local/bin/yara ]; then
+        SKIPPED_PACKAGES+=("yara"); ((TOTAL_SKIPPED++)); log INFO "Already installed: yara"; return 0
+    fi
+    batch_install "yara build deps" gcc glibc-devel make autoconf automake libtool pkgconf
+    local tag t
+    tag=$(gh_latest_tag VirusTotal/yara v4.5.8)
+    log INFO "Building yara ${tag#v} from source..."
+    t=$(mktemp -d)
+    if curl -fsSL --retry 3 -o "$t/yara.tar.gz" "https://github.com/VirusTotal/yara/archive/refs/tags/$tag.tar.gz" 2>/dev/null \
+        && tar -xzf "$t/yara.tar.gz" -C "$t" \
+        && (cd "$t/yara-${tag#v}" && LIBTOOLIZE=libtoolize ./bootstrap.sh &>/dev/null \
+            && ./configure --prefix=/usr/local --disable-shared &>/dev/null \
+            && make -j"$(nproc)" &>/dev/null && make install &>/dev/null) \
+        && /usr/local/bin/yara --version &>/dev/null; then
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("yara"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: yara ${tag#v} (built from source, /usr/local/bin/yara)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("yara"); ((TOTAL_FAILED++)); log WARNING "yara source build failed"; return 0
+}
+
+# radare2 - not packaged for OpenMandriva. Built from the official source
+# tarball (radare2-<ver>.tar.xz), checksum-verified against the release's
+# checksums.txt.
+install_radare2_source() {
+    if command -v r2 &>/dev/null || [ -x /usr/local/bin/r2 ]; then
+        SKIPPED_PACKAGES+=("radare2"); ((TOTAL_SKIPPED++)); log INFO "Already installed: radare2"; return 0
+    fi
+    batch_install "radare2 build deps" gcc glibc-devel make patch pkgconf
+    local tag t
+    tag=$(gh_latest_tag radareorg/radare2 6.2.4)
+    log INFO "Building radare2 $tag from source (takes a few minutes)..."
+    t=$(mktemp -d)
+    if curl -fsSL --retry 3 -o "$t/radare2-$tag.tar.xz" "https://github.com/radareorg/radare2/releases/download/$tag/radare2-$tag.tar.xz" 2>/dev/null \
+        && curl -fsSL --retry 3 -o "$t/checksums.txt" "https://github.com/radareorg/radare2/releases/download/$tag/checksums.txt" 2>/dev/null \
+        && (cd "$t" && grep "  radare2-$tag.tar.xz\$" checksums.txt | sha256sum -c - &>/dev/null) \
+        && tar -xJf "$t/radare2-$tag.tar.xz" -C "$t" \
+        && (cd "$t/radare2-$tag" && ./configure --prefix=/usr/local &>/dev/null \
+            && make -j"$(nproc)" &>/dev/null && make install &>/dev/null); then
+        ensure_local_lib_path
+        if /usr/local/bin/r2 -v &>/dev/null; then
+            rm -rf "$t"
+            INSTALLED_PACKAGES+=("radare2"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: radare2 $tag (built from source, r2 in /usr/local/bin)"; return 0
+        fi
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("radare2"); ((TOTAL_FAILED++)); log WARNING "radare2 source build failed"; return 0
+}
+
+# WhatWeb - not packaged for OpenMandriva. A Ruby program, installed from
+# the release's source archive into /usr/local/share/whatweb with the
+# command linked into /usr/local/bin - not via its own `make install`,
+# which ends in `bundle install` (needs Bundler, and pulls in its test/dev
+# gem groups too). Its runtime gems are just ipaddr, addressable and json;
+# json ships with Ruby itself as a default gem (OpenMandriva's rubygem-json
+# is only in the unsupported repo), the other two come from RubyGems.
+install_whatweb_source() {
+    if command -v whatweb &>/dev/null || [ -x /usr/local/bin/whatweb ]; then
+        SKIPPED_PACKAGES+=("whatweb"); ((TOTAL_SKIPPED++)); log INFO "Already installed: whatweb"; return 0
+    fi
+    batch_install "WhatWeb deps (Ruby)" ruby
+    local tag t
+    tag=$(gh_latest_tag urbanadventurer/WhatWeb v0.6.4)
+    log INFO "Installing WhatWeb ${tag#v} (Ruby, from source)..."
+    t=$(mktemp -d)
+    if command -v gem &>/dev/null \
+        && gem install --no-document ipaddr addressable &>/dev/null \
+        && curl -fsSL --retry 3 -o "$t/whatweb.tar.gz" "https://github.com/urbanadventurer/WhatWeb/archive/refs/tags/$tag.tar.gz" 2>/dev/null \
+        && tar -xzf "$t/whatweb.tar.gz" -C "$t"; then
+        rm -rf /usr/local/share/whatweb
+        mv "$t/WhatWeb-${tag#v}" /usr/local/share/whatweb
+        ln -sf /usr/local/share/whatweb/whatweb /usr/local/bin/whatweb
+        [ -f /usr/local/share/whatweb/whatweb.1 ] \
+            && install -Dm644 /usr/local/share/whatweb/whatweb.1 /usr/local/share/man/man1/whatweb.1
+        if /usr/local/bin/whatweb --version &>/dev/null; then
+            rm -rf "$t"
+            INSTALLED_PACKAGES+=("whatweb"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: WhatWeb ${tag#v} (/usr/local/bin/whatweb)"; return 0
+        fi
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("whatweb"); ((TOTAL_FAILED++)); log WARNING "WhatWeb install failed"; return 0
+}
+
+# KeePassXC - OpenMandriva's package works on Rock but not on current
+# Rolling (needs libbotan-2.so.19, which Rolling no longer ships); fall back
+# to KeePassXC's own verified Flathub build.
+install_keepassxc() {
+    safe_install keepassxc
+    if ! is_installed keepassxc; then
+        log INFO "keepassxc package not installable here - using KeePassXC's Flathub build"
+        flatpak_install_flathub org.keepassxc.KeePassXC "KeePassXC"
+        flatpak info org.keepassxc.KeePassXC &>/dev/null && clear_failed keepassxc
+    fi
+}
+
 install_security_tools() {
+    # nmap ships ncat itself here (no separate nmap-ncat package)
     batch_install "Security - Network" \
-        nmap masscan nmap-ncat hping3 bind-utils
+        nmap masscan bind-utils
+    om_skip_unavailable hping3 "OpenMandriva's package is uninstallable (needs libtcl8.6)"
 
     batch_install "Security - Web" \
-        nikto sqlmap gobuster whatweb wfuzz
+        nikto sqlmap wfuzz
+    install_gobuster_release
+    install_whatweb_source
 
     batch_install "Security - Cracking & Wireless" \
         john hashcat hydra aircrack-ng macchanger
 
     batch_install "Security - Forensics & RE" \
-        radare2 binwalk sleuthkit steghide yara perl-Image-ExifTool
+        binwalk sleuthkit perl-Image-ExifTool
+    install_radare2_source
+    install_yara_source
+    om_skip_unavailable steghide "not packaged for OpenMandriva"
 
+    # clamav ships freshclam itself here (no separate clamav-freshclam)
     batch_install "Security - Hardening" \
-        lynis chkrootkit rkhunter clamav clamav-freshclam fail2ban aide
+        lynis chkrootkit rkhunter clamav fail2ban aide
 
     # firewalld (Fedora's default firewall manager) replaces ufw/gufw -
     # there's no Fedora equivalent of Ubuntu's ufw/gufw pairing, firewalld
     # IS the native answer here, with firewall-config as its GUI.
     batch_install "Security - Firewall & Privacy" \
-        firewalld firewall-config openvpn wireguard-tools proxychains-ng torsocks keepassxc ettercap
+        firewalld firewall-config openvpn wireguard-tools proxychains-ng torsocks
+    install_keepassxc
+    om_skip_unavailable ettercap "not packaged for OpenMandriva"
 }
 
 install_security_defensive() {
@@ -2822,13 +3017,14 @@ install_security_defensive() {
         lynis chkrootkit rkhunter aide audit
 
     batch_install "Defensive - Anti-Malware" \
-        clamav clamav-freshclam
+        clamav
 
     batch_install "Defensive - IDS/IPS" \
         fail2ban suricata
 
     batch_install "Defensive - Firewall, VPN & Credentials" \
-        firewalld firewall-config openvpn wireguard-tools keepassxc
+        firewalld firewall-config openvpn wireguard-tools
+    install_keepassxc
 }
 
 # ========== DEVOPS & CLOUD ==========
