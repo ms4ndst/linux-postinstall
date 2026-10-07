@@ -37074,6 +37074,9 @@ done
 
 
 
+
+
+
 # >>> sedo-wm themes (generated) >>>
 # ----------------------------------------------------------------------------
 # sedo-* themes (from gitlab.com/sum4n/sedo-wm) - fonts. The original bars
@@ -39247,6 +39250,8 @@ cat > "$CONF/polybar/themes/sedo-everforest.ini" <<'EOF'
 ;     command isn't part of the sedo-wm repo)
 ;   - date/time: round ends - half-circle caps in the block's own colors
 ;     (replacing any slanted powerline decoration right around it)
+;   - removed from the bar: application (the original's app-launcher dock; module left
+;     defined but unused)
 ;   - tray: a tray module (same background/size/padding as the original's
 ;     tray-* settings) at the end of modules-right instead of the legacy
 ;     tray-position tray, which polybar 3.7 draws below bars with a border
@@ -39257,6 +39262,9 @@ cat > "$CONF/polybar/themes/sedo-everforest.ini" <<'EOF'
 ;   - fonts: Font Awesome 6 Pro -> Font Awesome 6 Free and Cartograph CF ->
 ;     VictorMono Nerd Font (both originals are paid fonts); every other
 ;     font is the original's, installed by the setup script
+;   - workspace icons: one per murz-alt workspace tag - web, Slack, email,
+;     1Password, VS Code, Windows, media, terminal, misc (Material Design
+;     glyphs) in JetBrainsMono Nerd Font 11, instead of the original's icons
 ;   - width = 100% / offset-x = 0: edge to edge across the screen (most
 ;     originals float at 98% width with a 1% side offset)
 ;   - network: the original reads $NET_INTERFACE, which polybar-launch.sh
@@ -39286,16 +39294,19 @@ cyan     = #7FBBB3
 type = internal/i3
 ; polybar's i3 module needs this to keep workspaces in numeric order
 index-sort = true
+ws-icon-0 = 1;󰖟
+ws-icon-1 = 2;󰒱
+ws-icon-2 = 3;󰇮
+ws-icon-3 = 4;󰢁
+ws-icon-4 = 5;󰨞
+ws-icon-5 = 6;󰖳
+ws-icon-6 = 7;󰐌
+ws-icon-7 = 8;󰆍
+ws-icon-8 = 9;󰟃
 enable-click = true
 enable-scroll = true
 reverse-scroll = true
 pin-workspaces = true
-ws-icon-0 = 1;1
-ws-icon-1 = 2;2
-ws-icon-2 = 3;3
-ws-icon-3 = 4;4
-ws-icon-4 = 5;5
-ws-icon-5 = 6;6
 ws-icon-default = "♟ "
 format = <label-state>
 format-font = 9
@@ -39317,10 +39328,6 @@ label-visible-padding = 1
 label-separator = ""
 label-separator-padding = 0
 label-separator-foreground = ${color.bg-alt}
-ws-icon-6 = 7;7
-ws-icon-7 = 8;8
-ws-icon-8 = 9;9
-ws-icon-9 = 10;10
 
 [module/battery-i3]
 inherit = module/battery
@@ -39360,7 +39367,7 @@ monitor = ${env:MONITOR:}
 width = 100%
 offset-x = 0
 modules-left = i3 bgi bgr mpd sep0 weather-i3
-modules-center = application
+modules-center = 
 modules-right = updates-i3 sep0 network sep0 battery-i3 sep0 date-cap-l date date-cap-r sep1 tray-i3
 tray-position = none
 wm-restack = i3
@@ -39368,7 +39375,7 @@ font-0 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
 font-2 = "Font Awesome 6 Free Solid:size=14;2"
 font-6 = "Font Awesome 6 Free Solid:size=11;2"
 font-7 = "JetBrainsMono Nerd Font:pixelsize=16;2"
-font-8 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+font-8 = "JetBrainsMono Nerd Font:size=11;3"
 
 [bar/top-secondary]
 inherit = bar/top-primary
@@ -40120,6 +40127,9 @@ cat > "$CONF/polybar/themes/sedo-gotham.ini" <<'EOF'
 ;     checkupdates/yay script and alacritty + pacman -Syyu
 ;   - date/time: round ends - half-circle caps in the block's own colors
 ;     (replacing any slanted powerline decoration right around it)
+;   - media: this rice's playerctl media widget (polybar-media.sh, same
+;     clicks as Forest's) in place of the original mpd widget, inside the
+;     original's own slanted chip; hidden when no player is running
 ;   - tray: a tray module (same background/size/padding as the original's
 ;     tray-* settings) at the end of modules-right instead of the legacy
 ;     tray-position tray, which polybar 3.7 draws below bars with a border
@@ -40212,6 +40222,24 @@ type = custom/text
 format = "%{T9}%{T-}"
 format-foreground = ${color.orange}
 
+[module/media-i3]
+type = custom/script
+exec = ~/.local/bin/polybar-media.sh
+interval = 1
+click-left = playerctl previous &
+click-middle = playerctl play-pause &
+click-right = playerctl next &
+format = <label>
+format-prefix = "%{T6}%{T-}"
+format-prefix-background = ${color.base1}
+format-prefix-foreground = ${color.fg}
+format-suffix = "%{T6}%{T-}"
+format-suffix-background = ${color.fg}
+format-suffix-foreground = ${color.base1}
+label = " %output% "
+label-background = ${color.fg}
+label-foreground = ${color.bg}
+
 [module/tray-i3]
 type = internal/tray
 format-background = ${color.base1}
@@ -40224,7 +40252,7 @@ inherit = bar/flow-bar
 monitor = ${env:MONITOR:}
 width = 100%
 offset-x = 0
-modules-left = bspL01 bspL i3 bspR bspR01 sep mpL mpd mpR sep
+modules-left = bspL01 bspL i3 bspR bspR01 sep media-i3 sep
 modules-center = 
 modules-right = upL updates-i3 upR pulseaudio volR network date-prev-cap-r date-cap-l date date-cap-r tray-i3
 tray-position = none
