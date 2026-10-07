@@ -9,7 +9,7 @@
 # every helper script written via heredoc - is plain bash/Python/config text
 # with no distro dependency at all, so it is untouched here. Only the actual
 # package-manager calls (dnf on OpenMandriva with repository tree handling),
-# enabling OpenMandriva's unsupported/restricted/non-free repos, and package
+# enabling OpenMandriva's extra/restricted/non-free repos, and package
 # name deltas that genuinely differ between Fedora and OpenMandriva were changed.
 #
 # Installs: i3-wm (or i3), picom, polybar, rofi, dunst, kitty,
@@ -141,14 +141,20 @@ enable_om_repo() {
   for f in /etc/yum.repos.d/openmandriva-*.repo; do
     [ -f "$f" ] || continue
     if grep -q "^\[$repoid\]" "$f" 2>/dev/null; then
+      # This script runs as the desktop user (sudo per command), so the
+      # rewritten copy goes to a temp file first - a plain redirect into
+      # /etc/yum.repos.d would fail without root.
+      local tmp
+      tmp=$(mktemp)
       if awk -v id="[$repoid]" '
         /^\[/ { inrepo = ($0 == id); print; next }
         inrepo && /^enabled[[:space:]]*=/ { print "enabled=1"; next }
         { print }
-      ' "$f" > "$f.omnew" && sudo mv "$f.omnew" "$f"; then
+      ' "$f" > "$tmp" && sudo cp "$tmp" "$f"; then
+        rm -f "$tmp"
         return 0
       fi
-      rm -f "$f.omnew"
+      rm -f "$tmp"
     fi
   done
   warn "Could not enable '$repoid' - check /etc/yum.repos.d/openmandriva-*.repo"
@@ -156,8 +162,12 @@ enable_om_repo() {
 }
 
 detect_repo_tree
-log "Enabling OpenMandriva extra/unsupported repositories (tree: $OM_REPO_TREE, arch: $OM_ARCH)..."
-enable_om_repo "unsupported"
+# OpenMandriva's optional repos are extra, restricted and non-free - there is
+# no "unsupported" repo in its configuration (openmandriva-*.repo has no such
+# section on Rock or Rolling); "extra" is the one carrying the community
+# packages (fish, ncdu, iotop, zathura, ...).
+log "Enabling OpenMandriva extra/restricted/non-free repositories (tree: $OM_REPO_TREE, arch: $OM_ARCH)..."
+enable_om_repo "extra"
 enable_om_repo "restricted"
 enable_om_repo "non-free"
 sudo dnf --refresh makecache 2>/dev/null || true

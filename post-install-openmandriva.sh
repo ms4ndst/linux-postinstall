@@ -234,7 +234,8 @@ pm_install() { dnf install -y "$@" 2>/dev/null; }
 # on the <tree>-<arch>[-<subrepo>] repoid - exactly what OpenMandriva's own
 # `enable-repo` CLI tool does under its pkexec wrapper.
 
-# Is a subrepo (restricted | non-free | extra | unsupported) enabled?
+# Is a subrepo (extra | restricted | non-free) enabled? (OpenMandriva has no
+# "unsupported" repo in its configuration - "extra" is the community one.)
 om_repo_enabled() {
     local sub="$1"
     [ -z "${OM_REPO_TREE:-}" ] && detect_version
@@ -363,12 +364,15 @@ bootstrap_repos() {
             || log WARNING "dnf config-manager unavailable - repo enabling falls back to editing .repo files directly"
     fi
 
-    log INFO "Enabling OpenMandriva restricted + non-free repos..."
+    log INFO "Enabling OpenMandriva extra + restricted + non-free repos..."
     local ok=true
+    # extra: community packages several categories below need (fish, ncdu,
+    # iotop, iftop, nload, sysstat, zathura, ...)
+    om_repo_enabled extra || { enable_om_repo extra || ok=false; }
     om_repo_enabled restricted || { enable_om_repo restricted || ok=false; }
     om_repo_enabled non-free  || { enable_om_repo non-free  || ok=false; }
     if $ok; then
-        log SUCCESS "OpenMandriva restricted (codecs) + non-free (proprietary) repos enabled"
+        log SUCCESS "OpenMandriva extra (community) + restricted (codecs) + non-free (proprietary) repos enabled"
     else
         log WARNING "Repo enabling failed - codec/driver categories below will mostly fail too"
     fi
@@ -648,7 +652,7 @@ install_creative_graphics() {
     batch_install "Graphics & Design" \
         gimp inkscape krita blender darktable digikam pitivi scribus
     # Synfig isn't packaged for OpenMandriva at all (no synfig* package in
-    # main/unsupported/non-free/restricted, Rock or Rolling) - an unknown
+    # main/extra/non-free/restricted, Rock or Rolling) - an unknown
     # name in the batch above failed the whole dnf transaction. Flathub has
     # the official build.
     flatpak_install_flathub org.synfig.SynfigStudio "Synfig Studio"
@@ -2939,7 +2943,7 @@ install_radare2_source() {
 # which ends in `bundle install` (needs Bundler, and pulls in its test/dev
 # gem groups too). Its runtime gems are just ipaddr, addressable and json;
 # json ships with Ruby itself as a default gem (OpenMandriva's rubygem-json
-# is only in the unsupported repo), the other two come from RubyGems.
+# is only in the optional extra repo), the other two come from RubyGems.
 install_whatweb_source() {
     if command -v whatweb &>/dev/null || [ -x /usr/local/bin/whatweb ]; then
         SKIPPED_PACKAGES+=("whatweb"); ((TOTAL_SKIPPED++)); log INFO "Already installed: whatweb"; return 0
