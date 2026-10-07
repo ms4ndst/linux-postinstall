@@ -210,7 +210,7 @@ sudo dnf install -y \
   system-config-printer hplip \
   vala gtk3-devel libdbusmenu-glib-devel libdbusmenu-gtk3-devel \
   lxappearance papirus-icon-theme \
-  fastfetch git curl unzip jq flameshot ImageMagick xclip slop \
+  fastfetch git curl unzip jq flameshot imagemagick xclip slop \
   brightnessctl playerctl numlockx autorandr arandr xdotool python3-xlib \
   solaar solaar-udev \
   python3-pipx \
@@ -35866,6 +35866,8 @@ cat > "$CONF/polybar/themes/hidrot.ini" <<'EOF'
 ;     labels renamed to i3's real unfocused/visible states (polybar's i3
 ;     module has no occupied/empty - they were bspwm-only)
 ;   - battery/adapter hardcoded to BAT0/AC instead of $POLYBAR_BATTERY_*
+;   - murz only: the date widget starts on the full date + time (the
+;     source's click alternate) and a click switches to the time alone
 ;   - the source's own wireless module added after battery, with
 ;     interface-type = wireless instead of $POLYBAR_WIRELESS, and the same
 ;     left/middle/right click actions as every other theme's wifi widget
@@ -36175,6 +36177,8 @@ cat > "$CONF/polybar/themes/murz.ini" <<'EOF'
 ;     labels renamed to i3's real unfocused/visible states (polybar's i3
 ;     module has no occupied/empty - they were bspwm-only)
 ;   - battery/adapter hardcoded to BAT0/AC instead of $POLYBAR_BATTERY_*
+;   - murz only: the date widget starts on the full date + time (the
+;     source's click alternate) and a click switches to the time alone
 ;   - the source's own wireless module added after battery, with
 ;     interface-type = wireless instead of $POLYBAR_WIRELESS, and the same
 ;     left/middle/right click actions as every other theme's wifi widget
@@ -36290,8 +36294,8 @@ label-urgent-foreground = ${colors.red0}
 type = internal/date
 interval = 1
 
-time = "%H:%M"
-time-alt = "%a, %b %d %H:%M:%S"
+time = "%a, %b %d %H:%M:%S"
+time-alt = "%H:%M"
 
 format-background = ${colors.blue1}
 format-padding = 1
@@ -36577,8 +36581,8 @@ label-urgent-padding = 1
 type = internal/date
 interval = 1
 
-time = "%H:%M"
-time-alt = "%a, %b %d %H:%M:%S"
+time = "%a, %b %d %H:%M:%S"
+time-alt = "%H:%M"
 
 format-background = ${colors.blue1}
 format-padding = 1
@@ -45602,7 +45606,7 @@ OPENMANDRIVA_SVG="/usr/share/icons/hicolor/scalable/apps/openmandriva.svg"
 
 if ! command -v magick >/dev/null 2>&1; then
   echo "ImageMagick (magick) is not installed." >&2
-  echo "  OpenMandriva:  sudo dnf install ImageMagick" >&2
+  echo "  OpenMandriva:  sudo dnf install imagemagick" >&2
   echo "  Ubuntu/Debian: sudo apt install imagemagick" >&2
   echo "  Fedora:        sudo dnf install ImageMagick" >&2
   echo "  Arch:          sudo pacman -S imagemagick" >&2

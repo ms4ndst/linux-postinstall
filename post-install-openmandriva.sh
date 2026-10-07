@@ -31,14 +31,18 @@
 #   (Fyra Labs builds target Fedora only) and the DisplayLink driver
 #   (displaylink-rpm publishes Fedora-kernel-specific prebuilt RPMs).
 # - Vendor yum repos kept as-is (VS Code, Sublime, Cursor, Azure CLI,
-#   1Password, TeamViewer, Claude Desktop, Charm, Slack-direct-rpm) use
-#   distro-generic baseurls - but their RPMs are BUILT against Fedora, so
-#   dependency resolution is not guaranteed here; safe_install's existing
-#   failure handling covers the miss, and Slack/TeamViewer fall back to
-#   Flathub when the vendor RPM path fails.
-# - Flathub-first where the vendor repo only builds Fedora RPMs: Brave,
-#   Vivaldi, Edge, Chrome, LibreWolf, teams-for-linux (all have official
-#   Flathub listings).
+#   1Password, TeamViewer, Claude Desktop, Charm) use distro-generic
+#   baseurls - but their RPMs are BUILT against Fedora, so dependency
+#   resolution is not guaranteed here; safe_install's existing failure
+#   handling covers the miss. 1Password and TeamViewer fall back to their
+#   official rpm installed as a local file (every dependency of both
+#   resolves on OpenMandriva - the fragile part is the vendor repo's signed
+#   metadata), and 1Password then to Flathub (TeamViewer has no Flathub
+#   package).
+# - Flathub-first where the vendor RPM can't work here: Brave, Vivaldi,
+#   Edge, Chrome, LibreWolf, teams-for-linux (all have official Flathub
+#   listings), and Slack (its rpm requires the Fedora package names
+#   libXScrnSaver / libappindicator-gtk3, which nothing here provides).
 # - Creative Suite has no comps groups to lean on (no Fedora Jam /
 #   design-suite equivalents) - explicit package lists instead.
 # - OpenMandriva Lx defaults to KDE Plasma: GNOME-only steps (app folders,
@@ -208,7 +212,14 @@ is_installed() { rpm -q "$1" &>/dev/null; }
 # checks BOTH installed and available packages and exits non-zero if the name
 # is unknown to any enabled repo - the direct dnf5 equivalent of the Ubuntu
 # script's `apt-cache policy` check.
-package_exists() { dnf info -q "$1" &>/dev/null; }
+# `dnf info` only matches real package NAMES - a Fedora-style name that an
+# OpenMandriva package merely Provides (e.g. vim-enhanced, provided by
+# OpenMandriva's plain `vim`) would be rejected as "Not in repos" even
+# though `dnf install` itself resolves it fine. Accept provided names too.
+package_exists() {
+    dnf info -q "$1" &>/dev/null \
+        || [ -n "$(dnf repoquery -q --whatprovides "$1" 2>/dev/null)" ]
+}
 
 pm_update() {
     dnf makecache
@@ -606,8 +617,13 @@ install_cliamp() {
 install_creative_graphics() {
     log INFO "Installing Graphics & Design... (large transaction - this can take a while)"
     batch_install "Graphics & Design" \
-        gimp inkscape krita blender darktable digikam synfigstudio pitivi scribus
-    batch_install "Graphics (extra)" nomacs flameshot ImageMagick GraphicsMagick optipng jpegoptim pngquant libwebp-tools
+        gimp inkscape krita blender darktable digikam pitivi scribus
+    # Synfig isn't packaged for OpenMandriva at all (no synfig* package in
+    # main/unsupported/non-free/restricted, Rock or Rolling) - an unknown
+    # name in the batch above failed the whole dnf transaction. Flathub has
+    # the official build.
+    flatpak_install_flathub org.synfig.SynfigStudio "Synfig Studio"
+    batch_install "Graphics (extra)" nomacs flameshot imagemagick graphicsmagick optipng jpegoptim pngquant libwebp-tools
     set_flameshot_hotkey
 }
 
@@ -1086,7 +1102,7 @@ snapshot_open_gui() {
 install_code_editors() {
     # gnome-text-editor replaces gedit as GNOME's default text editor since
     # GNOME 42 - both are listed since some Fedora releases still carry gedit.
-    batch_install "Code Editors" vim-enhanced neovim emacs nano geany gnome-text-editor gedit kate
+    batch_install "Code Editors" vim neovim emacs nano geany gnome-text-editor gedit kate
     install_vscode; install_sublime_text
     install_zed
     install_gram
@@ -1154,28 +1170,66 @@ install_vscode() {
     fi
     log INFO "Installing VS Code (Microsoft's official yum repo)..."
     rpm --import https://packages.microsoft.com/keys/microsoft.asc 2>/dev/null
-    dnf config-manager addrepo --id=vscode --save-filename=vscode.repo \
-        --set=name="Visual Studio Code" \
-        --set=baseurl=https://packages.microsoft.com/yumrepos/vscode \
-        --set=enabled=1 --set=gpgcheck=1 \
-        --set=gpgkey=https://packages.microsoft.com/keys/microsoft.asc \
-        --overwrite 2>/dev/null
+    # Written directly rather than via `dnf config-manager addrepo`: on
+    # dnf5-based OpenMandriva, config-manager is a plugin that isn't packaged
+    # here (no dnf5-plugins), so that call silently added nothing. Every
+    # dependency of the code rpm itself resolves on OpenMandriva.
+    cat > /etc/yum.repos.d/vscode.repo <<'EOF'
+[vscode]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+EOF
     pm_update
     safe_install code
 }
 
-# Sublime Text from its official rpm repo (download.sublimetext.com/rpm) -
-# same vendor as the Ubuntu apt path, rpm variant.
+# Sublime Text from Sublime HQ's official tarball build (installed to
+# /opt/sublime_text, the path its own bundled .desktop file expects).
+# Its rpm can't install on OpenMandriva - it requires the Fedora package
+# NAME gtk3, which nothing here provides (OpenMandriva ships the GTK 3
+# libraries under its own lib64gtk* names) - and dnf5's config-manager,
+# which the rpm-repo route used to add the repo, isn't packaged here
+# either (no dnf5-plugins). The tarball bundles its own Python/OpenSSL and
+# only needs the system GTK 3 libraries. No auto-update: re-run this to
+# move to a newer build (it always fetches the current stable one).
 install_sublime_text() {
-    if command -v subl &>/dev/null || is_installed sublime-text; then
+    if command -v subl &>/dev/null || [ -x /opt/sublime_text/sublime_text ]; then
         SKIPPED_PACKAGES+=("sublime-text"); ((TOTAL_SKIPPED++)); log INFO "Sublime Text already installed"; return 0
     fi
-    log INFO "Installing Sublime Text (official rpm repo)..."
-    rpm -v --import https://download.sublimetext.com/sublimehq-rpm-pub.gpg 2>/dev/null
-    dnf config-manager addrepo --from-repofile=https://download.sublimetext.com/rpm/stable/x86_64/sublime-text.repo 2>/dev/null \
-        || dnf config-manager --add-repo https://download.sublimetext.com/rpm/stable/x86_64/sublime-text.repo 2>/dev/null
-    pm_update
-    safe_install sublime-text
+    log INFO "Installing Sublime Text (official tarball build)..."
+    local build t
+    build=$(curl -fsSL https://www.sublimetext.com/updates/4/stable_update_check 2>/dev/null \
+        | grep -oE '"latest_version":[[:space:]]*[0-9]+' | grep -oE '[0-9]+$')
+    if [ -z "$build" ]; then
+        log WARNING "Couldn't read the current Sublime Text build number - trying Flathub instead"
+        flatpak_install_flathub com.sublimetext.three "Sublime Text"; return 0
+    fi
+    t=$(mktemp -d)
+    if curl -fsSL --retry 3 -o "$t/sublime.tar.xz" \
+            "https://download.sublimetext.com/sublime_text_build_${build}_x64.tar.xz" 2>/dev/null \
+        && tar -xJf "$t/sublime.tar.xz" -C "$t" \
+        && [ -x "$t/sublime_text/sublime_text" ]; then
+        rm -rf /opt/sublime_text
+        mv "$t/sublime_text" /opt/sublime_text
+        ln -sf /opt/sublime_text/sublime_text /usr/local/bin/subl
+        install -Dm644 /opt/sublime_text/sublime_text.desktop /usr/share/applications/sublime_text.desktop
+        local size
+        for size in 16x16 32x32 48x48 128x128 256x256; do
+            [ -f "/opt/sublime_text/Icon/$size/sublime-text.png" ] && install -Dm644 \
+                "/opt/sublime_text/Icon/$size/sublime-text.png" "/usr/share/icons/hicolor/$size/apps/sublime-text.png"
+        done
+        gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+        update-desktop-database -q /usr/share/applications 2>/dev/null || true
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("sublime-text"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Sublime Text build $build (/opt/sublime_text, 'subl' on PATH)"; return 0
+    fi
+    rm -rf "$t"
+    log WARNING "Sublime Text tarball install failed - trying Flathub instead"
+    flatpak_install_flathub com.sublimetext.three "Sublime Text"
 }
 
 # Bruno API client - no rpm/COPR from usebruno.com, only Flatpak/AppImage/Snap
@@ -1183,12 +1237,35 @@ install_sublime_text() {
 install_bruno() { flatpak_install_flathub com.usebruno.Bruno "Bruno"; }
 
 # ========== PYTHON ==========
+# pipx isn't packaged for OpenMandriva (no package, nothing provides the
+# name). Install pipx's own official standalone zipapp (pipx.pyz, published
+# with every pipx release) as /usr/local/bin/pipx: a single file that only
+# needs python3 - no pip, no --user install, no PEP 668 workaround, and no
+# dependency on knowing the desktop user. Each user's pipx-installed apps
+# still land in their own ~/.local as usual.
+ensure_pipx() {
+    if command -v pipx &>/dev/null || [ -x /usr/local/bin/pipx ]; then return 0; fi
+    log INFO "Installing pipx (official standalone pipx.pyz - not packaged for OpenMandriva)..."
+    curl -fsSL --retry 3 -o /usr/local/bin/pipx \
+            https://github.com/pypa/pipx/releases/latest/download/pipx.pyz 2>/dev/null \
+        && chmod 755 /usr/local/bin/pipx \
+        && /usr/local/bin/pipx --version &>/dev/null && return 0
+    rm -f /usr/local/bin/pipx
+    return 1
+}
+
 install_python() {
-    # Fedora Workstation ships python3 by default; python3-pip/virtualenv are
-    # the closest equivalents to the Ubuntu list (no "python-is-python3"
-    # package needed - Fedora's python3 IS the system python, no separate
-    # /usr/bin/python shim to bridge).
-    batch_install "Python" python3 python3-devel python3-pip python3-virtualenv ipython pipx
+    # OpenMandriva's Python 3 packages are unversioned: `python` IS Python 3
+    # (Python 2 is the separate `python2`), and the Fedora-style python3-*
+    # names are at most Provides of these - python3-virtualenv not even that.
+    # lib64python-devel, not the python-devel Provide, which lib64python2-devel
+    # also carries.
+    batch_install "Python" python lib64python-devel python-pip python-virtualenv ipython
+    if ensure_pipx; then
+        INSTALLED_PACKAGES+=("pipx"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: pipx (/usr/local/bin/pipx)"
+    else
+        FAILED_PACKAGES+=("pipx"); ((TOTAL_FAILED++)); log WARNING "pipx install failed"
+    fi
 }
 
 # ========== WEB DEVELOPMENT ==========
@@ -2128,9 +2205,9 @@ install_gnome_extensions() {
     if ! read -r user uid < <(resolve_desktop_session); then
         log INFO "No active desktop session - skipping GNOME extensions"; return 0
     fi
-    command -v pipx &>/dev/null || safe_install pipx
+    ensure_pipx || log WARNING "pipx unavailable - gext install will likely fail"
     log INFO "Setting up gext (GNOME Extension Manager CLI) via pipx..."
-    su - "$user" -c 'command -v gext >/dev/null 2>&1 || pipx install gnome-extensions-cli --system-site-packages' 2>/dev/null
+    su - "$user" -c 'PATH="$HOME/.local/bin:$PATH" command -v gext >/dev/null 2>&1 || PATH="/usr/local/bin:$PATH" pipx install gnome-extensions-cli --system-site-packages' 2>/dev/null
     if ! su - "$user" -c 'PATH="$HOME/.local/bin:$PATH" command -v gext' &>/dev/null; then
         log WARNING "gext install failed (pipx/network issue) - skipping all GNOME extensions"
         FAILED_PACKAGES+=("GNOME extensions (gext setup failed)"); ((TOTAL_FAILED++))
@@ -2226,7 +2303,7 @@ configure_mousiki() {
 # dependency list and build steps by hand rather than shelling out to it.
 install_mousiki() {
     log INFO "Installing Mousiki build dependencies..."
-    batch_install "Mousiki build deps" cmake gcc-c++ make ffmpeg yt-dlp python3 python3-pip
+    batch_install "Mousiki build deps" cmake gcc-c++ make ffmpeg yt-dlp python python-pip
     local t; t=$(mktemp -d)
     if ! git clone --depth 1 https://github.com/itzender5820/mousiki "$t/mousiki" 2>/dev/null; then
         rm -rf "$t"; log WARNING "Mousiki clone failed (needs network access to github.com)"; return 1
@@ -2853,41 +2930,47 @@ disable_stale_slack_repo() {
     $found && log INFO "Removed stale packagecloud Slack repo file(s)"
 }
 
+# Vendor rpm fetched straight from its own download URL and installed as a
+# local file - dnf still resolves its dependencies from OpenMandriva's own
+# repos, but nothing depends on the vendor's yum repo metadata (signed-repo
+# key import, $basearch layout) working on this distro.
+# Drop an earlier "failed" entry once a fallback has installed the package
+# after all, so the summary doesn't list it as both failed and installed.
+clear_failed() {  # <name as recorded in FAILED_PACKAGES>
+    local i kept=()
+    for i in "${FAILED_PACKAGES[@]}"; do
+        if [ "$i" = "$1" ]; then ((TOTAL_FAILED--)); else kept+=("$i"); fi
+    done
+    FAILED_PACKAGES=("${kept[@]}")
+}
+
+install_vendor_rpm_direct() {  # <package name> <rpm url> <label>
+    local pkg="$1" url="$2" label="$3" t
+    log INFO "Installing $label from its official rpm ($url)..."
+    t=$(mktemp -d)
+    if curl -fsSL --retry 3 -o "$t/$pkg.rpm" "$url" 2>/dev/null && [ -s "$t/$pkg.rpm" ] \
+        && dnf install -y "$t/$pkg.rpm" 2>/dev/null; then
+        rm -rf "$t"
+        clear_failed "$pkg"
+        INSTALLED_PACKAGES+=("$pkg"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $label"; return 0
+    fi
+    rm -rf "$t"
+    log WARNING "$label direct rpm install failed"; return 1
+}
+
 install_slack() {
-    if is_installed slack; then
+    if is_installed slack || flatpak info com.slack.Slack &>/dev/null; then
         SKIPPED_PACKAGES+=("slack"); ((TOTAL_SKIPPED++)); log INFO "Already installed: slack"
         disable_stale_slack_repo
         return 0
     fi
-    log INFO "Installing Slack (direct rpm from slack.com - packagecloud repo is permanently stale)..."
-    local page url t
-    page=$(curl -sL "https://slack.com/downloads/instructions/linux?build=rpm&ddl=1" 2>/dev/null)
-    url=$(printf '%s' "$page" | grep -oE 'https://downloads\.slack-edge\.com/desktop-releases/linux/x64/[0-9.]+/slack-[0-9.]+-[0-9.]+\.el[0-9]+\.x86_64\.rpm' | head -1)
-    if [ -z "$url" ]; then
-        FAILED_PACKAGES+=("slack"); ((TOTAL_FAILED++))
-        log WARNING "Could not find current Slack rpm URL on slack.com (page layout may have changed)"; return 1
-    fi
-    t=$(mktemp -d)
-    if ! curl -sL -o "$t/slack.rpm" "$url" 2>/dev/null || [ ! -s "$t/slack.rpm" ]; then
-        rm -rf "$t"; FAILED_PACKAGES+=("slack"); ((TOTAL_FAILED++))
-        log WARNING "Slack rpm download failed ($url)"; return 1
-    fi
-    if dnf install -y "$t/slack.rpm" 2>/dev/null; then
-        INSTALLED_PACKAGES+=("slack"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: slack"
-    else
-        FAILED_PACKAGES+=("slack"); ((TOTAL_FAILED++)); log WARNING "Slack rpm install failed"
-    fi
-    rm -rf "$t"
-    # OpenMandriva note: the vendor rpm is built against Fedora, so dependency
-    # resolution may fail here - Flathub's official Slack package is the
-    # fallback when it does.
-    if ! is_installed slack; then
-        log INFO "Vendor rpm path didn't take - falling back to Flathub's official Slack package"
-        flatpak_install_flathub com.slack.Slack "Slack"
-    fi
-    # The rpm's own postinst hook is what plants the stale repo files - it
-    # runs as part of `dnf install` above, so this has to come after, not
-    # before, or the just-added files would just get re-added underneath us.
+    # Slack's own rpm can never install here: it requires the Fedora package
+    # NAMES libXScrnSaver and libappindicator-gtk3, which nothing on
+    # OpenMandriva provides (the libraries themselves exist, as
+    # lib64xscrnsaver1 / lib64appindicator3_1, but dnf matches the name).
+    # Flathub's Slack package is the working path - and skipping the rpm
+    # also skips its postinst hook re-adding the stale packagecloud repo.
+    flatpak_install_flathub com.slack.Slack "Slack"
     disable_stale_slack_repo
 }
 
@@ -2977,11 +3060,14 @@ gpgkey=https://linux.teamviewer.com/pubkey/currentkey.asc
 EOF
     pm_update
     safe_install teamviewer
-    # OpenMandriva note: the vendor repo builds Fedora/openSUSE RPMs - if the
-    # rpm doesn't resolve here, Flathub's official package is the fallback.
+    # OpenMandriva note: if the repo route doesn't take (its signed-metadata
+    # key import is the fragile part), install TeamViewer's own rpm directly -
+    # every dependency it has resolves from OpenMandriva's repos. There is no
+    # Flathub TeamViewer package to fall back to.
     if ! is_installed teamviewer; then
-        log INFO "Vendor rpm path didn't take - falling back to Flathub's official TeamViewer package"
-        flatpak_install_flathub com.teamviewer.TeamViewer "TeamViewer"
+        install_vendor_rpm_direct teamviewer \
+            https://download.teamviewer.com/download/linux/teamviewer.x86_64.rpm "TeamViewer" \
+            || { FAILED_PACKAGES+=("teamviewer"); ((TOTAL_FAILED++)); }
     fi
 }
 
@@ -3005,6 +3091,15 @@ gpgkey=https://downloads.1password.com/linux/keys/1password.asc
 EOF
     pm_update
     safe_install 1password
+    # Same fallback chain as TeamViewer: the official rpm directly (all its
+    # dependencies resolve on OpenMandriva), then Flathub's 1Password
+    # package (verified, published by 1Password itself).
+    if ! is_installed 1password; then
+        install_vendor_rpm_direct 1password \
+            https://downloads.1password.com/linux/rpm/stable/x86_64/1password-latest.rpm "1Password" \
+            || flatpak_install_flathub com.onepassword.OnePassword "1Password"
+        flatpak info com.onepassword.OnePassword &>/dev/null && clear_failed 1password
+    fi
 }
 
 # ========== MENU SYSTEM ==========
