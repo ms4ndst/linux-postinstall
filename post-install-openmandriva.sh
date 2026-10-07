@@ -1316,7 +1316,7 @@ install_java() {
 install_c_cpp() {
     batch_install "C/C++" \
         gcc gcc-c++ gcc-gfortran clang cmake make ninja-build ccache \
-        autoconf automake libtool m4 bison flex gettext pkgconf-pkg-config \
+        autoconf automake libtool m4 bison flex gettext pkgconf \
         cppcheck valgrind gdb ltrace strace
 }
 
@@ -1382,10 +1382,42 @@ install_dotnet() {
 
 # ========== GENERAL DEV TOOLS ==========
 install_dev_tools() {
+    # pkgconf (not Fedora's pkgconf-pkg-config split) is OpenMandriva's
+    # package, and it provides /usr/bin/pkg-config itself. tig isn't packaged
+    # for OpenMandriva at all - built from source below instead.
     batch_install "Dev Tools" \
-        jq tig subversion make cmake \
-        autoconf automake bison flex gettext pkgconf-pkg-config man-db man-pages less
+        jq subversion make cmake \
+        autoconf automake bison flex gettext pkgconf man-db man-pages less
+    install_tig_source
     install_bruno
+}
+
+# tig - not packaged for OpenMandriva (no package, nothing provides it), so
+# build the official release tarball (github.com/jonas/tig) into /usr/local,
+# checksum-verified against the .sha256 file published with each release.
+# Only needs a C compiler, make, and ncursesw (lib64ncurses-devel).
+install_tig_source() {
+    if command -v tig &>/dev/null || [ -x /usr/local/bin/tig ]; then
+        SKIPPED_PACKAGES+=("tig"); ((TOTAL_SKIPPED++)); log INFO "Already installed: tig"; return 0
+    fi
+    batch_install "tig build deps" gcc make lib64ncurses-devel pkgconf
+    local tag t
+    tag=$(curl -fsSL https://api.github.com/repos/jonas/tig/releases/latest 2>/dev/null \
+        | grep -oE '"tag_name":[[:space:]]*"tig-[0-9.]+"' | grep -oE 'tig-[0-9.]+')
+    [ -z "$tag" ] && tag="tig-2.6.1"
+    log INFO "Building $tag from source..."
+    t=$(mktemp -d)
+    if curl -fsSL --retry 3 -o "$t/$tag.tar.gz" "https://github.com/jonas/tig/releases/download/$tag/$tag.tar.gz" 2>/dev/null \
+        && curl -fsSL --retry 3 -o "$t/$tag.tar.gz.sha256" "https://github.com/jonas/tig/releases/download/$tag/$tag.tar.gz.sha256" 2>/dev/null \
+        && (cd "$t" && sha256sum -c "$tag.tar.gz.sha256" &>/dev/null) \
+        && tar -xzf "$t/$tag.tar.gz" -C "$t" \
+        && (cd "$t/$tag" && ./configure --prefix=/usr/local &>/dev/null && make -j"$(nproc)" &>/dev/null && make install &>/dev/null) \
+        && [ -x /usr/local/bin/tig ]; then
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("tig"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $tag (built from source, /usr/local/bin/tig)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("tig"); ((TOTAL_FAILED++)); log WARNING "tig source build failed"; return 0
 }
 
 # ========== DATABASES ==========
@@ -1449,13 +1481,20 @@ install_containers() {
         [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ] && usermod -aG docker "$SUDO_USER" 2>/dev/null \
             && log INFO "Added $SUDO_USER to the docker group (log out/in to take effect)"
     fi
-    # Incus (the community-maintained LXD fork) - not confirmed in
-    # OpenMandriva's repos; skipped cleanly by package_exists() if absent.
-    batch_install "Incus (LXD replacement)" incus
+    # Not packaged for OpenMandriva (Rock or Rolling - no package, nothing
+    # provides the names), and neither has a Flatpak: Incus (the LXD fork)
+    # and Cockpit with its machines/podman plugins. Skipped rather than
+    # listed, so they don't show up as failures on every run.
+    log INFO "Skipping Incus and Cockpit - not packaged for OpenMandriva"
+    SKIPPED_PACKAGES+=("incus (not packaged for OpenMandriva)" "cockpit (not packaged for OpenMandriva)")
+    ((TOTAL_SKIPPED += 2))
+    # OpenMandriva's libvirt is libvirt-utils: the whole thing - libvirtd /
+    # virtqemud & co., their systemd units, virsh, and the libvirt group.
+    # There is no package named "libvirt" here.
     batch_install "Virtualization" \
-        qemu qemu-kvm libvirt virt-install virt-manager virt-viewer \
-        gnome-boxes cockpit cockpit-machines cockpit-podman
-    if is_installed libvirt; then
+        qemu qemu-kvm libvirt-utils virt-install virt-manager virt-viewer \
+        gnome-boxes
+    if is_installed libvirt-utils; then
         systemctl enable --now libvirtd 2>/dev/null
         [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ] && usermod -aG libvirt "$SUDO_USER" 2>/dev/null \
             && log INFO "Added $SUDO_USER to the libvirt group (log out/in to take effect)"
@@ -1524,7 +1563,7 @@ download_virtio_win_iso() {
 # installs a tiny oneshot systemd unit that reapplies the two rules after
 # docker.service comes up, on every boot, not just once right now.
 install_docker_libvirt_forward_fix() {
-    if ! is_installed docker || ! is_installed libvirt; then
+    if ! is_installed docker || ! is_installed libvirt-utils; then
         log INFO "Skipping Docker/libvirt forwarding fix - both Containers and Virtualization need to be installed first"
         return 0
     fi
@@ -1689,8 +1728,12 @@ install_jan() { flatpak_install_flathub ai.jan.Jan "Jan"; }
 # Prefers the repo copy (ai-key-manager.sh next to this script) so edits live
 # in one place; falls back to the embedded copy when run standalone.
 install_ai_key_manager() {
-    local sec=libsecret
-    batch_install "AI Key Manager deps" zenity "$sec" gnome-keyring curl
+    # OpenMandriva names: the real GTK zenity is zenity-gtk (it pulls in
+    # zenity-wrapper, which provides /usr/bin/zenity; a plain "zenity" only
+    # resolves to qarma, a Qt clone, on Rock), and secret-tool is in
+    # libsecret-tools ("libsecret" only resolves to the bare library,
+    # lib64secret1_0, without secret-tool).
+    batch_install "AI Key Manager deps" zenity-gtk libsecret-tools gnome-keyring curl
 
     local dir src
     dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -1912,6 +1955,24 @@ install_claude_desktop() {
     curl -fsSL https://pkg.claude-desktop-debian.dev/rpm/claude-desktop-unofficial.repo -o /etc/yum.repos.d/claude-desktop-unofficial.repo 2>/dev/null
     pm_update
     safe_install claude-desktop-unofficial
+    # The rpm itself only requires /bin/sh, so it installs fine here - it's
+    # the repo route (signed metadata, repo_gpgcheck=1) that's fragile. Fall
+    # back to the newest rpm listed in the repo's own metadata, installed
+    # as a local file.
+    if ! is_installed claude-desktop-unofficial; then
+        local base=https://pkg.claude-desktop-debian.dev/rpm/x86_64 prim rpm
+        prim=$(curl -fsSL "$base/repodata/repomd.xml" 2>/dev/null \
+            | tr -d '\n' | grep -oE '<data type="primary">.*</data>' \
+            | grep -oE 'href="repodata/[^"]*primary[^"]*"' | head -1 | sed 's/^href="//;s/"$//')
+        [ -n "$prim" ] && rpm=$(curl -fsSL "$base/$prim" 2>/dev/null | gzip -dc 2>/dev/null \
+            | grep -oE 'href="claude-desktop-unofficial-[0-9][^"]*\.x86_64\.rpm"' \
+            | sed 's/^href="//;s/"$//' | sort -V | tail -1)
+        if [ -n "$rpm" ]; then
+            install_vendor_rpm_direct claude-desktop-unofficial "$base/$rpm" "Claude Desktop" || true
+        else
+            log WARNING "Couldn't read the Claude Desktop repo metadata for a direct rpm"
+        fi
+    fi
 }
 
 # Zed (https://zed.dev) - GPU-accelerated code editor. No Fedora/COPR
@@ -2252,7 +2313,7 @@ configure_logiops() {
 install_logiops() {
     log INFO "Installing Logiops build dependencies..."
     batch_install "Logiops build deps" \
-        cmake pkgconf-pkg-config systemd-devel libevdev-devel libconfig-devel glib2-devel gcc-c++
+        cmake pkgconf systemd-devel libevdev-devel libconfig-devel glib2-devel gcc-c++
     local t; t=$(mktemp -d)
     if ! git clone --depth 1 https://github.com/PixlOne/logiops "$t/logiops" 2>/dev/null; then
         rm -rf "$t"; log WARNING "Logiops clone failed (needs network access to github.com)"; return 1
@@ -2759,7 +2820,7 @@ install_lazygit() {
 
 # ========== WINDOWS SOFTWARE SUPPORT (WINE) ==========
 install_windows_support() {
-    batch_install "Wine" wine winetricks zenity
+    batch_install "Wine" wine winetricks zenity-gtk
     # Winetricks ships no .desktop launcher on Fedora either - hand-write one
     # so it lands in the app grid, same as the Ubuntu script.
     if command -v winetricks &>/dev/null; then
