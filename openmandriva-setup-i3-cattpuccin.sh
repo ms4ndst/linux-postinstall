@@ -207,7 +207,9 @@ log "Installing base X11 stack + i3 + rice toolkit via dnf..."
 #   i3 -> i3-wm (OpenMandriva's package is i3-wm, providing i3)
 #   network-manager-applet -> NetworkManager-applet (OpenMandriva keeps CamelCase)
 #   pipewire-pulseaudio -> pipewire-pulse (OpenMandriva's PulseAudio emulation)
-#   libdbusmenu-devel -> libdbusmenu-glib-devel (or libdbusmenu-devel)
+#   gtk3-devel / libdbusmenu-{glib,gtk3}-devel -> lib64gtk+3.0-devel /
+#     lib64dbusmenu-glib-devel / lib64dbusmenu-gtk3-devel (the Fedora names
+#     aren't even Provides here), plus gcc + glibc-devel for snixembed's build
 #   pipx -> python3-pipx (OpenMandriva ships python3-pipx)
 #   dnf-utils -> dnf-plugins-core (or dnf5-plugins)
 #   dex-autostart is dropped in favor of systemd's built-in xdg-desktop-autostart.target
@@ -218,7 +220,7 @@ sudo dnf install -y \
   xss-lock NetworkManager-applet pasystray blueman lxqt-policykit pipewire-pulse \
   copyq udiskie pcmanfm gammastep libnotify nitrogen gnome-calendar \
   system-config-printer hplip \
-  vala gtk3-devel libdbusmenu-glib-devel libdbusmenu-gtk3-devel \
+  vala gcc glibc-devel make lib64gtk+3.0-devel lib64dbusmenu-glib-devel lib64dbusmenu-gtk3-devel \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq flameshot imagemagick xclip slop \
   brightnessctl playerctl numlockx autorandr arandr xdotool python3-xlib \
@@ -17658,7 +17660,15 @@ Exec=evolution-alarm-notify
 Type=Application
 Hidden=true
 EOF
-systemctl --user mask evolution-alarm-notify.service >/dev/null 2>&1 || warn "Could not mask evolution-alarm-notify.service - its D-Bus-activated popup may still appear."
+# On OpenMandriva evolution-data-server ships evolution-alarm-notify as an
+# autostart entry only - no systemd --user unit and no D-Bus activation file
+# - so the Hidden=true override above already stops it, and there's no unit
+# to mask (systemctl --user mask would just fail). Mask it only where a unit
+# actually exists.
+if ls /usr/lib/systemd/user/evolution-alarm-notify.service /etc/systemd/user/evolution-alarm-notify.service >/dev/null 2>&1; then
+  systemctl --user mask evolution-alarm-notify.service >/dev/null 2>&1 \
+    || warn "Could not mask evolution-alarm-notify.service - its D-Bus-activated popup may still appear."
+fi
 
 # ----------------------------------------------------------------------------
 # 6e. snixembed (StatusNotifierItem -> legacy XEmbed tray proxy)
@@ -17670,11 +17680,14 @@ systemctl --user mask evolution-alarm-notify.service >/dev/null 2>&1 || warn "Co
 # lose SNI tray icons for apps like OBS/1Password/Discord; the legacy-
 # protocol tray icons this script's own widgets don't already replace would
 # still work without it).
+# CC=gcc: valac compiles via the C compiler it finds as $CC, defaulting to
+# "cc" - which OpenMandriva doesn't provide when only gcc is installed
+# ("Failed to execute child process cc").
 if ! command -v snixembed >/dev/null 2>&1; then
   log "Building snixembed from source (proxies modern tray icons for polybar)..."
   SNIXEMBED_TMPDIR="$(mktemp -d)"
   if git clone --depth 1 https://git.sr.ht/~steef/snixembed "$SNIXEMBED_TMPDIR" >/dev/null 2>&1 \
-      && make -C "$SNIXEMBED_TMPDIR" >/dev/null 2>&1 \
+      && CC=gcc make -C "$SNIXEMBED_TMPDIR" >/dev/null 2>&1 \
       && make -C "$SNIXEMBED_TMPDIR" PREFIX="$HOME/.local" install >/dev/null 2>&1; then
     log "snixembed built and installed to $BIN/snixembed."
   else
@@ -45191,6 +45204,8 @@ rm -f "$PWFB_TMP"
 #      unit files themselves use.
 # ----------------------------------------------------------------------------
 log "Installing DPMS-wake-after-resume systemd-sleep hook (needs sudo)..."
+# /etc/systemd/system-sleep doesn't exist by default on OpenMandriva
+sudo mkdir -p /etc/systemd/system-sleep
 sudo tee /etc/systemd/system-sleep/i3-dpms-wake > /dev/null <<'HOOKEOF'
 #!/bin/sh
 # systemd-sleep hook: forces the display back on after resume. On some
