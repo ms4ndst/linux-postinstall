@@ -35,6 +35,9 @@ THEMES = [
     "daniela", "dracula", "emilia", "forest", "h4ck3r", "hidrot", "isabel",
     "jan", "karla", "marisol", "murz", "nord", "pamela", "silvia", "tobi",
     "varinka", "yael", "yucklys", "yucklys-light", "z0mbi3",
+    "sedo-dracula", "sedo-everblush", "sedo-everforest", "sedo-gotham",
+    "sedo-gruvbox", "sedo-nightfox", "sedo-nord", "sedo-onedark",
+    "sedo-tokyo-night",
 ]
 
 # aline is the one light theme in the whole set (confirmed in this rice's own

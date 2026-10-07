@@ -42,6 +42,8 @@
 #           of Forest showing workspace numbers instead of dots,
 #           and hidrot/murz from Murzchnvok/polybar-collection (top
 #           bar + system tray added),
+#           the 9 polybar styles from gitlab.com/sum4n/sedo-wm as
+#           sedo-* (original files untouched + an i3 wrapper),
 #           CLIamp terminal music player (Mod+m), an
 #           Omarchy-style app menu (Mod+alt+space) for this rice's own
 #           utility scripts (including a floating on-screen keybinding
@@ -16915,6 +16917,28 @@ if owner:
         owner.destroy()
         d.sync()
 PYEOF
+
+# sedo-* themes (gitlab.com/sum4n/sedo-wm) read the network interface and
+# battery/adapter from the environment, the way their original bspwm setup
+# exported them - set them here (unless already set) so those bars have
+# something to read. Every other theme ignores these.
+if [ -z "${NET_INTERFACE:-}" ]; then
+  for d in /sys/class/net/*/wireless; do
+    [ -e "$d" ] && { d="${d%/wireless}"; NET_INTERFACE="${d##*/}"; break; }
+  done
+  [ -z "${NET_INTERFACE:-}" ] && NET_INTERFACE="$(ip route show default 2>/dev/null | awk '{print $5; exit}')"
+fi
+if [ -z "${LBATTERY:-}" ]; then
+  for p in /sys/class/power_supply/BAT*; do [ -e "$p" ] && { LBATTERY="${p##*/}"; break; }; done
+fi
+if [ -z "${LADAPTER:-}" ]; then
+  for p in /sys/class/power_supply/*; do
+    [ "$(cat "$p/type" 2>/dev/null)" = Mains ] && { LADAPTER="${p##*/}"; break; }
+  done
+fi
+export NET_INTERFACE="${NET_INTERFACE:-lo}"
+[ -n "${LBATTERY:-}" ] && export LBATTERY
+[ -n "${LADAPTER:-}" ] && export LADAPTER
 
 LIST="$(polybar --list-monitors 2>/dev/null)"
 if [ -z "$LIST" ]; then
@@ -37168,6 +37192,7750 @@ for f in rofi/themes/murz.rasi rofi/themes/murz-powermenu.rasi kitty/themes/murz
          starship/themes/murz.toml dunst/themes/murz.dunstrc; do
   cp "$CONF/$f" "$CONF/${f/murz/murz-alt}"
 done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# >>> sedo-wm themes (generated) >>>
+# ----------------------------------------------------------------------------
+# sedo-* themes (from gitlab.com/sum4n/sedo-wm) - fonts. The original bars
+# name a dozen font families; install the free ones they use so the bars
+# render as designed. Best-effort like the Nerd Font download above: each
+# family is skipped if already present, and a failed download only blanks
+# some icons, it never aborts the script.
+#   - Nerd Fonts v3.4.0 (.tar.xz builds - same fonts, a fraction of the zip
+#     size): Iosevka, mononoki, Inconsolata, BlexMono (IBMPlexMono),
+#     VictorMono, SpaceMono
+#   - MesloLGS NF (romkatv/powerlevel10k-media, pinned commit)
+#   - Material Design Icons Desktop (Templarian/MaterialDesign-Font, pinned)
+#   - Font Awesome 6 Free 6.7.2 - stands in for the originals' Font Awesome
+#     6 Pro, which is a paid font (see each sedo-* theme's own header)
+# ----------------------------------------------------------------------------
+sedo_font_fetch() {  # <dest dir> <url> <extract: tar|zip|file> [file name]
+  local dest="$1" url="$2" kind="$3" tmp
+  [ -d "$dest" ] && return 0
+  tmp="$(mktemp -d)"
+  if curl -fsSL --retry 3 -o "$tmp/dl" "$url"; then
+    mkdir -p "$dest"
+    case "$kind" in
+      # Nerd Fonts families ship dozens of weights/widths (Iosevka alone
+      # unpacks to ~1 GB) - keep only the Regular/Bold/Italic/BoldItalic of
+      # the plain and Mono variants, which covers every style these bars use.
+      tar)  tar -xJf "$tmp/dl" -C "$dest"
+            find "$dest" -type f ! \( -name '*NerdFont-Regular.ttf' -o -name '*NerdFont-Bold.ttf' \
+              -o -name '*NerdFont-Italic.ttf' -o -name '*NerdFont-BoldItalic.ttf' \
+              -o -name '*NerdFontMono-Regular.ttf' -o -name '*NerdFontMono-Bold.ttf' \) -delete ;;
+      zip)  unzip -oqj "$tmp/dl" '*.otf' -d "$dest" ;;
+      file) mv "$tmp/dl" "$dest/$4" ;;
+    esac
+  else
+    warn "Font download failed: $url - sedo-* themes will show blank icons where it's used."
+  fi
+  rm -rf "$tmp"
+}
+log "Installing fonts used by the sedo-* polybar themes..."
+for nf in Iosevka Mononoki Inconsolata IBMPlexMono VictorMono SpaceMono; do
+  sedo_font_fetch "$FONTS/${nf}Nerd" "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/${nf}.tar.xz" tar
+done
+if [ ! -d "$FONTS/MesloLGS-NF" ]; then
+  for w in Regular Bold Italic "Bold Italic"; do
+    f="MesloLGS NF ${w}.ttf"
+    sedo_font_fetch "$FONTS/MesloLGS-NF.tmp/$w" "https://raw.githubusercontent.com/romkatv/powerlevel10k-media/145eb9fbc2f42ee408dacd9b22d8e6e0e553f83d/${f// /%20}" file "$f"
+  done
+  mkdir -p "$FONTS/MesloLGS-NF"
+  find "$FONTS/MesloLGS-NF.tmp" -name '*.ttf' -exec mv {} "$FONTS/MesloLGS-NF/" \; 2>/dev/null
+  rm -rf "$FONTS/MesloLGS-NF.tmp"
+fi
+sedo_font_fetch "$FONTS/MaterialDesignIconsDesktop" "https://raw.githubusercontent.com/Templarian/MaterialDesign-Font/d72e30826e6797c1b3a2976e71d0d2f790c1a2eb/MaterialDesignIconsDesktop.ttf" file MaterialDesignIconsDesktop.ttf
+sedo_font_fetch "$FONTS/FontAwesome6Free" "https://github.com/FortAwesome/Font-Awesome/releases/download/6.7.2/fontawesome-free-6.7.2-desktop.zip" zip
+fc-cache -f "$FONTS" >/dev/null 2>&1 || true
+
+cat > "$BIN/sedo-updates.sh" <<'EOF'
+#!/usr/bin/env bash
+# Pending-update count for the sedo-* themes' updates module - prints one
+# number and exits (their module re-runs it on its own interval), same count
+# as polybar-updates.sh. Stands in for sedo-wm's Arch checkupdates/yay script.
+count=$(timeout 10 zypper --non-interactive --no-refresh lu 2>/dev/null | grep -cE '^v[[:space:]]*\|')
+echo "${count:-0}"
+EOF
+chmod +x "$BIN/sedo-updates.sh"
+cat > "$BIN/polybar-distro.sh" <<'EOF'
+#!/usr/bin/env bash
+# Distro logo for the sedo-* themes' distro module (sedo-wm's bars call a
+# `distro` command that isn't in its repo) - one Nerd Font glyph per distro.
+. /etc/os-release 2>/dev/null
+case "${ID:-}" in
+  fedora)                 echo "" ;;
+  opensuse*|suse)         echo "" ;;
+  openmandriva*|mandriva) echo "" ;;
+  arch|endeavouros)       echo "" ;;
+  debian)                 echo "" ;;
+  ubuntu)                 echo "" ;;
+  *)                      echo "" ;;
+esac
+EOF
+chmod +x "$BIN/polybar-distro.sh"
+
+mkdir -p "$CONF/polybar/sedo/dracula"
+cat > "$CONF/polybar/sedo/dracula/colors.ini" <<'SEDO_EOF'
+[color]
+
+bg = #282A36
+current = #44475A
+
+fg = #F8F8F2
+alt-fg= #bfbfbf
+
+blue = #6272A4
+cyan = #8BE9FD
+green = #50FA7B
+orange = #FFB86C
+pink = #FF79C6
+red= #FF6E67
+
+purple = #BD93F9
+alt-purple= #CAA9FA
+
+alt-red = #FF5555
+yellow = #F1FA8C
+
+[pallete]
+first = #6272a4
+second = #FFB86C
+SEDO_EOF
+cat > "$CONF/polybar/sedo/dracula/config.ini" <<'SEDO_EOF'
+[global/wm]
+
+margin-bottom = 0
+margin-top = 0
+
+include-file = colors.ini
+include-file = modules.ini
+
+[bar/dracula-bar]
+
+monitor =
+monitor-fallback =
+monitor-strict = false
+
+override-redirect = false
+bottom = false
+fixed-center = false
+
+width = 98%
+height = 22
+
+offset-x = 1%
+offset-y = 0.5%
+
+background = ${color.bg}
+foreground = ${color.fg}
+
+radius = 
+
+line-size = 2
+
+border-size = 6
+border-color = ${color.bg}
+
+padding-left = 0
+padding-right = 2
+
+module-margin-left = 0
+module-margin-right = 0
+
+font-0 = "Cartograph CF:style=Bold:size=10;2"
+font-1 = "Material Design Icons Desktop:size=14;3"
+font-2 = "Font Awesome 6 Pro Solid:size=11;3"
+font-3 = "BlexMono Nerd Font:style=Regular:size=13;3"
+font-4 = "MesloLGS NF:size=13;3"
+font-5 = "BlexMono Nerd Font:style=Regular:size=15;3"
+
+modules-left = distro distR sep2 bspL bspwm bspR bspRR sep2 mpd
+modules-center =
+modules-right = updates sep network sep battery sep date
+
+separator = 
+dim-value = 1.0
+;locale = es_MX.UTF-8
+
+tray-position = right
+tray-detached = false
+tray-maxsize = 16
+tray-background = ${color.bg}
+tray-offset-x = 0
+tray-offset-y = 0
+tray-padding = 0
+tray-scale = 1.0
+
+wm-restack = bspwm
+enable-ipc = true
+
+cursor-click = pointer
+cursor-scroll = 
+
+[settings]
+
+screenchange-reload = false
+
+compositing-background = source
+compositing-foreground = over
+compositing-overline = over
+compositing-underline = over
+compositing-border = over
+
+pseudo-transparency = false
+SEDO_EOF
+cat > "$CONF/polybar/sedo/dracula/modules.ini" <<'SEDO_EOF'
+[module/bgi]
+type                        = custom/text
+content                     = "%{T4}%{T-}"
+content-foreground          = ${pallete.first}
+content-background          = ${color.bg}
+
+[module/boi]
+type                        = custom/text
+content                     = "%{T4}%{T-}"
+content-foreground          = ${pallete.second}
+content-background          = ${pallete.first}
+
+[module/bri]
+type                        = custom/text
+content                     = "%{T4}%{T-}"
+content-foreground          = ${pallete.first}
+content-background          = ${pallete.second}
+
+[module/bii]
+type                        = custom/text
+content                     = "%{T4}%{T-}"
+content-foreground          = ${pallete.second}
+content-background          = ${pallete.first}
+
+[module/bid]
+type                        = custom/text
+content                     = "%{T4}%{T-}"
+content-foreground          = ${color.bg}
+content-background          = ${pallete.second}
+
+#----#----#----#----#----#
+; [module/byi]
+; type                        = custom/text
+; content                     = "%{T4}%{T-}"
+; content-foreground          = ${color.yellow}
+; content-background          = ${color.bg}
+;
+; [module/bpi]
+; type                        = custom/text
+; content                     = "%{T4}%{T-}"
+; content-foreground          = ${color.purple}
+; content-background          = ${color.bg}
+;
+; [module/bbi]
+; type                        = custom/text
+; content                     = "%{T4}%{T-}"
+; content-foreground          = ${color.blue}
+; content-background          = ${color.bg}
+;
+; [module/bgd]
+; type                        = custom/text
+; content                     = "%{T4}%{T-}"
+; content-foreground          = ${color.bg}
+; content-background          = ${color.cyan}
+;
+; [module/brd]
+; type                        = custom/text
+; content                     = "%{T4}%{T-}"
+; content-foreground          = ${color.bg}
+; content-background          = ${color.red}
+;
+; [module/byd]
+; type                        = custom/text
+; content                     = "%{T4}%{T-}"
+; content-foreground          = ${color.bg}
+; content-background          = ${color.yellow}
+;
+; [module/bpd]
+; type                        = custom/text
+; content                     = "%{T4}%{T-}"
+; content-foreground          = ${color.bg}
+; content-background          = ${color.purple}
+;
+; [module/bbd]
+; type                        = custom/text
+; content                     = "%{T4}%{T-}"
+; content-foreground          = ${color.bg}
+; content-background          = ${color.blue}
+;
+; [module/bod]
+; type                        = custom/text
+; content                     = "%{T4}%{T-}"
+; content-foreground          = ${color.bg}
+; content-background          = ${color.orange}
+#----#----#----#----#----#
+
+
+######################################################
+
+[module/date]
+type = internal/date
+
+interval = 1.0
+
+time = %A - %B%d ( %H:%M )
+
+format = <label>
+; format-prefix = "  "
+format-prefix-background = ${color.alt-purple}
+format-prefix-foreground= ${color.bg}
+label = "%date% %time% "
+
+label-background = ${color.purple}
+label-foreground= ${color.bg}
+
+######################################################
+
+[module/network]
+type = internal/network
+interface = ${env:NET_INTERFACE}
+
+interval = 3.0
+accumulate-stats = true
+unknown-as-up = true
+speed-unit = ""
+
+format-connected = <label-connected>
+format-connected-prefix = "  "
+label-connected = "%netspeed% "
+format-connected-prefix-foreground = ${color.yellow}
+
+label-connected-foreground = ${color.yellow}
+
+format-disconnected = <label-disconnected>
+format-disconnected-prefix = "  "
+format-disconnected-foreground = ${color.yellow}
+
+label-disconnected = "NO_CONNECTIOn "
+label-disconnected-foreground = ${color.yellow}
+
+######################################################
+
+[module/bspwm]
+type = internal/bspwm
+
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+occupied-scroll = false
+
+ws-icon-0 = 1;
+ws-icon-1 = 2;
+ws-icon-2 = 3;
+ws-icon-3 = 4;
+ws-icon-4 = 5;
+ws-icon-5 = 6;
+ws-icon-default = "♟ "
+
+
+format = <label-state>
+format-font = 3
+
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.cyan}
+label-focused-background = ${color.blue}
+label-focused-underline = ${color.cyan}
+
+label-occupied = %icon%
+label-occupied-padding = 1
+label-occupied-foreground= ${color.bg}
+label-occupied-background = ${color.blue}
+
+label-urgent = %icon%
+label-urgent-padding = 1
+
+label-empty = %icon%
+label-empty-foreground = ${color.fg}
+label-empty-background = ${color.blue}
+label-empty-padding = 1
+
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.bg-alt}
+
+[module/bspL]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.blue}
+
+[module/bspR]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.blue}
+
+[module/bspLL]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.blue}
+
+[module/bspRR]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.blue}
+
+######################################################
+
+[module/updates]
+type = custom/script
+exec = ~/.config/bspwm/scripts/Updates
+interval = 120
+; tail = true
+label = "%{T3}%output% %{T-}"
+label-foreground = ${color.red}
+click-left = alacritty --class float,float -e sudo pacman -Syyu
+format-prefix = " 󰒓 "
+format-prefix-foreground = ${color.red}
+
+######################################################
+
+[module/sep]
+type = custom/text
+content = " | "
+content-foreground = ${color.current}
+
+######################################################
+
+[module/sep2]
+type = custom/text
+content = "  "
+content-foreground = ${color.current}
+
+#----
+
+[module/mpd]
+type                    = internal/mpd
+host                    = 127.0.0.1
+port                    = 6600
+interval        		= 2
+format-online           = "<icon-repeat> %{F#9ece6a}[%{F-} %{A1:mpc toggle:}<label-song>%{A} %{F#9ece6a}]%{F-}"
+format-offline          = ""
+label-song              = "%title%"
+label-song-maxlen		= 21
+icon-repeat             = " "
+
+icon-repeat-background  = ${color.bg}
+toggle-on-foreground    = ${color.cyan}
+toggle-off-foreground   = ${color.red}
+
+#----
+
+[module/battery]
+;https://github.com/jaagr/polybar/wiki/Module:-battery
+type = internal/battery
+battery = BAT0
+adapter = AC0
+full-at = 100
+
+format-charging = <animation-charging><label-charging>
+label-charging =   "%percentage%% "
+label-charging-foreground = ${color.cyan}
+
+format-discharging = <ramp-capacity><label-discharging>
+label-discharging =   "%percentage%% "
+label-discharging-foreground = ${color.cyan}
+
+format-full-prefix = "   "
+label-full =   "%percentage%% "
+
+format-full-prefix-font = 4
+format-full-prefix-foreground = ${color.cyan}
+format-full-foreground = ${color.cyan}
+
+ramp-capacity-0 = "   "
+ramp-capacity-1 = "   "
+ramp-capacity-2 = "   "
+ramp-capacity-3 = "   "
+ramp-capacity-4 = "   "
+ramp-capacity-foreground = ${color.cyan}
+ramp-capacity-font = 4
+
+animation-charging-0 = "   "
+animation-charging-1 = "   "
+animation-charging-2 = "   "
+animation-charging-3 = "   "
+animation-charging-4 = "   "
+animation-charging-font = 4
+animation-charging-foreground = ${color.cyan}
+animation-charging-framerate = 750
+
+#----
+
+[module/distro]
+type = custom/script
+exec = distro
+
+format = <label>
+label = "%{T4}%{F#282a36}%output%%{F-}%{T-}"
+label-background = ${color.yellow}
+
+[module/distR]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.yellow}
+
+#----
+SEDO_EOF
+cat > "$CONF/polybar/themes/sedo-dracula.ini" <<'EOF'
+; sedo-dracula - the "dracula" polybar from gitlab.com/sum4n/sedo-wm
+; (commit 3be319a), unmodified: its own config.ini/colors.ini/modules.ini
+; (/decor.ini) are installed byte-for-byte under
+; ~/.config/polybar/sedo/dracula/ and included below. This file only adds
+; what running that bspwm bar under i3 in this rice needs, on top of it:
+;   - top-primary/top-secondary bars (what polybar-launch.sh starts),
+;     inheriting bar/dracula-bar as-is; top-secondary has no tray
+;   - an i3 workspace module in place of the bspwm one, carrying the bspwm
+;     module's own labels/colors/icons (occupied -> unfocused, empty ->
+;     visible, bspwm-only keys dropped)
+;   - wm-restack = i3 instead of bspwm
+;   - text drawn through an icon font (updates) moved to
+;     font-0, so its digits match the rest of the bar's text
+;   - battery: battery/adapter from $LBATTERY/$LADAPTER (polybar-launch.sh sets
+;     them) instead of the original's hardcoded BAT0/AC0
+;   - updates: this distro's own pending-update count (sedo-updates.sh) and
+;     this rice's updater on click, instead of the original's Arch
+;     checkupdates/yay script and alacritty + pacman -Syyu
+;   - distro: ~/.local/bin/polybar-distro.sh (the original's `distro` command
+;     isn't part of the sedo-wm repo either)
+;   - date/time: round ends - half-circle caps in the block's own colors
+;     (replacing any slanted powerline decoration right around it)
+;   - tray: a tray module (same background/size/padding as the original's
+;     tray-* settings) at the end of modules-right instead of the legacy
+;     tray-position tray, which polybar 3.7 draws below bars with a border
+;   - text fonts: font-0 and every other text slot a widget's text is drawn
+;     in -> JetBrainsMono Nerd Font Regular 9 (Medium 9 for workspace
+;     labels), the same fonts murz-alt uses; the originals' bold 10-16pt
+;     text reads heavy. Icon/separator fonts are left as they were
+;   - fonts: Font Awesome 6 Pro -> Font Awesome 6 Free and Cartograph CF ->
+;     VictorMono Nerd Font (both originals are paid fonts); every other
+;     font is the original's, installed by the setup script
+;   - workspace icons: one per murz-alt workspace tag - web, Slack, email,
+;     1Password, VS Code, Windows, media, terminal, misc (Material Design
+;     glyphs) in JetBrainsMono Nerd Font 11, instead of the original's icons
+;   - width = 100% / offset-x = 0: edge to edge across the screen (most
+;     originals float at 98% width with a 1% side offset)
+;   - network: the original reads $NET_INTERFACE, which polybar-launch.sh
+;     exports (first wifi interface, else the default-route one)
+; [colors] below is only for generate-{vscode,gtk,nvim}-themes.py - the
+; bar itself still uses the original's own [color] section.
+
+; inside a section (as the original's own config.ini does with its
+; includes) so Python's configparser can read this file too
+[global/sedo]
+include-file = ~/.config/polybar/sedo/dracula/config.ini
+
+[colors]
+base     = #282A36
+mantle   = #282A36
+surface0 = #4D4D4D
+text     = #F8F8F2
+subtext  = #BFBFBF
+red      = #FF5555
+green    = #50FA7B
+yellow   = #F1FA8C
+blue     = #BD93F9
+purple   = #FF79C6
+cyan     = #8BE9FD
+
+[module/i3]
+type = internal/i3
+; polybar's i3 module needs this to keep workspaces in numeric order
+index-sort = true
+ws-icon-0 = 1;󰖟
+ws-icon-1 = 2;󰒱
+ws-icon-2 = 3;󰇮
+ws-icon-3 = 4;󰢁
+ws-icon-4 = 5;󰨞
+ws-icon-5 = 6;󰖳
+ws-icon-6 = 7;󰐌
+ws-icon-7 = 8;󰆍
+ws-icon-8 = 9;󰟃
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+ws-icon-default = "♟ "
+format = <label-state>
+format-font = 9
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.cyan}
+label-focused-background = ${color.blue}
+label-focused-underline = ${color.cyan}
+label-unfocused = %icon%
+label-unfocused-padding = 1
+label-unfocused-foreground = ${color.bg}
+label-unfocused-background = ${color.blue}
+label-urgent = %icon%
+label-urgent-padding = 1
+label-visible = %icon%
+label-visible-foreground = ${color.fg}
+label-visible-background = ${color.blue}
+label-visible-padding = 1
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.bg-alt}
+
+[module/battery-i3]
+inherit = module/battery
+battery = ${env:LBATTERY:BAT0}
+adapter = ${env:LADAPTER:AC}
+
+[module/updates-i3]
+inherit = module/updates
+exec = ~/.local/bin/sedo-updates.sh
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label = "%{T1}%output% %{T-}"
+
+[module/distro-i3]
+inherit = module/distro
+exec = ~/.local/bin/polybar-distro.sh
+label = "%{T7}%{F#282a36}%output%%{F-}%{T-}"
+
+[module/date-cap-l]
+type = custom/text
+format = "%{T8}%{T-}"
+format-foreground = ${color.purple}
+
+[module/date-cap-r]
+type = custom/text
+format = "%{T8}%{T-}"
+format-foreground = ${color.purple}
+
+[module/tray-i3]
+type = internal/tray
+format-background = ${color.bg}
+tray-background = ${color.bg}
+tray-size = 16
+tray-padding = 0
+
+[bar/top-primary]
+inherit = bar/dracula-bar
+monitor = ${env:MONITOR:}
+width = 100%
+offset-x = 0
+modules-left = distro-i3 distR sep2 bspL i3 bspR bspRR sep2 mpd
+modules-center = 
+modules-right = updates-i3 sep network sep battery-i3 sep date-cap-l date date-cap-r tray-i3
+tray-position = none
+wm-restack = i3
+font-0 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
+font-2 = "Font Awesome 6 Free Solid:size=11;3"
+font-6 = "JetBrainsMono Nerd Font Propo:size=13;3"
+font-7 = "JetBrainsMono Nerd Font:pixelsize=16;2"
+font-8 = "JetBrainsMono Nerd Font:size=11;3"
+
+[bar/top-secondary]
+inherit = bar/top-primary
+modules-right = updates-i3 sep network sep battery-i3 sep date-cap-l date date-cap-r
+EOF
+cat > "$CONF/rofi/themes/sedo-dracula.rasi" <<'EOF'
+* {
+    base:     #282A36ff;
+    mantle:   #282A36ff;
+    text:     #F8F8F2ff;
+    subtext:  #4D4D4Dff;
+    mauve:    #BD93F9ff;
+    surface0: #4D4D4Dff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/sedo-dracula-powermenu.rasi" <<'EOF'
+* {
+    base:     #282A36ff;
+    mantle:   #282A36ff;
+    text:     #F8F8F2ff;
+    subtext:  #4D4D4Dff;
+    mauve:    #BD93F9ff;
+    surface0: #4D4D4Dff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/starship/themes/sedo-dracula.toml" <<'EOF'
+format = """
+[](#282A36)\
+$python\
+$username\
+[](bg:#4D4D4D fg:#282A36)\
+$directory\
+[](fg:#4D4D4D bg:#4D4D4D)\
+$git_branch\
+$git_status\
+[](fg:#4D4D4D bg:#5AF78E)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#5AF78E bg:#FF79C6)\
+$docker_context\
+[](fg:#FF79C6 bg:#BD93F9)\
+$time\
+[ ](fg:#BD93F9)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#282A36"
+style_root = "bg:#282A36"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#4D4D4D"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#5AF78E"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#FF79C6"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#5AF78E"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#5AF78E"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#4D4D4D"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#4D4D4D"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#5AF78E"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#5AF78E"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#5AF78E"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#5AF78E"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#5AF78E"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#5AF78E"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282A36"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#5AF78E"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#BD93F9"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/dunst/themes/sedo-dracula.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#BD93F9"
+corner_radius = 10
+background = "#282A36"
+foreground = "#F8F8F2"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#4D4D4D"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#282A36"
+foreground = "#4D4D4D"
+frame_color = "#4D4D4D"
+timeout = 4
+
+[urgency_normal]
+background = "#282A36"
+foreground = "#F8F8F2"
+frame_color = "#BD93F9"
+timeout = 6
+
+[urgency_critical]
+background = "#282A36"
+foreground = "#FF5555"
+frame_color = "#FF5555"
+timeout = 0
+EOF
+cat > "$CONF/i3/themes/sedo-dracula.conf" <<'EOF'
+client.focused          #BD93F9  #282A36  #F8F8F2  #BD93F9   #BD93F9
+client.unfocused        #4D4D4D  #282A36  #4D4D4D  #4D4D4D   #4D4D4D
+client.focused_inactive #4D4D4D  #282A36  #4D4D4D  #4D4D4D   #4D4D4D
+client.urgent           #FF5555  #282A36  #F8F8F2  #FF5555   #FF5555
+EOF
+cat > "$CONF/kitty/themes/sedo-dracula.conf" <<'EOF'
+# sedo-dracula - kitty colors from sedo-wm's dracula palette, mapped the way
+# sedo-wm's own scripts/color_push writes its kitty colors.ini
+background #282A36
+foreground #F8F8F2
+url_color #50FA7B
+
+selection_background #F8F8F2
+selection_foreground #282A36
+
+cursor #F8F8F2
+cursor_text_color #3C3E4A
+
+color0 #4D4D4D
+color8 #4D4D4D
+color1 #FF5555
+color9 #FF6E67
+color2 #50FA7B
+color10 #5AF78E
+color3 #F1FA8C
+color11 #F4F99D
+color4 #BD93F9
+color12 #CAA9FA
+color5 #FF79C6
+color13 #FF92D0
+color6 #8BE9FD
+color14 #9AEDFE
+color7 #BFBFBF
+color15 #E6E6E6
+EOF
+
+mkdir -p "$CONF/polybar/sedo/everblush"
+cat > "$CONF/polybar/sedo/everblush/colors.ini" <<'SEDO_EOF'
+[color]
+
+bg = #1D2426
+alt-bg = #2d3437
+
+fg = #dadada
+alt-fg= #b3b9b8
+
+blue = #67b0e8
+cyan = #6cbfbf
+green = #8ccf7e
+orange = #f4a261
+pink = #d67ad2
+red= #e57474
+
+purple = #c47fd5
+alt-purple= #ce89df
+
+alt-red = #ef7e7e
+yellow = #f4d67a
+SEDO_EOF
+cat > "$CONF/polybar/sedo/everblush/config.ini" <<'SEDO_EOF'
+[global/wm]
+
+margin-bottom = 0
+margin-top = 0
+
+include-file = colors.ini
+include-file = modules.ini
+
+[bar/night-bar]
+
+monitor =
+monitor-fallback =
+monitor-strict = false
+
+override-redirect = false
+bottom = false
+fixed-center = false
+
+width = 98%
+height = 22
+
+offset-x = 1%
+offset-y = 0.5%
+
+background = ${color.bg}
+foreground = ${color.fg}
+
+radius = 
+
+line-size = 2
+
+border-size = 6
+border-color = ${color.bg}
+
+padding-left = 0
+padding-right = 2
+
+module-margin-left = 0
+module-margin-right = 0
+
+font-0 = "Iosevka Nerd Font:style=Bold:size=13;3"
+font-1 = "Material Design Icons Desktop:size=14;3"
+font-2 = "Font Awesome 6 Pro Solid:size=10;3"
+font-3 = "Iosevka Nerd Font:style=Bold:size=16;3"
+font-4 = "MesloLGS NF:size=13;3"
+font-5 = "JetBrainsMono Nerd Font:style=Bold:size=13;3"
+
+modules-left = distro sep2 bspwm sep2 weather
+modules-center =
+modules-right = mpd sep2 updates sep2 network sep2 filesystem sep2 battery sep2 date
+
+separator = 
+dim-value = 1.0
+;locale = es_MX.UTF-8
+
+tray-position = right
+tray-detached = false
+tray-maxsize = 16
+tray-background = ${color.bg}
+tray-offset-x = 0
+tray-offset-y = 0
+tray-padding = 0
+tray-scale = 1.0
+
+wm-restack = bspwm
+enable-ipc = true
+
+cursor-click = pointer
+cursor-scroll = 
+
+[settings]
+
+screenchange-reload = false
+
+compositing-background = source
+compositing-foreground = over
+compositing-overline = over
+compositing-underline = over
+compositing-border = over
+
+pseudo-transparency = false
+SEDO_EOF
+cat > "$CONF/polybar/sedo/everblush/modules.ini" <<'SEDO_EOF'
+######################################################
+
+[module/date]
+type = internal/date
+
+interval = 1.0
+
+time = %A - %B%d [%H:%M]
+
+format = <label>
+; format-prefix = "  "
+format-prefix-background = ${color.green}
+format-prefix-foreground= ${color.bg}
+label = "%date% %time% "
+
+label-background = ${color.green}
+label-foreground= ${color.bg}
+
+######################################################
+
+[module/network]
+type = internal/network
+interface = ${env:NET_INTERFACE}
+
+interval = 3.0
+accumulate-stats = true
+unknown-as-up = true
+speed-unit = ""
+
+format-connected = <label-connected>
+format-connected-prefix = "  "
+label-connected = " %netspeed% "
+format-connected-prefix-foreground = ${color.alt-fg}
+
+label-connected-foreground = ${color.alt-fg}
+
+format-disconnected = <label-disconnected>
+format-disconnected-prefix = " 󰖪 "
+format-disconnected-foreground = ${color.alt-fg}
+
+label-disconnected = " Disconnected "
+label-disconnected-foreground = ${color.alt-fg}
+
+######################################################
+
+[module/bspwm]
+type = internal/bspwm
+
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+occupied-scroll = false
+
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+
+
+format = "<label-state>"
+format-font = 6
+
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.orange}
+label-focused-background = ${color.alt-bg}
+label-focused-underline = ${color.cyan}
+
+label-occupied = %icon%
+label-occupied-padding = 1
+label-occupied-foreground= ${color.bg}
+label-occupied-background = ${color.alt-bg}
+
+label-urgent = %icon%
+label-urgent-padding = 1
+
+label-empty = %icon%
+label-empty-foreground = ${color.fg}
+label-empty-background = ${color.alt-bg}
+label-empty-padding = 1
+
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.alt-bg}
+
+[module/bspL]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.alt-bg}
+
+[module/bspR]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.alt-bg}
+
+[module/bspRR]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.blue}
+
+######################################################
+
+[module/updates]
+type = custom/script
+exec = ~/.config/bspwm/scripts/Updates
+interval = 120
+; tail = true
+label = "%{T1} %output% %{T-}"
+label-foreground = ${color.alt-fg}
+click-left = alacritty --class float,float -e sudo pacman -Syyu
+format-prefix = "  "
+format-prefix-foreground = ${color.alt-fg}
+
+######################################################
+
+[module/sep]
+type = custom/text
+content = " "
+content-foreground = ${color.current}
+
+######################################################
+
+[module/sep2]
+type = custom/text
+content = "  "
+content-foreground = ${color.current}
+
+#----
+
+[module/mpd]
+type                    = internal/mpd
+host                    = 127.0.0.1
+port                    = 6600
+interval                = 2
+format-online           = "<icon-repeat>%{F#9ece6a}%{F-} %{A1:mpc toggle:}<label-song>%{A} %{F#9ece6a}%{F-}"
+format-offline          = ""
+label-song              = "%{T1}%title%%{T-}"
+label-song-foreground   = ${color.alt-fg}
+label-song-maxlen       = 38
+icon-repeat             = "󰎈"
+
+toggle-on-foreground    = ${color.alt-fg}
+toggle-off-foreground   = ${color.alt-fg}
+
+#----
+
+[module/battery]
+;https://github.com/jaagr/polybar/wiki/Module:-battery
+type = internal/battery
+battery = BAT0
+adapter = AC0
+full-at = 100
+
+format-charging = <animation-charging><label-charging>
+label-charging =   "%percentage%% "
+label-charging-foreground = ${color.red}
+
+format-discharging = <ramp-capacity><label-discharging>
+label-discharging =   "%percentage%% "
+label-discharging-foreground = ${color.red}
+
+format-full-prefix = "   "
+label-full =   "%percentage%% "
+
+format-full-prefix-font = 1
+format-full-prefix-foreground = ${color.red}
+format-full-foreground = ${color.red}
+
+ramp-capacity-0 = "   "
+ramp-capacity-1 = "   "
+ramp-capacity-2 = "   "
+ramp-capacity-3 = "   "
+ramp-capacity-4 = "   "
+ramp-capacity-foreground = ${color.red}
+ramp-capacity-font = 1
+
+animation-charging-0 = "   "
+animation-charging-1 = "   "
+animation-charging-2 = "   "
+animation-charging-3 = "   "
+animation-charging-4 = "   "
+animation-charging-font = 1
+animation-charging-foreground = ${color.red}
+animation-charging-framerate = 750
+
+#----
+
+[module/distro]
+type = custom/script
+exec = distro
+
+format = <label>
+label = "%{T4}%{F#dbc074}%{A1:rofi -show run:}%output%%{A}%{F-}%{T-}"
+
+#----
+
+[module/weather]
+type = custom/script
+exec = weather
+interval = 120
+format = <label>
+label = " %output% "
+label-foreground= ${color.blue}
+
+#----
+
+[module/filesystem]
+type = internal/fs
+
+mount-0 = /
+interval = 60
+fixed-values = true
+
+format-mounted = <label-mounted>
+# format-mounted-prefix = " "
+format-mounted-prefix-background = ${color.bg}
+format-mounted-prefix-foreground = ${color.yellow}
+
+format-unmounted = <label-unmounted>
+format-unmounted-prefix = " "
+
+label-mounted = %used%/used
+label-mounted-background = ${color.bg}
+label-mounted-foreground = ${color.yellow}
+
+label-unmounted = %mountpoint%: not mounted
+
+#----
+SEDO_EOF
+cat > "$CONF/polybar/themes/sedo-everblush.ini" <<'EOF'
+; sedo-everblush - the "everblush" polybar from gitlab.com/sum4n/sedo-wm
+; (commit 3be319a), unmodified: its own config.ini/colors.ini/modules.ini
+; (/decor.ini) are installed byte-for-byte under
+; ~/.config/polybar/sedo/everblush/ and included below. This file only adds
+; what running that bspwm bar under i3 in this rice needs, on top of it:
+;   - top-primary/top-secondary bars (what polybar-launch.sh starts),
+;     inheriting bar/night-bar as-is; top-secondary has no tray
+;   - an i3 workspace module in place of the bspwm one, carrying the bspwm
+;     module's own labels/colors/icons (occupied -> unfocused, empty ->
+;     visible, bspwm-only keys dropped)
+;   - wm-restack = i3 instead of bspwm
+;   - battery: battery/adapter from $LBATTERY/$LADAPTER (polybar-launch.sh sets
+;     them) instead of the original's hardcoded BAT0/AC0
+;   - updates: this distro's own pending-update count (sedo-updates.sh) and
+;     this rice's updater on click, instead of the original's Arch
+;     checkupdates/yay script and alacritty + pacman -Syyu
+;   - weather: ~/.local/bin/polybar-weather.py (the original's `weather`
+;     command isn't part of the sedo-wm repo)
+;   - distro: ~/.local/bin/polybar-distro.sh (the original's `distro` command
+;     isn't part of the sedo-wm repo either)
+;   - date/time: round ends - half-circle caps in the block's own colors
+;     (replacing any slanted powerline decoration right around it)
+;   - tray: a tray module (same background/size/padding as the original's
+;     tray-* settings) at the end of modules-right instead of the legacy
+;     tray-position tray, which polybar 3.7 draws below bars with a border
+;   - text fonts: font-0 and every other text slot a widget's text is drawn
+;     in -> JetBrainsMono Nerd Font Regular 9 (Medium 9 for workspace
+;     labels), the same fonts murz-alt uses; the originals' bold 10-16pt
+;     text reads heavy. Icon/separator fonts are left as they were
+;   - fonts: Font Awesome 6 Pro -> Font Awesome 6 Free and Cartograph CF ->
+;     VictorMono Nerd Font (both originals are paid fonts); every other
+;     font is the original's, installed by the setup script
+;   - width = 100% / offset-x = 0: edge to edge across the screen (most
+;     originals float at 98% width with a 1% side offset)
+;   - network: the original reads $NET_INTERFACE, which polybar-launch.sh
+;     exports (first wifi interface, else the default-route one)
+; [colors] below is only for generate-{vscode,gtk,nvim}-themes.py - the
+; bar itself still uses the original's own [color] section.
+
+; inside a section (as the original's own config.ini does with its
+; includes) so Python's configparser can read this file too
+[global/sedo]
+include-file = ~/.config/polybar/sedo/everblush/config.ini
+
+[colors]
+base     = #141B1E
+mantle   = #141B1E
+surface0 = #2D3437
+text     = #DADADA
+subtext  = #B3B9B8
+red      = #E57474
+green    = #8CCF7E
+yellow   = #E5C76B
+blue     = #67B0E8
+purple   = #C47FD5
+cyan     = #6CBFBF
+
+[module/i3]
+type = internal/i3
+; polybar's i3 module needs this to keep workspaces in numeric order
+index-sort = true
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+format = "<label-state>"
+format-font = 8
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.orange}
+label-focused-background = ${color.alt-bg}
+label-focused-underline = ${color.cyan}
+label-unfocused = %icon%
+label-unfocused-padding = 1
+label-unfocused-foreground = ${color.bg}
+label-unfocused-background = ${color.alt-bg}
+label-urgent = %icon%
+label-urgent-padding = 1
+label-visible = %icon%
+label-visible-foreground = ${color.fg}
+label-visible-background = ${color.alt-bg}
+label-visible-padding = 1
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.alt-bg}
+ws-icon-6 = 7;7
+ws-icon-7 = 8;8
+ws-icon-8 = 9;9
+ws-icon-9 = 10;10
+
+[module/battery-i3]
+inherit = module/battery
+battery = ${env:LBATTERY:BAT0}
+adapter = ${env:LADAPTER:AC}
+
+[module/updates-i3]
+inherit = module/updates
+exec = ~/.local/bin/sedo-updates.sh
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+
+[module/weather-i3]
+inherit = module/weather
+exec = ~/.local/bin/polybar-weather.py
+
+[module/distro-i3]
+inherit = module/distro
+exec = ~/.local/bin/polybar-distro.sh
+
+[module/date-cap-l]
+type = custom/text
+format = "%{T7}%{T-}"
+format-foreground = ${color.green}
+
+[module/date-cap-r]
+type = custom/text
+format = "%{T7}%{T-}"
+format-foreground = ${color.green}
+
+[module/tray-i3]
+type = internal/tray
+format-background = ${color.bg}
+tray-background = ${color.bg}
+tray-size = 16
+tray-padding = 0
+
+[bar/top-primary]
+inherit = bar/night-bar
+monitor = ${env:MONITOR:}
+width = 100%
+offset-x = 0
+modules-left = distro-i3 sep2 i3 sep2 weather-i3
+modules-center = 
+modules-right = mpd sep2 updates-i3 sep2 network sep2 filesystem sep2 battery-i3 sep2 date-cap-l date date-cap-r tray-i3
+tray-position = none
+wm-restack = i3
+font-0 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
+font-2 = "Font Awesome 6 Free Solid:size=10;3"
+font-5 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+font-6 = "JetBrainsMono Nerd Font:pixelsize=16;2"
+font-7 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+
+[bar/top-secondary]
+inherit = bar/top-primary
+modules-right = mpd sep2 updates-i3 sep2 network sep2 filesystem sep2 battery-i3 sep2 date-cap-l date date-cap-r
+EOF
+cat > "$CONF/rofi/themes/sedo-everblush.rasi" <<'EOF'
+* {
+    base:     #141B1Eff;
+    mantle:   #141B1Eff;
+    text:     #DADADAff;
+    subtext:  #2D3437ff;
+    mauve:    #67B0E8ff;
+    surface0: #2D3437ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/sedo-everblush-powermenu.rasi" <<'EOF'
+* {
+    base:     #141B1Eff;
+    mantle:   #141B1Eff;
+    text:     #DADADAff;
+    subtext:  #2D3437ff;
+    mauve:    #67B0E8ff;
+    surface0: #2D3437ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/starship/themes/sedo-everblush.toml" <<'EOF'
+format = """
+[](#141B1E)\
+$python\
+$username\
+[](bg:#2D3437 fg:#141B1E)\
+$directory\
+[](fg:#2D3437 bg:#2D3437)\
+$git_branch\
+$git_status\
+[](fg:#2D3437 bg:#96D988)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#96D988 bg:#C47FD5)\
+$docker_context\
+[](fg:#C47FD5 bg:#67B0E8)\
+$time\
+[ ](fg:#67B0E8)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#141B1E"
+style_root = "bg:#141B1E"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#2D3437"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#96D988"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#C47FD5"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#96D988"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#96D988"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#2D3437"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#2D3437"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#96D988"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#96D988"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#96D988"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#96D988"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#96D988"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#96D988"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#141B1E"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#96D988"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#67B0E8"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/dunst/themes/sedo-everblush.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#67B0E8"
+corner_radius = 10
+background = "#141B1E"
+foreground = "#DADADA"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#2D3437"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#141B1E"
+foreground = "#2D3437"
+frame_color = "#2D3437"
+timeout = 4
+
+[urgency_normal]
+background = "#141B1E"
+foreground = "#DADADA"
+frame_color = "#67B0E8"
+timeout = 6
+
+[urgency_critical]
+background = "#141B1E"
+foreground = "#E57474"
+frame_color = "#E57474"
+timeout = 0
+EOF
+cat > "$CONF/i3/themes/sedo-everblush.conf" <<'EOF'
+client.focused          #67B0E8  #141B1E  #DADADA  #67B0E8   #67B0E8
+client.unfocused        #2D3437  #141B1E  #2D3437  #2D3437   #2D3437
+client.focused_inactive #2D3437  #141B1E  #2D3437  #2D3437   #2D3437
+client.urgent           #E57474  #141B1E  #DADADA  #E57474   #E57474
+EOF
+cat > "$CONF/kitty/themes/sedo-everblush.conf" <<'EOF'
+# sedo-everblush - kitty colors from sedo-wm's everblush palette, mapped the way
+# sedo-wm's own scripts/color_push writes its kitty colors.ini
+background #141B1E
+foreground #DADADA
+url_color #8CCF7E
+
+selection_background #DADADA
+selection_foreground #141B1E
+
+cursor #2C3333
+cursor_text_color #232A2D
+
+color0 #2D3437
+color8 #2D3437
+color1 #E57474
+color9 #EF7E7E
+color2 #8CCF7E
+color10 #96D988
+color3 #E5C76B
+color11 #F4D67A
+color4 #67B0E8
+color12 #71BAF2
+color5 #C47FD5
+color13 #CE89DF
+color6 #6CBFBF
+color14 #67CBE7
+color7 #B3B9B8
+color15 #BDC3C2
+EOF
+
+mkdir -p "$CONF/polybar/sedo/everforest"
+cat > "$CONF/polybar/sedo/everforest/colors.ini" <<'SEDO_EOF'
+
+# Author 	 -  sum4n
+# Source 	 -  https://gitlab.com/sum4n/SEDO
+# Maintainer -  to_suman@outlook.com
+
+[color]
+bg = #272E33
+bg-alt = #495156
+fg = #D2C5A9
+
+trans = #00000000
+white = #E6E6E6
+black = #1e2326
+
+red = #e67e80
+orange = #e69875
+yellow = #dbbc7f
+green = #a7c080
+blue = #7fbbb3
+aqua = #83c092
+magenta = #d699b6
+gray = #9da9a0
+aqua-drk = #35a77c
+green-drk = #8da101
+orange-drk = #f57d26
+alert = #A54242
+SEDO_EOF
+cat > "$CONF/polybar/sedo/everforest/config.ini" <<'SEDO_EOF'
+
+# Author 	 -  sum4n
+# Source 	 -  https://gitlab.com/sum4n/SEDO
+# Maintainer -  to_suman@outlook.com
+
+[global/em]
+
+margin-bottom = 0
+margin-top = 0
+
+include-file = colors.ini
+include-file = modules.ini
+include-file = decor.ini
+
+[bar/ever-bar]
+
+monitor =
+monitor-fallback =
+monitor-strict = false
+
+override-redirect = false
+bottom = false
+fixed-width = 100%
+
+height = 22
+radius = 
+
+background = ${color.bg}
+foreground = ${color.fg}
+
+line-size = 2pt
+
+border-size = 4pt
+border-left = 0
+border-right = 1
+border-color = ${color.bg}
+
+padding-left = 0
+padding-right = 0.5
+
+module-margin-left = 0
+module-margin-right = 0
+
+separator =
+dim-value = 1.0
+locale = en_IN.UTF-8
+
+font-0 = "Cartograph CF:size=10;1"
+font-1 = "BlexMono Nerd Font:size=13;3"
+font-2 = "Font Awesome 6 Pro Solid:size=14;2"
+font-3 = "JetBrainsMono Nerd Font:size=14;4"
+font-4 = "MesloLGS NF:style=Regular:size=13;3"
+font-5 = "Material Design Icons Desktop:style=Solid:size=16;4"
+font-6 = "Font Awesome 6 Pro Solid:size=11;2"
+
+modules-left = bspwm bgi bgr mpd sep0 weather
+modules-center = application
+modules-right = updates sep0 network sep0 battery sep0 date sep1
+
+cursor-click = pointer
+cursor-scroll = 
+
+tray-position = right
+tray-detached = false
+tray-maxsize = 16
+tray-background = ${color.bg}
+tray-offset-x = 0
+tray-offset-y = 0
+tray-padding = 1
+tray-scale = 1.0
+
+wm-restack = bspwm
+enable-ipc = true
+
+[settings]
+
+screenchange-reload = true
+
+compositing-background = source
+compositing-foreground = over
+compositing-overline = over
+compositing-underline = over
+compositing-border = over
+
+pseudo-transparency = false
+SEDO_EOF
+cat > "$CONF/polybar/sedo/everforest/decor.ini" <<'SEDO_EOF'
+
+# Author 	 -  sum4n
+# Source 	 -  https://gitlab.com/sum4n/SEDO
+# Maintainer -  to_suman@outlook.com
+
+[module/bgi]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.fg}
+content-background          = ${color.bg}
+
+[module/bgr]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.fg}
+content-background          = ${color.bg}
+
+[module/appL]
+type = custom/text
+content = ""
+content-foreground = ${color.bg-alt}
+content-font = 5
+
+[module/appR]
+type = custom/text
+content = ""
+content-foreground = ${color.bg-alt}
+content-font = 5
+SEDO_EOF
+cat > "$CONF/polybar/sedo/everforest/modules.ini" <<'SEDO_EOF'
+
+# Author 	 -  sum4n
+# Source 	 -  https://gitlab.com/sum4n/SEDO
+# Maintainer -  to_suman@outlook.com
+
+#----#----#----#
+
+[module/date]
+type = internal/date
+
+interval = 1.0
+
+time = %I:%M %P
+date-alt = " %A, %d %B %Y"
+
+format = <label>
+format-prefix = " "
+format-prefix-font = 7
+format-prefix-underline = ${color.yellow}
+format-prefix-foreground = ${color.fg}
+format-prefix-background = ${color.bg-alt}
+
+label = "%date% %time% "
+label-underline = ${color.yellow}
+label-foreground= ${color.fg}
+label-background = ${color.bg-alt}
+
+#----#----#----#
+
+[module/network]
+type = internal/network
+interface = ${env:NET_INTERFACE}
+
+interval = 3.0
+; accumulate-stats = true
+; unknown-as-up = true
+; speed-unit = ""
+
+label-connected = " %downspeed%  %upspeed% "
+label-connected-underline = ${color.magenta}
+label-connected-foreground = ${color.fg}
+label-connected-background = ${color.bg-alt}
+
+format-connected = <label-connected>
+format-connected-prefix = " 󰖩"
+format-connected-prefix-underline = ${color.magenta}
+format-connected-prefix-foreground = ${color.fg}
+format-connected-prefix-background = ${color.bg-alt}
+
+label-disconnected = "DisConnected "
+label-disconnected-underline = ${color.red}
+label-disconnected-foreground = ${color.fg}
+label-disconnected-background = ${color.bg-alt}
+
+format-disconnected = <label-disconnected>
+format-disconnected-prefix = " 󰖪 "
+format-disconnected-prefix-font = 3
+format-disconnected-prefix-underline = ${color.red}
+format-disconnected-prefix-foreground = ${color.fg}
+format-disconnected-prefix-background = ${color.bg-alt}
+
+#----#----#----#
+
+# application lunchers
+[module/application]
+type = custom/text
+content = "%{A1:~/.config/bspwm/scripts/myterm -e nvim:}%{B#495156}%{F#95BE7F}%{T4}   %{T-}%{B- F-}%{A}%{A1:~/.config/bspwm/scripts/myterm:}%{B#495156}%{F#E69875} 󰨊 %{B- F-}%{A}%{A1:firefox:}%{B#495156}%{F#D699B6} 󰈹 %{B- F-}%{A}%{A1:thunar:}%{B#495156}%{F#35A77C}%{T4}  %{T-}%{B- F-}%{A}%{A1:bash $HOME/.config/rofi/bin/windows:}%{B#495156}%{F#DBBC7F}%{T4}  %{T-}%{B- F-}%{A}%{A1:firefox gitlab.com/sum4n:}%{B#495156}%{F#62AEEF} 󰊤 %{B- F-}%{A}%{A1:firefox www.reddit.com:}%{B#495156}%{F#F57D26} 󰑍 %{B- F-}%{A}%{A1:firefox www.youtube.com:}%{B#495156}%{F#E67E80} 󰗃  %{B- F-}%{A}"
+content-background = ${color.bg-alt}
+content-font = 7
+
+# ------------- #
+
+[module/bspwm]
+type = internal/bspwm
+
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+occupied-scroll = false
+
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+ws-icon-default = "♟ "
+
+
+format = <label-state>
+format-font = 7
+
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.orange-drk}
+label-focused-background = ${color.fg}
+label-focused-underline = ${color.bg}
+
+label-occupied = %icon%
+label-occupied-padding = 1
+label-occupied-foreground= ${color.aqua-drk}
+label-occupied-background = ${color.fg}
+
+label-urgent = %icon%
+label-urgent-padding = 1
+
+label-empty = %icon%
+label-empty-foreground = ${color.bg}
+label-empty-background = ${color.fg}
+label-empty-padding = 1
+
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.bg-alt}
+
+#----#----#----#
+
+[module/updates]
+type = custom/script
+exec = ~/.config/bspwm/scripts/Updates
+; tail = true
+interval = 120
+
+label = " %output% "
+label-underline = ${color.green}
+label-foreground = ${color.green}
+label-background = ${color.bg}
+
+click-left = alacritty --class float,float -e sudo pacman -Syyu &
+click-right = alacritty --class float,float -e sudo pacman -Syyu &
+
+format-prefix = ""
+format-prefix-font = 3
+format-prefix-underline = ${color.green}
+format-prefix-foreground = ${color.green}
+format-prefix-background = ${color.bg}
+
+#----#----#----#
+
+[module/weather]
+type = custom/script
+exec = weather
+interval = 120
+format = <label>
+label = " %output% "
+label-foreground= ${color.orange}
+; label-underline = ${color.orange}
+
+#----#----#----#
+[module/sep0]
+type = custom/text
+content = "  "
+content-foreground = ${color.bg-alt}
+
+#----#----#----#
+
+[module/sep1]
+type = custom/text
+content = " "
+content-foreground = ${color.fg}
+
+#----#----#----#
+
+[module/mpd]
+type                    = internal/mpd
+host                    = 127.0.0.1
+port                    = 6600
+interval        		= 2
+format-online           = "<icon-repeat> %{F#9ece6a}[%{F-} %{A1:mpc toggle:}<label-song>%{A} %{F#9ece6a}]%{F-}"
+format-offline          = ""
+label-song              = "%title%"
+label-song-maxlen		= 21
+icon-repeat             = " "
+
+icon-repeat-background  = ${color.bg}
+toggle-on-foreground    = ${color.red}
+toggle-off-foreground   = ${color.red}
+
+#----#----#----#
+
+[module/battery]
+;https://github.com/jaagr/polybar/wiki/Module:-battery
+type = internal/battery
+battery = BAT0
+adapter = AC0
+full-at = 100
+
+format-charging = <animation-charging><label-charging>
+label-charging =   "%percentage%% "
+label-charging-foreground = ${color.fg}
+label-charging-background = ${color.bg-alt}
+label-charging-underline = ${color.blue}
+
+format-discharging = <ramp-capacity><label-discharging>
+label-discharging =   "%percentage%% "
+label-discharging-background = ${color.bg-alt}
+label-discharging-foreground = ${color.fg}
+label-discharging-underline = ${color.blue}
+
+format-full-prefix = "   "
+format-full-prefix-font = 2
+format-full-prefix-foreground = ${color.fg}
+format-full-prefix-background = ${color.bg-alt}
+format-full-prefix-underline = ${color.blue}
+
+label-full =   "%percentage%% "
+label-full-foreground = ${color.fg}
+label-full-background = ${color.bg-alt}
+label-full-underline = ${color.blue}
+
+ramp-capacity-0 = "   "
+ramp-capacity-1 = "   "
+ramp-capacity-2 = "   "
+ramp-capacity-3 = "   "
+ramp-capacity-4 = "   "
+ramp-capacity-font = 2
+ramp-capacity-underline = ${color.blue}
+ramp-capacity-foreground = ${color.fg}
+ramp-capacity-background = ${color.bg-alt}
+
+animation-charging-0 = "   "
+animation-charging-1 = "   "
+animation-charging-2 = "   "
+animation-charging-3 = "   "
+animation-charging-4 = "   "
+animation-charging-font = 2
+animation-charging-foreground = ${color.fg}
+animation-charging-background = ${color.bg-alt}
+animation-charging-underline = ${color.blue}
+animation-charging-framerate = 750
+
+#----#----#----#
+
+
+SEDO_EOF
+cat > "$CONF/polybar/themes/sedo-everforest.ini" <<'EOF'
+; sedo-everforest - the "everforest" polybar from gitlab.com/sum4n/sedo-wm
+; (commit 3be319a), unmodified: its own config.ini/colors.ini/modules.ini
+; (/decor.ini) are installed byte-for-byte under
+; ~/.config/polybar/sedo/everforest/ and included below. This file only adds
+; what running that bspwm bar under i3 in this rice needs, on top of it:
+;   - top-primary/top-secondary bars (what polybar-launch.sh starts),
+;     inheriting bar/ever-bar as-is; top-secondary has no tray
+;   - an i3 workspace module in place of the bspwm one, carrying the bspwm
+;     module's own labels/colors/icons (occupied -> unfocused, empty ->
+;     visible, bspwm-only keys dropped)
+;   - wm-restack = i3 instead of bspwm
+;   - battery: battery/adapter from $LBATTERY/$LADAPTER (polybar-launch.sh sets
+;     them) instead of the original's hardcoded BAT0/AC0
+;   - updates: this distro's own pending-update count (sedo-updates.sh) and
+;     this rice's updater on click, instead of the original's Arch
+;     checkupdates/yay script and alacritty + pacman -Syyu
+;   - weather: ~/.local/bin/polybar-weather.py (the original's `weather`
+;     command isn't part of the sedo-wm repo)
+;   - date/time: round ends - half-circle caps in the block's own colors
+;     (replacing any slanted powerline decoration right around it)
+;   - tray: a tray module (same background/size/padding as the original's
+;     tray-* settings) at the end of modules-right instead of the legacy
+;     tray-position tray, which polybar 3.7 draws below bars with a border
+;   - text fonts: font-0 and every other text slot a widget's text is drawn
+;     in -> JetBrainsMono Nerd Font Regular 9 (Medium 9 for workspace
+;     labels), the same fonts murz-alt uses; the originals' bold 10-16pt
+;     text reads heavy. Icon/separator fonts are left as they were
+;   - fonts: Font Awesome 6 Pro -> Font Awesome 6 Free and Cartograph CF ->
+;     VictorMono Nerd Font (both originals are paid fonts); every other
+;     font is the original's, installed by the setup script
+;   - width = 100% / offset-x = 0: edge to edge across the screen (most
+;     originals float at 98% width with a 1% side offset)
+;   - network: the original reads $NET_INTERFACE, which polybar-launch.sh
+;     exports (first wifi interface, else the default-route one)
+; [colors] below is only for generate-{vscode,gtk,nvim}-themes.py - the
+; bar itself still uses the original's own [color] section.
+
+; inside a section (as the original's own config.ini does with its
+; includes) so Python's configparser can read this file too
+[global/sedo]
+include-file = ~/.config/polybar/sedo/everforest/config.ini
+
+[colors]
+base     = #272E33
+mantle   = #272E33
+surface0 = #495156
+text     = #D3C6AA
+subtext  = #E2E2E2
+red      = #E67E80
+green    = #A7C080
+yellow   = #DBBC7F
+blue     = #7FBBB3
+purple   = #D699B6
+cyan     = #7FBBB3
+
+[module/i3]
+type = internal/i3
+; polybar's i3 module needs this to keep workspaces in numeric order
+index-sort = true
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+ws-icon-default = "♟ "
+format = <label-state>
+format-font = 9
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.orange-drk}
+label-focused-background = ${color.fg}
+label-focused-underline = ${color.bg}
+label-unfocused = %icon%
+label-unfocused-padding = 1
+label-unfocused-foreground = ${color.aqua-drk}
+label-unfocused-background = ${color.fg}
+label-urgent = %icon%
+label-urgent-padding = 1
+label-visible = %icon%
+label-visible-foreground = ${color.bg}
+label-visible-background = ${color.fg}
+label-visible-padding = 1
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.bg-alt}
+ws-icon-6 = 7;7
+ws-icon-7 = 8;8
+ws-icon-8 = 9;9
+ws-icon-9 = 10;10
+
+[module/battery-i3]
+inherit = module/battery
+battery = ${env:LBATTERY:BAT0}
+adapter = ${env:LADAPTER:AC}
+
+[module/updates-i3]
+inherit = module/updates
+exec = ~/.local/bin/sedo-updates.sh
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+click-right = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+
+[module/weather-i3]
+inherit = module/weather
+exec = ~/.local/bin/polybar-weather.py
+
+[module/date-cap-l]
+type = custom/text
+format = "%{T8}%{T-}"
+format-foreground = ${color.bg-alt}
+
+[module/date-cap-r]
+type = custom/text
+format = "%{T8}%{T-}"
+format-foreground = ${color.bg-alt}
+
+[module/tray-i3]
+type = internal/tray
+format-background = ${color.bg}
+tray-background = ${color.bg}
+tray-size = 16
+tray-padding = 1
+
+[bar/top-primary]
+inherit = bar/ever-bar
+monitor = ${env:MONITOR:}
+width = 100%
+offset-x = 0
+modules-left = i3 bgi bgr mpd sep0 weather-i3
+modules-center = application
+modules-right = updates-i3 sep0 network sep0 battery-i3 sep0 date-cap-l date date-cap-r sep1 tray-i3
+tray-position = none
+wm-restack = i3
+font-0 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
+font-2 = "Font Awesome 6 Free Solid:size=14;2"
+font-6 = "Font Awesome 6 Free Solid:size=11;2"
+font-7 = "JetBrainsMono Nerd Font:pixelsize=16;2"
+font-8 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+
+[bar/top-secondary]
+inherit = bar/top-primary
+modules-right = updates-i3 sep0 network sep0 battery-i3 sep0 date-cap-l date date-cap-r sep1
+EOF
+cat > "$CONF/rofi/themes/sedo-everforest.rasi" <<'EOF'
+* {
+    base:     #272E33ff;
+    mantle:   #272E33ff;
+    text:     #D3C6AAff;
+    subtext:  #495156ff;
+    mauve:    #7FBBB3ff;
+    surface0: #495156ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/sedo-everforest-powermenu.rasi" <<'EOF'
+* {
+    base:     #272E33ff;
+    mantle:   #272E33ff;
+    text:     #D3C6AAff;
+    subtext:  #495156ff;
+    mauve:    #7FBBB3ff;
+    surface0: #495156ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/starship/themes/sedo-everforest.toml" <<'EOF'
+format = """
+[](#272E33)\
+$python\
+$username\
+[](bg:#495156 fg:#272E33)\
+$directory\
+[](fg:#495156 bg:#495156)\
+$git_branch\
+$git_status\
+[](fg:#495156 bg:#8DA101)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8DA101 bg:#D699B6)\
+$docker_context\
+[](fg:#D699B6 bg:#7FBBB3)\
+$time\
+[ ](fg:#7FBBB3)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#272E33"
+style_root = "bg:#272E33"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#495156"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8DA101"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#D699B6"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8DA101"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8DA101"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#495156"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#495156"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8DA101"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8DA101"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8DA101"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8DA101"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8DA101"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8DA101"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#272E33"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8DA101"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7FBBB3"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/dunst/themes/sedo-everforest.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#7FBBB3"
+corner_radius = 10
+background = "#272E33"
+foreground = "#D3C6AA"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#495156"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#272E33"
+foreground = "#495156"
+frame_color = "#495156"
+timeout = 4
+
+[urgency_normal]
+background = "#272E33"
+foreground = "#D3C6AA"
+frame_color = "#7FBBB3"
+timeout = 6
+
+[urgency_critical]
+background = "#272E33"
+foreground = "#E67E80"
+frame_color = "#E67E80"
+timeout = 0
+EOF
+cat > "$CONF/i3/themes/sedo-everforest.conf" <<'EOF'
+client.focused          #7FBBB3  #272E33  #D3C6AA  #7FBBB3   #7FBBB3
+client.unfocused        #495156  #272E33  #495156  #495156   #495156
+client.focused_inactive #495156  #272E33  #495156  #495156   #495156
+client.urgent           #E67E80  #272E33  #D3C6AA  #E67E80   #E67E80
+EOF
+cat > "$CONF/kitty/themes/sedo-everforest.conf" <<'EOF'
+# sedo-everforest - kitty colors from sedo-wm's everforest palette, mapped the way
+# sedo-wm's own scripts/color_push writes its kitty colors.ini
+background #272E33
+foreground #D3C6AA
+url_color #A7C080
+
+selection_background #D3C6AA
+selection_foreground #272E33
+
+cursor #D3C6AA
+cursor_text_color #1E2326
+
+color0 #495156
+color8 #495156
+color1 #E67E80
+color9 #F85552
+color2 #A7C080
+color10 #8DA101
+color3 #DBBC7F
+color11 #DFA000
+color4 #7FBBB3
+color12 #3A94C5
+color5 #D699B6
+color13 #DF69BA
+color6 #7FBBB3
+color14 #3A94C5
+color7 #E2E2E2
+color15 #F4F0D9
+EOF
+
+mkdir -p "$CONF/polybar/sedo/gotham"
+cat > "$CONF/polybar/sedo/gotham/colors.ini" <<'SEDO_EOF'
+[color]
+
+bg = #091f2e 
+fg = #99d1ce
+base1 = #11151c
+base2 = #091f2e
+base3 = #0a3749
+base4 = #245361
+base5 = #599cab
+base7 = #d3ebe9
+
+red = #c23127
+orange = #d26937
+yellow = #edb443
+magenta = #888ca6
+violet = #4e5166
+blue = #195466
+cyan = #33859E
+green = #2aa889
+SEDO_EOF
+cat > "$CONF/polybar/sedo/gotham/config.ini" <<'SEDO_EOF'
+[global/wm]
+
+margin-bottom = 0
+margin-top = 0
+
+include-file = colors.ini
+include-file = modules.ini
+
+
+[bar/flow-bar]
+
+monitor =
+monitor-fallback =
+monitor-strict = false
+
+override-redirect = false
+bottom = false
+fixed-center = false
+
+width = 98%
+height = 20
+
+offset-x = 1%
+offset-y = 0.5%
+
+background = ${color.base1}
+foreground = ${color.fg}
+
+radius = 4
+
+line-size = 2
+
+border-size = 5
+border-color = ${color.base1}
+
+padding-left = 1
+padding-right = 1
+
+module-margin-left = 0
+module-margin-right = 0
+
+font-0 = "mononoki Nerd Font Mono:style=Bold:size=11;3"
+font-1 = "Font Awesome 6 Pro Solid:size=12;4"
+font-2 = "Font Awesome 6 Pro:style=Solid:size=12;3"
+font-3 = "Font Awesome 6 Pro Solid:style=Solid:size=13;3"
+font-4 = "Font Awesome 6 Pro Regular:size=14;3"
+font-5 = "MesloLGS NF:style=Regular:size=13;3"
+font-6 = "Cartograph CF:style=Bold:size=14;1"
+font-7 = "mononoki Nerd Font:style=Bold:size=14;4"
+
+modules-left = bspL01 bspL bspwm bspR bspR01 sep mpL mpd mpR sep
+modules-center =
+modules-right = upL updates upR pulseaudio volR network netR date dtR
+
+separator =
+dim-value = 1.0
+locale = en_IN.UTF-8
+
+tray-position = right
+tray-detached = false
+tray-maxsize = 26
+tray-background = ${color.base1}
+tray-offset-x = 0
+tray-offset-y = 0
+tray-padding = 1
+tray-scale = 1.0
+
+wm-restack = bspwm
+enable-ipc = true
+
+cursor-click = pointer
+cursor-scroll =
+
+[settings]
+
+screenchange-reload = false
+
+compositing-background = source
+compositing-foreground = over
+compositing-overline = over
+compositing-underline = over
+compositing-border = over
+
+pseudo-transparency = false
+SEDO_EOF
+cat > "$CONF/polybar/sedo/gotham/modules.ini" <<'SEDO_EOF'
+#-------- decoration -----------#
+[module/upL]
+type = custom/text
+content = "%{T6}%{T-}"
+content-background = ${color.base1}
+content-foreground = ${color.cyan}
+
+[module/upR]
+type = custom/text
+content = "%{T6}%{T-}"
+content-background = ${color.cyan}
+content-foreground = ${color.yellow}
+
+[module/volR]
+type = custom/text
+content = "%{T6}%{T-}"
+content-background = ${color.yellow}
+content-foreground = ${color.orange}
+
+[module/netR]
+type = custom/text
+content = "%{T6}%{T-}"
+content-background = ${color.orange}
+content-foreground = ${color.green}
+
+[module/dtR]
+type = custom/text
+content = "%{T6}%{T-}"
+content-background = ${color.green}
+content-foreground = ${color.base1}
+
+[module/sepL]
+type = custom/text
+content = ""
+content-background = ${color.green}
+content-foreground = ${color.base4}
+content-font = 6
+
+[module/mpL]
+type = custom/text
+content = "%{T6}%{T-}"
+content-background = ${color.base1}
+content-foreground = ${color.fg}
+
+[module/mpR]
+type = custom/text
+content = "%{T6}%{T-}"
+content-background = ${color.fg}
+content-foreground = ${color.base1}
+
+
+#----#----#----#
+[module/date]
+type = internal/date
+
+interval = 1.0
+
+time = "%H:%M"
+date-alt = " %A, %d %B %Y"
+
+label = "%date% %time% "
+label-foreground = ${color.base7}
+label-background = ${color.green}
+
+format = <label>
+format-prefix = " "
+format-prefix-font = 4
+format-prefix-foreground = ${color.base7}
+format-prefix-background = ${color.green}
+
+#----#----#----#
+[module/network]
+type = internal/network
+interface = ${env:NET_INTERFACE}
+
+interval = 3.0
+accumulate-stats = true
+unknown-as-up = true
+speed-unit = ""
+
+format-connected = <label-connected>
+format-connected-prefix = " "
+format-connected-prefix-font = 4
+format-connected-prefix-background = ${color.orange}
+format-connected-prefix-foreground = ${color.base7}
+
+label-connected = " %netspeed% "
+label-connected-foreground = ${color.base7}
+label-connected-background = ${color.orange}
+
+format-disconnected = <label-disconnected>
+format-disconnected-prefix = " "
+format-disconnected-prefix-font = 4
+format-disconnected-prefix-background = ${color.orange}
+format-disconnected-prefix-foreground = ${color.base7}
+
+label-disconnected = " NO_INTERNEt "
+label-disconnected-foreground = ${color.base7}
+label-disconnected-background = ${color.orange}
+
+#----#----#----#
+[module/pulseaudio]
+type = internal/pulseaudio
+
+;;sink = alsa_output.pci-0000_00_1b.0.analog-stereo
+use-ui-max = true
+interval = 5
+
+format-volume = <ramp-volume><label-volume>
+format-volume-prefix = ""
+
+
+label-volume = " %percentage%% "
+label-volume-foreground = ${color.bg}
+label-volume-background = ${color.yellow}
+
+format-muted = <label-muted>
+format-muted-prefix = " "
+format-muted-prefix-foreground = ${color.bg}
+format-muted-prefix-background = ${color.yellow}
+format-muted-prefix-font = 4
+label-muted = " Muted "
+label-muted-foreground = ${color.bg}
+label-muted-background = ${color.yellow}
+
+ramp-volume-0 = " "
+ramp-volume-1 = " "
+ramp-volume-2 = " "
+ramp-volume-3 = " "
+ramp-volume-4 = " "
+ramp-volume-5 = " "
+ramp-volume-font = 4
+ramp-volume-foreground = ${color.bg}
+ramp-volume-background = ${color.yellow}
+
+click-right = pavucontrol
+
+#----#----#----#
+[module/bspwm]
+type = internal/bspwm
+
+enable-click = true
+pin-workspaces = true
+occupied-scroll = true
+
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+
+format = <label-state>
+
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.yellow}
+label-focused-background = ${color.base3}
+label-focused-underline = ${color.yellow}
+label-focused-font = 8
+
+label-occupied = [%icon%]
+label-occupied-padding = 1
+label-occupied-foreground = ${color.magenta}
+label-occupied-background = ${color.base3}
+; label-occupied-underline = ${color.red}
+label-occupied-font = 8
+
+label-urgent = %icon%
+label-urgent-padding = 0
+
+label-empty = %icon%
+label-empty-foreground = ${color.base5}
+label-empty-background = ${color.base3}
+label-empty-font = 8
+label-empty-padding = 1
+
+
+[module/bspL]
+type = custom/text
+content = ""
+content-background = ${color.base4}
+content-foreground = ${color.base3}
+content-font = 6
+
+[module/bspR]
+type = custom/text
+content = ""
+content-background = ${color.base3}
+content-foreground = ${color.base4}
+content-font = 6
+
+[module/bspL01]
+type = custom/text
+content = ""
+content-foreground = ${color.base4}
+content-background = ${color.base1}
+content-font = 6
+
+[module/bspR01]
+type = custom/text
+content = ""
+content-background = ${color.base4}
+content-foreground = ${color.base1}
+content-font = 6
+
+#----#----#----#
+[module/updates]
+type = custom/script
+exec = ~/.config/bspwm/scripts/Updates
+; tail = true
+interval = 120
+
+label = " %output% "
+label-foreground = ${color.fg}
+label-background = ${color.cyan}
+
+click-left = alacritty --class float,float -e sudo pacman -Syyu
+
+format = <label>
+format-prefix = " "
+format-prefix-font = 3
+format-prefix-foreground = ${color.base7}
+format-prefix-background = ${color.cyan}
+
+#----#----#----#
+[module/sep]
+type = custom/text
+content = " "
+content-foreground = ${color.diff_bg}
+
+#----#----#----#
+[module/sep2]
+type = custom/text
+content = " "
+content-foreground = ${color.white}
+
+[module/sep3]
+type = custom/text
+content = " | "
+content-foreground = ${color.white}
+
+#----#----#----#
+[module/memory_bar]
+type = internal/memory
+
+interval = 3
+
+format = <label>
+
+label = " %used%"
+label-foreground = ${color.fg}
+label-background = ${color.violet}
+
+format-prefix = ""
+format-prefix-background = ${color.orange}
+format-prefix-foreground = ${color.bg}
+format-prefix-font = 4
+
+#----#----#----#
+[module/mpd]
+type = internal/mpd
+interval = 2
+
+format-online = "  <toggle><label-song>"
+format-online-prefix-font = 5
+format-online-prefix-foreground = ${color.blue}
+
+format-playing = ${self.format-online}
+format-paused = <toggle><label-song>
+format-paused-foreground = ${color.teal}
+
+format-offline = "<label-offline> "
+format-offline-foreground = ${color.crust}
+format-offline-prefix = "     "
+format-offline-prefix-foreground = ${color.red}
+label-offline = "Offline"
+
+label-song =  " %title% | %artist%  "
+label-song-maxlen = 30
+label-song-ellipsis = true
+label-song-foreground = ${color.bg}
+label-song-background = ${color.fg}
+
+icon-play = " "
+icon-play-font = 2
+icon-play-foreground = ${color.bg}
+icon-play-background = ${color.fg}
+icon-pause = " "
+icon-pause-font = 2
+icon-pause-foreground = ${color.bg}
+icon-pause-background = ${color.fg}
+
+#----
+
+[module/cava]
+type = custom/script
+tail = true
+exec = $HOME/.config/bspwm/scripts/cava.sh
+format = <label>
+format-font = 6
+label = %output%
+label-foreground = ${color.green}
+
+#---
+SEDO_EOF
+cat > "$CONF/polybar/themes/sedo-gotham.ini" <<'EOF'
+; sedo-gotham - the "gotham" polybar from gitlab.com/sum4n/sedo-wm
+; (commit 3be319a), unmodified: its own config.ini/colors.ini/modules.ini
+; (/decor.ini) are installed byte-for-byte under
+; ~/.config/polybar/sedo/gotham/ and included below. This file only adds
+; what running that bspwm bar under i3 in this rice needs, on top of it:
+;   - top-primary/top-secondary bars (what polybar-launch.sh starts),
+;     inheriting bar/flow-bar as-is; top-secondary has no tray
+;   - an i3 workspace module in place of the bspwm one, carrying the bspwm
+;     module's own labels/colors/icons (occupied -> unfocused, empty ->
+;     visible, bspwm-only keys dropped)
+;   - wm-restack = i3 instead of bspwm
+;   - updates: this distro's own pending-update count (sedo-updates.sh) and
+;     this rice's updater on click, instead of the original's Arch
+;     checkupdates/yay script and alacritty + pacman -Syyu
+;   - date/time: round ends - half-circle caps in the block's own colors
+;     (replacing any slanted powerline decoration right around it)
+;   - tray: a tray module (same background/size/padding as the original's
+;     tray-* settings) at the end of modules-right instead of the legacy
+;     tray-position tray, which polybar 3.7 draws below bars with a border
+;   - text fonts: font-0 and every other text slot a widget's text is drawn
+;     in -> JetBrainsMono Nerd Font Regular 9 (Medium 9 for workspace
+;     labels), the same fonts murz-alt uses; the originals' bold 10-16pt
+;     text reads heavy. Icon/separator fonts are left as they were
+;   - fonts: Font Awesome 6 Pro -> Font Awesome 6 Free and Cartograph CF ->
+;     VictorMono Nerd Font (both originals are paid fonts); every other
+;     font is the original's, installed by the setup script
+;   - width = 100% / offset-x = 0: edge to edge across the screen (most
+;     originals float at 98% width with a 1% side offset)
+;   - network: the original reads $NET_INTERFACE, which polybar-launch.sh
+;     exports (first wifi interface, else the default-route one)
+; [colors] below is only for generate-{vscode,gtk,nvim}-themes.py - the
+; bar itself still uses the original's own [color] section.
+
+; inside a section (as the original's own config.ini does with its
+; includes) so Python's configparser can read this file too
+[global/sedo]
+include-file = ~/.config/polybar/sedo/gotham/config.ini
+
+[colors]
+base     = #0C1014
+mantle   = #0C1014
+surface0 = #245361
+text     = #99D1CE
+subtext  = #D3EBE9
+red      = #C23127
+green    = #2AA889
+yellow   = #EDB443
+blue     = #599CAB
+purple   = #888CA6
+cyan     = #33859E
+
+[module/i3]
+type = internal/i3
+; polybar's i3 module needs this to keep workspaces in numeric order
+index-sort = true
+format-font = 10
+enable-click = true
+pin-workspaces = true
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+format = <label-state>
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.yellow}
+label-focused-background = ${color.base3}
+label-focused-underline = ${color.yellow}
+label-focused-font = 10
+label-unfocused = [%icon%]
+label-unfocused-padding = 1
+label-unfocused-foreground = ${color.magenta}
+label-unfocused-background = ${color.base3}
+label-unfocused-font = 10
+label-urgent = %icon%
+label-urgent-padding = 0
+label-visible = %icon%
+label-visible-foreground = ${color.base5}
+label-visible-background = ${color.base3}
+label-visible-font = 10
+label-visible-padding = 1
+ws-icon-6 = 7;7
+ws-icon-7 = 8;8
+ws-icon-8 = 9;9
+ws-icon-9 = 10;10
+
+[module/updates-i3]
+inherit = module/updates
+exec = ~/.local/bin/sedo-updates.sh
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+
+[module/date-cap-l]
+type = custom/text
+format = "%{T9}%{T-}"
+format-foreground = ${color.green}
+
+[module/date-cap-r]
+type = custom/text
+format = "%{T9}%{T-}"
+format-foreground = ${color.green}
+
+[module/date-prev-cap-r]
+type = custom/text
+format = "%{T9}%{T-}"
+format-foreground = ${color.orange}
+
+[module/tray-i3]
+type = internal/tray
+format-background = ${color.base1}
+tray-background = ${color.base1}
+tray-size = 26
+tray-padding = 1
+
+[bar/top-primary]
+inherit = bar/flow-bar
+monitor = ${env:MONITOR:}
+width = 100%
+offset-x = 0
+modules-left = bspL01 bspL i3 bspR bspR01 sep mpL mpd mpR sep
+modules-center = 
+modules-right = upL updates-i3 upR pulseaudio volR network date-prev-cap-r date-cap-l date date-cap-r tray-i3
+tray-position = none
+wm-restack = i3
+font-0 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
+font-1 = "Font Awesome 6 Free Solid:size=12;4"
+font-2 = "Font Awesome 6 Free:style=Solid:size=12;3"
+font-3 = "Font Awesome 6 Free Solid:style=Solid:size=13;3"
+font-4 = "Font Awesome 6 Free Regular:size=14;3"
+font-6 = "VictorMono Nerd Font:style=Bold:size=14;1"
+font-7 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+font-8 = "JetBrainsMono Nerd Font:pixelsize=15;4"
+font-9 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+
+[bar/top-secondary]
+inherit = bar/top-primary
+modules-right = upL updates-i3 upR pulseaudio volR network date-prev-cap-r date-cap-l date date-cap-r
+EOF
+cat > "$CONF/rofi/themes/sedo-gotham.rasi" <<'EOF'
+* {
+    base:     #0C1014ff;
+    mantle:   #0C1014ff;
+    text:     #99D1CEff;
+    subtext:  #245361ff;
+    mauve:    #599CABff;
+    surface0: #245361ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/sedo-gotham-powermenu.rasi" <<'EOF'
+* {
+    base:     #0C1014ff;
+    mantle:   #0C1014ff;
+    text:     #99D1CEff;
+    subtext:  #245361ff;
+    mauve:    #599CABff;
+    surface0: #245361ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/starship/themes/sedo-gotham.toml" <<'EOF'
+format = """
+[](#0C1014)\
+$python\
+$username\
+[](bg:#245361 fg:#0C1014)\
+$directory\
+[](fg:#245361 bg:#245361)\
+$git_branch\
+$git_status\
+[](fg:#245361 bg:#2AA889)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#2AA889 bg:#888CA6)\
+$docker_context\
+[](fg:#888CA6 bg:#599CAB)\
+$time\
+[ ](fg:#599CAB)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#0C1014"
+style_root = "bg:#0C1014"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#245361"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#2AA889"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#888CA6"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#2AA889"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#2AA889"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#245361"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#245361"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#2AA889"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#2AA889"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#2AA889"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#2AA889"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#2AA889"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#2AA889"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#0C1014"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#2AA889"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#599CAB"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/dunst/themes/sedo-gotham.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#599CAB"
+corner_radius = 10
+background = "#0C1014"
+foreground = "#99D1CE"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#245361"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#0C1014"
+foreground = "#245361"
+frame_color = "#245361"
+timeout = 4
+
+[urgency_normal]
+background = "#0C1014"
+foreground = "#99D1CE"
+frame_color = "#599CAB"
+timeout = 6
+
+[urgency_critical]
+background = "#0C1014"
+foreground = "#C23127"
+frame_color = "#C23127"
+timeout = 0
+EOF
+cat > "$CONF/i3/themes/sedo-gotham.conf" <<'EOF'
+client.focused          #599CAB  #0C1014  #99D1CE  #599CAB   #599CAB
+client.unfocused        #245361  #0C1014  #245361  #245361   #245361
+client.focused_inactive #245361  #0C1014  #245361  #245361   #245361
+client.urgent           #C23127  #0C1014  #99D1CE  #C23127   #C23127
+EOF
+cat > "$CONF/kitty/themes/sedo-gotham.conf" <<'EOF'
+# sedo-gotham - kitty colors from sedo-wm's gotham palette, mapped the way
+# sedo-wm's own scripts/color_push writes its kitty colors.ini
+background #0C1014
+foreground #99D1CE
+url_color #2AA889
+
+selection_background #99D1CE
+selection_foreground #0C1014
+
+cursor #2AA889
+cursor_text_color #091F2E
+
+color0 #245361
+color8 #245361
+color1 #C23127
+color9 #C23127
+color2 #2AA889
+color10 #2AA889
+color3 #EDB443
+color11 #EDB443
+color4 #599CAB
+color12 #599CAB
+color5 #888CA6
+color13 #888CA6
+color6 #33859E
+color14 #33859E
+color7 #D3EBE9
+color15 #4E5166
+EOF
+
+mkdir -p "$CONF/polybar/sedo/gruvbox"
+cat > "$CONF/polybar/sedo/gruvbox/colors.ini" <<'SEDO_EOF'
+
+[color]
+
+# Author 	 -  sum4n
+# Source 	 -  https://gitlab.com/sum4n/SEDO
+# Maintainer -  to_suman@outlook.com
+
+;; GruvBox Dark
+
+;; bg = #282828
+;; fg = #ebdbb2
+
+;; gray = #928374
+;; bg1 = #504945
+;; bg2 = #665c54
+
+;; red = #fb4934
+;; no-red = #cc241d
+
+;; green = #b8bb26
+;; no-green = #98971A
+
+;; yellow = #fabd2f
+;; no-yellow = #D79921
+
+;; blue = #83a598
+;; no-blue = #458588
+
+;; purple = #d3869b
+;; no-purple = #B16286
+
+;; aqua = #8ec07c
+;; no-aqua = #689D6A
+
+;; orange = #fe8019
+;; no-orange = #D65D0E
+
+;; GruvBox Material
+
+bg = #282828
+bg-alt = #665c54
+fg = #d4be98
+fg-alt = #282e3a
+primary = #ffb52a
+secondary = #e60053
+alert = #B48EAD
+
+cyan = #7daea3
+gray = #a89984
+aqua = #89b482
+red = #ea6962
+yellow = #d8a657
+green = #a9b665
+orange = #fe8019
+magenta = #d3869b
+white = #d4be98
+pink = #d3869b
+blue = #7daea3
+SEDO_EOF
+cat > "$CONF/polybar/sedo/gruvbox/config.ini" <<'SEDO_EOF'
+
+# Author 	 -  sum4n
+# Source 	 -  https://gitlab.com/sum4n/SEDO
+# Maintainer -  to_suman@outlook.com
+
+[global/em]
+
+margin-bottom = 0
+margin-top = 0
+
+include-file = colors.ini
+include-file = modules.ini
+include-file = decor.ini
+
+[bar/gruv-bar]
+
+monitor =
+monitor-fallback =
+monitor-strict = false
+
+override-redirect = false
+bottom = false
+fixed-width = 100%
+
+width = 98%
+height = 22
+radius = 
+; dpi = 96center = false
+
+offset-x = 1%
+offset-y = 0.5%
+
+
+background = ${color.bg}
+foreground = ${color.fg}
+
+line-size = 2pt
+
+border-size = 4pt
+border-color = ${color.bg}
+
+padding-left = 1
+padding-right = 1
+
+module-margin-left = 0
+module-margin-right = 0
+
+separator =
+dim-value = 1.0
+locale = en_IN.UTF-8
+
+font-0 = "Inconsolata Nerd Font:style=Bold:size=12;2"
+font-1 = "BlexMono Nerd Font:size=12;3"
+font-2 = "Font Awesome 6 Pro Solid:size=10;2"
+font-3 = "VictorMono Nerd Font:style=Bold:size=12;2"
+font-4 = "MesloLGS NF:style=Regular:size=14;4"
+
+modules-left = hlrd lrd bspwm rrd hrrd sep0 mpd
+modules-center =
+modules-right = weather sep0 upL updates upR netL network netR btL battery btR dtL date dtR
+
+cursor-click = pointer
+cursor-scroll =
+
+tray-position = right
+tray-detached = false
+tray-maxsize = 16
+tray-background = ${color.bg}
+tray-offset-x = 0
+tray-offset-y = 0
+tray-padding = 0
+tray-scale = 1.0
+
+wm-restack = bspwm
+enable-ipc = true
+
+[settings]
+
+screenchange-reload = true
+
+compositing-background = source
+compositing-foreground = over
+compositing-overline = over
+compositing-underline = over
+compositing-border = over
+
+pseudo-transparency = false
+
+SEDO_EOF
+cat > "$CONF/polybar/sedo/gruvbox/decor.ini" <<'SEDO_EOF'
+
+# Author 	 -  sum4n
+# Source 	 -  https://gitlab.com/sum4n/SEDO
+# Maintainer -  to_suman@outlook.com
+
+[module/lrd]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.fg}
+content-background          = ${color.bg}
+
+[module/rrd]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.fg}
+content-background          = ${color.bg}
+
+[module/hlrd]
+type                        = custom/text
+content                     = "%{T3}/%{T-}"
+content-foreground          = ${color.fg}
+content-background          = ${color.bg}
+
+[module/hrrd]
+type                        = custom/text
+content                     = "%{T3}/%{T-}"
+content-foreground          = ${color.fg}
+content-background          = ${color.bg}
+
+#           
+
+#----()----()----#
+[module/netL]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.magenta}
+content-background          = ${color.bg}
+
+[module/netR]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.magenta}
+content-background          = ${color.bg}
+
+[module/dtL]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.yellow}
+content-background          = ${color.bg}
+
+[module/dtR]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.yellow}
+content-background          = ${color.bg}
+
+[module/btL]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.aqua}
+content-background          = ${color.bg}
+
+[module/btR]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.aqua}
+content-background          = ${color.bg}
+
+[module/upL]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.blue}
+content-background          = ${color.bg}
+
+[module/upR]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.blue}
+content-background          = ${color.bg}
+SEDO_EOF
+cat > "$CONF/polybar/sedo/gruvbox/modules.ini" <<'SEDO_EOF'
+
+# Author 	 -  sum4n
+# Source 	 -  https://gitlab.com/sum4n/SEDO
+# Maintainer -  to_suman@outlook.com
+
+#----#----#----#
+
+[module/date]
+type = internal/date
+
+interval = 1.0
+
+time = %I:%M %P
+date-alt = " %A, %d %B %Y"
+
+format = <label>
+format-prefix = ""
+format-prefix-font = 3
+format-prefix-background = ${color.yellow}
+format-prefix-foreground= ${color.bg}
+label = "%date% %time%"
+
+label-background = ${color.yellow}
+label-foreground= ${color.bg}
+
+#----#----#----#
+
+[module/network]
+type = internal/network
+interface = ${env:NET_INTERFACE}
+
+interval = 3.0
+; accumulate-stats = true
+; unknown-as-up = true
+; speed-unit = ""
+
+label-connected = "%{T3} %{T-}%upspeed% -%{T3}  %{T-}%downspeed% "
+label-connected-foreground = ${color.bg}
+label-connected-background = ${color.magenta}
+
+format-connected = <label-connected>
+format-connected-prefix = "  "
+format-connected-prefix-font = 3
+format-connected-prefix-foreground = ${color.bg}
+format-connected-prefix-background = ${color.magenta}
+
+label-disconnected = "DisConnected "
+label-disconnected-foreground = ${color.bg}
+label-disconnected-background = ${color.magenta}
+
+format-disconnected = <label-disconnected>
+format-disconnected-prefix = "  "
+format-disconnected-prefix-font = 3
+format-disconnected-prefix-foreground = ${color.bg}
+format-disconnected-prefix-background = ${color.magenta}
+
+#----#----#----#
+
+[module/bspwm]
+type = internal/bspwm
+
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+occupied-scroll = false
+
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+ws-icon-default = "♟ "
+
+
+format = <label-state>
+format-font = 3
+
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.secondary}
+label-focused-background = ${color.aqua}
+label-focused-overline = ${color.bg}
+label-focused-underline = ${color.bg}
+
+label-occupied = %icon%'
+label-occupied-padding = 1
+label-occupied-foreground= ${color.fg-alt}
+label-occupied-background = ${color.fg}
+
+label-urgent = %icon%
+label-urgent-padding = 1
+
+label-empty = %icon%
+label-empty-foreground = ${color.bg}
+label-empty-background = ${color.fg}
+label-empty-padding = 1
+
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.bg-alt}
+
+#----#----#----#
+
+[module/updates]
+type = custom/script
+exec = ~/.config/bspwm/scripts/Updates
+; tail = true
+interval = 120
+label = "%output% "
+label-foreground = ${color.bg}
+label-background = ${color.blue}
+click-left = alacritty --class float,float -e sudo pacman -Syyu &
+click-right = alacritty --class float,float -e sudo pacman -Syyu &
+format-prefix = "%{T2}  %{T-}"
+format-prefix-foreground = ${color.bg}
+format-prefix-background = ${color.blue}
+
+#----#----#----#
+
+[module/weather]
+type = custom/script
+exec = weather
+interval = 1800
+format = <label>
+label = " %output% "
+label-foreground= ${color.green}
+
+#----#----#----#
+
+[module/sep0]
+type = custom/text
+content = " "
+content-foreground = ${color.bg1}
+
+#----#----#----#
+
+[module/sep1]
+type = custom/text
+content = "|"
+content-foreground = ${color.bg1}
+
+#----#----#----#
+
+[module/mpd]
+type                    = internal/mpd
+host                    = 127.0.0.1
+port                    = 6600
+interval        		= 2
+format-online           = "<icon-repeat> %{F#9ece6a}[%{F-} %{A1:mpc toggle:}<label-song>%{A} %{F#9ece6a}]%{F-}"
+format-offline          = ""
+label-song              = "%title%"
+label-song-maxlen		= 21
+icon-repeat             = " "
+
+icon-repeat-background  = ${color.bg}
+toggle-on-foreground    = ${color.red}
+toggle-off-foreground   = ${color.red}
+
+#----#----#----#
+
+[module/battery]
+;https://github.com/jaagr/polybar/wiki/Module:-battery
+type = internal/battery
+battery = BAT0
+adapter = AC0
+full-at = 100
+
+format-charging = <animation-charging><label-charging>
+label-charging =   "%percentage%% "
+; label-charging-font = 1
+label-charging-foreground = ${color.bg}
+label-charging-background = ${color.aqua}
+
+format-discharging = <ramp-capacity><label-discharging>
+label-discharging =   "%percentage%%"
+label-discharging-background = ${color.aqua}
+label-discharging-foreground = ${color.bg}
+; label-discharging-font = 1
+
+format-full-prefix = "  "
+label-full =   "%percentage%%"
+; label-full-font = 1
+format-full-prefix-font = 2
+format-full-prefix-foreground = ${color.bg}
+format-full-prefix-background = ${color.aqua}
+format-full-foreground = ${color.bg}
+format-full-background = ${color.aqua}
+
+ramp-capacity-0 = "  "  
+ramp-capacity-1 = "  "  
+ramp-capacity-2 = "  "  
+ramp-capacity-3 = "  "  
+ramp-capacity-4 = "  "  
+ramp-capacity-background = ${color.aqua}
+ramp-capacity-foreground = ${color.bg}
+ramp-capacity-font = 2
+
+animation-charging-0 = "   "
+animation-charging-1 = "   "
+animation-charging-2 = "   "  
+animation-charging-3 = "   "  
+animation-charging-4 = "   " 
+animation-charging-font = 2
+animation-charging-foreground = ${color.bg}
+animation-charging-background = ${color.aqua}
+animation-charging-framerate = 750
+
+#----#----#----#
+
+[module/mpv-polybar]
+type = custom/script
+exec = ~/bin/mpv_status
+interval = 1
+label-foreground = ${color.green}
+click-left = echo 'cycle pause' | socat - /tmp/mpvsocket
+click-right = echo 'cycle mute' | socat - /tmp/mpvsocket
+
+#--------//------------//
+SEDO_EOF
+cat > "$CONF/polybar/themes/sedo-gruvbox.ini" <<'EOF'
+; sedo-gruvbox - the "gruvbox" polybar from gitlab.com/sum4n/sedo-wm
+; (commit 3be319a), unmodified: its own config.ini/colors.ini/modules.ini
+; (/decor.ini) are installed byte-for-byte under
+; ~/.config/polybar/sedo/gruvbox/ and included below. This file only adds
+; what running that bspwm bar under i3 in this rice needs, on top of it:
+;   - top-primary/top-secondary bars (what polybar-launch.sh starts),
+;     inheriting bar/gruv-bar as-is; top-secondary has no tray
+;   - an i3 workspace module in place of the bspwm one, carrying the bspwm
+;     module's own labels/colors/icons (occupied -> unfocused, empty ->
+;     visible, bspwm-only keys dropped)
+;   - wm-restack = i3 instead of bspwm
+;   - battery: battery/adapter from $LBATTERY/$LADAPTER (polybar-launch.sh sets
+;     them) instead of the original's hardcoded BAT0/AC0
+;   - updates: this distro's own pending-update count (sedo-updates.sh) and
+;     this rice's updater on click, instead of the original's Arch
+;     checkupdates/yay script and alacritty + pacman -Syyu
+;   - weather: ~/.local/bin/polybar-weather.py (the original's `weather`
+;     command isn't part of the sedo-wm repo)
+;   - date/time: round ends - half-circle caps in the block's own colors
+;     (replacing any slanted powerline decoration right around it)
+;   - tray: a tray module (same background/size/padding as the original's
+;     tray-* settings) at the end of modules-right instead of the legacy
+;     tray-position tray, which polybar 3.7 draws below bars with a border
+;   - text fonts: font-0 and every other text slot a widget's text is drawn
+;     in -> JetBrainsMono Nerd Font Regular 9 (Medium 9 for workspace
+;     labels), the same fonts murz-alt uses; the originals' bold 10-16pt
+;     text reads heavy. Icon/separator fonts are left as they were
+;   - fonts: Font Awesome 6 Pro -> Font Awesome 6 Free and Cartograph CF ->
+;     VictorMono Nerd Font (both originals are paid fonts); every other
+;     font is the original's, installed by the setup script
+;   - width = 100% / offset-x = 0: edge to edge across the screen (most
+;     originals float at 98% width with a 1% side offset)
+;   - network: the original reads $NET_INTERFACE, which polybar-launch.sh
+;     exports (first wifi interface, else the default-route one)
+; [colors] below is only for generate-{vscode,gtk,nvim}-themes.py - the
+; bar itself still uses the original's own [color] section.
+
+; inside a section (as the original's own config.ini does with its
+; includes) so Python's configparser can read this file too
+[global/sedo]
+include-file = ~/.config/polybar/sedo/gruvbox/config.ini
+
+[colors]
+base     = #282828
+mantle   = #282828
+surface0 = #665C54
+text     = #D4BE98
+subtext  = #A89984
+red      = #EA6962
+green    = #A9B665
+yellow   = #D8A657
+blue     = #7DAEA3
+purple   = #D3869B
+cyan     = #89B482
+
+[module/i3]
+type = internal/i3
+; polybar's i3 module needs this to keep workspaces in numeric order
+index-sort = true
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+ws-icon-default = "♟ "
+format = <label-state>
+format-font = 7
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.secondary}
+label-focused-background = ${color.aqua}
+label-focused-overline = ${color.bg}
+label-focused-underline = ${color.bg}
+label-unfocused = %icon%
+label-unfocused-padding = 1
+label-unfocused-foreground = ${color.fg-alt}
+label-unfocused-background = ${color.fg}
+label-urgent = %icon%
+label-urgent-padding = 1
+label-visible = %icon%
+label-visible-foreground = ${color.bg}
+label-visible-background = ${color.fg}
+label-visible-padding = 1
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.bg-alt}
+ws-icon-6 = 7;7
+ws-icon-7 = 8;8
+ws-icon-8 = 9;9
+ws-icon-9 = 10;10
+
+[module/battery-i3]
+inherit = module/battery
+battery = ${env:LBATTERY:BAT0}
+adapter = ${env:LADAPTER:AC}
+
+[module/updates-i3]
+inherit = module/updates
+exec = ~/.local/bin/sedo-updates.sh
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+click-right = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+
+[module/weather-i3]
+inherit = module/weather
+exec = ~/.local/bin/polybar-weather.py
+
+[module/date-cap-l]
+type = custom/text
+format = "%{T6}%{T-}"
+format-foreground = ${color.yellow}
+
+[module/date-cap-r]
+type = custom/text
+format = "%{T6}%{T-}"
+format-foreground = ${color.yellow}
+
+[module/tray-i3]
+type = internal/tray
+format-background = ${color.bg}
+tray-background = ${color.bg}
+tray-size = 16
+tray-padding = 0
+
+[bar/top-primary]
+inherit = bar/gruv-bar
+monitor = ${env:MONITOR:}
+width = 100%
+offset-x = 0
+modules-left = hlrd lrd i3 rrd hrrd sep0 mpd
+modules-center = 
+modules-right = weather-i3 sep0 upL updates-i3 upR netL network netR btL battery-i3 btR date-cap-l date date-cap-r tray-i3
+tray-position = none
+wm-restack = i3
+font-0 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
+font-2 = "Font Awesome 6 Free Solid:size=10;2"
+font-5 = "JetBrainsMono Nerd Font:pixelsize=16;2"
+font-6 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+
+[bar/top-secondary]
+inherit = bar/top-primary
+modules-right = weather-i3 sep0 upL updates-i3 upR netL network netR btL battery-i3 btR date-cap-l date date-cap-r
+EOF
+cat > "$CONF/rofi/themes/sedo-gruvbox.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #282828ff;
+    text:     #D4BE98ff;
+    subtext:  #665C54ff;
+    mauve:    #7DAEA3ff;
+    surface0: #665C54ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/sedo-gruvbox-powermenu.rasi" <<'EOF'
+* {
+    base:     #282828ff;
+    mantle:   #282828ff;
+    text:     #D4BE98ff;
+    subtext:  #665C54ff;
+    mauve:    #7DAEA3ff;
+    surface0: #665C54ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/starship/themes/sedo-gruvbox.toml" <<'EOF'
+format = """
+[](#282828)\
+$python\
+$username\
+[](bg:#665C54 fg:#282828)\
+$directory\
+[](fg:#665C54 bg:#665C54)\
+$git_branch\
+$git_status\
+[](fg:#665C54 bg:#B8BB26)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#B8BB26 bg:#D3869B)\
+$docker_context\
+[](fg:#D3869B bg:#7DAEA3)\
+$time\
+[ ](fg:#7DAEA3)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#282828"
+style_root = "bg:#282828"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#665C54"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#D3869B"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#665C54"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#665C54"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#B8BB26"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#B8BB26"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282828"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#B8BB26"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7DAEA3"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/dunst/themes/sedo-gruvbox.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#7DAEA3"
+corner_radius = 10
+background = "#282828"
+foreground = "#D4BE98"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#665C54"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#282828"
+foreground = "#665C54"
+frame_color = "#665C54"
+timeout = 4
+
+[urgency_normal]
+background = "#282828"
+foreground = "#D4BE98"
+frame_color = "#7DAEA3"
+timeout = 6
+
+[urgency_critical]
+background = "#282828"
+foreground = "#EA6962"
+frame_color = "#EA6962"
+timeout = 0
+EOF
+cat > "$CONF/i3/themes/sedo-gruvbox.conf" <<'EOF'
+client.focused          #7DAEA3  #282828  #D4BE98  #7DAEA3   #7DAEA3
+client.unfocused        #665C54  #282828  #665C54  #665C54   #665C54
+client.focused_inactive #665C54  #282828  #665C54  #665C54   #665C54
+client.urgent           #EA6962  #282828  #D4BE98  #EA6962   #EA6962
+EOF
+cat > "$CONF/kitty/themes/sedo-gruvbox.conf" <<'EOF'
+# sedo-gruvbox - kitty colors from sedo-wm's gruvbox palette, mapped the way
+# sedo-wm's own scripts/color_push writes its kitty colors.ini
+background #282828
+foreground #D4BE98
+url_color #A9B665
+
+selection_background #D4BE98
+selection_foreground #282828
+
+cursor #D4BE98
+cursor_text_color #282828
+
+color0 #665C54
+color8 #665C54
+color1 #EA6962
+color9 #E60053
+color2 #A9B665
+color10 #B8BB26
+color3 #D8A657
+color11 #FABD2F
+color4 #7DAEA3
+color12 #83A598
+color5 #D3869B
+color13 #D3869B
+color6 #89B482
+color14 #8EC07C
+color7 #A89984
+color15 #D4BE98
+EOF
+
+mkdir -p "$CONF/polybar/sedo/nightfox"
+cat > "$CONF/polybar/sedo/nightfox/colors.ini" <<'SEDO_EOF'
+[color]
+
+bg = #192330
+alt-bg = #2b3b51
+
+fg = #cdcecf
+alt-fg= #aeafb0
+
+blue = #719cd6
+cyan = #63cdcf
+green = #81b29a
+orange = #f4a261
+pink = #d67ad2
+red= #c94f6d
+
+purple = #9d79d6
+alt-purple= #9d79d6
+
+alt-red = #c94f6d
+yellow = #dbc074
+SEDO_EOF
+cat > "$CONF/polybar/sedo/nightfox/config.ini" <<'SEDO_EOF'
+[global/wm]
+
+margin-bottom = 0
+margin-top = 0
+
+include-file = colors.ini
+include-file = modules.ini
+
+[bar/night-bar]
+
+monitor =
+monitor-fallback =
+monitor-strict = false
+
+override-redirect = false
+bottom = false
+fixed-center = false
+
+width = 98%
+height = 22
+
+offset-x = 1%
+offset-y = 0.5%
+
+background = ${color.bg}
+foreground = ${color.fg}
+
+radius = 
+
+line-size = 2
+
+border-size = 6
+border-color = ${color.bg}
+
+padding-left = 0
+padding-right = 2
+
+module-margin-left = 0
+module-margin-right = 0
+
+font-0 = "Iosevka Nerd Font:style=Bold:size=13;3"
+font-1 = "Material Design Icons Desktop:size=14;3"
+font-2 = "Font Awesome 6 Pro Solid:size=10;3"
+font-3 = "Iosevka Nerd Font:style=Bold:size=16;3"
+font-4 = "MesloLGS NF:size=13;3"
+font-5 = "JetBrainsMono Nerd Font:style=Bold:size=13;3"
+
+modules-left = distro sep2 bspwm sep2 weather
+modules-center =
+modules-right = mpd sep2 updates sep2 network sep2 filesystem sep2 battery sep2 date
+
+separator = 
+dim-value = 1.0
+;locale = es_MX.UTF-8
+
+tray-position = right
+tray-detached = false
+tray-maxsize = 16
+tray-background = ${color.bg}
+tray-offset-x = 0
+tray-offset-y = 0
+tray-padding = 0
+tray-scale = 1.0
+
+wm-restack = bspwm
+enable-ipc = true
+
+cursor-click = pointer
+cursor-scroll = 
+
+[settings]
+
+screenchange-reload = false
+
+compositing-background = source
+compositing-foreground = over
+compositing-overline = over
+compositing-underline = over
+compositing-border = over
+
+pseudo-transparency = false
+SEDO_EOF
+cat > "$CONF/polybar/sedo/nightfox/modules.ini" <<'SEDO_EOF'
+######################################################
+
+[module/date]
+type = internal/date
+
+interval = 1.0
+
+time = %A - %B%d [%H:%M]
+
+format = <label>
+; format-prefix = "  "
+format-prefix-background = ${color.green}
+format-prefix-foreground= ${color.bg}
+label = "%date% %time% "
+
+label-background = ${color.green}
+label-foreground= ${color.bg}
+
+######################################################
+
+[module/network]
+type = internal/network
+interface = ${env:NET_INTERFACE}
+
+interval = 3.0
+accumulate-stats = true
+unknown-as-up = true
+speed-unit = ""
+
+format-connected = <label-connected>
+format-connected-prefix = "  "
+label-connected = " %netspeed% "
+format-connected-prefix-foreground = ${color.alt-fg}
+
+label-connected-foreground = ${color.alt-fg}
+
+format-disconnected = <label-disconnected>
+format-disconnected-prefix = " 󰖪 "
+format-disconnected-foreground = ${color.alt-fg}
+
+label-disconnected = " Disconnected "
+label-disconnected-foreground = ${color.alt-fg}
+
+######################################################
+
+[module/bspwm]
+type = internal/bspwm
+
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+occupied-scroll = false
+
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+
+
+format = "<label-state>"
+format-font = 6
+
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.orange}
+label-focused-background = ${color.alt-bg}
+label-focused-underline = ${color.cyan}
+
+label-occupied = %icon%
+label-occupied-padding = 1
+label-occupied-foreground= ${color.bg}
+label-occupied-background = ${color.alt-bg}
+
+label-urgent = %icon%
+label-urgent-padding = 1
+
+label-empty = %icon%
+label-empty-foreground = ${color.fg}
+label-empty-background = ${color.alt-bg}
+label-empty-padding = 1
+
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.alt-bg}
+
+[module/bspL]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.alt-bg}
+
+[module/bspR]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.alt-bg}
+
+[module/bspRR]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.blue}
+
+######################################################
+
+[module/updates]
+type = custom/script
+exec = ~/.config/bspwm/scripts/Updates
+interval = 120
+; tail = true
+label = "%{T1} %output% %{T-}"
+label-foreground = ${color.alt-fg}
+click-left = alacritty --class float,float -e sudo pacman -Syyu
+format-prefix = "  "
+format-prefix-foreground = ${color.alt-fg}
+
+######################################################
+
+[module/sep]
+type = custom/text
+content = " "
+content-foreground = ${color.current}
+
+######################################################
+
+[module/sep2]
+type = custom/text
+content = "  "
+content-foreground = ${color.current}
+
+#----
+
+[module/mpd]
+type                    = internal/mpd
+host                    = 127.0.0.1
+port                    = 6600
+interval                = 2
+format-online           = "<icon-repeat>%{F#9ece6a}%{F-} %{A1:mpc toggle:}<label-song>%{A} %{F#9ece6a}%{F-}"
+format-offline          = ""
+label-song              = "%{T1}%title%%{T-}"
+label-song-foreground   = ${color.alt-fg}
+label-song-maxlen       = 38
+icon-repeat             = "󰎈"
+
+toggle-on-foreground    = ${color.alt-fg}
+toggle-off-foreground   = ${color.alt-fg}
+
+#----
+
+[module/battery]
+;https://github.com/jaagr/polybar/wiki/Module:-battery
+type = internal/battery
+battery = BAT0
+adapter = AC0
+full-at = 100
+
+format-charging = <animation-charging><label-charging>
+label-charging =   "%percentage%% "
+label-charging-foreground = ${color.red}
+
+format-discharging = <ramp-capacity><label-discharging>
+label-discharging =   "%percentage%% "
+label-discharging-foreground = ${color.red}
+
+format-full-prefix = "   "
+label-full =   "%percentage%% "
+
+format-full-prefix-font = 1
+format-full-prefix-foreground = ${color.red}
+format-full-foreground = ${color.red}
+
+ramp-capacity-0 = "   "
+ramp-capacity-1 = "   "
+ramp-capacity-2 = "   "
+ramp-capacity-3 = "   "
+ramp-capacity-4 = "   "
+ramp-capacity-foreground = ${color.red}
+ramp-capacity-font = 1
+
+animation-charging-0 = "   "
+animation-charging-1 = "   "
+animation-charging-2 = "   "
+animation-charging-3 = "   "
+animation-charging-4 = "   "
+animation-charging-font = 1
+animation-charging-foreground = ${color.red}
+animation-charging-framerate = 750
+
+#----
+
+[module/distro]
+type = custom/script
+exec = distro
+
+format = <label>
+label = "%{T4}%{F#dbc074}%{A1:rofi -show run:}%output%%{A}%{F-}%{T-}"
+
+#----
+
+[module/weather]
+type = custom/script
+exec = weather
+interval = 120
+format = <label>
+label = " %output% "
+label-foreground= ${color.blue}
+
+#----
+
+[module/filesystem]
+type = internal/fs
+
+mount-0 = /
+interval = 60
+fixed-values = true
+
+format-mounted = <label-mounted>
+# format-mounted-prefix = " "
+format-mounted-prefix-background = ${color.bg}
+format-mounted-prefix-foreground = ${color.yellow}
+
+format-unmounted = <label-unmounted>
+format-unmounted-prefix = " "
+
+label-mounted = %used%/used
+label-mounted-background = ${color.bg}
+label-mounted-foreground = ${color.yellow}
+
+label-unmounted = %mountpoint%: not mounted
+
+#----
+SEDO_EOF
+cat > "$CONF/polybar/themes/sedo-nightfox.ini" <<'EOF'
+; sedo-nightfox - the "nightfox" polybar from gitlab.com/sum4n/sedo-wm
+; (commit 3be319a), unmodified: its own config.ini/colors.ini/modules.ini
+; (/decor.ini) are installed byte-for-byte under
+; ~/.config/polybar/sedo/nightfox/ and included below. This file only adds
+; what running that bspwm bar under i3 in this rice needs, on top of it:
+;   - top-primary/top-secondary bars (what polybar-launch.sh starts),
+;     inheriting bar/night-bar as-is; top-secondary has no tray
+;   - an i3 workspace module in place of the bspwm one, carrying the bspwm
+;     module's own labels/colors/icons (occupied -> unfocused, empty ->
+;     visible, bspwm-only keys dropped)
+;   - wm-restack = i3 instead of bspwm
+;   - battery: battery/adapter from $LBATTERY/$LADAPTER (polybar-launch.sh sets
+;     them) instead of the original's hardcoded BAT0/AC0
+;   - updates: this distro's own pending-update count (sedo-updates.sh) and
+;     this rice's updater on click, instead of the original's Arch
+;     checkupdates/yay script and alacritty + pacman -Syyu
+;   - weather: ~/.local/bin/polybar-weather.py (the original's `weather`
+;     command isn't part of the sedo-wm repo)
+;   - distro: ~/.local/bin/polybar-distro.sh (the original's `distro` command
+;     isn't part of the sedo-wm repo either)
+;   - date/time: round ends - half-circle caps in the block's own colors
+;     (replacing any slanted powerline decoration right around it)
+;   - tray: a tray module (same background/size/padding as the original's
+;     tray-* settings) at the end of modules-right instead of the legacy
+;     tray-position tray, which polybar 3.7 draws below bars with a border
+;   - text fonts: font-0 and every other text slot a widget's text is drawn
+;     in -> JetBrainsMono Nerd Font Regular 9 (Medium 9 for workspace
+;     labels), the same fonts murz-alt uses; the originals' bold 10-16pt
+;     text reads heavy. Icon/separator fonts are left as they were
+;   - fonts: Font Awesome 6 Pro -> Font Awesome 6 Free and Cartograph CF ->
+;     VictorMono Nerd Font (both originals are paid fonts); every other
+;     font is the original's, installed by the setup script
+;   - width = 100% / offset-x = 0: edge to edge across the screen (most
+;     originals float at 98% width with a 1% side offset)
+;   - network: the original reads $NET_INTERFACE, which polybar-launch.sh
+;     exports (first wifi interface, else the default-route one)
+; [colors] below is only for generate-{vscode,gtk,nvim}-themes.py - the
+; bar itself still uses the original's own [color] section.
+
+; inside a section (as the original's own config.ini does with its
+; includes) so Python's configparser can read this file too
+[global/sedo]
+include-file = ~/.config/polybar/sedo/nightfox/config.ini
+
+[colors]
+base     = #192330
+mantle   = #192330
+surface0 = #575860
+text     = #CDCECF
+subtext  = #DFDFE0
+red      = #C94F6D
+green    = #81B29A
+yellow   = #DBC074
+blue     = #719CD6
+purple   = #9D79D6
+cyan     = #63CDCF
+
+[module/i3]
+type = internal/i3
+; polybar's i3 module needs this to keep workspaces in numeric order
+index-sort = true
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+format = "<label-state>"
+format-font = 8
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.orange}
+label-focused-background = ${color.alt-bg}
+label-focused-underline = ${color.cyan}
+label-unfocused = %icon%
+label-unfocused-padding = 1
+label-unfocused-foreground = ${color.bg}
+label-unfocused-background = ${color.alt-bg}
+label-urgent = %icon%
+label-urgent-padding = 1
+label-visible = %icon%
+label-visible-foreground = ${color.fg}
+label-visible-background = ${color.alt-bg}
+label-visible-padding = 1
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.alt-bg}
+ws-icon-6 = 7;7
+ws-icon-7 = 8;8
+ws-icon-8 = 9;9
+ws-icon-9 = 10;10
+
+[module/battery-i3]
+inherit = module/battery
+battery = ${env:LBATTERY:BAT0}
+adapter = ${env:LADAPTER:AC}
+
+[module/updates-i3]
+inherit = module/updates
+exec = ~/.local/bin/sedo-updates.sh
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+
+[module/weather-i3]
+inherit = module/weather
+exec = ~/.local/bin/polybar-weather.py
+
+[module/distro-i3]
+inherit = module/distro
+exec = ~/.local/bin/polybar-distro.sh
+
+[module/date-cap-l]
+type = custom/text
+format = "%{T7}%{T-}"
+format-foreground = ${color.green}
+
+[module/date-cap-r]
+type = custom/text
+format = "%{T7}%{T-}"
+format-foreground = ${color.green}
+
+[module/tray-i3]
+type = internal/tray
+format-background = ${color.bg}
+tray-background = ${color.bg}
+tray-size = 16
+tray-padding = 0
+
+[bar/top-primary]
+inherit = bar/night-bar
+monitor = ${env:MONITOR:}
+width = 100%
+offset-x = 0
+modules-left = distro-i3 sep2 i3 sep2 weather-i3
+modules-center = 
+modules-right = mpd sep2 updates-i3 sep2 network sep2 filesystem sep2 battery-i3 sep2 date-cap-l date date-cap-r tray-i3
+tray-position = none
+wm-restack = i3
+font-0 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
+font-2 = "Font Awesome 6 Free Solid:size=10;3"
+font-5 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+font-6 = "JetBrainsMono Nerd Font:pixelsize=16;2"
+font-7 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+
+[bar/top-secondary]
+inherit = bar/top-primary
+modules-right = mpd sep2 updates-i3 sep2 network sep2 filesystem sep2 battery-i3 sep2 date-cap-l date date-cap-r
+EOF
+cat > "$CONF/rofi/themes/sedo-nightfox.rasi" <<'EOF'
+* {
+    base:     #192330ff;
+    mantle:   #192330ff;
+    text:     #CDCECFff;
+    subtext:  #575860ff;
+    mauve:    #719CD6ff;
+    surface0: #575860ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/sedo-nightfox-powermenu.rasi" <<'EOF'
+* {
+    base:     #192330ff;
+    mantle:   #192330ff;
+    text:     #CDCECFff;
+    subtext:  #575860ff;
+    mauve:    #719CD6ff;
+    surface0: #575860ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/starship/themes/sedo-nightfox.toml" <<'EOF'
+format = """
+[](#192330)\
+$python\
+$username\
+[](bg:#575860 fg:#192330)\
+$directory\
+[](fg:#575860 bg:#575860)\
+$git_branch\
+$git_status\
+[](fg:#575860 bg:#8EBAA4)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8EBAA4 bg:#9D79D6)\
+$docker_context\
+[](fg:#9D79D6 bg:#719CD6)\
+$time\
+[ ](fg:#719CD6)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#192330"
+style_root = "bg:#192330"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#575860"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#8EBAA4"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#9D79D6"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8EBAA4"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8EBAA4"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#575860"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#575860"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8EBAA4"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8EBAA4"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8EBAA4"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8EBAA4"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8EBAA4"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8EBAA4"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#192330"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8EBAA4"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#719CD6"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/dunst/themes/sedo-nightfox.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#719CD6"
+corner_radius = 10
+background = "#192330"
+foreground = "#CDCECF"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#575860"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#192330"
+foreground = "#575860"
+frame_color = "#575860"
+timeout = 4
+
+[urgency_normal]
+background = "#192330"
+foreground = "#CDCECF"
+frame_color = "#719CD6"
+timeout = 6
+
+[urgency_critical]
+background = "#192330"
+foreground = "#C94F6D"
+frame_color = "#C94F6D"
+timeout = 0
+EOF
+cat > "$CONF/i3/themes/sedo-nightfox.conf" <<'EOF'
+client.focused          #719CD6  #192330  #CDCECF  #719CD6   #719CD6
+client.unfocused        #575860  #192330  #575860  #575860   #575860
+client.focused_inactive #575860  #192330  #575860  #575860   #575860
+client.urgent           #C94F6D  #192330  #CDCECF  #C94F6D   #C94F6D
+EOF
+cat > "$CONF/kitty/themes/sedo-nightfox.conf" <<'EOF'
+# sedo-nightfox - kitty colors from sedo-wm's nightfox palette, mapped the way
+# sedo-wm's own scripts/color_push writes its kitty colors.ini
+background #192330
+foreground #CDCECF
+url_color #81B29A
+
+selection_background #CDCECF
+selection_foreground #192330
+
+cursor #CDCECF
+cursor_text_color #393B44
+
+color0 #575860
+color8 #575860
+color1 #C94F6D
+color9 #D16983
+color2 #81B29A
+color10 #8EBAA4
+color3 #DBC074
+color11 #E0C989
+color4 #719CD6
+color12 #86ABDC
+color5 #9D79D6
+color13 #BAA1E2
+color6 #63CDCF
+color14 #7AD5D6
+color7 #DFDFE0
+color15 #E4E4E5
+EOF
+
+mkdir -p "$CONF/polybar/sedo/nord"
+cat > "$CONF/polybar/sedo/nord/colors.ini" <<'SEDO_EOF'
+[color]
+
+bg = #2e3440
+alt-bg = #444c5e
+
+fg = #cdcecf
+alt-fg= #abb1bb
+
+blue = #8cafd2
+cyan = #92ccdc
+green = #b1d196
+orange = #d89079
+pink = #d092ce
+red= #d06f79
+
+purple = #c895bf
+alt-purple= #b483ad
+
+alt-red = #a54e56
+yellow = #f0d399
+SEDO_EOF
+cat > "$CONF/polybar/sedo/nord/config.ini" <<'SEDO_EOF'
+[global/wm]
+
+margin-bottom = 0
+margin-top = 0
+
+include-file = colors.ini
+include-file = modules.ini
+
+[bar/nord-bar]
+
+monitor =
+monitor-fallback =
+monitor-strict = false
+
+override-redirect = false
+bottom = false
+fixed-center = false
+
+width = 98%
+height = 22
+
+offset-x = 1%
+offset-y = 0.5%
+
+background = ${color.bg}
+foreground = ${color.fg}
+
+radius = 
+
+line-size = 2
+
+border-size = 6
+border-color = ${color.bg}
+
+padding-left = 0
+padding-right = 2
+
+module-margin-left = 0
+module-margin-right = 0
+
+font-0 = "Iosevka Nerd Font:style=Bold:size=12;3"
+font-1 = "Material Design Icons Desktop:size=14;3"
+font-2 = "Font Awesome 6 Pro Solid:size=10;3"
+font-3 = "Iosevka Nerd Font:style=Bold:size=16;3"
+font-4 = "MesloLGS NF:size=13;3"
+font-5 = "JetBrainsMono Nerd Font:style=Bold:size=13;3"
+
+modules-left = distro sep2 bspwm sep2 weather
+modules-center =
+modules-right = mpd sep2 updates sep2 network sep2 battery sep2 date
+
+separator = 
+dim-value = 1.0
+;locale = es_MX.UTF-8
+
+tray-position = right
+tray-detached = false
+tray-maxsize = 16
+tray-background = ${color.bg}
+tray-offset-x = 0
+tray-offset-y = 0
+tray-padding = 0
+tray-scale = 1.0
+
+wm-restack = bspwm
+enable-ipc = true
+
+cursor-click = pointer
+cursor-scroll = 
+
+[settings]
+
+screenchange-reload = false
+
+compositing-background = source
+compositing-foreground = over
+compositing-overline = over
+compositing-underline = over
+compositing-border = over
+
+pseudo-transparency = false
+SEDO_EOF
+cat > "$CONF/polybar/sedo/nord/modules.ini" <<'SEDO_EOF'
+######################################################
+
+[module/date]
+type = internal/date
+
+interval = 1.0
+
+time = %A - %B%d [%H:%M]
+
+format = <label>
+; format-prefix = "  "
+format-prefix-background = ${color.green}
+format-prefix-foreground= ${color.bg}
+label = "%date% %time% "
+
+label-background = ${color.green}
+label-foreground= ${color.bg}
+
+######################################################
+
+[module/network]
+type = internal/network
+interface = ${env:NET_INTERFACE}
+
+interval = 3.0
+accumulate-stats = true
+unknown-as-up = true
+speed-unit = ""
+
+format-connected = <label-connected>
+format-connected-prefix = "  "
+label-connected = " %netspeed% "
+format-connected-prefix-foreground = ${color.alt-fg}
+
+label-connected-foreground = ${color.alt-fg}
+
+format-disconnected = <label-disconnected>
+format-disconnected-prefix = "  "
+format-disconnected-foreground = ${color.alt-fg}
+
+label-disconnected = "Disconnected "
+label-disconnected-foreground = ${color.alt-fg}
+
+######################################################
+
+[module/bspwm]
+type = internal/bspwm
+
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+occupied-scroll = false
+
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+
+
+format = "<label-state>"
+format-font = 6
+
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.orange}
+label-focused-background = ${color.alt-bg}
+label-focused-underline = ${color.cyan}
+
+label-occupied = %icon%
+label-occupied-padding = 1
+label-occupied-foreground= ${color.bg}
+label-occupied-background = ${color.alt-bg}
+
+label-urgent = %icon%
+label-urgent-padding = 1
+
+label-empty = %icon%
+label-empty-foreground = ${color.fg}
+label-empty-background = ${color.alt-bg}
+label-empty-padding = 1
+
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.alt-bg}
+
+[module/bspL]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.alt-bg}
+
+[module/bspR]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.alt-bg}
+
+[module/bspRR]
+type = custom/text
+
+content = "%{T5}%{T-}"
+content-foreground = ${color.blue}
+
+######################################################
+
+[module/updates]
+type = custom/script
+exec = ~/.config/bspwm/scripts/Updates
+interval = 120
+; tail = true
+label = "%{T1} %output% %{T-}"
+label-foreground = ${color.alt-fg}
+click-left = alacritty --class float,float -e sudo pacman -Syyu
+format-prefix = "  "
+format-prefix-foreground = ${color.alt-fg}
+
+######################################################
+
+[module/sep]
+type = custom/text
+content = " "
+content-foreground = ${color.current}
+
+######################################################
+
+[module/sep2]
+type = custom/text
+content = "  "
+content-foreground = ${color.current}
+
+#----
+
+[module/mpd]
+type                    = internal/mpd
+host                    = 127.0.0.1
+port                    = 6600
+interval                = 2
+format-online           = "<icon-repeat>%{F#9ece6a}%{F-} %{A1:mpc toggle:}<label-song>%{A} %{F#9ece6a}%{F-}"
+format-offline          = ""
+label-song              = "%{T1}%title%%{T-}"
+label-song-foreground   = ${color.alt-fg}
+label-song-maxlen       = 38
+icon-repeat             = "󰎈"
+
+toggle-on-foreground    = ${color.alt-fg}
+toggle-off-foreground   = ${color.alt-fg}
+
+#----
+
+[module/battery]
+;https://github.com/jaagr/polybar/wiki/Module:-battery
+type = internal/battery
+battery = BAT0
+adapter = AC0
+full-at = 100
+
+format-charging = <animation-charging><label-charging>
+label-charging =   "%percentage%% "
+label-charging-foreground = ${color.red}
+
+format-discharging = <ramp-capacity><label-discharging>
+label-discharging =   "%percentage%% "
+label-discharging-foreground = ${color.red}
+
+format-full-prefix = "   "
+label-full =   "%percentage%% "
+
+format-full-prefix-font = 1
+format-full-prefix-foreground = ${color.red}
+format-full-foreground = ${color.red}
+
+ramp-capacity-0 = "   "
+ramp-capacity-1 = "   "
+ramp-capacity-2 = "   "
+ramp-capacity-3 = "   "
+ramp-capacity-4 = "   "
+ramp-capacity-foreground = ${color.red}
+ramp-capacity-font = 1
+
+animation-charging-0 = "   "
+animation-charging-1 = "   "
+animation-charging-2 = "   "
+animation-charging-3 = "   "
+animation-charging-4 = "   "
+animation-charging-font = 1
+animation-charging-foreground = ${color.red}
+animation-charging-framerate = 750
+
+#----
+
+[module/distro]
+type = custom/script
+exec = distro
+
+format = <label>
+label = "%{T4}%{F#dbc074}%{A1:rofi -show run:}%output%%{A}%{F-}%{T-}"
+
+#----
+
+[module/weather]
+type = custom/script
+exec = weather
+interval = 120
+format = <label>
+label = " %output% "
+label-foreground= ${color.blue}
+
+#----
+SEDO_EOF
+cat > "$CONF/polybar/themes/sedo-nord.ini" <<'EOF'
+; sedo-nord - the "nord" polybar from gitlab.com/sum4n/sedo-wm
+; (commit 3be319a), unmodified: its own config.ini/colors.ini/modules.ini
+; (/decor.ini) are installed byte-for-byte under
+; ~/.config/polybar/sedo/nord/ and included below. This file only adds
+; what running that bspwm bar under i3 in this rice needs, on top of it:
+;   - top-primary/top-secondary bars (what polybar-launch.sh starts),
+;     inheriting bar/nord-bar as-is; top-secondary has no tray
+;   - an i3 workspace module in place of the bspwm one, carrying the bspwm
+;     module's own labels/colors/icons (occupied -> unfocused, empty ->
+;     visible, bspwm-only keys dropped)
+;   - wm-restack = i3 instead of bspwm
+;   - battery: battery/adapter from $LBATTERY/$LADAPTER (polybar-launch.sh sets
+;     them) instead of the original's hardcoded BAT0/AC0
+;   - updates: this distro's own pending-update count (sedo-updates.sh) and
+;     this rice's updater on click, instead of the original's Arch
+;     checkupdates/yay script and alacritty + pacman -Syyu
+;   - weather: ~/.local/bin/polybar-weather.py (the original's `weather`
+;     command isn't part of the sedo-wm repo)
+;   - distro: ~/.local/bin/polybar-distro.sh (the original's `distro` command
+;     isn't part of the sedo-wm repo either)
+;   - date/time: round ends - half-circle caps in the block's own colors
+;     (replacing any slanted powerline decoration right around it)
+;   - tray: a tray module (same background/size/padding as the original's
+;     tray-* settings) at the end of modules-right instead of the legacy
+;     tray-position tray, which polybar 3.7 draws below bars with a border
+;   - text fonts: font-0 and every other text slot a widget's text is drawn
+;     in -> JetBrainsMono Nerd Font Regular 9 (Medium 9 for workspace
+;     labels), the same fonts murz-alt uses; the originals' bold 10-16pt
+;     text reads heavy. Icon/separator fonts are left as they were
+;   - fonts: Font Awesome 6 Pro -> Font Awesome 6 Free and Cartograph CF ->
+;     VictorMono Nerd Font (both originals are paid fonts); every other
+;     font is the original's, installed by the setup script
+;   - width = 100% / offset-x = 0: edge to edge across the screen (most
+;     originals float at 98% width with a 1% side offset)
+;   - network: the original reads $NET_INTERFACE, which polybar-launch.sh
+;     exports (first wifi interface, else the default-route one)
+; [colors] below is only for generate-{vscode,gtk,nvim}-themes.py - the
+; bar itself still uses the original's own [color] section.
+
+; inside a section (as the original's own config.ini does with its
+; includes) so Python's configparser can read this file too
+[global/sedo]
+include-file = ~/.config/polybar/sedo/nord/config.ini
+
+[colors]
+base     = #2E3440
+mantle   = #2E3440
+surface0 = #4C566A
+text     = #D8DEE9
+subtext  = #E5E9F0
+red      = #BF616A
+green    = #A3BE8C
+yellow   = #EBCB8B
+blue     = #81A1C1
+purple   = #B48EAD
+cyan     = #88C0D0
+
+[module/i3]
+type = internal/i3
+; polybar's i3 module needs this to keep workspaces in numeric order
+index-sort = true
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+format = "<label-state>"
+format-font = 8
+label-focused = %icon%
+label-focused-padding = 1
+label-focused-foreground = ${color.orange}
+label-focused-background = ${color.alt-bg}
+label-focused-underline = ${color.cyan}
+label-unfocused = %icon%
+label-unfocused-padding = 1
+label-unfocused-foreground = ${color.bg}
+label-unfocused-background = ${color.alt-bg}
+label-urgent = %icon%
+label-urgent-padding = 1
+label-visible = %icon%
+label-visible-foreground = ${color.fg}
+label-visible-background = ${color.alt-bg}
+label-visible-padding = 1
+label-separator = ""
+label-separator-padding = 0
+label-separator-foreground = ${color.alt-bg}
+ws-icon-6 = 7;7
+ws-icon-7 = 8;8
+ws-icon-8 = 9;9
+ws-icon-9 = 10;10
+
+[module/battery-i3]
+inherit = module/battery
+battery = ${env:LBATTERY:BAT0}
+adapter = ${env:LADAPTER:AC}
+
+[module/updates-i3]
+inherit = module/updates
+exec = ~/.local/bin/sedo-updates.sh
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+
+[module/weather-i3]
+inherit = module/weather
+exec = ~/.local/bin/polybar-weather.py
+
+[module/distro-i3]
+inherit = module/distro
+exec = ~/.local/bin/polybar-distro.sh
+
+[module/date-cap-l]
+type = custom/text
+format = "%{T7}%{T-}"
+format-foreground = ${color.green}
+
+[module/date-cap-r]
+type = custom/text
+format = "%{T7}%{T-}"
+format-foreground = ${color.green}
+
+[module/tray-i3]
+type = internal/tray
+format-background = ${color.bg}
+tray-background = ${color.bg}
+tray-size = 16
+tray-padding = 0
+
+[bar/top-primary]
+inherit = bar/nord-bar
+monitor = ${env:MONITOR:}
+width = 100%
+offset-x = 0
+modules-left = distro-i3 sep2 i3 sep2 weather-i3
+modules-center = 
+modules-right = mpd sep2 updates-i3 sep2 network sep2 battery-i3 sep2 date-cap-l date date-cap-r tray-i3
+tray-position = none
+wm-restack = i3
+font-0 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
+font-2 = "Font Awesome 6 Free Solid:size=10;3"
+font-5 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+font-6 = "JetBrainsMono Nerd Font:pixelsize=16;2"
+font-7 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+
+[bar/top-secondary]
+inherit = bar/top-primary
+modules-right = mpd sep2 updates-i3 sep2 network sep2 battery-i3 sep2 date-cap-l date date-cap-r
+EOF
+cat > "$CONF/rofi/themes/sedo-nord.rasi" <<'EOF'
+* {
+    base:     #2E3440ff;
+    mantle:   #2E3440ff;
+    text:     #D8DEE9ff;
+    subtext:  #4C566Aff;
+    mauve:    #81A1C1ff;
+    surface0: #4C566Aff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/sedo-nord-powermenu.rasi" <<'EOF'
+* {
+    base:     #2E3440ff;
+    mantle:   #2E3440ff;
+    text:     #D8DEE9ff;
+    subtext:  #4C566Aff;
+    mauve:    #81A1C1ff;
+    surface0: #4C566Aff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/starship/themes/sedo-nord.toml" <<'EOF'
+format = """
+[](#2E3440)\
+$python\
+$username\
+[](bg:#4C566A fg:#2E3440)\
+$directory\
+[](fg:#4C566A bg:#4C566A)\
+$git_branch\
+$git_status\
+[](fg:#4C566A bg:#B1D196)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#B1D196 bg:#B48EAD)\
+$docker_context\
+[](fg:#B48EAD bg:#81A1C1)\
+$time\
+[ ](fg:#81A1C1)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#2E3440"
+style_root = "bg:#2E3440"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#4C566A"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#B1D196"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#B48EAD"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#B1D196"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#B1D196"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#4C566A"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#4C566A"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#B1D196"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#B1D196"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#B1D196"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#B1D196"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#B1D196"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#B1D196"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#2E3440"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#B1D196"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#81A1C1"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/dunst/themes/sedo-nord.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#81A1C1"
+corner_radius = 10
+background = "#2E3440"
+foreground = "#D8DEE9"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#4C566A"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#2E3440"
+foreground = "#4C566A"
+frame_color = "#4C566A"
+timeout = 4
+
+[urgency_normal]
+background = "#2E3440"
+foreground = "#D8DEE9"
+frame_color = "#81A1C1"
+timeout = 6
+
+[urgency_critical]
+background = "#2E3440"
+foreground = "#BF616A"
+frame_color = "#BF616A"
+timeout = 0
+EOF
+cat > "$CONF/i3/themes/sedo-nord.conf" <<'EOF'
+client.focused          #81A1C1  #2E3440  #D8DEE9  #81A1C1   #81A1C1
+client.unfocused        #4C566A  #2E3440  #4C566A  #4C566A   #4C566A
+client.focused_inactive #4C566A  #2E3440  #4C566A  #4C566A   #4C566A
+client.urgent           #BF616A  #2E3440  #D8DEE9  #BF616A   #BF616A
+EOF
+cat > "$CONF/kitty/themes/sedo-nord.conf" <<'EOF'
+# sedo-nord - kitty colors from sedo-wm's nord palette, mapped the way
+# sedo-wm's own scripts/color_push writes its kitty colors.ini
+background #2E3440
+foreground #D8DEE9
+url_color #A3BE8C
+
+selection_background #D8DEE9
+selection_foreground #2E3440
+
+cursor #D8DEE9
+cursor_text_color #3B4252
+
+color0 #4C566A
+color8 #4C566A
+color1 #BF616A
+color9 #D06F79
+color2 #A3BE8C
+color10 #B1D196
+color3 #EBCB8B
+color11 #F0D399
+color4 #81A1C1
+color12 #8CAFD2
+color5 #B48EAD
+color13 #C895BF
+color6 #88C0D0
+color14 #93CCDC
+color7 #E5E9F0
+color15 #E7ECF4
+EOF
+
+mkdir -p "$CONF/polybar/sedo/onedark"
+cat > "$CONF/polybar/sedo/onedark/colors.ini" <<'SEDO_EOF'
+
+# Author 	 -  sum4n
+# Source 	 -  https://gitlab.com/sum4n/SEDO
+# Maintainer -  to_suman@outlook.com
+
+
+[color]
+foreground = #bbc2cf
+background = #282c34
+primary = #62aeef
+black = #1c1f24
+red = #ff6c6b
+green = #98be65
+yellow = #Ecbe7b
+blue = #51afef
+magenta = #c678dd
+cyan = #5699af
+white = #ABB2BF
+altblack = #5b6268
+altred = #da8548
+altgreen = #A2CD83
+altyellow = #EFCA84
+altblue = #3071db
+altmagenta = #a9a1e1
+altcyan = #46d9ff
+altwhite = #B5BCC9
+
+SEDO_EOF
+cat > "$CONF/polybar/sedo/onedark/config.ini" <<'SEDO_EOF'
+#----[ global settings ]----#
+[global/wm]
+margin-bottom = 0
+margin-top = 0
+
+include-file = colors.ini
+include-file = modules.ini
+
+#----[ bar-settings ]----#
+[bar/main]
+monitor = 
+monitor-fallback = 
+monitor-strict = false
+override-redirect = false
+bottom = false
+
+fixed-center = true
+width = 98%
+height = 22
+offset-x = 1%
+offset-y = 0.5%
+
+background = ${color.background}
+foreground = ${color.foreground}
+
+line-size = 2
+padding = 1
+
+module-margin-left = 0
+module-margin-right = 0
+
+radius = 0
+border-size = 5
+border-color = ${color.background}
+
+modules-left = wl bspwm wr sep mpd sep
+modules-center =
+modules-right = updates sep pulseaudio sep network_ext sep date
+enable-ipc = true
+cursor-click = pointer
+
+spacing = 0
+dim-value = 1.0
+locale = en_US.UTF-8
+
+tray-position = right
+tray-detached = false
+tray-maxsize = 16
+tray-background = ${color.background}
+tray-offset-x = 0
+tray-offset-y = 0
+tray-padding = 0
+tray-scale = 1.0
+
+#----[ fonts ]----#
+font-0 = "mononoki Nerd Font:style=Bold:size=13;3"
+font-1 = "SpaceMono Nerd Font:pixelsize=12;3"
+font-2 = "CaskaydiaCove Nerd Font:style=Bold:size=12;3"
+font-3 = "Font Awesome 6 Pro Solid:style=Solid:size=10;3"
+font-4 = "Font Awesome 6 Pro Regular:style=Regular:size=12;3"
+font-5 = "Font Awesome 6 Pro Solid:style=Solid:size=12;3"
+font-6 = "MesloLGS NF:size=13;3"
+
+#----[ settings ]----#
+[settings]
+throttle-output = 5
+throttle-output-for = 10
+
+;throttle-input-for = 30
+
+screenchange-reload = false
+
+compositing-background = source
+compositing-foreground = over
+compositing-overline = over
+compositing-underline = over
+compositing-border = over
+
+pseudo-transparency = false
+
+#----[ EOF ]----#
+SEDO_EOF
+cat > "$CONF/polybar/sedo/onedark/modules.ini" <<'SEDO_EOF'
+#----[ volume ]----#
+[module/pulseaudio]
+type = internal/pulseaudio
+
+sink = alsa_output.pci-0000_00_1b.0.analog-stereo
+use-ui-max = true
+interval = 5
+
+format-volume = "%{A3:pavucontrol:}<ramp-volume><label-volume>%{A}"
+format-volume-prefix = ""
+format-volume-foreground = ${color.yellow}
+
+label-volume = " %percentage%%"
+label-volume-foreground = ${color.yellow}
+
+format-muted = <label-muted>
+format-muted-prefix = "%{T4}%{T-}"
+format-muted-prefix-foreground = ${color.red}
+label-muted = " Muted "
+label-muted-foreground = ${color.red}
+
+ramp-volume-0 = "%{T4}%{T-}"
+ramp-volume-1 = "%{T4}%{T-}"
+ramp-volume-2 = "%{T4}%{T-}"
+ramp-volume-3 = "%{T4}%{T-}"
+ramp-volume-4 = "%{T4}%{T-}"
+
+#----[ battery ]----#
+[module/battery]
+type = internal/battery
+
+full-at = 99
+battery = ${env:LBATTERY}
+adapter = ${env:LADAPTER}
+
+poll-interval = 2
+format-charging = <animation-charging><label-charging>
+format-discharging = <ramp-capacity><label-discharging>
+format-full = <label-full>
+format-full-prefix = "   "
+format-full-prefix-font = 2
+format-full-prefix-underline = ${color.altmagenta}
+format-full-prefix-foreground = ${color.altmagenta}
+
+label-charging = "%percentage%% "
+label-charging-underline = ${color.altmagenta}
+label-charging-foreground = ${color.altmagenta}
+
+label-discharging = "%percentage%% "
+label-discharging-underline = ${color.altmagenta}
+label-discharging-foreground = ${color.altmagenta}
+
+label-full = "%percentage%% "
+label-full-underline = ${color.altmagenta}
+label-full-foreground = ${color.altmagenta}
+
+ramp-capacity-0 = "   "
+ramp-capacity-1 = "   "
+ramp-capacity-2 = "   "
+ramp-capacity-3 = "   "
+ramp-capacity-4 = "   "
+ramp-capacity-font = 2
+ramp-capacity-underline = ${color.altmagenta}
+ramp-capacity-foreground = ${color.altmagenta}
+
+;bar-capacity-width = 10
+
+animation-charging-0 = "   "
+animation-charging-1 = "   "
+animation-charging-2 = "   "
+animation-charging-3 = "   "
+animation-charging-4 = "   "
+animation-charging-font = 2
+animation-charging-underline = ${color.altmagenta}
+animation-charging-foreground = ${color.altmagenta}
+
+animation-charging-framerate = 750
+
+#----[ workspaces ]----#
+[module/bspwm]
+type = internal/bspwm
+
+pin-workspaces = true
+inline-mode = false
+
+enable-click = true
+occupied-scroll = true
+reverse-scroll = false
+
+fuzzy-match = true
+
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+
+format = <label-state> <label-mode>
+format-background = ${color.altblack}
+label-monitor = %name%
+
+label-focused = "%{T6}%icon%%{T-}"
+label-focused-padding = 1
+label-focused-underline = ${color.altcyan}
+label-focused-foreground = ${color.altcyan}
+
+label-occupied = "%{T6}%icon%%{T-}"
+label-occupied-padding = 1
+label-occupied-foreground = ${color.cyan}
+
+label-urgent = "%{T6}%icon%%{T-}"
+label-urgent-foreground = ${color.red}
+
+label-empty = "%{T5}%icon%%{T-}"
+label-empty-padding = 1
+label-empty-foreground = ${color.white}
+
+[module/wl]
+type                        = custom/text
+content                     = "%{T7}%{T-}"
+content-foreground          = ${color.altblack}
+content-background          = ${color.background}
+
+[module/wr]
+type                        = custom/text
+content                     = "%{T7}%{T-}"
+content-foreground          = ${color.altblack}
+content-background          = ${color.background}
+
+#----[ time/date ]----#
+[module/date]
+type = internal/date
+interval = 1.0
+
+time = " [ %a / %b%d ] %H:%M"
+
+format-prefix = " %{T4}%{T-} "
+format-prefix-foreground = ${color.background}
+format-prefix-background = ${color.cyan}
+format = <label>
+label = "%{T1}%time% %{T-}"
+label-foreground = ${color.background}
+label-background = ${color.blue}
+
+#----[ memory ]----#
+[module/used-memory]
+type = custom/script
+enable-click = true
+
+exec = free -m | sed -n 's/^Mem:\s\+[0-9]\+\s\+\([0-9]\+\)\s.\+/\1/p'
+tail = true
+interval = 5
+
+format = <label>
+format-prefix = "%{T5}󰘚 %{T-}"
+format-prefix-foreground = ${color.magenta}
+label = "%{T1}%output% MB%{T-}"
+
+click-left = alacritty -e "htop"
+
+#----[ mpd ]----#
+[module/mpd]
+type = internal/mpd
+interval = 1
+
+format-online = "<icon-repeat> %{F#9ece6a}%{T3}[%{T-}%{F-}%{A1:mpc toggle:}<label-song>%{A} %{F#9ece6a}%{T3}]%{T-}%{F-}"
+icon-repeat = "%{F#ff6c6b}%{T6}%{T-}%{F-}"
+
+format-offline = <label-offline>
+format-offline-prefix = 
+format-offline-foreground = ${color.foreground}
+
+label-song =  " %title%"
+label-song-font = 1
+# label-song-foreground = ${color.altwhite}
+label-song-maxlen = 28
+label-song-ellipsis = true
+
+label-offline = " Offline"
+toggle-on-foreground = ${color.primary}
+toggle-off-foreground = ${color.red}
+
+[module/mpd-time]
+type = internal/mpd
+interval = 1
+
+format-online = " %{A1:mpc toggle:}<label-time>%{A}"
+
+label-time = " %elapsed% / %total% "
+label-time-foreground = ${color.white}
+label-time-background = ${color.altblack}
+
+#----[ network ]----#
+[module/network_ext]
+type = internal/network
+interface = ${env:NET_INTERFACE}
+
+interval = 1.0
+
+; Default: false
+accumulate-stats = true
+
+; Default: false
+unknown-as-up = true
+
+format-connected = <label-connected> 
+format-connected-prefix = ""
+
+format-disconnected = <label-disconnected>
+format-disconnected-prefix = 睊
+
+label-connected = "%downspeed%  %upspeed%"
+label-connected-foreground = ${color.altgreen}
+
+label-disconnected = " %{A1:networkmanager_dmenu &:} Disconnected%{A}"
+
+ramp-signal-0 = "󰤟"
+ramp-signal-1 = "󰤟"
+ramp-signal-2 = "󰤢"
+ramp-signal-3 = "󰤢"
+ramp-signal-4 = "󰤨"
+ramp-signal-5 = "󰤨"
+ramp-signal-foreground = ${color.altgreen}
+ramp-signal-font = 3
+
+#----[ powermenu ]----#
+[module/powermenu]
+type = custom/script
+exec = $HOME/.config/bspwm/scripts/user
+
+format = <label>
+format-prefix = "  %{T6} %{T-}"
+format-prefix-foreground = ${color.background}
+format-prefix-background = ${color.altred}
+format-prefix-padding = 0
+
+label = "%output%  "
+label-background = ${color.altred}
+label-foreground = ${color.background}
+
+click-left = ~/.config/rofi/bin/powermenu
+
+#----[ separator ]----#
+[module/sep]
+type = custom/text
+
+content = " "
+content-padding = 1
+
+[module/sep2]
+type = custom/text
+
+content = "-"
+content-font = 3
+content-foreground = ${color.altblack}
+content-padding = 1
+
+#----[ update ]----#
+[module/updates]
+type = custom/script
+exec = ~/.config/bspwm/scripts/Updates
+
+# tail = true
+interval = 120
+
+format = "%{A1:exo-open --launch TerminalEmulator && sleep 0.6 && xdotool type 'sudo pacman -Syu':}<label>%{A}"
+format-prefix = "%{T6}%{T-}"
+format-prefix-foreground = ${color.magenta}
+
+label = " %{T4}%output%%{T-}"
+label-foreground = ${color.magenta}
+
+#----[ mpv ]----#
+[module/mpv-polybar]
+type = custom/script
+exec = ~/bin/mpv_status
+interval = 1
+label-foreground = ${color.green}
+label-maxlen = 40
+click-left = echo 'cycle pause' | socat - /tmp/mpvsocket
+click-right = echo 'cycle mute' | socat - /tmp/mpvsocket
+
+#----[ EOF ]----#
+SEDO_EOF
+cat > "$CONF/polybar/themes/sedo-onedark.ini" <<'EOF'
+; sedo-onedark - the "onedark" polybar from gitlab.com/sum4n/sedo-wm
+; (commit 3be319a), unmodified: its own config.ini/colors.ini/modules.ini
+; (/decor.ini) are installed byte-for-byte under
+; ~/.config/polybar/sedo/onedark/ and included below. This file only adds
+; what running that bspwm bar under i3 in this rice needs, on top of it:
+;   - top-primary/top-secondary bars (what polybar-launch.sh starts),
+;     inheriting bar/main as-is; top-secondary has no tray
+;   - an i3 workspace module in place of the bspwm one, carrying the bspwm
+;     module's own labels/colors/icons (occupied -> unfocused, empty ->
+;     visible, bspwm-only keys dropped)
+;   - text drawn through an icon font (updates) moved to
+;     font-0, so its digits match the rest of the bar's text
+;   - updates: this distro's own pending-update count (sedo-updates.sh) and
+;     this rice's updater on click, instead of the original's Arch
+;     checkupdates/yay script and alacritty + pacman -Syyu
+;   - date/time: round ends - half-circle caps in the block's own colors
+;     (replacing any slanted powerline decoration right around it)
+;   - tray: a tray module (same background/size/padding as the original's
+;     tray-* settings) at the end of modules-right instead of the legacy
+;     tray-position tray, which polybar 3.7 draws below bars with a border
+;   - text fonts: font-0 and every other text slot a widget's text is drawn
+;     in -> JetBrainsMono Nerd Font Regular 9 (Medium 9 for workspace
+;     labels), the same fonts murz-alt uses; the originals' bold 10-16pt
+;     text reads heavy. Icon/separator fonts are left as they were
+;   - fonts: Font Awesome 6 Pro -> Font Awesome 6 Free and Cartograph CF ->
+;     VictorMono Nerd Font (both originals are paid fonts); every other
+;     font is the original's, installed by the setup script
+;   - width = 100% / offset-x = 0: edge to edge across the screen (most
+;     originals float at 98% width with a 1% side offset)
+;   - network: the original reads $NET_INTERFACE, which polybar-launch.sh
+;     exports (first wifi interface, else the default-route one)
+; [colors] below is only for generate-{vscode,gtk,nvim}-themes.py - the
+; bar itself still uses the original's own [color] section.
+
+; inside a section (as the original's own config.ini does with its
+; includes) so Python's configparser can read this file too
+[global/sedo]
+include-file = ~/.config/polybar/sedo/onedark/config.ini
+
+[colors]
+base     = #282C34
+mantle   = #282C34
+surface0 = #5B6268
+text     = #BBC2CF
+subtext  = #ABB2BF
+red      = #FF6C6B
+green    = #98BE65
+yellow   = #ECBE7B
+blue     = #51AFEF
+purple   = #C678DD
+cyan     = #5699AF
+
+[module/i3]
+type = internal/i3
+; polybar's i3 module needs this to keep workspaces in numeric order
+index-sort = true
+format-font = 9
+pin-workspaces = true
+enable-click = true
+reverse-scroll = false
+fuzzy-match = true
+ws-icon-0 = 1;1
+ws-icon-1 = 2;2
+ws-icon-2 = 3;3
+ws-icon-3 = 4;4
+ws-icon-4 = 5;5
+ws-icon-5 = 6;6
+format = <label-state> <label-mode>
+format-background = ${color.altblack}
+label-focused = "%{T9}%icon%%{T-}"
+label-focused-padding = 1
+label-focused-underline = ${color.altcyan}
+label-focused-foreground = ${color.altcyan}
+label-unfocused = "%{T9}%icon%%{T-}"
+label-unfocused-padding = 1
+label-unfocused-foreground = ${color.cyan}
+label-urgent = "%{T9}%icon%%{T-}"
+label-urgent-foreground = ${color.red}
+label-visible = "%{T9}%icon%%{T-}"
+label-visible-padding = 1
+label-visible-foreground = ${color.white}
+ws-icon-6 = 7;7
+ws-icon-7 = 8;8
+ws-icon-8 = 9;9
+ws-icon-9 = 10;10
+
+[module/updates-i3]
+inherit = module/updates
+exec = ~/.local/bin/sedo-updates.sh
+format = "%{A1:kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &:}<label>%{A}"
+label = " %{T1}%output%%{T-}"
+
+[module/date-cap-l]
+type = custom/text
+format = "%{T8}%{T-}"
+format-foreground = ${color.cyan}
+
+[module/date-cap-r]
+type = custom/text
+format = "%{T8}%{T-}"
+format-foreground = ${color.blue}
+
+[module/tray-i3]
+type = internal/tray
+format-background = ${color.background}
+tray-background = ${color.background}
+tray-size = 16
+tray-padding = 0
+
+[bar/top-primary]
+inherit = bar/main
+monitor = ${env:MONITOR:}
+width = 100%
+offset-x = 0
+modules-left = wl i3 wr sep mpd sep
+modules-center = 
+modules-right = updates-i3 sep pulseaudio sep network_ext sep date-cap-l date date-cap-r tray-i3
+tray-position = none
+font-0 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
+font-3 = "Font Awesome 6 Free Solid:style=Solid:size=10;3"
+font-4 = "Font Awesome 6 Free Regular:style=Regular:size=12;3"
+font-5 = "Font Awesome 6 Free Solid:style=Solid:size=12;3"
+font-7 = "JetBrainsMono Nerd Font:pixelsize=16;2"
+font-8 = "JetBrainsMono Nerd Font:style=Medium:size=9;2"
+
+[bar/top-secondary]
+inherit = bar/top-primary
+modules-right = updates-i3 sep pulseaudio sep network_ext sep date-cap-l date date-cap-r
+EOF
+cat > "$CONF/rofi/themes/sedo-onedark.rasi" <<'EOF'
+* {
+    base:     #282C34ff;
+    mantle:   #282C34ff;
+    text:     #BBC2CFff;
+    subtext:  #5B6268ff;
+    mauve:    #51AFEFff;
+    surface0: #5B6268ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/sedo-onedark-powermenu.rasi" <<'EOF'
+* {
+    base:     #282C34ff;
+    mantle:   #282C34ff;
+    text:     #BBC2CFff;
+    subtext:  #5B6268ff;
+    mauve:    #51AFEFff;
+    surface0: #5B6268ff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/starship/themes/sedo-onedark.toml" <<'EOF'
+format = """
+[](#282C34)\
+$python\
+$username\
+[](bg:#5B6268 fg:#282C34)\
+$directory\
+[](fg:#5B6268 bg:#5B6268)\
+$git_branch\
+$git_status\
+[](fg:#5B6268 bg:#A2CD83)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#A2CD83 bg:#C678DD)\
+$docker_context\
+[](fg:#C678DD bg:#51AFEF)\
+$time\
+[ ](fg:#51AFEF)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#282C34"
+style_root = "bg:#282C34"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#5B6268"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#A2CD83"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#C678DD"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#A2CD83"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#A2CD83"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#5B6268"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#5B6268"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#A2CD83"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#A2CD83"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#A2CD83"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#A2CD83"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#A2CD83"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#A2CD83"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#282C34"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#A2CD83"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#51AFEF"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/dunst/themes/sedo-onedark.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#51AFEF"
+corner_radius = 10
+background = "#282C34"
+foreground = "#BBC2CF"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#5B6268"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#282C34"
+foreground = "#5B6268"
+frame_color = "#5B6268"
+timeout = 4
+
+[urgency_normal]
+background = "#282C34"
+foreground = "#BBC2CF"
+frame_color = "#51AFEF"
+timeout = 6
+
+[urgency_critical]
+background = "#282C34"
+foreground = "#FF6C6B"
+frame_color = "#FF6C6B"
+timeout = 0
+EOF
+cat > "$CONF/i3/themes/sedo-onedark.conf" <<'EOF'
+client.focused          #51AFEF  #282C34  #BBC2CF  #51AFEF   #51AFEF
+client.unfocused        #5B6268  #282C34  #5B6268  #5B6268   #5B6268
+client.focused_inactive #5B6268  #282C34  #5B6268  #5B6268   #5B6268
+client.urgent           #FF6C6B  #282C34  #BBC2CF  #FF6C6B   #FF6C6B
+EOF
+cat > "$CONF/kitty/themes/sedo-onedark.conf" <<'EOF'
+# sedo-onedark - kitty colors from sedo-wm's onedark palette, mapped the way
+# sedo-wm's own scripts/color_push writes its kitty colors.ini
+background #282C34
+foreground #BBC2CF
+url_color #98BE65
+
+selection_background #BBC2CF
+selection_foreground #282C34
+
+cursor #BBC2CF
+cursor_text_color #1C1F24
+
+color0 #5B6268
+color8 #5B6268
+color1 #FF6C6B
+color9 #DA8548
+color2 #98BE65
+color10 #A2CD83
+color3 #ECBE7B
+color11 #EFCA84
+color4 #51AFEF
+color12 #3071DB
+color5 #C678DD
+color13 #A9A1E1
+color6 #5699AF
+color14 #46D9FF
+color7 #ABB2BF
+color15 #DFDFDF
+EOF
+
+mkdir -p "$CONF/polybar/sedo/tokyo_night"
+cat > "$CONF/polybar/sedo/tokyo_night/colors.ini" <<'SEDO_EOF'
+[color]
+
+;; Dark Add FC at the beginning #FC1E1F29 for 99 transparency
+bg = #1A1B26
+fg = #BECAEF
+mb = #282A36
+
+trans = #00000000
+white = #FFFFFF
+black = #000000
+
+;; Colors
+
+red = #f7768e
+pink = #FF0677
+purple = #583794
+blue = #7aa2f7
+blue-arch = #0A9CF5
+cyan = #4DD0E1
+teal = #00B19F
+green = #9ece6a
+lime = #B9C244
+yellow = #e0af68
+amber = #FBC02D
+orange = #E57C46
+brown = #AC8476
+grey = #8C8C8C
+indigo = #6C77BB
+blue-gray = #6D8895
+
+SEDO_EOF
+cat > "$CONF/polybar/sedo/tokyo_night/config.ini" <<'SEDO_EOF'
+[gbobal/wm]
+
+margin-bottom = 0
+margin-top = 0
+
+include-file = colors.ini
+include-file = modules.ini
+
+[bar/emi-bar]
+
+monitor-strict = false
+override-redirect = false
+
+bottom = false
+fixed-center = true
+
+width = 98%
+height = 22
+
+offset-x = 1%
+offset-y = 0.5%
+
+background = ${color.bg}
+foreground = ${color.fg}
+
+radius = 0.0
+
+line-size = 2
+line-color = ${color.blue}
+
+border-size = 6px
+border-color = ${color.bg}
+
+padding = 1
+
+module-margin-left = 0
+module-margin-right = 0
+
+font-0 = "Cartograph CF:size=11;2"
+font-1 = "Font Awesome 6 Pro Solid:size=10;3"
+font-2 = "BlexMono Nerd Font:style=Bold:size=12;3"
+font-3 = "Material Design Icons Desktop:size=17;5"
+font-4 = "MesloLGS NF:style=Regular:size=13;3"
+font-5 = "SpaceMono Nerd Font:style=Regular:size=14;2"
+font-6 = "Material Design Icons Desktop:size=14;3"
+
+modules-left = bspwm sep sep mpd sep
+modules-center = 
+modules-right = updates sep sep cpu_bar sep sep battery sep bi filesystem dots pulseaudio bd sep network sep date
+
+spacing = 0
+separator = 
+dim-value = 1.0
+
+;;locale = es_MX.UTF-8
+
+tray-position = right
+tray-detached = false
+tray-maxsize = 16
+tray-background = ${color.bg}
+tray-offset-x = 0
+tray-offset-y = 0
+tray-padding = 0
+tray-scale = 1.0
+
+wm-restack = bspwm
+enable-ipc = true
+
+cursor-click = pointer
+cursor-scroll = 
+
+[settings]
+
+screenchange-reload = false
+
+compositing-background = source
+compositing-foreground = over
+compositing-overline = over
+compositing-underline = over
+compositing-border = over
+
+pseudo-transparency = false
+SEDO_EOF
+cat > "$CONF/polybar/sedo/tokyo_night/modules.ini" <<'SEDO_EOF'
+[module/bi]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.mb}
+content-background          = ${color.bg}
+
+[module/bd]
+type                        = custom/text
+content                     = "%{T5}%{T-}"
+content-foreground          = ${color.mb}
+content-background          = ${color.bg}
+
+######################################################
+
+[module/title]
+type = internal/xwindow
+format = <label>
+format-background = ${color.grey}
+format-foreground = ${color.bg}
+format-padding = 1
+
+label = %title%
+label-font = 3
+label-maxlen = 55
+
+label-empty = No Window
+label-empty-foreground = ${color.bg}
+
+########################################################
+
+[module/date]
+type = internal/date
+
+interval = 1.0
+
+time = "%A - %B%d ( %H:%M ) "
+format-background = ${color.yellow}
+format-foreground = ${color.bg}
+date-alt = " %A, %d %B %Y"
+
+format = <label>
+format-prefix = " "
+format-prefix-background = ${color.yellow}
+format-prefix-foreground = ${color.bg}
+
+label = %date% %time%
+
+######################################################
+
+[module/filesystem]
+type = internal/fs
+
+mount-0 = /
+interval = 60
+fixed-values = true
+
+format-mounted = <label-mounted>
+format-mounted-prefix = " "
+format-mounted-prefix-background = ${color.mb}
+format-mounted-prefix-foreground = ${color.orange}
+
+format-unmounted = <label-unmounted>
+format-unmounted-prefix = " "
+
+label-mounted = %used%
+label-mounted-background = ${color.mb}
+label-mounted-foreground = ${color.orange}
+
+label-unmounted = %mountpoint%: not mounted
+
+######################################################
+
+[module/network]
+type = internal/network
+interface = ${env:NET_INTERFACE}
+
+interval = 3.0
+accumulate-stats = true
+unknown-as-up = true
+
+format-connected = <label-connected>
+format-connected-prefix = " "
+; format-connected-background = ${color.brown}
+format-connected-foreground = ${color.green}
+
+speed-unit = ""
+label-connected = " %netspeed% "
+label-connected-font = 3
+; label-connected-background = ${color.brown}
+label-connected-foreground = ${color.amber}
+
+format-disconnected = <label-disconnected>
+format-disconnected-prefix = " "
+format-disconnected-foreground = ${color.red}
+; format-disconnected-background = ${color.brown}
+
+label-disconnected = " NO_INTERNEt "
+label-disconnected-font = 3
+label-disconnected-foreground = ${color.red}
+
+######################################################
+
+[module/pulseaudio]
+type = internal/pulseaudio
+
+;;sink = alsa_output.pci-0000_00_1b.0.analog-stereo
+use-ui-max = true
+interval = 5
+
+format-volume = <ramp-volume><label-volume>
+format-volume-prefix = ""
+format-volume-background = ${color.mb}
+format-volume-foreground = ${color.indigo}
+
+label-volume = " %percentage%"
+label-volume-background = ${color.mb}
+label-volume-foreground = ${color.fg}
+
+format-muted = <label-muted>
+format-muted-prefix = 
+format-muted-foreground = ${color.indigo}
+format-muted-background = ${color.mb}
+label-muted = " Muted "
+label-muted-foreground = ${color.red}
+label-muted-background = ${color.mb}
+
+ramp-volume-0 = 
+ramp-volume-1 = 
+ramp-volume-2 = 
+ramp-volume-3 = 
+ramp-volume-4 = 
+
+click-right = pavucontrol
+
+######################################################
+
+[module/bspwm]
+type = internal/bspwm
+
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+
+ws-icon-0 = 1;
+ws-icon-1 = 2;󰈹
+ws-icon-2 = 3;
+ws-icon-3 = 4;
+ws-icon-4 = 5;
+ws-icon-5 = 6;󰗃
+
+format = "<label-state> <label-mode>"
+format-foreground = ${color.fg}
+format-font = 6
+
+label-focused = "%{T6} %icon% %{T-}"
+label-focused-font = 6
+label-focused-underline = ${color.yellow}
+label-focused-padding = 0
+label-focused-foreground = ${color.yellow}
+
+label-occupied = "%{T6} %icon% %{T-}"
+label-occupied-font = 6
+label-occupied-padding = 0
+label-occupied-foreground = ${color.blue}
+
+label-urgent = "%{T6} %icon% %{T-}"
+label-urgent-padding = 2
+
+label-empty = "%{T6} %icon% %{T-}"
+label-empty-font = 6
+label-empty-foreground = ${color.blue-gray}
+label-empty-padding = 0
+
+scroll-up = bspwm-desknext
+scroll-down = bspwm-deskprev
+
+######################################################
+
+[module/updates]
+type = custom/script
+exec = ~/.config/bspwm/scripts/Updates
+interval = 120
+; tail = true
+label = "%output% "
+label-font = 2
+label-foreground = ${color.brown}
+click-left = alacritty --class float,float -e sudo pacman -Syyu
+format-prefix = "  "
+format-prefix-foreground = ${color.brown}
+
+######################################################
+
+[module/launcher]
+type = custom/text
+
+content = 󰣇
+content-foreground = ${color.blue-arch}
+content-font = 4
+
+click-left = rofi -no-lazy-grab -show drun -theme $HOME/.config/rofi/themes/sedo_launcher.rasi
+click-right = sedo_selector
+
+######################################################
+
+[module/sep]
+type = custom/text
+content = " "
+content-foreground = ${color.bg}
+
+######################################################
+
+[module/dots]
+type = custom/text
+content = "  "
+; content-font = 3
+content-foreground = ${color.blue-gray}
+content-background = ${color.mb}
+
+######################################################
+
+[module/cpu_bar]
+type = internal/cpu
+
+interval = 0.5
+
+format = <label>
+format-prefix = "%{T6} %{T-}"
+format-prefix-background = ${color.bg}
+format-prefix-foreground = ${color.red}
+
+label = "%percentage%%"
+label-foreground = ${color.red}
+label-background = ${color.bg}
+
+######################################################
+
+[module/memory_bar]
+type = internal/memory
+
+interval = 3
+
+format = <label>
+format-prefix = " "
+format-prefix-background = ${color.mb}
+format-prefix-foreground = ${color.cyan}
+
+label = %used%
+label-background = ${color.mb}
+
+######################################################
+
+[module/mpd]
+type                    = internal/mpd
+host                    = 127.0.0.1
+port                    = 6600
+interval        		= 2
+format-online           = "<icon-repeat> %{F#9ece6a}[%{F-} %{A1:mpc toggle:}<label-song>%{A} %{F#9ece6a}]%{F-}"
+format-offline          = ""
+label-song              = "%title%"
+label-song-maxlen		= 21
+icon-repeat             = ""
+
+icon-repeat-background  = ${color.bg}
+toggle-on-foreground    = ${color.red}
+toggle-off-foreground   = ${color.red}
+
+#######################################################
+
+[module/battery]
+;https://github.com/jaagr/polybar/wiki/Module:-battery
+type = internal/battery
+battery = BAT0
+adapter = AC0
+full-at = 100
+
+format-charging = <animation-charging><label-charging>
+label-charging =   " %percentage%%"
+label-charging-foreground = ${color.cyan}
+; label-charging-underline = ${color.blue}
+
+format-discharging = <ramp-capacity><label-discharging>
+label-discharging =   "%percentage%%"
+label-discharging-foreground = ${color.cyan}
+; label-discharging-underline = ${color.blue}
+
+format-full-prefix = "󰁹"
+format-full-prefix-font = 7
+format-full-prefix-foreground = ${color.cyan}
+; format-full-prefix-underline = ${color.blue}
+
+label-full =   " %percentage%%"
+label-full-foreground = ${color.cyan}
+; label-full-underline = ${color.blue}
+
+ramp-capacity-0 = "󱃍"
+ramp-capacity-1 = "󰁻"
+ramp-capacity-2 = "󰁼"
+ramp-capacity-3 = "󰁽"
+ramp-capacity-4 = "󰁾"
+ramp-capacity-5 = "󰂀"
+ramp-capacity-6 = "󰁹"
+ramp-capacity-font = 7
+; ramp-capacity-underline = ${color.blue}
+ramp-capacity-foreground = ${color.cyan}
+
+animation-charging-0 = "󰢟"
+animation-charging-1 = "󱊤"
+animation-charging-2 = "󱊥"
+animation-charging-3 = "󱊦"
+; animation-charging-4 = "   "
+animation-charging-font = 7
+animation-charging-foreground = ${color.cyan}
+; animation-charging-underline = ${color.blue}
+animation-charging-framerate = 750
+
+####################################################
+SEDO_EOF
+cat > "$CONF/polybar/themes/sedo-tokyo-night.ini" <<'EOF'
+; sedo-tokyo-night - the "tokyo_night" polybar from gitlab.com/sum4n/sedo-wm
+; (commit 3be319a), unmodified: its own config.ini/colors.ini/modules.ini
+; (/decor.ini) are installed byte-for-byte under
+; ~/.config/polybar/sedo/tokyo_night/ and included below. This file only adds
+; what running that bspwm bar under i3 in this rice needs, on top of it:
+;   - top-primary/top-secondary bars (what polybar-launch.sh starts),
+;     inheriting bar/emi-bar as-is; top-secondary has no tray
+;   - an i3 workspace module in place of the bspwm one, carrying the bspwm
+;     module's own labels/colors/icons (occupied -> unfocused, empty ->
+;     visible, bspwm-only keys dropped)
+;   - wm-restack = i3 instead of bspwm
+;   - text drawn through an icon font (updates) moved to
+;     font-0, so its digits match the rest of the bar's text
+;   - battery: battery/adapter from $LBATTERY/$LADAPTER (polybar-launch.sh sets
+;     them) instead of the original's hardcoded BAT0/AC0
+;   - updates: this distro's own pending-update count (sedo-updates.sh) and
+;     this rice's updater on click, instead of the original's Arch
+;     checkupdates/yay script and alacritty + pacman -Syyu
+;   - date/time: round ends - half-circle caps in the block's own colors
+;     (replacing any slanted powerline decoration right around it)
+;   - tray: a tray module (same background/size/padding as the original's
+;     tray-* settings) at the end of modules-right instead of the legacy
+;     tray-position tray, which polybar 3.7 draws below bars with a border
+;   - text fonts: font-0 and every other text slot a widget's text is drawn
+;     in -> JetBrainsMono Nerd Font Regular 9 (Medium 9 for workspace
+;     labels), the same fonts murz-alt uses; the originals' bold 10-16pt
+;     text reads heavy. Icon/separator fonts are left as they were
+;   - fonts: Font Awesome 6 Pro -> Font Awesome 6 Free and Cartograph CF ->
+;     VictorMono Nerd Font (both originals are paid fonts); every other
+;     font is the original's, installed by the setup script
+;   - workspace icons: one per murz-alt workspace tag - web, Slack, email,
+;     1Password, VS Code, Windows, media, terminal, misc (Material Design
+;     glyphs) in JetBrainsMono Nerd Font 11, instead of the original's icons
+;   - width = 100% / offset-x = 0: edge to edge across the screen (most
+;     originals float at 98% width with a 1% side offset)
+;   - network: the original reads $NET_INTERFACE, which polybar-launch.sh
+;     exports (first wifi interface, else the default-route one)
+; [colors] below is only for generate-{vscode,gtk,nvim}-themes.py - the
+; bar itself still uses the original's own [color] section.
+
+; inside a section (as the original's own config.ini does with its
+; includes) so Python's configparser can read this file too
+[global/sedo]
+include-file = ~/.config/polybar/sedo/tokyo_night/config.ini
+
+[colors]
+base     = #1A1B27
+mantle   = #1A1B27
+surface0 = #565A6E
+text     = #C0CAF5
+subtext  = #CFC9C2
+red      = #F7768E
+green    = #9ECE6A
+yellow   = #E0AF68
+blue     = #7AA2F7
+purple   = #BB9AF7
+cyan     = #7DCFFF
+
+[module/i3]
+type = internal/i3
+; polybar's i3 module needs this to keep workspaces in numeric order
+index-sort = true
+ws-icon-0 = 1;󰖟
+ws-icon-1 = 2;󰒱
+ws-icon-2 = 3;󰇮
+ws-icon-3 = 4;󰢁
+ws-icon-4 = 5;󰨞
+ws-icon-5 = 6;󰖳
+ws-icon-6 = 7;󰐌
+ws-icon-7 = 8;󰆍
+ws-icon-8 = 9;󰟃
+enable-click = true
+enable-scroll = true
+reverse-scroll = true
+pin-workspaces = true
+format = "<label-state> <label-mode>"
+format-foreground = ${color.fg}
+format-font = 9
+label-focused = "%{T9} %icon% %{T-}"
+label-focused-font = 9
+label-focused-underline = ${color.yellow}
+label-focused-padding = 0
+label-focused-foreground = ${color.yellow}
+label-unfocused = "%{T9} %icon% %{T-}"
+label-unfocused-font = 9
+label-unfocused-padding = 0
+label-unfocused-foreground = ${color.blue}
+label-urgent = "%{T9} %icon% %{T-}"
+label-urgent-padding = 2
+label-visible = "%{T9} %icon% %{T-}"
+label-visible-font = 9
+label-visible-foreground = ${color.blue-gray}
+label-visible-padding = 0
+ws-icon-default = ""
+
+[module/battery-i3]
+inherit = module/battery
+battery = ${env:LBATTERY:BAT0}
+adapter = ${env:LADAPTER:AC}
+
+[module/updates-i3]
+inherit = module/updates
+exec = ~/.local/bin/sedo-updates.sh
+click-left = kitty --class UpdatesTask -e ~/.local/bin/software-update.sh &
+label-font = 1
+
+[module/date-cap-l]
+type = custom/text
+format = "%{T8}%{T-}"
+format-foreground = ${color.yellow}
+
+[module/date-cap-r]
+type = custom/text
+format = "%{T8}%{T-}"
+format-foreground = ${color.yellow}
+
+[module/tray-i3]
+type = internal/tray
+format-background = ${color.bg}
+tray-background = ${color.bg}
+tray-size = 16
+tray-padding = 0
+
+[bar/top-primary]
+inherit = bar/emi-bar
+monitor = ${env:MONITOR:}
+width = 100%
+offset-x = 0
+modules-left = i3 sep sep mpd sep
+modules-center = 
+modules-right = updates-i3 sep sep cpu_bar sep sep battery-i3 sep bi filesystem dots pulseaudio bd sep network sep date-cap-l date date-cap-r tray-i3
+tray-position = none
+wm-restack = i3
+font-0 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
+font-1 = "Font Awesome 6 Free Solid:size=10;3"
+font-2 = "JetBrainsMono Nerd Font:style=Regular:size=9;2"
+font-7 = "JetBrainsMono Nerd Font:pixelsize=16;2"
+font-8 = "JetBrainsMono Nerd Font:size=11;3"
+
+[bar/top-secondary]
+inherit = bar/top-primary
+modules-right = updates-i3 sep sep cpu_bar sep sep battery-i3 sep bi filesystem dots pulseaudio bd sep network sep date-cap-l date date-cap-r
+EOF
+cat > "$CONF/rofi/themes/sedo-tokyo-night.rasi" <<'EOF'
+* {
+    base:     #1A1B27ff;
+    mantle:   #1A1B27ff;
+    text:     #C0CAF5ff;
+    subtext:  #565A6Eff;
+    mauve:    #7AA2F7ff;
+    surface0: #565A6Eff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 30%;
+    border-radius: 12px;
+    background-color: @base;
+}
+
+inputbar {
+    padding: 10px;
+    background-color: @mantle;
+    border-radius: 8px;
+    children: [prompt, entry];
+}
+
+prompt { text-color: @mauve; padding: 0 8px 0 0; }
+entry  { text-color: @text; }
+
+listview {
+    lines: 14;
+    padding: 8px 0;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @surface0;
+    text-color: @mauve;
+}
+EOF
+cat > "$CONF/rofi/themes/sedo-tokyo-night-powermenu.rasi" <<'EOF'
+* {
+    base:     #1A1B27ff;
+    mantle:   #1A1B27ff;
+    text:     #C0CAF5ff;
+    subtext:  #565A6Eff;
+    mauve:    #7AA2F7ff;
+    surface0: #565A6Eff;
+
+    background-color: @base;
+    text-color: @text;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width: 560px;
+    background-color: @base;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 10px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    children: [ element-text ];
+    padding: 26px;
+    border-radius: 16px;
+    background-color: @mantle;
+}
+element normal.normal {
+    text-color: @text;
+}
+element selected {
+    background-color: @surface0;
+    border: 2px;
+    border-color: @mauve;
+    border-radius: 14px;
+}
+element-text {
+    font: "JetBrainsMono Nerd Font 26";
+    background-color: transparent;
+    text-color: inherit;
+    /* Nerd Font glyphs' advance width isn't visually symmetric around their
+       ink - 0.5 (true center) renders visibly right-of-center, so this is
+       nudged left. */
+    horizontal-align: 0.32;
+    vertical-align: 0.5;
+}
+EOF
+cat > "$CONF/starship/themes/sedo-tokyo-night.toml" <<'EOF'
+format = """
+[](#1A1B27)\
+$python\
+$username\
+[](bg:#565A6E fg:#1A1B27)\
+$directory\
+[](fg:#565A6E bg:#565A6E)\
+$git_branch\
+$git_status\
+[](fg:#565A6E bg:#485E30)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#485E30 bg:#BB9AF7)\
+$docker_context\
+[](fg:#BB9AF7 bg:#7AA2F7)\
+$time\
+[ ](fg:#7AA2F7)\
+"""
+command_timeout = 5000
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+# You can also replace your username with a neat symbol like  to save some space
+[username]
+show_always = true
+style_user = "bg:#1A1B27"
+style_root = "bg:#1A1B27"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#565A6E"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = "  "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important  " = "  "
+
+[c]
+symbol = " "
+style = "bg:#485E30"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#BB9AF7"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#485E30"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#485E30"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#565A6E"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#565A6E"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#485E30"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#485E30"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#485E30"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#485E30"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#485E30"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#485E30"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#1A1B27"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#485E30"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#7AA2F7"
+format = '[ $time ]($style)'
+EOF
+cat > "$CONF/dunst/themes/sedo-tokyo-night.dunstrc" <<'EOF'
+[global]
+font = JetBrainsMono Nerd Font 10
+frame_width = 2
+frame_color = "#7AA2F7"
+corner_radius = 10
+background = "#1A1B27"
+foreground = "#C0CAF5"
+width = 320
+height = 100
+offset = 12x40
+padding = 12
+horizontal_padding = 12
+separator_color = "#565A6E"
+mouse_left_click = do_action, close_current
+mouse_middle_click = do_action, close_all
+mouse_right_click = close_all
+
+[urgency_low]
+background = "#1A1B27"
+foreground = "#565A6E"
+frame_color = "#565A6E"
+timeout = 4
+
+[urgency_normal]
+background = "#1A1B27"
+foreground = "#C0CAF5"
+frame_color = "#7AA2F7"
+timeout = 6
+
+[urgency_critical]
+background = "#1A1B27"
+foreground = "#F7768E"
+frame_color = "#F7768E"
+timeout = 0
+EOF
+cat > "$CONF/i3/themes/sedo-tokyo-night.conf" <<'EOF'
+client.focused          #7AA2F7  #1A1B27  #C0CAF5  #7AA2F7   #7AA2F7
+client.unfocused        #565A6E  #1A1B27  #565A6E  #565A6E   #565A6E
+client.focused_inactive #565A6E  #1A1B27  #565A6E  #565A6E   #565A6E
+client.urgent           #F7768E  #1A1B27  #C0CAF5  #F7768E   #F7768E
+EOF
+cat > "$CONF/kitty/themes/sedo-tokyo-night.conf" <<'EOF'
+# sedo-tokyo-night - kitty colors from sedo-wm's tokyo_night palette, mapped the way
+# sedo-wm's own scripts/color_push writes its kitty colors.ini
+background #1A1B27
+foreground #C0CAF5
+url_color #9ECE6A
+
+selection_background #C0CAF5
+selection_foreground #1A1B27
+
+cursor #C0CAF5
+cursor_text_color #24283B
+
+color0 #565A6E
+color8 #565A6E
+color1 #F7768E
+color9 #8C4351
+color2 #9ECE6A
+color10 #485E30
+color3 #E0AF68
+color11 #FF9E64
+color4 #7AA2F7
+color12 #166775
+color5 #BB9AF7
+color13 #5A4A78
+color6 #7DCFFF
+color14 #2AC3DE
+color7 #CFC9C2
+color15 #9699A3
+EOF
+
+# <<< sedo-wm themes (generated) <<<
 
 # dunst has no config-reload-on-file-change of its own the way starship
 # does (it reads dunstrc once at startup, unlike starship which re-reads
