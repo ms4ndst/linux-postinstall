@@ -36304,6 +36304,293 @@ label-foreground = ${colors.widget-bg}
 [settings]
 screenchange-reload = true
 EOF
+cat > "$CONF/polybar/themes/murz-alt.ini" <<'EOF'
+; Murz Alt - murz (below) with a short content tag per workspace instead
+; of murz's circles: 1 WEB (web browser), 2 SLK (Slack), 3 EML (email),
+; 4 1PW (1Password), 5 VSC (VS Code), 6 WIN (Windows App), 7 MED (media),
+; 8 TRM (terminal), 9 MSC (misc). Tags are polybar's own ws-icon-N, so they
+; follow the workspace's name, not what's actually open on it; any other
+; workspace falls back to murz's circle. Font-3 (%{T4}, JetBrainsMono
+; Medium) and padding 1 each, same green/purple/blue/red state colors.
+; Everything else - and rofi/kitty/starship/dunst/i3/GTK/nvim/VS Code -
+; is plain murz (polybar-theme.sh strips the "-alt" suffix for the shared
+; ones, the rest are copies).
+;
+[colors]
+bg0 = #282828
+bg1 = #3c3836
+fg0 = #fbf1c7
+fg1 = #ebdbb2
+
+red0 = #fb4934
+red1 = #cc241d
+green0 = #b8bb26
+green1 = #98971a
+yellow0 = #fabd2f
+yellow1 = #d79921
+blue0 = #83a598
+blue1 = #458588
+purple0 = #d3869b
+purple1 = #b16286
+aqua0 = #8ec07c
+aqua1 = #689d6a
+
+semi-trans = #ee282828
+full-trans = #00282828
+widget-bg = #99282828
+
+; Aliases for generate-{vscode,gtk,nvim}-themes.py, which read this rice's
+; own base/text/red/... key names out of [colors] - not used by the bar.
+base     = #282828
+mantle   = #282828
+surface0 = #3c3836
+text     = #ebdbb2
+subtext  = #a89984
+red      = #fb4934
+green    = #b8bb26
+yellow   = #fabd2f
+blue     = #83a598
+purple   = #d3869b
+cyan     = #8ec07c
+orange   = #fe8019
+
+[bar/base]
+monitor = ${env:MONITOR:}
+width = 100%
+height = 30
+
+bottom = false
+fixed-center = true
+
+offset-x = 0
+offset-y = 0
+
+background = ${colors.full-trans}
+foreground = ${colors.fg0}
+
+wm-restack = i3
+
+; icons normal size
+font-0 = "JetBrainsMono Nerd Font:style=Normal:size=11;3"
+; icons big size (most for border)
+font-1 = "JetBrainsMono Nerd Font:style=Normal:size=19;5"
+; text normal
+font-2 = "JetBrainsMono Nerd Font:style=Normal:size=9;3"
+; text medium
+font-3 = "JetBrainsMono Nerd Font:style=Medium:size=9;3"
+; text italic
+font-4 = "JetBrainsMono Nerd Font:style=Italic:size=9;3"
+; text bold
+font-5 = "JetBrainsMono Nerd Font:style=Bold:size=9;3"
+; material icons
+font-6 = "Material Icons:size=11;4"
+
+modules-left = pill-left i3 pill-right
+modules-center = border-round-left-blue weather date border-round-right-blue
+
+[bar/top-primary]
+inherit = bar/base
+modules-right = pill-left cpu memory pulseaudio backlight battery wireless tray pill-right
+
+[bar/top-secondary]
+inherit = bar/base
+modules-right = pill-left cpu memory pulseaudio backlight battery wireless pill-right
+
+[module/i3]
+type = internal/i3
+format-background = ${colors.widget-bg}
+index-sort = true
+ws-icon-0 = "1;WEB"
+ws-icon-1 = "2;SLK"
+ws-icon-2 = "3;EML"
+ws-icon-3 = "4;1PW"
+ws-icon-4 = "5;VSC"
+ws-icon-5 = "6;WIN"
+ws-icon-6 = "7;MED"
+ws-icon-7 = "8;TRM"
+ws-icon-8 = "9;MSC"
+ws-icon-default = "󰄰"
+
+format = <label-state> <label-mode>
+format-padding = 1
+
+label-mode = %mode%
+label-mode-background = ${colors.yellow0}
+
+label-focused = %{T4}%icon%%{T-}
+label-focused-foreground = ${colors.green0}
+label-focused-padding = 1
+
+label-unfocused = %{T4}%icon%%{T-}
+label-unfocused-foreground = ${colors.purple0}
+label-unfocused-padding = 1
+
+label-visible = %{T4}%icon%%{T-}
+label-visible-foreground = ${colors.blue0}
+label-visible-padding = 1
+
+label-urgent = %{T4}%icon%%{T-}
+label-urgent-foreground = ${colors.red0}
+label-urgent-padding = 1
+
+[module/date]
+type = internal/date
+interval = 1
+
+time = "%H:%M"
+time-alt = "%a, %b %d %H:%M:%S"
+
+format-background = ${colors.blue1}
+format-padding = 1
+format-prefix = %{T1}󱑎 %{T-}
+
+label = %{T3}%time%%{T-}
+
+[module/weather]
+type = custom/script
+interval = 1800
+
+exec = ~/.local/bin/polybar-weather.py
+
+format-background = ${colors.blue1}
+format-padding = 1
+format-prefix = %{T1}󰖐 %{T-}
+
+label = %{T3}%output%%{T-}
+
+[module/cpu]
+type = internal/cpu
+format-background = ${colors.widget-bg}
+interval = 1
+
+format-padding = 1
+format-prefix = %{T1}󰍛 %{T-}
+format-prefix-foreground = ${colors.purple0}
+
+label = %{T3}%percentage:2%%%{T-}
+
+[module/memory]
+type = internal/memory
+format-background = ${colors.widget-bg}
+interval = 1
+
+format-padding = 1
+format-prefix = %{T1}󰘚 %{T-}
+format-prefix-foreground = ${colors.aqua0}
+
+label = %{T3}%percentage_used%%%{T-}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+format-volume-background = ${colors.widget-bg}
+format-muted-background = ${colors.widget-bg}
+use-ui-max = false
+
+format-volume-padding = 1
+format-volume-prefix = %{T1}󰕾 %{T-}
+format-volume-prefix-foreground = ${colors.yellow0}
+
+label-volume = %{T3}%percentage%%%{T-}
+label-volume-foreground = ${colors.fg0}
+
+format-muted-padding = 1
+format-muted-prefix = %{T1}󰖁 %{T-}
+format-muted-prefix-foreground = ${colors.red0}
+
+label-muted = %{T3}%percentage%%%{T-}
+label-muted-foreground = ${colors.fg0}
+
+[module/backlight]
+type = internal/backlight
+format-background = ${colors.widget-bg}
+use-actual-brightness = false
+
+format-padding = 1
+format-prefix = %{T1}󰖨 %{T-}
+format-prefix-foreground = ${colors.yellow0}
+
+label = %{T3}%percentage%%%{T-}
+
+[module/battery]
+type = internal/battery
+format-charging-background = ${colors.widget-bg}
+format-discharging-background = ${colors.widget-bg}
+format-full-background = ${colors.widget-bg}
+battery = BAT0
+adapter = AC
+full-at = 98
+
+format-charging-padding = 1
+format-charging-prefix = %{T1}󰠠 %{T-}
+format-charging-prefix-foreground = ${colors.aqua0}
+
+label-charging = %{T3}%percentage%%%{T-}
+
+format-discharging-padding = 1
+format-discharging-prefix = %{T1}󰠠 %{T-}
+format-discharging-prefix-foreground = ${colors.blue0}
+
+label-discharging = %{T3}%percentage%%%{T-}
+
+format-full-padding = 1
+format-full-prefix = %{T1}󰠠 %{T-}
+format-full-prefix-foreground = ${colors.green0}
+
+label-full = %{T3}%percentage%%%{T-}
+
+[module/wireless]
+type = internal/network
+format-connected-background = ${colors.widget-bg}
+format-disconnected-background = ${colors.widget-bg}
+interface-type = wireless
+interval = 3.0
+
+format-connected-padding = 1
+format-connected-prefix = %{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:~/.local/bin/wifi-toggle.sh &:}%{T1}󰖩 %{T-}%{A}%{A}%{A}
+format-connected-prefix-foreground = ${colors.green0}
+
+label-connected = %{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:~/.local/bin/wifi-toggle.sh &:}%{T1} %{T-}%{T3}%downspeed%%{T-}%{A}%{A}%{A}
+
+format-disconnected-padding = 1
+format-disconnected-prefix = %{A1:~/.local/bin/wifi-menu.sh &:}%{A2:nm-connection-editor &:}%{A3:~/.local/bin/wifi-toggle.sh &:}%{T1}󰖪 %{T-}%{A}%{A}%{A}
+format-disconnected-prefix-foreground = ${colors.red0}
+
+[module/tray]
+type = internal/tray
+format-background = ${colors.widget-bg}
+tray-background = ${colors.widget-bg}
+
+format-padding = 1
+tray-size = 60%
+tray-spacing = 8px
+
+[module/border-round-left-blue]
+type = custom/text
+
+label = %{T2}%{T-}
+label-foreground = ${colors.blue1}
+
+[module/border-round-right-blue]
+type = custom/text
+
+label = %{T2}%{T-}
+label-foreground = ${colors.blue1}
+
+[module/pill-left]
+type = custom/text
+
+label = %{T2}%{T-}
+label-foreground = ${colors.widget-bg}
+
+[module/pill-right]
+type = custom/text
+
+label = %{T2}%{T-}
+label-foreground = ${colors.widget-bg}
+
+[settings]
+screenchange-reload = true
+EOF
 
 # Hidrot is Nord through and through (the source's own colorscheme/nord.ini
 # is the standard Nord palette) - reuse this rice's existing Nord rofi/kitty/
@@ -36626,6 +36913,13 @@ client.unfocused        #665C54  #282828  #665C54  #665C54   #665C54
 client.focused_inactive #665C54  #282828  #665C54  #665C54   #665C54
 client.urgent           #FB4934  #282828  #EBDBB2  #FB4934   #FB4934
 EOF
+
+# murz-alt shares all of murz's non-polybar files (i3 borders, GTK and
+# neovim via polybar-theme.sh's own "-alt" suffix stripping).
+for f in rofi/themes/murz.rasi rofi/themes/murz-powermenu.rasi kitty/themes/murz.conf \
+         starship/themes/murz.toml dunst/themes/murz.dunstrc; do
+  cp "$CONF/$f" "$CONF/${f/murz/murz-alt}"
+done
 
 # dunst has no config-reload-on-file-change of its own the way starship
 # does (it reads dunstrc once at startup, unlike starship which re-reads
@@ -37647,11 +37941,12 @@ DUNST_FILE="$DUNST_THEMES_DIR/$CHOSEN.dunstrc"
 # No "-square" variant of a border-color scheme exists (same reasoning as
 # GTK_BASE below - it's a corner-rounding distinction, not a color one), so
 # strip the suffix the same way before looking up the i3 theme file. Same
-# for "-numbered" (workspace numbers instead of dots - a bar-widget
-# distinction only), stripped after "-square" since that's the outer one
-# in names like forest-numbered-square.
+# for "-numbered" (workspace numbers instead of dots) and "-alt" (murz-alt's
+# workspace tags) - bar-widget distinctions only - stripped after "-square"
+# since that's the outer one in names like forest-numbered-square.
 BASE_NAME="${CHOSEN%-square}"
 BASE_NAME="${BASE_NAME%-numbered}"
+BASE_NAME="${BASE_NAME%-alt}"
 I3_FILE="$I3_THEMES_DIR/$BASE_NAME.conf"
 
 if [ ! -f "$POLY_FILE" ]; then
