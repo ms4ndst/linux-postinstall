@@ -2066,6 +2066,16 @@ install_neuralinverse() {
     if eval "$check_cmd" &>/dev/null; then
         SKIPPED_PACKAGES+=("neuralinverse"); ((TOTAL_SKIPPED++)); log INFO "Already installed: neuralinverse"; return 0
     fi
+    # The installer is the only documented install method (the GitHub
+    # releases carry no IDE builds), and neuralinverse.com has been answering
+    # every request with HTTP 402 Payment Required. Check it's reachable
+    # first, so an unavailable installer is reported as skipped rather than
+    # as a failed install - it picks up again on its own once the site is back.
+    if ! curl -fsSL -o /dev/null --max-time 20 https://neuralinverse.com/sh 2>/dev/null; then
+        SKIPPED_PACKAGES+=("neuralinverse (installer site unavailable)"); ((TOTAL_SKIPPED++))
+        log WARNING "Neural Inverse installer (neuralinverse.com/sh) is unavailable right now - skipping; re-run later"
+        return 0
+    fi
     log INFO "Installing Neural Inverse IDE (native installer)..."
     if eval "$install_cmd" 2>/dev/null && eval "$check_cmd" &>/dev/null; then
         INSTALLED_PACKAGES+=("neuralinverse"); ((TOTAL_INSTALLED++))

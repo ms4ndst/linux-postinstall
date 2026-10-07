@@ -308,7 +308,34 @@ batch_install() {
     log INFO "$cat: $((TOTAL_INSTALLED-s)) installed, $((TOTAL_FAILED-f)) failed, $((TOTAL_SKIPPED-k)) skipped"
 }
 
+# OpenMandriva's rpm is built with its OpenSSL backend, i.e. rpm's own
+# legacy OpenPGP parser rather than Sequoia (Fedora's), and that parser can't
+# read the signing keys of these four vendors (TeamViewer, Cursor, Claude
+# Desktop, 1Password) - dnf fails with "parsing armored OpenPGP packet(s)
+# failed". With gpgcheck/repo_gpgcheck on, such a repo can't be read at all,
+# and dnf5 doesn't skip unreadable repos by default, so one of these files
+# would fail every later dnf command (including the metadata refresh below,
+# which exits the script). So their repos are kept - `dnf upgrade` still
+# updates them, over HTTPS from the vendor - but without signature checking,
+# and marked skip_if_unavailable. Applied to the vendors' own repo files too:
+# the TeamViewer rpm ships teamviewer.repo, and the Cursor and 1Password
+# rpms write theirs on install, all with signature checking on.
+OM_UNVERIFIABLE_REPOS=(teamviewer cursor claude-desktop-unofficial 1password)
+om_relax_vendor_repos() {
+    local name f
+    for name in "${OM_UNVERIFIABLE_REPOS[@]}"; do
+        f="/etc/yum.repos.d/$name.repo"
+        [ -f "$f" ] || continue
+        awk '
+            /^[[:space:]]*(gpgcheck|repo_gpgcheck|skip_if_unavailable)[[:space:]]*=/ { next }
+            { print }
+            /^[[:space:]]*\[.*\][[:space:]]*$/ { print "gpgcheck=0"; print "repo_gpgcheck=0"; print "skip_if_unavailable=1" }
+        ' "$f" > "$f.tmp" && cat "$f.tmp" > "$f" && rm -f "$f.tmp"
+    done
+}
+
 update_packages() {
+    om_relax_vendor_repos
     log INFO "Refreshing package metadata..."
     if ! pm_update; then
         log ERROR "Failed to refresh metadata. Check internet."
@@ -1244,6 +1271,10 @@ install_bruno() { flatpak_install_flathub com.usebruno.Bruno "Bruno"; }
 # dependency on knowing the desktop user. Each user's pipx-installed apps
 # still land in their own ~/.local as usual.
 ensure_pipx() {
+    # pipx builds every app's virtualenv with `python -m venv`, which needs
+    # ensurepip - split into its own package on OpenMandriva (without it:
+    # "No module named ensurepip", and every pipx install fails).
+    is_installed python-ensurepip || pm_install python-ensurepip &>/dev/null
     if command -v pipx &>/dev/null || [ -x /usr/local/bin/pipx ]; then return 0; fi
     log INFO "Installing pipx (official standalone pipx.pyz - not packaged for OpenMandriva)..."
     curl -fsSL --retry 3 -o /usr/local/bin/pipx \
@@ -1260,7 +1291,7 @@ install_python() {
     # names are at most Provides of these - python3-virtualenv not even that.
     # lib64python-devel, not the python-devel Provide, which lib64python2-devel
     # also carries.
-    batch_install "Python" python lib64python-devel python-pip python-virtualenv ipython
+    batch_install "Python" python lib64python-devel python-pip python-virtualenv python-ensurepip ipython
     if ensure_pipx; then
         INSTALLED_PACKAGES+=("pipx"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: pipx (/usr/local/bin/pipx)"
     else
@@ -1395,12 +1426,19 @@ install_dev_tools() {
 # tig - not packaged for OpenMandriva (no package, nothing provides it), so
 # build the official release tarball (github.com/jonas/tig) into /usr/local,
 # checksum-verified against the .sha256 file published with each release.
-# Only needs a C compiler, make, and ncursesw (lib64ncurses-devel).
+# Only needs a C compiler (+ glibc-devel), make, and ncursesw (lib64ncurses-devel).
+# Built as -std=gnu17: tig 2.6.1 has `return false;` in a pointer-returning
+# function (src/stage.c:350), which Rock's GCC 14 rejects as a hard error
+# ("incompatible types when returning type '_Bool'") - valid in C17, where
+# false is just 0. Verified building on both Rock and Rolling containers.
 install_tig_source() {
     if command -v tig &>/dev/null || [ -x /usr/local/bin/tig ]; then
         SKIPPED_PACKAGES+=("tig"); ((TOTAL_SKIPPED++)); log INFO "Already installed: tig"; return 0
     fi
-    batch_install "tig build deps" gcc make lib64ncurses-devel pkgconf
+    # glibc-devel too: OpenMandriva's gcc doesn't pull in the C library's
+    # crt1.o/crti.o and headers, so without it gcc can't link anything
+    # ("C compiler cannot create executables" from configure).
+    batch_install "tig build deps" gcc glibc-devel make lib64ncurses-devel pkgconf
     local tag t
     tag=$(curl -fsSL https://api.github.com/repos/jonas/tig/releases/latest 2>/dev/null \
         | grep -oE '"tag_name":[[:space:]]*"tig-[0-9.]+"' | grep -oE 'tig-[0-9.]+')
@@ -1411,7 +1449,8 @@ install_tig_source() {
         && curl -fsSL --retry 3 -o "$t/$tag.tar.gz.sha256" "https://github.com/jonas/tig/releases/download/$tag/$tag.tar.gz.sha256" 2>/dev/null \
         && (cd "$t" && sha256sum -c "$tag.tar.gz.sha256" &>/dev/null) \
         && tar -xzf "$t/$tag.tar.gz" -C "$t" \
-        && (cd "$t/$tag" && ./configure --prefix=/usr/local &>/dev/null && make -j"$(nproc)" &>/dev/null && make install &>/dev/null) \
+        && (cd "$t/$tag" && ./configure --prefix=/usr/local CFLAGS="-O2 -std=gnu17" &>/dev/null \
+            && make -j"$(nproc)" &>/dev/null && make install &>/dev/null) \
         && [ -x /usr/local/bin/tig ]; then
         rm -rf "$t"
         INSTALLED_PACKAGES+=("tig"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $tag (built from source, /usr/local/bin/tig)"; return 0
@@ -1658,15 +1697,97 @@ gpgkey=https://repo.charm.sh/yum/gpg.key
 REPOEOF
         pm_update
     fi
+    # glances, ripgrep and vnstat are installed separately below: the first
+    # two aren't packaged for OpenMandriva (Rolling's "rg" package is a
+    # different program - a ripgrep-compatible GNU grep, not ripgrep), and
+    # OpenMandriva's vnstat package is uninstallable (it requires
+    # user(vnstat)/group(vnstat), which nothing provides).
     batch_install "System Utils" \
-        htop iotop sysstat glances \
-        nethogs iftop nload vnstat tcpdump wireshark \
+        htop iotop sysstat \
+        nethogs iftop nload tcpdump wireshark \
         lsof strace ltrace valgrind gdb \
-        tmux screen zsh fish fzf ripgrep tree ncdu rsync unzip bat glow
+        tmux screen zsh fish fzf tree ncdu rsync unzip bat glow
+    install_glances
+    install_ripgrep_release
+    install_vnstat_source
     # NOTE: unlike Ubuntu's "bat" package (which installs as /usr/bin/batcat
     # due to a Debian name collision), RPM distros' "bat" packages typically
     # install straight to /usr/bin/bat - if OpenMandriva's does too, no
     # alias/rename is needed here.
+}
+
+# glances (system monitor) - not packaged for OpenMandriva; it's a Python
+# app on PyPI, so install it system-wide with pipx (/opt/pipx, launcher in
+# /usr/local/bin) rather than into the system Python.
+install_glances() {
+    if command -v glances &>/dev/null || [ -x /usr/local/bin/glances ]; then
+        SKIPPED_PACKAGES+=("glances"); ((TOTAL_SKIPPED++)); log INFO "Already installed: glances"; return 0
+    fi
+    log INFO "Installing glances (pipx --global - not packaged for OpenMandriva)..."
+    if ensure_pipx && PATH="/usr/local/bin:$PATH" pipx install --global glances &>/dev/null \
+        && [ -x /usr/local/bin/glances ]; then
+        INSTALLED_PACKAGES+=("glances"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: glances (/usr/local/bin/glances)"; return 0
+    fi
+    FAILED_PACKAGES+=("glances"); ((TOTAL_FAILED++)); log WARNING "glances install failed"; return 0
+}
+
+# ripgrep - not packaged for OpenMandriva. The official release's static
+# (musl) build, checksum-verified against the .sha256 published with it.
+install_ripgrep_release() {
+    if [ -x /usr/local/bin/rg ] || { command -v rg &>/dev/null && rg --version 2>/dev/null | grep -q '^ripgrep '; }; then
+        SKIPPED_PACKAGES+=("ripgrep"); ((TOTAL_SKIPPED++)); log INFO "Already installed: ripgrep"; return 0
+    fi
+    local tag name t
+    tag=$(curl -fsSL https://api.github.com/repos/BurntSushi/ripgrep/releases/latest 2>/dev/null \
+        | grep -oE '"tag_name":[[:space:]]*"[0-9.]+"' | grep -oE '[0-9][0-9.]*')
+    [ -z "$tag" ] && tag="15.2.0"
+    name="ripgrep-$tag-x86_64-unknown-linux-musl"
+    log INFO "Installing ripgrep $tag (official static release build)..."
+    t=$(mktemp -d)
+    if curl -fsSL --retry 3 -o "$t/$name.tar.gz" "https://github.com/BurntSushi/ripgrep/releases/download/$tag/$name.tar.gz" 2>/dev/null \
+        && curl -fsSL --retry 3 -o "$t/$name.tar.gz.sha256" "https://github.com/BurntSushi/ripgrep/releases/download/$tag/$name.tar.gz.sha256" 2>/dev/null \
+        && (cd "$t" && sha256sum -c "$name.tar.gz.sha256" &>/dev/null) \
+        && tar -xzf "$t/$name.tar.gz" -C "$t" \
+        && install -Dm755 "$t/$name/rg" /usr/local/bin/rg; then
+        [ -f "$t/$name/doc/rg.1" ] && install -Dm644 "$t/$name/doc/rg.1" /usr/local/share/man/man1/rg.1
+        [ -f "$t/$name/complete/rg.bash" ] && install -Dm644 "$t/$name/complete/rg.bash" /usr/share/bash-completion/completions/rg
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("ripgrep"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: ripgrep $tag (/usr/local/bin/rg)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("ripgrep"); ((TOTAL_FAILED++)); log WARNING "ripgrep install failed"; return 0
+}
+
+# vnstat - OpenMandriva's own package can't be installed (it requires
+# user(vnstat)/group(vnstat) and nothing provides either), so build the
+# official release (github.com/vergoh/vnstat) into /usr/local with its config
+# in /etc, and run it with vnstat's own hardened systemd unit
+# (examples/systemd/vnstat.service), pointed at the /usr/local daemon.
+install_vnstat_source() {
+    if command -v vnstat &>/dev/null || [ -x /usr/local/bin/vnstat ]; then
+        SKIPPED_PACKAGES+=("vnstat"); ((TOTAL_SKIPPED++)); log INFO "Already installed: vnstat"; return 0
+    fi
+    batch_install "vnstat build deps" gcc glibc-devel make lib64sqlite3-devel
+    local tag t
+    tag=$(curl -fsSL https://api.github.com/repos/vergoh/vnstat/releases/latest 2>/dev/null \
+        | grep -oE '"tag_name":[[:space:]]*"v[0-9.]+"' | grep -oE 'v[0-9.]+')
+    [ -z "$tag" ] && tag="v2.13"
+    log INFO "Building vnstat ${tag#v} from source..."
+    t=$(mktemp -d)
+    if curl -fsSL --retry 3 -o "$t/vnstat.tar.gz" "https://github.com/vergoh/vnstat/releases/download/$tag/vnstat-${tag#v}.tar.gz" 2>/dev/null \
+        && tar -xzf "$t/vnstat.tar.gz" -C "$t" \
+        && (cd "$t/vnstat-${tag#v}" && ./configure --prefix=/usr/local --sysconfdir=/etc &>/dev/null \
+            && make -j"$(nproc)" &>/dev/null && make install &>/dev/null) \
+        && [ -x /usr/local/bin/vnstat ] && [ -x /usr/local/sbin/vnstatd ]; then
+        sed 's#^ExecStart=/usr/sbin/vnstatd#ExecStart=/usr/local/sbin/vnstatd#' \
+            "$t/vnstat-${tag#v}/examples/systemd/vnstat.service" > /etc/systemd/system/vnstat.service
+        systemctl daemon-reload 2>/dev/null
+        systemctl enable --now vnstat 2>/dev/null
+        rm -rf "$t"
+        INSTALLED_PACKAGES+=("vnstat"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: vnstat ${tag#v} (built from source, service: vnstat)"; return 0
+    fi
+    rm -rf "$t"
+    FAILED_PACKAGES+=("vnstat"); ((TOTAL_FAILED++)); log WARNING "vnstat source build failed"; return 0
 }
 
 # ========== ANDROID TOOLS ==========
@@ -1953,6 +2074,7 @@ install_claude_desktop() {
     fi
     log INFO "Installing Claude Desktop (unofficial rpm repo)..."
     curl -fsSL https://pkg.claude-desktop-debian.dev/rpm/claude-desktop-unofficial.repo -o /etc/yum.repos.d/claude-desktop-unofficial.repo 2>/dev/null
+    om_relax_vendor_repos  # its .repo has gpgcheck/repo_gpgcheck=1 - unreadable key here
     pm_update
     safe_install claude-desktop-unofficial
     # The rpm itself only requires /bin/sh, so it installs fine here - it's
@@ -1973,6 +2095,7 @@ install_claude_desktop() {
             log WARNING "Couldn't read the Claude Desktop repo metadata for a direct rpm"
         fi
     fi
+    om_relax_vendor_repos
 }
 
 # Zed (https://zed.dev) - GPU-accelerated code editor. No Fedora/COPR
@@ -2131,6 +2254,16 @@ install_neuralinverse() {
     if eval "$check_cmd" &>/dev/null; then
         SKIPPED_PACKAGES+=("neuralinverse"); ((TOTAL_SKIPPED++)); log INFO "Already installed: neuralinverse"; return 0
     fi
+    # The installer is the only documented install method (the GitHub
+    # releases carry no IDE builds), and neuralinverse.com has been answering
+    # every request with HTTP 402 Payment Required. Check it's reachable
+    # first, so an unavailable installer is reported as skipped rather than
+    # as a failed install - it picks up again on its own once the site is back.
+    if ! curl -fsSL -o /dev/null --max-time 20 https://neuralinverse.com/sh 2>/dev/null; then
+        SKIPPED_PACKAGES+=("neuralinverse (installer site unavailable)"); ((TOTAL_SKIPPED++))
+        log WARNING "Neural Inverse installer (neuralinverse.com/sh) is unavailable right now - skipping; re-run later"
+        return 0
+    fi
     log INFO "Installing Neural Inverse IDE (native installer)..."
     if eval "$install_cmd" 2>/dev/null && eval "$check_cmd" &>/dev/null; then
         INSTALLED_PACKAGES+=("neuralinverse"); ((TOTAL_INSTALLED++))
@@ -2191,18 +2324,17 @@ install_cursor() {
     if command -v cursor &>/dev/null || is_installed cursor; then
         SKIPPED_PACKAGES+=("cursor"); ((TOTAL_SKIPPED++)); log INFO "Already installed: cursor"; return 0
     fi
-    log INFO "Installing Cursor (official yum repo)..."
-    rpm --import https://downloads.cursor.com/keys/anysphere.asc 2>/dev/null
+    log INFO "Installing Cursor (official yum repo, unsigned - see om_relax_vendor_repos)..."
     cat > /etc/yum.repos.d/cursor.repo <<'EOF'
 [cursor]
 name=Cursor
 baseurl=https://downloads.cursor.com/yumrepo
 enabled=1
-gpgcheck=1
-gpgkey=https://downloads.cursor.com/keys/anysphere.asc
 EOF
+    om_relax_vendor_repos
     pm_update
     safe_install cursor
+    om_relax_vendor_repos  # the rpm's install script rewrites cursor.repo
 }
 
 # LM Studio (lmstudio.ai) - GUI desktop app for discovering/running local
@@ -3108,17 +3240,14 @@ install_teamviewer() {
     if command -v teamviewer &>/dev/null || is_installed teamviewer; then
         SKIPPED_PACKAGES+=("teamviewer"); ((TOTAL_SKIPPED++)); log INFO "Already installed: teamviewer"; return 0
     fi
-    log INFO "Installing TeamViewer (official yum repo)..."
-    rpm --import https://linux.teamviewer.com/pubkey/currentkey.asc 2>/dev/null
+    log INFO "Installing TeamViewer (official yum repo, unsigned - see om_relax_vendor_repos)..."
     cat > /etc/yum.repos.d/teamviewer.repo <<'EOF'
 [teamviewer]
 name=TeamViewer
 baseurl=https://linux.teamviewer.com/yum/stable/main/binary-$basearch/
 enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://linux.teamviewer.com/pubkey/currentkey.asc
 EOF
+    om_relax_vendor_repos
     pm_update
     safe_install teamviewer
     # OpenMandriva note: if the repo route doesn't take (its signed-metadata
@@ -3130,6 +3259,7 @@ EOF
             https://download.teamviewer.com/download/linux/teamviewer.x86_64.rpm "TeamViewer" \
             || { FAILED_PACKAGES+=("teamviewer"); ((TOTAL_FAILED++)); }
     fi
+    om_relax_vendor_repos  # the rpm ships its own teamviewer.repo
 }
 
 # 1Password - real vendor yum repo, Fedora explicitly supported. Simpler than
@@ -3139,17 +3269,14 @@ install_1password() {
     if is_installed 1password; then
         SKIPPED_PACKAGES+=("1password"); ((TOTAL_SKIPPED++)); log INFO "Already installed: 1password"; return 0
     fi
-    log INFO "Installing 1Password (official yum repo)..."
-    rpm --import https://downloads.1password.com/linux/keys/1password.asc 2>/dev/null
+    log INFO "Installing 1Password (official yum repo, unsigned - see om_relax_vendor_repos)..."
     cat > /etc/yum.repos.d/1password.repo <<'EOF'
 [1password]
 name=1Password
 baseurl=https://downloads.1password.com/linux/rpm/stable/$basearch
 enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://downloads.1password.com/linux/keys/1password.asc
 EOF
+    om_relax_vendor_repos
     pm_update
     safe_install 1password
     # Same fallback chain as TeamViewer: the official rpm directly (all its
@@ -3161,6 +3288,7 @@ EOF
             || flatpak_install_flathub com.onepassword.OnePassword "1Password"
         flatpak info com.onepassword.OnePassword &>/dev/null && clear_failed 1password
     fi
+    om_relax_vendor_repos  # the rpm's install script writes its own 1password.repo
 }
 
 # ========== MENU SYSTEM ==========
