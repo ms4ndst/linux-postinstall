@@ -271,7 +271,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 - **Package Front-End:** Nala (auto-installed, with transparent apt-get fallback)
 - **Verified APT Packages:** 200+
 - **Snap-Only Tools:** 3 (LXD, IntelliJ IDEA Community, DBeaver CE)
-- **Third-Party Direct-Install Tools:** VS Code, Sublime Text, Ollama, Cursor, Mistral Vibe CLI, Claude Code, Gemini CLI, OpenCode, Go, Rust/rustup, Chris Titus mybash, Azure CLI, lazygit (via Go), LazyVim + Nordic (Neovim config)
+- **Third-Party Direct-Install Tools:** VS Code, Sublime Text, Ollama, Cursor, Mistral Vibe CLI, Claude Code, Gemini CLI, Antigravity CLI, OpenCode, Go, Rust/rustup, Chris Titus mybash, Azure CLI, lazygit (via Go), LazyVim + Nordic (Neovim config)
 - **Estimated Install Time:** 15 minutes – several hours (depending on selections; "Install EVERYTHING" is a long run)
 - **Estimated Disk Space:** 5–30GB+ (depending on selections)
 
@@ -648,11 +648,12 @@ Note: `libreoffice` is a meta-package that resolves to **seven separate real app
 | **Jan**              | Flathub (`ai.jan.Jan`) | Local-first, OpenAI-alternative desktop chat client        |
 | **Claude Code**     | Official native installer (`claude.ai/install.sh`), npm fallback | Anthropic's CLI code assistant (provides the `claude` command) |
 | **Gemini CLI**       | `npm install -g @google/gemini-cli` | Google's official CLI code assistant (provides the `gemini` command) |
+| **Antigravity CLI**  | Official native installer (`antigravity.google/cli/install.sh`), per user into `~/.local/bin`, self-updating | Google's Antigravity agent in the terminal (provides the `agy` command) |
 | **Mistral Vibe CLI** | Official installer script (`mistral.ai/vibe/install.sh`), installs the `mistral-vibe` Python package via `uv`/`pip` | Mistral's terminal coding agent (provides the `vibe` command) |
 | **OpenCode**         | Official native installer (`opencode.ai/install`), npm fallback (`opencode-ai`) | Provider-agnostic terminal AI coding agent (provides the `opencode` command) |
 | **Cursor**           | `.deb` download       | AI-powered code editor                                    |
 
-All of these register in the installed/skipped/failed tracking, so they appear in the summary and are fed to the app-folder resolver. **Cursor** ships its own `cursor.desktop` and **Jan** exports a Flatpak launcher, so both are grouped into the AI Tools folder. **Ollama**, **Claude Code**, **Gemini CLI**, **Mistral Vibe CLI**, and **OpenCode** are command-line only (no launcher), so they're tracked but don't get a folder icon — expected, same as `docker`/`adb`.
+All of these register in the installed/skipped/failed tracking, so they appear in the summary and are fed to the app-folder resolver. **Cursor** ships its own `cursor.desktop` and **Jan** exports a Flatpak launcher, so both are grouped into the AI Tools folder. **Ollama**, **Claude Code**, **Gemini CLI**, **Antigravity CLI**, **Mistral Vibe CLI**, and **OpenCode** are command-line only (no launcher), so they're tracked but don't get a folder icon — expected, same as `docker`/`adb`.
 
 ---
 
@@ -1351,6 +1352,7 @@ Same tool set as the Ubuntu script — almost entirely package-manager-agnostic 
 | **Jan** | Flathub (`ai.jan.Jan`) |
 | **Claude Code** | Official native installer, npm fallback |
 | **Gemini CLI** | `npm install -g @google/gemini-cli` |
+| **Antigravity CLI** | Official native installer (`antigravity.google/cli/install.sh`) into `~/.local/bin` |
 | **Mistral Vibe CLI** | Official installer script |
 | **OpenCode** | Official native installer, npm fallback |
 | **Cursor** | Official yum repo (`downloads.cursor.com/yumrepo`) — real vendor repo as of ~2025, simpler than the Ubuntu script's `.deb`/AppImage download-API dance |
@@ -1914,6 +1916,7 @@ Almost entirely package-manager-agnostic (vendor curl-installer scripts, npm glo
 | **Claude Code** | Official native installer, npm fallback |
 | **Claude Desktop** | Unofficial rpm repo ([aaddrick/claude-desktop-debian](https://github.com/aaddrick/claude-desktop-debian)) — same repo the Fedora script uses, zypper consumes the same INI file |
 | **Gemini CLI** | `npm install -g @google/gemini-cli` |
+| **Antigravity CLI** | Official native installer (`antigravity.google/cli/install.sh`) into `~/.local/bin` |
 | **Mistral Vibe CLI** | Official installer script |
 | **OpenCode** | Official native installer, npm fallback |
 | **Cursor** | Official yum repo (`downloads.cursor.com/yumrepo`) — ported unchanged from the Fedora script |
@@ -2342,6 +2345,7 @@ Below is a breakdown of what each category installs. Packages are tagged **(AUR)
 | **Claude Code** | Official native installer, npm fallback |
 | **Claude Desktop** | AppImage downloaded directly from [aaddrick/claude-desktop-debian](https://github.com/aaddrick/claude-desktop-debian)'s GitHub Releases — its own AUR package (`claude-desktop-appimage`) was deleted 2026-08-01 in an AUR duplicate-package cleanup and is pending reinstatement, so the script hand-writes a `.desktop` launcher instead of waiting on it |
 | **Gemini CLI** | `npm install -g @google/gemini-cli` |
+| **Antigravity CLI** | Official native installer (`antigravity.google/cli/install.sh`) into `~/.local/bin` |
 | **Mistral Vibe CLI** | Official installer script (needs Python 3.12+) |
 | **OpenCode** | Official native installer, npm fallback |
 | **Cursor** | **(AUR)** `cursor-bin` — simpler than Fedora's yum-repo bootstrap, no repo registration needed |
@@ -3160,6 +3164,7 @@ Sorted alphabetically by key; where a key has more than one binding, the plain `
 | `Mod+shift+v` | Clipboard history (`copyq toggle`, opens as a floating window) |
 | `Mod+shift+w` | Wallpaper picker (`nitrogen`) |
 | `Mod+shift+XF86Assistant` | Toggle Claude Desktop show/hide (hardware AI-assistant key, if your keyboard has one) |
+| `Mod+shift+a` | Toggle the [Mistral Vibe](https://chat.mistral.ai) web app (formerly Le Chat) show/hide — Mistral has no Linux desktop app, so `mistral-vibe-toggle.sh` opens `chat.mistral.ai` in the first installed Chromium-family browser's app mode (Chrome, Chromium, Brave, Edge or Vivaldi) with its own profile in `~/.local/share/mistral-vibe-app` and window class `MistralVibe`, floated and scratchpad-toggled like Claude Desktop. Sign in once; the profile keeps the session. |
 | `XF86Audio{Play,Next,Prev}` | Media control via `playerctl` |
 | `XF86Audio{Raise,Lower,Mute}Volume` | Volume via `pactl`, with a dunst level popup |
 | `XF86MonBrightness{Up,Down}` | Brightness via `brightnessctl`, with a dunst level popup |

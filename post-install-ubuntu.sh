@@ -1929,6 +1929,7 @@ install_ai_tools() {
     install_claude_code
     install_claude_desktop
     install_gemini_cli
+    install_antigravity_cli
     install_vibe_cli
     install_opencode
     install_cursor
@@ -2248,6 +2249,29 @@ install_gemini_cli() {
     fi
     FAILED_PACKAGES+=("gemini"); ((TOTAL_FAILED++))
     log WARNING "Gemini CLI install failed - try: npm install -g @google/gemini-cli"; return 0
+}
+
+# Antigravity CLI (Google) - official native installer
+# (antigravity.google/cli/install.sh): a single binary, checksum-verified
+# against Google's release manifest, installed per user to ~/.local/bin/agy
+# (the installer also adds that to the shell's PATH). It self-updates in the
+# background, so it belongs in the desktop user's home, not /usr/local.
+install_antigravity_cli() {
+    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+    local uh="$HOME"
+    [ -n "$u" ] && uh=$(getent passwd "$u" | cut -d: -f6)
+    if [ -x "$uh/.local/bin/agy" ] || command -v agy &>/dev/null; then
+        SKIPPED_PACKAGES+=("agy"); ((TOTAL_SKIPPED++)); log INFO "Already installed: agy (Antigravity CLI)"; return 0
+    fi
+    log INFO "Installing Antigravity CLI (official installer)..."
+    local install_cmd="curl -fsSL https://antigravity.google/cli/install.sh | bash"
+    [ -n "$u" ] && install_cmd="su - $u -c '$install_cmd'"
+    if eval "$install_cmd" >/dev/null 2>&1 && [ -x "$uh/.local/bin/agy" ]; then
+        INSTALLED_PACKAGES+=("agy"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: agy (Antigravity CLI, ~/.local/bin - open a new terminal, then run 'agy' to sign in)"; return 0
+    fi
+    FAILED_PACKAGES+=("agy"); ((TOTAL_FAILED++))
+    log WARNING "Antigravity CLI install failed - try: curl -fsSL https://antigravity.google/cli/install.sh | bash"; return 0
 }
 
 # Mistral Vibe CLI (https://docs.mistral.ai/getting-started/quickstarts/vibe-code/install-cli) -

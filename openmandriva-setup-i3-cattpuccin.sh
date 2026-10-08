@@ -409,6 +409,41 @@ if ! command -v gammastep >/dev/null 2>&1; then
   rm -rf "$OMT"
 fi
 
+# dunst - OpenMandriva packages dunst 1.6.1 (2021) on both Rock and Rolling,
+# which predates three things this rice relies on: the width/origin/offset
+# placement keys (1.7 - 1.6 ignores them and draws every notification as a
+# full-width bar across the top of the screen), and `dunstctl reload` /
+# `history-clear` / `history-rm` (theme switching and the polybar
+# notification widgets). Build the current release
+# (github.com/dunst-project/dunst) into /usr/local, X11-only. The packaged
+# 1.6.1 is then removed with plain `rpm -e` (not dnf, which would also
+# autoremove libraries the new build links against), so only one dunst -
+# and one D-Bus service file for org.freedesktop.Notifications - is left.
+om_dunst_ver() { dunst --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1; }
+if [ "$(printf '%s\n1.7\n' "$(om_dunst_ver)" | sort -V | head -1)" != "1.7" ]; then
+  log "Building dunst from source (OpenMandriva's dunst $(om_dunst_ver) is too old for this rice)..."
+  om_build_deps make gcc glibc-devel pkgconf \
+    'pkgconfig(dbus-1)' 'pkgconfig(x11)' 'pkgconfig(xinerama)' 'pkgconfig(xrandr)' 'pkgconfig(xscrnsaver)' \
+    'pkgconfig(glib-2.0)' 'pkgconfig(gio-2.0)' 'pkgconfig(pangocairo)' 'pkgconfig(cairo)' \
+    'pkgconfig(gdk-pixbuf-2.0)' 'pkgconfig(libnotify)'
+  DUNST_TAG=$(curl -fsSL https://api.github.com/repos/dunst-project/dunst/releases/latest 2>/dev/null \
+    | grep -oE '"tag_name":[[:space:]]*"v[0-9.]+"' | grep -oE 'v[0-9.]+')
+  [ -z "$DUNST_TAG" ] && DUNST_TAG=v1.13.2
+  OMT="$(mktemp -d)"
+  if d="$(om_fetch_tarball "https://github.com/dunst-project/dunst/archive/refs/tags/$DUNST_TAG.tar.gz" "$OMT")" \
+      && make -C "$d" CC=gcc WAYLAND=0 SYSTEMD=0 PREFIX=/usr/local -j"$(nproc)" >/dev/null 2>&1 \
+      && sudo make -C "$d" CC=gcc WAYLAND=0 SYSTEMD=0 PREFIX=/usr/local install >/dev/null 2>&1 \
+      && /usr/local/bin/dunst --version >/dev/null 2>&1; then
+    rpm -q dunst >/dev/null 2>&1 && sudo rpm -e dunst >/dev/null 2>&1
+    hash -r
+    pkill -x dunst 2>/dev/null || true   # a running 1.6.1 gets replaced at next i3 start
+    log "dunst ${DUNST_TAG#v} installed to /usr/local/bin."
+  else
+    warn "dunst build failed - keeping dunst $(om_dunst_ver); notifications fall back to its old geometry setting."
+  fi
+  rm -rf "$OMT"
+fi
+
 # ----------------------------------------------------------------------------
 # 1b. i3lock-color (repo package or source build fallback)
 # ----------------------------------------------------------------------------
@@ -986,6 +1021,12 @@ for_window [class="^com\.anthropic\.Claude$"] floating enable, resize set 1200 8
 # Own line, not chained onto the rule above - same "a chained `mark`
 # silently never applies" gotcha as the AIVibe/Cliamp rules.
 for_window [class="^com\.anthropic\.Claude$"] mark claude-desktop-scratch
+# Mistral Vibe (ex Le Chat) web app - Mistral has no Linux desktop app, so
+# mistral-vibe-toggle.sh opens chat.mistral.ai in a Chromium-family
+# browser's app mode under its own window class, MistralVibe.
+for_window [class="^MistralVibe$"] floating enable, resize set 1200 850, move position center
+# Own line, same "a chained `mark` silently never applies" gotcha as above.
+for_window [class="^MistralVibe$"] mark mistral-vibe-scratch
 for_window [class="^Screensaver$"] fullscreen enable
 
 # --- launch ---
@@ -1070,6 +1111,8 @@ bindsym XF86AudioPrev exec --no-startup-id playerctl previous
 # rather than binding XF86Assistant alone (which would require it to be
 # pressed with no modifiers held, which this hardware never actually does).
 bindsym $mod+shift+XF86Assistant exec --no-startup-id ~/.local/bin/claude-desktop-toggle.sh
+# Mistral Vibe web app, same show/hide toggle as Claude Desktop above
+bindsym $mod+shift+a exec --no-startup-id ~/.local/bin/mistral-vibe-toggle.sh
 
 # --- focus / movement ---
 bindsym $mod+h focus left
@@ -45040,6 +45083,16 @@ EOF
 # every prompt) - seed the default here same as rofi/kitty/starship above,
 # and ~/.local/bin/polybar-theme.sh's own `dunstctl reload` is what makes a
 # later theme switch pick up a new dunstrc without restarting the process.
+# If the dunst build in step 1a failed, OpenMandriva's dunst 1.6.1 is still
+# what runs, and it only understands the pre-1.7 `geometry` key - without
+# it every notification is a full-width bar across the top. Add the same
+# placement in that form (320 wide, 12px from the right, 40px down, at
+# most 5 shown) to every dunstrc; newer dunst never sees this line.
+if [ "$(printf '%s\n1.7\n' "$(om_dunst_ver)" | sort -V | head -1)" != "1.7" ]; then
+  for f in "$CONF/dunst/themes/"*.dunstrc; do
+    grep -q '^geometry' "$f" || sed -i '/^offset = 12x40$/a geometry = "320x5-12+40"' "$f"
+  done
+fi
 cp "$CONF/dunst/themes/catppuccin-mocha.dunstrc" "$CONF/dunst/dunstrc"
 
 # ----------------------------------------------------------------------------
@@ -46314,6 +46367,7 @@ ROWS=(
   "Mod+1..9|Switch to workspace 1-9"
   "Mod+shift+1..9|Move window to workspace 1-9"
   "Mod+a|AI window (Mistral Vibe CLI), toggle show/hide"
+  "Mod+shift+a|Mistral Vibe web app, toggle show/hide"
   "Mod+b|Split horizontal (for next window)"
   "Mod+c|Toggle caffeine (inhibit screen-lock/sleep)"
   "Mod+shift+c|Reload i3"
@@ -46589,6 +46643,52 @@ else
 fi
 EOF
 chmod +x "$BIN/claude-desktop-toggle.sh"
+
+log "Writing mistral-vibe-toggle.sh..."
+cat > "$BIN/mistral-vibe-toggle.sh" <<'EOF'
+#!/usr/bin/env bash
+# Toggles the Mistral Vibe web app (chat.mistral.ai - Le Chat was renamed
+# Vibe in 2026) via i3's scratchpad, same show/hide-without-killing
+# pattern as claude-desktop-toggle.sh. Mistral ships no Linux desktop app,
+# so it runs in a Chromium-family browser's --app mode (no tabs/toolbar).
+# --class only takes effect for a browser's first process, which is why it
+# gets its own profile dir: otherwise an already-running browser would
+# just open another normal window with the browser's class. Sign in once
+# in that profile; it's kept between launches.
+mark=mistral-vibe-scratch
+url="https://chat.mistral.ai"
+profile="$HOME/.local/share/mistral-vibe-app"
+
+current_ws=$(i3-msg -t get_tree | python3 -c "
+import json, sys
+t = json.load(sys.stdin)
+def walk(n, ws=None):
+    if n.get('type') == 'workspace':
+        ws = n.get('name')
+    if 'mistral-vibe-scratch' in n.get('marks', []):
+        print(ws or '')
+        sys.exit(0)
+    for c in n.get('nodes', []) + n.get('floating_nodes', []):
+        walk(c, ws)
+walk(t)
+")
+
+if [ -z "$current_ws" ]; then
+  for b in google-chrome-stable google-chrome chromium chromium-browser brave-browser microsoft-edge-stable vivaldi-stable vivaldi; do
+    if command -v "$b" >/dev/null 2>&1; then
+      exec "$b" --user-data-dir="$profile" --class=MistralVibe \
+        --no-first-run --no-default-browser-check --app="$url"
+    fi
+  done
+  notify-send "Mistral Vibe" "Needs a Chromium-based browser (Chrome, Chromium, Brave, Edge or Vivaldi) - install one from the post-install script's Browsers category."
+elif [ "$current_ws" = "__i3_scratch" ]; then
+  i3-msg "[con_mark=\"$mark\"] scratchpad show" >/dev/null
+  i3-msg "[con_mark=\"$mark\"] resize set 1200 850, move position center" >/dev/null
+else
+  i3-msg "[con_mark=\"$mark\"] move scratchpad" >/dev/null
+fi
+EOF
+chmod +x "$BIN/mistral-vibe-toggle.sh"
 
 # ----------------------------------------------------------------------------
 # 12. Wallpaper fallback (solid Catppuccin base color) if none exists
