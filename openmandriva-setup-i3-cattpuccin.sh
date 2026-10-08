@@ -1305,6 +1305,8 @@ exec --no-startup-id sh -c 'pgrep -x playerctld >/dev/null || playerctld'
 # running at all, with no error anywhere. Kept as its own script so the
 # checking process's command line has no reason to contain that text.
 exec --no-startup-id ~/.local/bin/calendar-reminder-daemon-launch.sh
+# Low-battery / "charger not keeping up" pop-ups - i3 has none of its own.
+exec --no-startup-id ~/.local/bin/battwatch.sh
 exec --no-startup-id numlockx on
 # OpenMandriva doesn't ship dex-autostart, so we use systemd's built-in
 # systemd-xdg-autostart-generator instead. It parses ~/.config/autostart and
@@ -17836,6 +17838,77 @@ cat > "$BIN/calendar-reminder-daemon-launch.sh" <<'EOF'
 pgrep -f calendar-reminder-daemon.py >/dev/null || exec python3 ~/.local/bin/calendar-reminder-daemon.py
 EOF
 chmod +x "$BIN/calendar-reminder-daemon-launch.sh"
+
+# ----------------------------------------------------------------------------
+# 6c2. Battery watcher - low-battery and "charger not keeping up" warnings
+# ----------------------------------------------------------------------------
+# i3 has no battery warnings of its own (GNOME/KDE do): the polybar battery
+# widget only shows the level, so a battery running down - including while
+# plugged in to a charger too weak for the current load - went unnoticed
+# until the laptop died. Pop-ups go through dunst; the hard backstop is
+# UPower's critical action (see 10b2).
+log "Writing battwatch.sh..."
+cat > "$BIN/battwatch.sh" <<'EOF'
+#!/usr/bin/env bash
+# Checks the battery once a minute and warns via notify-send (dunst):
+#   - plugged in but still draining (charger not keeping up), after two
+#     checks in a row, so plugging in/unplugging doesn't cause false alarms
+#   - low at 15%, critical at 8% while discharging
+# Each warning fires once per event, not every minute; they share one dunst
+# stack tag, so a newer warning replaces an older one. Started once from
+# i3's config (exec, not exec_always); the flock makes a second copy exit
+# at once, without pgrep and its self-matching pitfalls.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/battwatch.lock"
+flock -n 9 || exit 0
+
+# The laptop's own battery (BAT*), not a mouse/keyboard battery such as
+# hidpp_battery_* (scope=Device).
+BAT=$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -1)
+[ -n "$BAT" ] || exit 0   # no battery: a desktop, nothing to watch
+
+on_ac() {  # any external supply (barrel charger or USB-C) delivering power
+  local s
+  for s in /sys/class/power_supply/*; do
+    case "$(cat "$s/type" 2>/dev/null)" in
+      Mains|USB|USB_C|USB_PD)
+        [ "$(cat "$s/online" 2>/dev/null)" = 1 ] && return 0 ;;
+    esac
+  done
+  return 1
+}
+notify() { notify-send -u "$1" -h string:x-dunst-stack-tag:battwatch "$2" "$3"; }
+
+drain_count=0 warned_drain=0 warned_low=0 warned_crit=0
+while :; do
+  cap=$(cat "$BAT/capacity" 2>/dev/null || echo 100)
+  st=$(cat "$BAT/status" 2>/dev/null)
+  if on_ac; then
+    warned_low=0 warned_crit=0
+    if [ "$st" = Discharging ]; then
+      drain_count=$((drain_count + 1))
+      if [ "$drain_count" -ge 2 ] && [ "$warned_drain" = 0 ]; then
+        notify critical "Charger not keeping up" "Plugged in but the battery is still draining ($cap%). Check the charger's wattage, or connect it directly instead of through a dock."
+        warned_drain=1
+      fi
+    else
+      drain_count=0 warned_drain=0
+    fi
+  else
+    drain_count=0 warned_drain=0
+    if [ "$st" = Discharging ]; then
+      if [ "$cap" -le 8 ] && [ "$warned_crit" = 0 ]; then
+        notify critical "Battery critical" "$cap% left - plug in now. The laptop powers off at 5%."
+        warned_crit=1 warned_low=1
+      elif [ "$cap" -le 15 ] && [ "$warned_low" = 0 ]; then
+        notify normal "Battery low" "$cap% left"
+        warned_low=1
+      fi
+    fi
+  fi
+  sleep 60
+done
+EOF
+chmod +x "$BIN/battwatch.sh"
 
 # ----------------------------------------------------------------------------
 # 6d. Disable the redundant tray applets' own autostart entries
@@ -45414,6 +45487,30 @@ else
   log "WARNING: pwfeedback sudoers snippet failed visudo validation, skipped"
 fi
 rm -f "$PWFB_TMP"
+
+# ----------------------------------------------------------------------------
+# 10b2. UPower critical-battery action - the backstop under battwatch.sh
+# ----------------------------------------------------------------------------
+# UPower acts on its own at critical battery even without a desktop
+# environment, but distro defaults act only at ~2% with
+# CriticalPowerAction=Auto/HybridSleep, which needs hibernation - not
+# available with zram-only swap - so the laptop can just die instead. Set
+# it explicitly: warn at 20%/8% and power off cleanly at 5%, matching the
+# battwatch.sh pop-ups. Each key's active line is replaced, or the key is
+# appended if it has none (the file's commented-out examples are left
+# alone). Laptops only.
+if ls -d /sys/class/power_supply/BAT* >/dev/null 2>&1 && [ -f /etc/UPower/UPower.conf ]; then
+  log "Setting UPower critical-battery action to power off at 5% (needs sudo)..."
+  for kv in UsePercentageForPolicy=true PercentageLow=20 PercentageCritical=8 PercentageAction=5 CriticalPowerAction=PowerOff; do
+    k="${kv%%=*}"
+    if grep -qE "^[[:space:]]*$k=" /etc/UPower/UPower.conf; then
+      sudo sed -i -E "s|^[[:space:]]*$k=.*|$kv|" /etc/UPower/UPower.conf
+    else
+      echo "$kv" | sudo tee -a /etc/UPower/UPower.conf >/dev/null
+    fi
+  done
+  sudo systemctl try-restart upower 2>/dev/null || true
+fi
 
 # ----------------------------------------------------------------------------
 # 10c. DPMS-wake-after-resume fix - a systemd-sleep hook, not a user script.
