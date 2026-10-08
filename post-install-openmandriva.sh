@@ -1700,17 +1700,37 @@ DLFF_UNIT_EOF
 # same repo-then-Flathub dance applies to Lutris. OpenMandriva handles
 # 32-bit multilib natively via .i686 builds, so there's no Ubuntu-style
 # "dpkg --add-architecture i386" step needed at all.
+# Repo package if it installs, Flathub otherwise - including when the
+# package exists but dnf can't install it on this particular system (a
+# dependency clash with something already installed, as Lutris hit on one
+# Rolling install while installing fine on fresh Rock and Rolling). dnf's
+# reason is shown before falling back.
+# Usage: install_repo_or_flathub <package> <flatpak app id> <label>
+install_repo_or_flathub() {
+    local pkg="$1" app="$2" label="$3" err
+    if is_installed "$pkg"; then
+        SKIPPED_PACKAGES+=("$pkg"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $pkg"; return 0
+    fi
+    if command -v flatpak &>/dev/null && flatpak info "$app" &>/dev/null; then
+        SKIPPED_PACKAGES+=("$label"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label (flatpak)"; return 0
+    fi
+    if package_exists "$pkg"; then
+        log INFO "Installing: $pkg"
+        err=$(mktemp)
+        if dnf install -y "$pkg" >/dev/null 2>"$err" || is_installed "$pkg"; then
+            rm -f "$err"
+            INSTALLED_PACKAGES+=("$pkg"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $pkg"; return 0
+        fi
+        log WARNING "dnf couldn't install $pkg - falling back to Flathub. dnf said:"
+        grep -v '^[[:space:]]*$' "$err" | tail -n 6 | sed 's/^/    /'
+        rm -f "$err"
+    fi
+    flatpak_install_flathub "$app" "$label"
+}
+
 install_gaming() {
-    if package_exists steam; then
-        batch_install "Steam" steam
-    else
-        flatpak_install_flathub com.valvesoftware.Steam "Steam"
-    fi
-    if package_exists lutris; then
-        batch_install "Lutris" lutris
-    else
-        flatpak_install_flathub net.lutris.Lutris "Lutris"
-    fi
+    install_repo_or_flathub steam com.valvesoftware.Steam "Steam"
+    install_repo_or_flathub lutris net.lutris.Lutris "Lutris"
     batch_install "Gaming (tweaks)" gamemode mangohud
 }
 
