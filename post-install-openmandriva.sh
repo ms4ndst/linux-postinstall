@@ -2785,21 +2785,61 @@ install_nerd_fonts() {
 install_chris_titus_mybash() {
     local UH=$(eval echo ~$SUDO_USER 2>/dev/null || echo "/home/$(logname)")
     local MD="${UH}/mybash" BR="${UH}/.bashrc"
-    if [ -d "$MD" ]; then log INFO "mybash already installed"; return 0; fi
+    # "Already installed" only counts if starship actually made it in too -
+    # earlier runs of this script left ~/mybash in place with no starship
+    # (see below), and returning early here would never repair that.
+    if [ -d "$MD" ] && { command -v starship &>/dev/null || [ -x /usr/local/bin/starship ]; }; then
+        log INFO "mybash already installed"; return 0
+    fi
     log INFO "Installing Chris Titus mybash..."
-    if ! git clone --depth 1 https://github.com/christitustech/mybash "$MD"; then
+    if [ ! -d "$MD" ] && ! git clone --depth 1 https://github.com/christitustech/mybash "$MD"; then
         log ERROR "Clone failed"; return 1
     fi
+    # OpenMandriva: mybash's setup.sh runs `set -eu` and does ONE
+    # `sudo dnf install ... trash-cli ... zoxide ...` - trash-cli isn't packaged
+    # here (zoxide neither, on Rock), so that dnf call failed, setup.sh exited
+    # on the spot, and starship + mybash's config links were never installed -
+    # leaving a .bashrc whose prompt theming (starship.toml, which the desktop
+    # theme switcher rewrites) nothing ever read. So:
+    #   1. pre-install what does exist, and starship into /usr/local/bin
+    #      (always on PATH - mybash's own install target, ~/.local/bin, isn't
+    #      added to PATH by its .bashrc on Linux); trash-cli via pipx, zoxide
+    #      via its official installer where it isn't packaged;
+    #   2. run setup.sh with a `sudo` shim on PATH that adds --setopt=strict=0
+    #      to its dnf call, so missing names are skipped instead of fatal.
+    dnf install -y --setopt=strict=0 bash-completion bat tree multitail fastfetch neovim \
+        fzf zoxide curl fontconfig tar xz >/dev/null 2>&1 || true
+    if ! command -v starship &>/dev/null && [ ! -x /usr/local/bin/starship ]; then
+        curl -fsSL https://starship.rs/install.sh 2>/dev/null | sh -s -- -y -b /usr/local/bin >/dev/null 2>&1 \
+            || log WARNING "starship install failed - the shell prompt won't follow desktop themes"
+    fi
+    if ! command -v zoxide &>/dev/null && [ ! -x /usr/local/bin/zoxide ]; then
+        curl -fsSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh 2>/dev/null \
+            | sh -s -- --bin-dir /usr/local/bin --man-dir /usr/local/share/man >/dev/null 2>&1 || true
+    fi
+    if ! command -v trash-put &>/dev/null && ensure_pipx; then
+        PATH="/usr/local/bin:$PATH" pipx install --global trash-cli >/dev/null 2>&1 || true
+    fi
+    local shim
+    shim=$(mktemp -d)
+    cat > "$shim/sudo" <<'SHIMEOF'
+#!/bin/sh
+if [ "$1" = dnf ]; then shift; exec /usr/bin/dnf --setopt=strict=0 "$@"; fi
+exec /usr/bin/sudo "$@"
+SHIMEOF
+    chmod 755 "$shim/sudo"
     # setup.sh calls `sudo apt-get install ...` internally on Debian/Ubuntu -
     # on Fedora it detects dnf and calls `sudo dnf install ...` instead (the
     # upstream script branches on package manager itself). Run as root, not
     # via su, for the same "nested sudo needs a real terminal" reason as the
     # Ubuntu script.
-    if HOME="$UH" USER="$SUDO_USER" LOGNAME="$SUDO_USER" bash "$MD/setup.sh"; then
+    if PATH="$shim:/usr/local/bin:$PATH" HOME="$UH" USER="$SUDO_USER" LOGNAME="$SUDO_USER" bash "$MD/setup.sh"; then
+        rm -rf "$shim"
         chown -R "$SUDO_USER:$SUDO_USER" "$MD" "$UH/.local" "$UH/.config" "$BR" 2>/dev/null || true
         log SUCCESS "mybash installed. User: source ~/.bashrc"
         return 0
     fi
+    rm -rf "$shim"
     log WARNING "setup.sh failed, falling back to a plain .bashrc copy..."
     [ -f "$MD/.bashrc" ] && cp "$MD/.bashrc" "$BR" 2>/dev/null
     if [ -f "$MD/starship.toml" ]; then
