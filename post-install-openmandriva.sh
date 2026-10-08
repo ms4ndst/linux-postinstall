@@ -2582,17 +2582,21 @@ install_gui_tools() {
 
 # ── Icon Sets ─────────────────────────────────────────────────────────────
 install_icon_sets() {
-    # Icon themes go through package_exists() - whatever OpenMandriva's
-    # repos carry installs, the rest is skipped cleanly (there's no
-    # COPR-equivalent third-party layer to pull them from;
-    # obsidian-icon-theme stays listed in case it's carried).
-    batch_install "Icon Sets" \\
+    # Packaged on OpenMandriva: papirus-icon-theme, adwaita-icon-theme and
+    # Breeze (named breeze-icons here, not breeze-icon-theme). Numix,
+    # Numix Circle and Obsidian aren't packaged on Rock or Rolling - they're
+    # plain icon folders, so install them from their upstream repos below.
+    # (This line used to end in a doubled backslash, which ended the command
+    # there - batch_install got no packages and every name below it ran as
+    # a command of its own, "command not found".)
+    batch_install "Icon Sets" \
         papirus-icon-theme \
-        numix-icon-theme \
-        numix-icon-theme-circle \
-        breeze-icon-theme \
-        adwaita-icon-theme \
-        obsidian-icon-theme
+        breeze-icons \
+        adwaita-icon-theme
+    install_git_icon_theme "Numix icons" https://github.com/numixproject/numix-icon-theme.git Numix Numix-Light
+    # Numix Circle inherits Numix, so it goes after it
+    install_git_icon_theme "Numix Circle icons" https://github.com/numixproject/numix-icon-theme-circle.git Numix-Circle Numix-Circle-Light
+    install_git_icon_theme "Obsidian icons" https://github.com/madmaxms/iconpack-obsidian.git 'Obsidian*'
     install_qogir_icons
     install_whitesur_icons
     install_vimix_icons
@@ -2624,6 +2628,36 @@ install_vinceliuice_repo() {
         INSTALLED_PACKAGES+=("$label $kind"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $label $kind (pick via gnome-tweaks)"
     else
         FAILED_PACKAGES+=("$label $kind"); ((TOTAL_FAILED++)); log WARNING "$label $kind install failed"
+    fi
+    rm -rf "$t"
+}
+
+# Icon theme that's just theme folders at the top of a git repo: clone it and
+# copy the named folders (globs allowed) into /usr/share/icons.
+install_git_icon_theme() {  # <label> <git url> <folder>...
+    local label="$1" url="$2"; shift 2
+    local first="${1%\*}"
+    if compgen -G "/usr/share/icons/${first}*" >/dev/null; then
+        SKIPPED_PACKAGES+=("$label"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label"; return 0
+    fi
+    local t; t=$(mktemp -d)
+    if ! git clone --depth 1 "$url" "$t/src" 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=("$label"); ((TOTAL_FAILED++))
+        log WARNING "$label clone failed (needs network access to github.com)"; return 1
+    fi
+    log INFO "Installing $label..."
+    local ok=true pat d
+    for pat in "$@"; do
+        for d in "$t"/src/$pat; do
+            [ -d "$d" ] || { ok=false; continue; }
+            cp -r "$d" /usr/share/icons/ 2>/dev/null || ok=false
+            gtk-update-icon-cache -q -f "/usr/share/icons/$(basename "$d")" 2>/dev/null || true
+        done
+    done
+    if $ok; then
+        INSTALLED_PACKAGES+=("$label"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $label (/usr/share/icons)"
+    else
+        FAILED_PACKAGES+=("$label"); ((TOTAL_FAILED++)); log WARNING "$label install failed"
     fi
     rm -rf "$t"
 }
