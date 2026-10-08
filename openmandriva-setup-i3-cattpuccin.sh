@@ -355,8 +355,8 @@ fi
 # to the system's PyGObject/GTK bindings (--system-site-packages).
 if ! command -v udiskie >/dev/null 2>&1 && [ ! -x /usr/local/bin/udiskie ]; then
   log "Installing udiskie (pipx - not packaged for OpenMandriva)..."
-  om_build_deps python python-ensurepip udisks2 python-gobject3 \
-    'typelib(Gtk) = 3.0' 'typelib(Notify)'
+  om_build_deps python python-ensurepip udisks python-gi \
+    'typelib(Gtk) = 3.0' 'typelib(Notify)' ntfs-3g exfatprogs dosfstools
   OM_PIPX=""
   if command -v pipx >/dev/null 2>&1; then
     OM_PIPX="$(command -v pipx)"
@@ -370,6 +370,20 @@ if ! command -v udiskie >/dev/null 2>&1 && [ ! -x /usr/local/bin/udiskie ]; then
     log "udiskie installed to /usr/local/bin."
   else
     warn "udiskie install failed - USB drives won't be automounted."
+  fi
+fi
+# NTFS drives: udisks mounts them as type "ntfs" by default, and on
+# OpenMandriva nothing answers to that name on Rock (the kernel only has
+# ntfs3, and ntfs-3g only installs mount.ntfs-3g, not mount.ntfs) - so every
+# NTFS mount failed with "wrong fs type, bad option". Tell udisks (2.10+;
+# Rock ships 2.10.90, Rolling 2.11) to use the kernel's ntfs3 driver first.
+if [ ! -f /etc/udisks2/mount_options.conf ] || ! grep -q '^ntfs_drivers' /etc/udisks2/mount_options.conf; then
+  log "Setting udisks to mount NTFS with the kernel's ntfs3 driver..."
+  sudo mkdir -p /etc/udisks2
+  if [ -f /etc/udisks2/mount_options.conf ] && grep -q '^\[defaults\]' /etc/udisks2/mount_options.conf; then
+    sudo sed -i '/^\[defaults\]/a ntfs_drivers=ntfs3,ntfs' /etc/udisks2/mount_options.conf
+  else
+    printf '[defaults]\nntfs_drivers=ntfs3,ntfs\n' | sudo tee -a /etc/udisks2/mount_options.conf >/dev/null
   fi
 fi
 
