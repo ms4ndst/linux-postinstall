@@ -221,12 +221,14 @@ log "Installing base X11 stack + i3 + rice toolkit via dnf..."
 # --setopt=strict=0: skip names that aren't available instead of aborting
 # the entire install (dnf's default) - works on both dnf 4 (Rock) and dnf5
 # (Rolling). Some of these aren't packaged for OpenMandriva at all (xss-lock,
-# pasystray, udiskie, slop, numlockx, autorandr; gammastep on Rock).
+# udiskie, slop, numlockx, autorandr; gammastep on Rock) - those are built
+# or pipx-installed in step 1a below. pasystray is dropped outright: this
+# rice disables its autostart anyway (polybar's own widgets replace it).
 sudo dnf install -y --setopt=strict=0 \
   x11-server-xorg xinit xauth xrandr xset xsetroot xrdb \
   i3-wm \
   picom polybar rofi dunst kitty \
-  xss-lock NetworkManager-applet pasystray blueman lxqt-policykit pipewire-pulse \
+  xss-lock NetworkManager-applet blueman lxqt-policykit pipewire-pulse \
   copyq udiskie pcmanfm gammastep libnotify nitrogen gnome-calendar \
   system-config-printer hplip \
   vala gcc glibc-devel make lib64gtk+3.0-devel lib64dbusmenu-glib-devel lib64dbusmenu-gtk3-devel \
@@ -244,6 +246,154 @@ sudo dnf install -y --setopt=strict=0 \
 log "Adding $USER to the 'video' group (needed for brightnessctl)..."
 sudo usermod -aG video "$USER" 2>/dev/null \
   || warn "Could not add $USER to 'video' group - brightness keys may not work until you do this manually."
+
+# ----------------------------------------------------------------------------
+# 1a. Tools this rice uses that OpenMandriva doesn't package
+# ----------------------------------------------------------------------------
+# Checked against Rock and Rolling: xss-lock, udiskie, slop, numlockx and
+# autorandr aren't packaged at all, and gammastep only on Rolling - so the
+# base dnf list above skips them (--setopt=strict=0) and they're built or
+# installed here instead, each from its official upstream source into
+# /usr/local (autorandr into /usr, see below). Build dependencies are asked
+# for by pkgconfig(...) name, so dnf resolves OpenMandriva's own package
+# names for them. Every step is best-effort: a failure only warns.
+om_build_deps() {
+  sudo dnf install -y --setopt=strict=0 "$@" >/dev/null 2>&1 || true
+}
+om_local_lib_path() {
+  [ -f /etc/ld.so.conf.d/usr-local.conf ] \
+    || printf '/usr/local/lib\n/usr/local/lib64\n' | sudo tee /etc/ld.so.conf.d/usr-local.conf >/dev/null
+  sudo ldconfig 2>/dev/null || true
+}
+om_fetch_tarball() {  # <url> <dest dir> - downloads and unpacks, prints the top-level dir
+  local url="$1" dest="$2"
+  curl -fsSL --retry 3 -o "$dest/src.tar.gz" "$url" 2>/dev/null || return 1
+  tar -xzf "$dest/src.tar.gz" -C "$dest" || return 1
+  find "$dest" -mindepth 1 -maxdepth 1 -type d | head -1
+}
+
+# xss-lock (locks the screen on suspend/idle) - github.com/xdbob/xss-lock, cmake.
+# CMAKE_POLICY_VERSION_MINIMUM: its CMakeLists predates what CMake 4 accepts.
+if ! command -v xss-lock >/dev/null 2>&1; then
+  log "Building xss-lock from source (not packaged for OpenMandriva)..."
+  om_build_deps cmake make gcc glibc-devel pkgconf \
+    'pkgconfig(xcb)' 'pkgconfig(xcb-event)' 'pkgconfig(xcb-screensaver)' 'pkgconfig(glib-2.0)' 'pkgconfig(gio-2.0)'
+  OMT="$(mktemp -d)"
+  if d="$(om_fetch_tarball https://github.com/xdbob/xss-lock/archive/refs/tags/v0.3.0.tar.gz "$OMT")" \
+      && cmake -S "$d" -B "$d/build" -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_POLICY_VERSION_MINIMUM=3.5 >/dev/null 2>&1 \
+      && make -C "$d/build" -j"$(nproc)" >/dev/null 2>&1 \
+      && sudo make -C "$d/build" install >/dev/null 2>&1 \
+      && [ -x /usr/local/bin/xss-lock ]; then
+    log "xss-lock installed to /usr/local/bin."
+  else
+    warn "xss-lock build failed - the screen won't lock automatically on suspend/idle."
+  fi
+  rm -rf "$OMT"
+fi
+
+# numlockx (num lock on at login) - github.com/rg3/numlockx, ships configure.
+if ! command -v numlockx >/dev/null 2>&1; then
+  log "Building numlockx from source (not packaged for OpenMandriva)..."
+  om_build_deps make gcc glibc-devel pkgconf 'pkgconfig(x11)' 'pkgconfig(xtst)'
+  OMT="$(mktemp -d)"
+  if d="$(om_fetch_tarball https://github.com/rg3/numlockx/archive/refs/tags/1.2.tar.gz "$OMT")" \
+      && (cd "$d" && ./configure --prefix=/usr/local >/dev/null 2>&1 && make >/dev/null 2>&1) \
+      && sudo make -C "$d" install >/dev/null 2>&1 \
+      && [ -x /usr/local/bin/numlockx ]; then
+    log "numlockx installed to /usr/local/bin."
+  else
+    warn "numlockx build failed - num lock won't be switched on at login."
+  fi
+  rm -rf "$OMT"
+fi
+
+# slop (region/point picker, used by the colorpicker) - github.com/naelstrof/slop,
+# built without its optional OpenGL effects (fewer dependencies, same picker).
+if ! command -v slop >/dev/null 2>&1; then
+  log "Building slop from source (not packaged for OpenMandriva)..."
+  om_build_deps cmake make gcc gcc-c++ glibc-devel pkgconf glm-devel \
+    'pkgconfig(x11)' 'pkgconfig(xext)' 'pkgconfig(xrender)' 'pkgconfig(icu-uc)'
+  OMT="$(mktemp -d)"
+  if d="$(om_fetch_tarball https://github.com/naelstrof/slop/archive/refs/tags/v7.7.tar.gz "$OMT")" \
+      && cmake -S "$d" -B "$d/build" -DCMAKE_INSTALL_PREFIX=/usr/local -DSLOP_OPENGL=OFF >/dev/null 2>&1 \
+      && make -C "$d/build" -j"$(nproc)" >/dev/null 2>&1 \
+      && sudo make -C "$d/build" install >/dev/null 2>&1; then
+    om_local_lib_path
+    if /usr/local/bin/slop --version >/dev/null 2>&1; then
+      log "slop installed to /usr/local/bin."
+    else
+      warn "slop built but doesn't run - the colorpicker won't work."
+    fi
+  else
+    warn "slop build failed - the colorpicker won't work."
+  fi
+  rm -rf "$OMT"
+fi
+
+# autorandr (monitor-layout hotplug) - github.com/phillipberndt/autorandr.
+# Installed with its own `make install` into /usr (not /usr/local): that
+# also installs its udev hotplug rule and systemd unit, and the unit runs
+# /usr/bin/autorandr by that exact path.
+if ! command -v autorandr >/dev/null 2>&1; then
+  log "Installing autorandr from source (not packaged for OpenMandriva)..."
+  om_build_deps make pkgconf python 'pkgconfig(systemd)' 'pkgconfig(udev)'
+  OMT="$(mktemp -d)"
+  if d="$(om_fetch_tarball https://github.com/phillipberndt/autorandr/archive/refs/tags/1.15.tar.gz "$OMT")" \
+      && sudo make -C "$d" install PREFIX=/usr TARGETS="autorandr bash_completion systemd udev" >/dev/null 2>&1 \
+      && [ -x /usr/bin/autorandr ]; then
+    sudo udevadm control --reload 2>/dev/null || true
+    sudo systemctl daemon-reload 2>/dev/null || true
+    sudo systemctl enable autorandr.service >/dev/null 2>&1 || true
+    log "autorandr installed (with its udev hotplug rule and systemd unit)."
+  else
+    warn "autorandr install failed - monitor layouts won't switch automatically on hotplug."
+  fi
+  rm -rf "$OMT"
+fi
+
+# udiskie (USB automount + tray) - Python, from PyPI via pipx, with access
+# to the system's PyGObject/GTK bindings (--system-site-packages).
+if ! command -v udiskie >/dev/null 2>&1 && [ ! -x /usr/local/bin/udiskie ]; then
+  log "Installing udiskie (pipx - not packaged for OpenMandriva)..."
+  om_build_deps python python-ensurepip udisks2 python-gobject3 \
+    'typelib(Gtk) = 3.0' 'typelib(Notify)'
+  OM_PIPX=""
+  if command -v pipx >/dev/null 2>&1; then
+    OM_PIPX="$(command -v pipx)"
+  elif sudo curl -fsSL --retry 3 -o /usr/local/bin/pipx https://github.com/pypa/pipx/releases/latest/download/pipx.pyz 2>/dev/null \
+      && sudo chmod 755 /usr/local/bin/pipx; then
+    OM_PIPX=/usr/local/bin/pipx
+  fi
+  if [ -n "$OM_PIPX" ] \
+      && sudo env PATH="/usr/local/bin:$PATH" "$OM_PIPX" install --global --system-site-packages udiskie >/dev/null 2>&1 \
+      && [ -x /usr/local/bin/udiskie ]; then
+    log "udiskie installed to /usr/local/bin."
+  else
+    warn "udiskie install failed - USB drives won't be automounted."
+  fi
+fi
+
+# gammastep (night light) - packaged on Rolling, not on Rock: build the
+# official release there (gitlab.com/chinstrap/gammastep, autotools).
+if ! command -v gammastep >/dev/null 2>&1; then
+  log "Building gammastep from source (not packaged for this OpenMandriva release)..."
+  om_build_deps make gcc glibc-devel pkgconf autoconf automake libtool gettext intltool \
+    'pkgconfig(x11)' 'pkgconfig(xcb)' 'pkgconfig(xcb-randr)' 'pkgconfig(xxf86vm)' 'pkgconfig(libdrm)' \
+    'pkgconfig(glib-2.0)' 'pkgconfig(gio-2.0)'
+  OMT="$(mktemp -d)"
+  if d="$(om_fetch_tarball https://gitlab.com/chinstrap/gammastep/-/archive/v2.0.11/gammastep-v2.0.11.tar.gz "$OMT")" \
+      && (cd "$d" && ./bootstrap >/dev/null 2>&1 \
+          && ./configure --prefix=/usr/local --disable-gui --disable-wayland --disable-geoclue2 \
+               --with-systemduserunitdir=no >/dev/null 2>&1 \
+          && make -j"$(nproc)" >/dev/null 2>&1) \
+      && sudo make -C "$d" install >/dev/null 2>&1 \
+      && [ -x /usr/local/bin/gammastep ]; then
+    log "gammastep installed to /usr/local/bin."
+  else
+    warn "gammastep build failed - no night-light colour shift."
+  fi
+  rm -rf "$OMT"
+fi
 
 # ----------------------------------------------------------------------------
 # 1b. i3lock-color (repo package or source build fallback)
@@ -45261,12 +45411,29 @@ sudo chmod +x /etc/systemd/system-sleep/i3-dpms-wake
 #      fullscreen kitty window instead of Omarchy's Astal/AGS shell (which i3
 #      doesn't have an equivalent of).
 # ----------------------------------------------------------------------------
+# OpenMandriva specifics: pipx isn't packaged on Rock (python-pipx is
+# Rolling-only), so fall back to pipx's own official standalone zipapp; and
+# pipx can't build any app's venv without python-ensurepip, which
+# OpenMandriva splits out of the main python package. tte is installed
+# --global (/usr/local/bin/tte, on every user's PATH) rather than into
+# ~/.local/bin, which an i3 session here doesn't necessarily have on PATH.
 log "Installing Terminal Text Effects (tte) via pipx for the screensaver..."
-if command -v pipx >/dev/null 2>&1; then
-  pipx install terminaltexteffects 2>/dev/null \
-    || warn "pipx install terminaltexteffects failed - the screensaver (Mod+Escape, and before an idle lock) won't work until you run it manually."
+sudo dnf install -y --setopt=strict=0 python python-ensurepip python-pipx >/dev/null 2>&1 || true
+TTE_PIPX="$(command -v pipx 2>/dev/null || true)"
+if [ -z "$TTE_PIPX" ] && [ -x /usr/local/bin/pipx ]; then TTE_PIPX=/usr/local/bin/pipx; fi
+if [ -z "$TTE_PIPX" ] \
+    && sudo curl -fsSL --retry 3 -o /usr/local/bin/pipx https://github.com/pypa/pipx/releases/latest/download/pipx.pyz 2>/dev/null \
+    && sudo chmod 755 /usr/local/bin/pipx; then
+  TTE_PIPX=/usr/local/bin/pipx
+fi
+if [ -x /usr/local/bin/tte ] || command -v tte >/dev/null 2>&1; then
+  log "tte already installed."
+elif [ -n "$TTE_PIPX" ] \
+    && sudo env PATH="/usr/local/bin:$PATH" "$TTE_PIPX" install --global terminaltexteffects >/dev/null 2>&1 \
+    && [ -x /usr/local/bin/tte ]; then
+  log "tte installed to /usr/local/bin."
 else
-  warn "pipx not found - skipping the screensaver's tte dependency. Install pipx and run 'pipx install terminaltexteffects' to enable it later."
+  warn "tte install failed - the screensaver (Mod+Escape, and before an idle lock) won't work until you run: sudo pipx install --global terminaltexteffects"
 fi
 
 log "Writing screensaver script..."
@@ -45279,6 +45446,9 @@ cat > "$BIN/screensaver.sh" <<'EOF'
 # block), just run in a plain fullscreen kitty window instead of Omarchy's
 # Astal/AGS shell (which i3 doesn't have an equivalent of). Exits on any
 # keypress OR mouse movement.
+# tte is installed to /usr/local/bin (pipx --global); ~/.local/bin covers a
+# per-user pipx install. Neither is guaranteed on PATH in a window i3 starts.
+PATH="/usr/local/bin:$HOME/.local/bin:$PATH"
 LOGO="$HOME/.config/screensaver/logo.txt"
 OPENMANDRIVA_SVG="/usr/share/icons/hicolor/scalable/apps/openmandriva.svg"
 [ -f "$OPENMANDRIVA_SVG" ] || OPENMANDRIVA_SVG="/usr/share/icons/openmandriva.svg"
