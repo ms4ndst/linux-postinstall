@@ -1446,11 +1446,41 @@ install_ruby() {
 }
 
 # ========== .NET ==========
-# Ships natively in Fedora's own repos - no Microsoft repo needed at all
-# (mixing Microsoft's repo with Fedora's own dotnet packages is explicitly
-# discouraged upstream), unlike the Ubuntu script's packages.microsoft.com dance.
+# OpenMandriva doesn't carry Fedora's dotnet-sdk-8.0/-9.0 packages: Rock has
+# no .NET at all, and Rolling only .NET 10, under unversioned names. A
+# distro-packaged dotnet and a Microsoft-installed one live in separate roots
+# whose `dotnet` can't see each other's SDKs, so every version comes from
+# Microsoft's official dotnet-install.sh (dot.net/v1) into one shared root,
+# /usr/share/dotnet: the 8.0 and 10.0 LTS and the 9.0 SDKs - each SDK
+# includes its matching ASP.NET Core runtime (the Fedora list's
+# aspnetcore-runtime-9.0). dotnet goes on PATH via /usr/local/bin, and
+# DOTNET_ROOT is set for tools that look for the root themselves.
 install_dotnet() {
-    batch_install ".NET" dotnet-sdk-9.0 dotnet-sdk-8.0 aspnetcore-runtime-9.0
+    local root=/usr/share/dotnet ch t c=0 f=0
+    log INFO "Installing .NET SDKs (Microsoft's dotnet-install.sh)..."
+    # Runtime libraries .NET loads (ICU, Kerberos GSSAPI, OpenSSL, zlib)
+    dnf install -y --setopt=strict=0 lib64icuuc lib64icui18n lib64gssapi_krb5_2 lib64ssl3 lib64z1 >/dev/null 2>&1 || true
+    t=$(mktemp -d)
+    if ! curl -fsSL --retry 3 -o "$t/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh 2>/dev/null; then
+        rm -rf "$t"; FAILED_PACKAGES+=(".NET SDKs"); ((TOTAL_FAILED++))
+        log WARNING ".NET installer download failed (needs network access to dot.net)"; return 1
+    fi
+    for ch in 8.0 9.0 10.0; do
+        if [ -x "$root/dotnet" ] && "$root/dotnet" --list-sdks 2>/dev/null | grep -q "^${ch%.0}\."; then
+            SKIPPED_PACKAGES+=(".NET SDK $ch"); ((TOTAL_SKIPPED++)); log INFO "Already installed: .NET SDK $ch"; continue
+        fi
+        if bash "$t/dotnet-install.sh" --channel "$ch" --install-dir "$root" >/dev/null 2>&1; then
+            INSTALLED_PACKAGES+=(".NET SDK $ch"); ((TOTAL_INSTALLED++)); ((c++)); log SUCCESS "Installed: .NET SDK $ch (+ ASP.NET Core runtime)"
+        else
+            FAILED_PACKAGES+=(".NET SDK $ch"); ((TOTAL_FAILED++)); ((f++)); log WARNING ".NET SDK $ch install failed"
+        fi
+    done
+    rm -rf "$t"
+    if [ -x "$root/dotnet" ]; then
+        ln -sf "$root/dotnet" /usr/local/bin/dotnet
+        printf 'export DOTNET_ROOT=%s\n' "$root" > /etc/profile.d/dotnet.sh
+    fi
+    log INFO ".NET: $c installed, $f failed"
 }
 
 # ========== GENERAL DEV TOOLS ==========
