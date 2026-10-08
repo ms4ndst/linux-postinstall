@@ -1340,19 +1340,53 @@ install_npm_packages() {
 # ========== JAVA ==========
 install_java() {
     # OpenMandriva's own repo-preferences package points Java installs at
-    # the "jdk-current" meta (see openmandriva-repos' pkgprefs); listed
-    # alongside Fedora-style names - package_exists() picks whichever is
-    # actually carried.
-    batch_install "Java" jdk-current java-21-openjdk java-latest-openjdk gradle maven ant junit
+    # the "jdk-current" meta (see openmandriva-repos' pkgprefs), which is
+    # always the newest JDK (21 on Rock, 25 on Rolling) - the role Fedora's
+    # java-latest-openjdk plays, which OpenMandriva has no package for.
+    # junit is only packaged on Rolling.
+    batch_install "Java" jdk-current java-21-openjdk gradle ant junit
+    install_maven
     # IntelliJ IDEA Community - not carried by OpenMandriva's repos;
     # Flathub's official listing is the real equivalent.
     flatpak_install_flathub com.jetbrains.IntelliJ-IDEA-Community "IntelliJ IDEA Community"
 }
 
+# Maven - packaged on both releases, but on Rolling the package can't be
+# installed (its maven-lib needs org.eclipse.sisu jars Rolling doesn't ship).
+# Fall back to Apache's official binary release there: newest 3.x from
+# Apache's download CDN, checked against its published SHA-512, unpacked to
+# /opt/apache-maven with mvn linked into /usr/local/bin.
+install_maven() {
+    if command -v mvn &>/dev/null; then
+        SKIPPED_PACKAGES+=("maven"); ((TOTAL_SKIPPED++)); log INFO "Already installed: maven"; return 0
+    fi
+    if package_exists maven && pm_install maven && command -v mvn &>/dev/null; then
+        INSTALLED_PACKAGES+=("maven"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: maven"; return 0
+    fi
+    local ver t f
+    ver=$(curl -fsSL https://dlcdn.apache.org/maven/maven-3/ 2>/dev/null \
+        | grep -oE 'href="3\.[0-9]+\.[0-9]+/"' | grep -oE '3\.[0-9]+\.[0-9]+' | sort -V | tail -1)
+    log INFO "maven package not installable here - using Apache's official release ${ver:-?}..."
+    f="apache-maven-${ver}-bin.tar.gz"
+    t=$(mktemp -d)
+    if [ -n "$ver" ] \
+        && curl -fsSL --retry 3 -o "$t/$f" "https://dlcdn.apache.org/maven/maven-3/$ver/binaries/$f" 2>/dev/null \
+        && curl -fsSL --retry 3 -o "$t/$f.sha512" "https://downloads.apache.org/maven/maven-3/$ver/binaries/$f.sha512" 2>/dev/null \
+        && [ "$(sha512sum "$t/$f" | cut -d' ' -f1)" = "$(grep -oE '^[0-9a-f]{128}' "$t/$f.sha512")" ] \
+        && tar -xzf "$t/$f" -C "$t" \
+        && rm -rf /opt/apache-maven && mv "$t/apache-maven-$ver" /opt/apache-maven \
+        && ln -sf /opt/apache-maven/bin/mvn /usr/local/bin/mvn; then
+        INSTALLED_PACKAGES+=("maven $ver"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: maven $ver (/opt/apache-maven, mvn in /usr/local/bin)"
+    else
+        FAILED_PACKAGES+=("maven"); ((TOTAL_FAILED++)); log WARNING "maven install failed"
+    fi
+    rm -rf "$t"
+}
+
 # ========== C/C++ ==========
 install_c_cpp() {
     batch_install "C/C++" \
-        gcc gcc-c++ gcc-gfortran clang cmake make ninja-build ccache \
+        gcc gcc-c++ gcc-gfortran clang cmake make ninja ccache \
         autoconf automake libtool m4 bison flex gettext pkgconf \
         cppcheck valgrind gdb ltrace strace
 }
@@ -1406,7 +1440,9 @@ install_php() {
 
 # ========== RUBY ==========
 install_ruby() {
-    batch_install "Ruby" ruby ruby-devel rubygem-bundler
+    # No rubygem-bundler package: OpenMandriva's ruby ships Bundler itself
+    # (bundle/bundler in /usr/bin), as upstream Ruby has since 2.6.
+    batch_install "Ruby" ruby ruby-devel
 }
 
 # ========== .NET ==========
@@ -2806,16 +2842,65 @@ install_themes() {
 }
 
 install_cursor_themes() {
-    # Candidate package names vary by Fedora release for the Breeze cursor
-    # theme (xcursor-breeze vs breeze-cursor-theme) - package_exists skips
-    # whichever isn't the real one on a given release.
-    batch_install "Cursor Themes" xcursor-breeze breeze-cursor-theme
+    # OpenMandriva has no standalone Breeze cursor package (Fedora's
+    # xcursor-breeze / breeze-cursor-theme): its cursors only ship inside the
+    # KDE `breeze` style package, which pulls in the whole KF/Qt stack. The
+    # cursors are prebuilt Xcursor files in KDE's own breeze repo, though -
+    # fetch just those two folders from invent.kde.org into the same
+    # /usr/share/icons names Fedora's package uses (breeze_cursors,
+    # Breeze_Light).
+    log INFO "Installing Cursor Themes..."
+    local t name src dest
+    for name in Breeze Breeze_Light; do
+        src="cursors/$name/$name"
+        [ "$name" = Breeze ] && dest=/usr/share/icons/breeze_cursors || dest="/usr/share/icons/$name"
+        if [ -f "$dest/index.theme" ]; then
+            SKIPPED_PACKAGES+=("$name cursors"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $name cursors"; continue
+        fi
+        t=$(mktemp -d)
+        if curl -fsSL --retry 3 -o "$t/c.tar.gz" "https://invent.kde.org/plasma/breeze/-/archive/master/breeze-master.tar.gz?path=$src" 2>/dev/null \
+            && tar -xzf "$t/c.tar.gz" -C "$t" \
+            && [ -f "$t/breeze-master-${src//\//-}/$src/index.theme" ] \
+            && rm -rf "$dest" && cp -a "$t/breeze-master-${src//\//-}/$src" "$dest"; then
+            INSTALLED_PACKAGES+=("$name cursors"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $name cursors ($dest)"
+        else
+            FAILED_PACKAGES+=("$name cursors"); ((TOTAL_FAILED++)); log WARNING "$name cursors download failed (needs network access to invent.kde.org)"
+        fi
+        rm -rf "$t"
+    done
+}
+
+# Fira Code and JetBrains Mono (the plain, non-Nerd fonts) aren't packaged
+# for OpenMandriva - install their official release zips instead, into
+# /usr/share/fonts/truetype/<dir>. Usage: install_release_font <label> <owner/repo> <dir>
+install_release_font() {
+    local label="$1" repo="$2" dir="$3" url t
+    if [ -d "/usr/share/fonts/truetype/$dir" ]; then
+        SKIPPED_PACKAGES+=("$label"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label"; return 0
+    fi
+    command -v unzip &>/dev/null || safe_install unzip
+    url=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null \
+        | grep -oE '"browser_download_url":[[:space:]]*"[^"]+\.zip"' | head -1 | grep -oE 'https://[^"]+')
+    t=$(mktemp -d)
+    if [ -n "$url" ] && curl -fsSL --retry 3 -o "$t/f.zip" "$url" 2>/dev/null \
+        && unzip -qq -o "$t/f.zip" -d "$t/x" \
+        && mkdir -p "/usr/share/fonts/truetype/$dir" \
+        && find "$t/x" -path '*/ttf/*' -iname '*.ttf' -exec cp {} "/usr/share/fonts/truetype/$dir/" \; \
+        && [ -n "$(ls -A "/usr/share/fonts/truetype/$dir")" ]; then
+        INSTALLED_PACKAGES+=("$label"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $label (${url##*/})"
+    else
+        rm -rf "/usr/share/fonts/truetype/$dir"
+        FAILED_PACKAGES+=("$label"); ((TOTAL_FAILED++)); log WARNING "$label download failed (needs network access to github.com)"
+    fi
+    rm -rf "$t"
 }
 
 install_nerd_fonts() {
     log INFO "Installing Nerd Fonts..."
     mkdir -p /usr/share/fonts/truetype/nerd-fonts
-    batch_install "Nerd Fonts (dnf)" fira-code-fonts jetbrains-mono-fonts
+    install_release_font "Fira Code" tonsky/FiraCode fira-code
+    install_release_font "JetBrains Mono" JetBrains/JetBrainsMono jetbrains-mono
+    command -v fc-cache &>/dev/null && fc-cache -f /usr/share/fonts/truetype/ 2>/dev/null
     local t=$(mktemp -d) c=0 f=0
     local fonts=(FiraCode JetBrainsMono Hack SourceCodePro CascadiaCode UbuntuMono DejaVuSansMono)
     local ext="tar.xz" ecmd="tar -xf" destflag="-C"
