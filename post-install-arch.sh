@@ -2806,7 +2806,14 @@ install_vinceliuice_repo() {
         log WARNING "$label $kind clone failed (needs network access to github.com)"; return 1
     fi
     log INFO "Installing $label $kind..."
-    if bash "$t/src/install.sh" "${extra_args[@]}" 2>/dev/null; then
+    # The GTK themes compile their CSS with sassc, and their install.sh
+    # installs it itself if missing - but with a plain `sudo dnf install
+    # sassc` (no -y; zypper likewise), whose confirmation prompt is hidden
+    # by the 2>/dev/null below, so the run silently hung after listing
+    # sassc. Install it up front, and give install.sh no stdin so any
+    # future prompt fails fast instead of hanging.
+    [ "$kind" = "theme" ] && ! command -v sassc &>/dev/null && safe_install sassc
+    if bash "$t/src/install.sh" "${extra_args[@]}" </dev/null 2>/dev/null; then
         mkdir -p "$(dirname "$marker")" && touch "$marker"
         INSTALLED_PACKAGES+=("$label $kind"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: $label $kind"
     else
@@ -2846,14 +2853,19 @@ install_nordic_theme() {
         SKIPPED_PACKAGES+=("Nordic theme"); ((TOTAL_SKIPPED++)); log INFO "Already installed: Nordic theme"; return 0
     fi
     local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
-    if ! su - "$user" -c "git clone --depth 1 https://github.com/EliverLara/Nordic.git '$t/src'" 2>/dev/null; then
-        rm -rf "$t"; FAILED_PACKAGES+=("Nordic theme"); ((TOTAL_FAILED++))
-        log WARNING "Nordic theme clone failed"; return 1
-    fi
-    if su - "$user" -c "mkdir -p '$uh/.themes' && cp -r '$t/src/Nordic' '$uh/.themes/Nordic'" 2>/dev/null && [ -d "$uh/.themes/Nordic" ]; then
-        INSTALLED_PACKAGES+=("Nordic theme"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: Nordic theme"
+    log INFO "Installing Nordic theme..."
+    # The Nordic repo's top level IS the theme (index.theme, gtk-3.0/, ...),
+    # with no Nordic/ subfolder - so the old clone + `cp -r src/Nordic` never
+    # copied anything, on any distro. Use the release's own prebuilt
+    # Nordic.tar.xz instead: exactly one clean Nordic/ theme folder, without
+    # the repo's development files (src/, Gulpfile.js, package.json, ...).
+    if su - "$user" -c "curl -fsSL --retry 3 -o '$t/Nordic.tar.xz' https://github.com/EliverLara/Nordic/releases/latest/download/Nordic.tar.xz && mkdir -p '$uh/.themes' && tar -xJf '$t/Nordic.tar.xz' -C '$uh/.themes'" 2>/dev/null \
+        && [ -f "$uh/.themes/Nordic/index.theme" ]; then
+        INSTALLED_PACKAGES+=("Nordic theme"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Nordic theme (~/.themes - pick it in gnome-tweaks)"
     else
-        FAILED_PACKAGES+=("Nordic theme"); ((TOTAL_FAILED++)); log WARNING "Nordic theme install failed"
+        FAILED_PACKAGES+=("Nordic theme"); ((TOTAL_FAILED++))
+        log WARNING "Nordic theme download failed (needs network access to github.com)"
     fi
     rm -rf "$t"
 }
@@ -2907,6 +2919,11 @@ install_lycia_theme() {
     # install.sh interactively asks two questions: install the GTK4/Libadwaita
     # files (yes) and install the GDM login-screen theme (no - that overwrites
     # a system gnome-shell resource file, too invasive for an unattended run).
+    # Upstream bug: install.sh runs under `set -euo pipefail` and looks for an
+    # earlier GTK4 backup with `ls ... | head`, which fails (and so exits the
+    # installer, code 2) on every first run - before the GTK4 symlinks are
+    # made. Let that lookup come back empty instead, as it intends to.
+    sed -i 's#2>/dev/null | head -n1)"#2>/dev/null | head -n1 || true)"#' "$t/src/install.sh"
     if printf 'Y\nN\n' | su - "$user" -c "bash '$t/src/install.sh'" 2>/dev/null && [ -d "$uh/.themes/Lycia" ]; then
         INSTALLED_PACKAGES+=("Lycia theme"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: Lycia theme"
     else
@@ -3029,6 +3046,14 @@ install_gnome_extensions() {
     local user uid
     if ! read -r user uid < <(resolve_desktop_session); then
         log INFO "No active desktop session - skipping GNOME extensions"; return 0
+    fi
+    # gext installs through GNOME Shell's own D-Bus service (org.gnome.Shell),
+    # so outside a GNOME session (i3, KDE, ...) every extension fails with
+    # "The name org.gnome.Shell was not provided by any .service files".
+    if ! pgrep -u "$uid" -x gnome-shell &>/dev/null; then
+        log INFO "GNOME Shell isn't running in this session (i3/KDE/...) - skipping GNOME extensions"
+        SKIPPED_PACKAGES+=("GNOME extensions (no GNOME Shell session)"); ((TOTAL_SKIPPED++))
+        return 0
     fi
     command -v pipx &>/dev/null || safe_install python-pipx
     su - "$user" -c 'command -v gext >/dev/null 2>&1 || pipx install gnome-extensions-cli --system-site-packages' 2>/dev/null

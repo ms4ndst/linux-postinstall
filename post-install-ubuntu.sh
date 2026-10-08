@@ -2653,6 +2653,14 @@ install_gnome_extensions() {
     if ! read -r user uid < <(resolve_desktop_session); then
         log INFO "No active desktop session - skipping GNOME extensions"; return 0
     fi
+    # gext installs through GNOME Shell's own D-Bus service (org.gnome.Shell),
+    # so outside a GNOME session (i3, KDE, ...) every extension fails with
+    # "The name org.gnome.Shell was not provided by any .service files".
+    if ! pgrep -u "$uid" -x gnome-shell &>/dev/null; then
+        log INFO "GNOME Shell isn't running in this session (i3/KDE/...) - skipping GNOME extensions"
+        SKIPPED_PACKAGES+=("GNOME extensions (no GNOME Shell session)"); ((TOTAL_SKIPPED++))
+        return 0
+    fi
     command -v pipx &>/dev/null || safe_install pipx
     log INFO "Setting up gext (GNOME Extension Manager CLI) via pipx..."
     su - "$user" -c 'command -v gext >/dev/null 2>&1 || pipx install gnome-extensions-cli --system-site-packages' 2>/dev/null
@@ -3367,6 +3375,11 @@ install_lycia_theme() {
         log WARNING "Lycia theme clone failed (needs network access to github.com)"; return 1
     fi
     log INFO "Installing Lycia theme..."
+    # Upstream bug: install.sh runs under `set -euo pipefail` and looks for an
+    # earlier GTK4 backup with `ls ... | head`, which fails (and so exits the
+    # installer, code 2) on every first run - before the GTK4 symlinks are
+    # made. Let that lookup come back empty instead, as it intends to.
+    sed -i 's#2>/dev/null | head -n1)"#2>/dev/null | head -n1 || true)"#' "$t/src/install.sh"
     if printf 'Y\nN\n' | su - "$user" -c "bash '$t/src/install.sh'" 2>/dev/null && [ -d "$uh/.themes/Lycia" ]; then
         INSTALLED_PACKAGES+=("Lycia theme"); ((TOTAL_INSTALLED++))
         log SUCCESS "Installed: Lycia theme (~/.themes - pick it in gnome-tweaks)"
