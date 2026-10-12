@@ -30,20 +30,24 @@ POLYBAR_THEMES_DIR = os.path.expanduser("~/.config/polybar/themes")
 EXTENSION_DIR = os.path.expanduser("~/.vscode/extensions/linux-postinstall-rice-themes")
 
 THEMES = [
-    "aline", "alireza", "archblur", "archcraft", "blocks", "breddie", "brenda",
-    "catppuccin-mocha", "classic", "cristina", "cynthia",
-    "daniela", "dracula", "emilia", "forest", "h4ck3r", "hidrot", "isabel",
-    "jan", "karla", "marisol", "murz", "nord", "pamela", "silvia", "tobi",
-    "varinka", "yael", "yucklys", "yucklys-light", "z0mbi3",
+    "aline", "alireza", "archblur", "archcraft", "breddie", "brenda",
+    "catppuccin-mocha", "classic", "cynthia",
+    "daniela", "emilia", "forest", "hidrot", "isabel",
+    "jan", "marisol", "murz", "pamela", "silvia", "tobi",
+    "varinka", "yael", "z0mbi3",
     "sedo-dracula", "sedo-everblush", "sedo-everforest", "sedo-gotham",
     "sedo-gruvbox", "sedo-nightfox", "sedo-nord", "sedo-onedark",
     "sedo-tokyo-night",
+    "gh0stzk-aline", "gh0stzk-brenda", "gh0stzk-cristina", "gh0stzk-cynthia",
+    "gh0stzk-daniela", "gh0stzk-emilia", "gh0stzk-h4ck3r", "gh0stzk-isabel",
+    "gh0stzk-jan", "gh0stzk-karla", "gh0stzk-pamela", "gh0stzk-silvia",
+    "gh0stzk-varinka", "gh0stzk-yael",
 ]
 
-# aline is the one light theme in the whole set (confirmed in this rice's own
-# README) - every other theme is dark. VS Code's uiTheme base affects default
+# aline and gh0stzk-aline are the light themes in the
+# set (confirmed in this rice's own README) - every other theme is dark. VS Code's uiTheme base affects default
 # contrast assumptions for anything this theme doesn't explicitly override.
-LIGHT_THEMES = {"aline"}
+LIGHT_THEMES = {"aline", "gh0stzk-aline"}
 
 # Semantic role -> ordered list of [colors] keys to try, most-specific first.
 # Built by reading every theme's real [colors] block (not guessed) - most

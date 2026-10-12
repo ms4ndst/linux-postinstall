@@ -4,16 +4,20 @@
 
 ![screenshot](screenshot.png)
 
-This repo ships **four independent, distro-specific scripts** — pick the one that matches your machine:
+This repo ships **independent, distro-specific scripts** — pick the one that matches your machine:
 
 - **[`post-install-ubuntu.sh`](post-install-ubuntu.sh)** — for **Ubuntu 26.04 LTS / 26.10**, built on apt/Nala.
 - **[`post-install-fedora.sh`](post-install-fedora.sh)** — for **Fedora Workstation**, built on `dnf5`/RPM Fusion.
 - **[`post-install-arch.sh`](post-install-arch.sh)** — for **Arch Linux and [Omarchy](https://omarchy.org)**, built on `pacman` with a `yay` AUR fallback.
 - **[`post-install-opensuse.sh`](post-install-opensuse.sh)** — for **openSUSE Tumbleweed**, built on `zypper`/OBS/Packman.
+- **[`post-install-openmandriva.sh`](post-install-openmandriva.sh)** — for **OpenMandriva (Rock/Rolling)**, built on `dnf`.
+- **[`post-install-nixos.sh`](post-install-nixos.sh)** — for **NixOS (nixos-26.05)**, *declarative*: see the note below.
 
-They share the same Catppuccin-themed menu-driven UX, the same installed/skipped/failed tracking, and the same GNOME Shell app-folder feature — but every install path (package names, repos, drivers, codecs) is re-sourced per distro rather than being a single script with `if`-branches. None of the four scripts depends on or modifies another; run whichever matches your system.
+The RPM/apt/pacman scripts share the same Catppuccin-themed menu-driven UX, the same installed/skipped/failed tracking, and the same GNOME Shell app-folder feature — but every install path (package names, repos, drivers, codecs) is re-sourced per distro rather than being a single script with `if`-branches. None of them depends on or modifies another; run whichever matches your system.
 
-There are also two standalone i3+Catppuccin rice scripts that aren't part of that quartet: **[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh)** (Fedora) and **[`opensuse-setup-i3-cattpuccin.sh`](opensuse-setup-i3-cattpuccin.sh)** (openSUSE Tumbleweed) each build a full Catppuccin Mocha–themed **i3 tiling window manager** desktop on top of their respective distro — single-purpose rice scripts, not menu-driven package browsers. Run one after (or independently of) its matching post-install script. See [i3 + Catppuccin Rice Script](#-i3--catppuccin-rice-script-fedora--opensuse) below.
+**NixOS is different by design.** NixOS doesn't install packages imperatively, so `post-install-nixos.sh` keeps the same category menu but, instead of installing each pick, accumulates your choices into a single generated module (`/etc/nixos/postinstall.nix`), imports it (automatically for a classic `configuration.nix`, or by printing the one line to add for a flake), and runs `nixos-rebuild switch`. The result is reproducible, rolls back through the normal generation/boot-menu mechanism, and survives future rebuilds. It targets nixpkgs **nixos-26.05**; a few items the other scripts pull from vendor repos aren't in nixpkgs (or are flake-only) and are reported rather than silently dropped.
+
+There are also standalone i3+Catppuccin rice scripts that aren't part of that set: **[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh)** (Fedora), **[`opensuse-setup-i3-cattpuccin.sh`](opensuse-setup-i3-cattpuccin.sh)** (openSUSE), **[`openmandriva-setup-i3-cattpuccin.sh`](openmandriva-setup-i3-cattpuccin.sh)** (OpenMandriva) and **[`nixos-setup-i3-cattpuccin.sh`](nixos-setup-i3-cattpuccin.sh)** (NixOS) each build a full Catppuccin Mocha–themed **i3 tiling window manager** desktop on top of their respective distro — single-purpose rice scripts, not menu-driven package browsers. Run one after (or independently of) its matching post-install script. See [i3 + Catppuccin Rice Script](#-i3--catppuccin-rice-script-fedora--opensuse) below. The NixOS rice installs its toolkit through a generated `/etc/nixos/rice.nix` (i3lock-color and snixembed are packaged there, so none of the other rices' build-from-source fallbacks run), then writes the exact same dotfiles into `$HOME` so the live theme switcher works identically.
 
 ---
 
@@ -206,6 +210,13 @@ There are also two standalone i3+Catppuccin rice scripts that aren't part of tha
   - [🖥️ Multi-Monitor Setup](#️-multi-monitor-setup)
   - [🛟 Rollback Safety Net](#-rollback-safety-net)
   - [⚠️ i3 Script Known Limitations & Caveats](#️-i3-script-known-limitations--caveats)
+- [❄️ NixOS: Complete Beginner's Guide](#️-nixos-complete-beginners-guide)
+  - [❄️ What makes NixOS different (read this first)](#️-what-makes-nixos-different-read-this-first)
+  - [❄️ Before you start](#️-before-you-start)
+  - [❄️ Step-by-step: the post-install script](#️-step-by-step-the-post-install-script)
+  - [❄️ Step-by-step: the i3 rice](#️-step-by-step-the-i3-rice)
+  - [❄️ If something goes wrong (and how to undo anything)](#️-if-something-goes-wrong-and-how-to-undo-anything)
+  - [❄️ NixOS FAQ](#️-nixos-faq)
 - [📜 License](#-license)
 - [🙏 Acknowledgments](#-acknowledgments)
 
@@ -2815,29 +2826,26 @@ Each script targets **its own distro only** — the Fedora script checks for `dn
 
 **Polybar themes** (reachable from the app menu's **Desktop Theme** entry, or standalone via `~/.local/bin/polybar-theme.sh [name]`) — each `~/.config/polybar/themes/*.ini` is a **complete, standalone `config.ini`**, not a `[colors]`-block fragment or a `modules-left`/`-center`/`-right` override. Two earlier iterations tried the fragment approach — a "theme" as just a color palette, then a separate "layout" as just module arrangement, applied via a splicing script that edited pieces of the live `config.ini` in place — and kept converging on the same complaint: recoloring or reordering the *same* segmented-powerline-pill structure only ever produces variations on one look, no matter how different the hex codes are, and a centered module reusing a pill built for the end of a chain (a filled box floating alone in empty space) reads as visually broken regardless of which colors fill it. A real theme is more than a palette: module arrangement, which widgets get a filled background vs. plain text, whether powerline arrows connect segments at all, are all part of what makes e.g. Dracula's actual i3 setup (flat, no boxes anywhere) look nothing like Catppuccin's (segmented pills), even before any color is considered — so a theme now owns all of it, and `polybar-theme.sh` applies one with a plain file copy over the live `config.ini`, no splicing to keep in sync.
 
-72 theme entries ship by default: 29 themes that each have a rounded-corner-free `-square` counterpart (58 — see [Square variants](#square-variants-no-rounded-corners) further down), plus `forest-numbered`/`forest-numbered-square`, `hidrot`, `murz`, `murz-alt`, and the nine `sedo-*` themes (see [Numbered Forest, Murzchnvok, and sedo-wm themes](#numbered-forest-murzchnvok-and-sedo-wm-themes) further down). Only `catppuccin-mocha` is meant to stay exactly as originally shipped — the rice's own reference theme, since rofi/i3lock/GTK/dunst all already match it regardless of which polybar theme is active. The core set below is built from scratch in genuinely different visual languages, each modeled on an actual reference setup rather than invented, and deliberately *structurally* different from each other too — not just Mocha vs. one alternative flat style repeated for every other theme with different colors, which is what the first pass at this actually shipped (see the correction note below). An additional 16 themes from rices in [gh0stzk/dotfiles](https://github.com/gh0stzk/dotfiles) (a real bspwm/polybar collection) follow in their own table further down, as do the [Murzchnvok/polybar-collection](https://github.com/Murzchnvok/polybar-collection) and [sum4n/sedo-wm](https://gitlab.com/sum4n/sedo-wm) ports.
+70 theme entries ship by default: 21 themes that each have a rounded-corner-free `-square` counterpart (42 — see [Square variants](#square-variants-no-rounded-corners) further down), plus `forest-numbered`/`forest-numbered-square`, `hidrot`, `murz`, `murz-alt`, the nine `sedo-*` themes (see [Numbered Forest, Murzchnvok, and sedo-wm themes](#numbered-forest-murzchnvok-and-sedo-wm-themes) further down), and the 14 `gh0stzk-*` themes (see [gh0stzk-* themes](#gh0stzk--themes-faithful-gh0stzkdotfiles-imports)). Only `catppuccin-mocha` is meant to stay exactly as originally shipped — the rice's own reference theme, since rofi/i3lock/GTK/dunst all already match it regardless of which polybar theme is active. The core set below is built from scratch in genuinely different visual languages, each modeled on an actual reference setup rather than invented, and deliberately *structurally* different from each other too — not just Mocha vs. one alternative flat style repeated for every other theme with different colors, which is what the first pass at this actually shipped (see the correction note below). An additional 13 themes from rices in [gh0stzk/dotfiles](https://github.com/gh0stzk/dotfiles) (a real bspwm/polybar collection) follow in their own table further down, as do the [Murzchnvok/polybar-collection](https://github.com/Murzchnvok/polybar-collection) and [sum4n/sedo-wm](https://gitlab.com/sum4n/sedo-wm) ports.
+
+**Removed by request:** `blocks`, `cristina`, `dracula` (not `sedo-dracula`), `h4ck3r`, `karla`, `nord` (not `sedo-nord`), `yucklys` and `yucklys-light`, each with its `-square` variant. Re-running the setup script deletes their leftover files from `~/.config/{polybar,rofi,kitty,starship,dunst,i3}/themes/`, so they also disappear from the theme picker on machines that had them. `hidrot` keeps the Nord rofi/kitty/starship/dunst/i3-border files it used to copy from `nord` — they're now written directly as `hidrot`'s own.
 
 - **`catppuccin-mocha`** — segmented powerline pills, tray and clock each their own filled capsule, angled separators (a single glyph, `U+E0B4`, reused for every transition — not two different glyph styles) connecting every segment into one continuous ribbon. Unchanged from the very first version of this script.
-- **`dracula`** — flat, no pills, no powerline arrows anywhere, modeled directly on [Dracula's actual i3 port](https://github.com/dracula/i3) (confirmed by reading its real config, not assumed): i3bar/i3status-based, so nearly everything renders as plain colored text, separated by a simple `|` divider in the muted "Current Line" tone (`#44475a`) — that's i3status's own real separator color in that config too. The workspace switcher is the *only* element that ever gets a filled background, and only when focused (unfocused workspaces sit directly on the bar's own background color, exactly matching the reference). Ported to polybar rather than switching to i3bar/i3status, so every widget this rice already has — tray, caffeine, DND, etc., none of which exist in the plain i3status world — stays present, just restyled flat instead of removed.
-- **`nord`** — grouped flat "islands": related widgets (volume/network/bluetooth; DND/caffeine/battery; memory/CPU) share one background block each with no divider between them — only the icon color tells them apart — separated by a real empty gap module between groups, not a colored separator glyph. This is a genuinely different structure from Dracula's fully-flat approach (no backgrounds anywhere) and from Mocha's fully-connected one (every segment physically joined by an arrow) — modeled on actual screenshots from [stav121/i3wm-themer](https://github.com/stav121/i3wm-themer)'s `themes/screenshots/` and [Jfeatherstone/i3-themes](https://github.com/Jfeatherstone/i3-themes)' Bebop theme (`bebop_busy.png`), fetched and looked at directly rather than described secondhand. Colors are the official [Nord](https://www.nordtheme.com/) palette.
 - **`archcraft`** — rounded-cap "capsule" clusters: `LD`/`RD` decorator modules (the same `U+E0B6`/`U+E0B4` half-circle pair Mocha's separators use, just bracketing a *group* instead of connecting every segment) whose foreground color matches the bracketed widgets' own background, so the two caps and the content between them fuse into one seamless pill — the workspace switcher, the tray, and the clock each get their own capsule this way. Everything *outside* a capsule (backlight, volume, network, bluetooth, caffeine, DND, battery, memory, CPU) stays completely flat — plain text with only a colored icon prefix, no background at all — separated by a small dot glyph (`U+F444`) instead of a divider line. Each i3 workspace state pops its own individual accent color against the shared capsule background (focused = blue, visible = green, urgent = red) rather than one shared fill for the whole cluster. Modeled directly on [archcraft-os/archcraft-i3wm](https://github.com/archcraft-os/archcraft-i3wm)'s real `files/theme/polybar/{decor,modules,colors}.ini`, fetched and read directly via the GitHub API rather than guessed — including its exact `LD`/`RD`/`dot` glyph codepoints and its own `format-background` pairing between the decor modules and the widgets they bracket. Colors are Archcraft's real One-Dark-adjacent palette (`colors.ini`), not reused from any other theme here.
 
-#### The gh0stzk/dotfiles batch (16 themes)
+#### The gh0stzk/dotfiles batch (13 themes)
 
-16 of the 18 rices in [gh0stzk/dotfiles](https://github.com/gh0stzk/dotfiles), ported after cloning the whole repo locally — 774 files — rather than fetching pieces through the GitHub API, and reading each rice's own real `config.ini`/`modules.ini` directly (`andrea` and `melissa` were built the same way but removed after live-testing feedback — see the correction note below). 15 of the 16 are genuine polybar configs; `z0mbi3` turned out to be [EWW](https://github.com/elkowar/eww)-based instead (checked per-rice, not assumed from one example after an earlier check was wrong), so it translates the source's real colors and layout into polybar syntax rather than porting an actual config. Several rices also ship as 2–6 *separate* bars, or (`z0mbi3`) a true vertical sidebar, rather than one horizontal top bar — every one of those was consolidated into this rice's usual single top bar, the same simplification already applied to Nord/Dracula/Archcraft's own unportable pieces.
+16 of the 18 rices in [gh0stzk/dotfiles](https://github.com/gh0stzk/dotfiles), ported after cloning the whole repo locally — 774 files — rather than fetching pieces through the GitHub API, and reading each rice's own real `config.ini`/`modules.ini` directly (`andrea` and `melissa` were built the same way but removed after live-testing feedback — see the correction note below). `cristina`, `h4ck3r` and `karla` were later removed by request too, leaving 13. 15 of the 16 are genuine polybar configs; `z0mbi3` turned out to be [EWW](https://github.com/elkowar/eww)-based instead (checked per-rice, not assumed from one example after an earlier check was wrong), so it translates the source's real colors and layout into polybar syntax rather than porting an actual config. Several rices also ship as 2–6 *separate* bars, or (`z0mbi3`) a true vertical sidebar, rather than one horizontal top bar — every one of those was consolidated into this rice's usual single top bar, the same simplification already applied to Nord/Dracula/Archcraft's own unportable pieces.
 
 | Theme | Real identity | Notes |
 |---|---|---|
 | `aline` | Light pastel (Rosé-Pine-Dawn-adjacent), shared-group brackets, per-number circled workspace icons | Only non-dark theme in the whole set |
 | `brenda` | Everforest-adjacent, two-part vivid-icon + cream-value chips, Pac-Man/ghost workspace icons | |
-| `cristina` | Individually-colored pill capsules per widget, plain unbracketed workspace digits | Rosé-Pine-Moon-adjacent |
 | `cynthia` | Deliberately monochrome near-black, workspace state is the *only* real color | Circled-number icons, same family as `aline` |
 | `daniela` | Flat colored **word** prefixes ("CPU", "RAM") instead of icons, no backgrounds anywhere | Real palette was Catppuccin Mocha's exact hex — substituted a Tokyo-Night-adjacent palette |
 | `emilia` | Individually-bracketed capsules, all one muted hue (vs. Cristina's rainbow) | Real palette was Tokyo Night (clashed with Daniela's substitute) — warm copper/amber used instead |
-| `h4ck3r` | Green-on-black "matrix" monochrome — the source's own "red"/"blue"/etc. keys are secretly all shades of green | Reticle/skull/dot workspace icons |
 | `isabel` | No chip backgrounds or state colors at all — icon shape alone tells workspaces apart; vertical 3-dot bullet separators | |
 | `jan` | Genuine Synthwave-adjacent neon (hot pink/electric blue/neon green) | Focused workspace wrapped in literal `[ ]` brackets |
-| `karla` | Vivid magenta/purple, plain ASCII `\|` pipe dividers — the simplest separator in this whole set | |
 | `marisol` | One shared, rounded-cap-bracketed chip for the whole workspace cluster, everything else fully flat | Real palette was the official Dracula palette — substitute used; bar background is ~90% opaque rather than the real source's full transparency (see correction note) |
 | `pamela` | Vivid indigo-navy, no chip, colored workspace icons only | Real bar background comes from a different color key (`bg-alt`, ~75% opaque) than the one first read — corrected after re-checking the source |
 | `silvia` | Official Gruvbox Dark, used as-is (no clash) — concentric-ring workspace icons, bullet-dot separators | |
@@ -2888,6 +2896,23 @@ Both draw their icons with the repo's bundled Material Icons font, which the set
 
 Known quirks kept from the originals (they're the originals' own, not introduced here): several modules reference colors their `colors.ini` never defines (`${color.bg1}`, `${color.current}`, …), so polybar falls back to its default for those; `sedo-onedark` has an unescaped backslash in an unused memory module; `sedo-gotham`/`sedo-onedark` show the **mpd** widget's "Offline" text whenever mpd isn't running (the other styles' mpd widgets have an empty offline format, so they just disappear). One exception was made: `sedo-gruvbox`'s `label-occupied = %icon%'` has a stray quote that only became visible once its workspace digits moved to a text font, so the wrapper's own workspace module drops it.
 
+#### gh0stzk-* themes (faithful gh0stzk/dotfiles imports)
+
+**`gh0stzk-aline`, `-brenda`, `-cristina`, `-cynthia`, `-daniela`, `-emilia`, `-h4ck3r`, `-isabel`, `-jan`, `-karla`, `-pamela`, `-silvia`, `-varinka`, `-yael`** — 14 of the 16 polybar rices from [gh0stzk/dotfiles](https://github.com/gh0stzk/dotfiles) (commit `bbcd8b0`), imported to look like the originals. The older restyled ports in the [gh0stzk/dotfiles batch](#the-gh0stzkdotfiles-batch-13-themes) above are kept alongside them. `marisol` and `melissa` were removed by request; `andrea` and `z0mbi3`'s bars are EWW rather than polybar, so they aren't included either.
+
+Same approach as the sedo themes: each rice's own `config.ini`/`modules.ini` is installed byte-for-byte under `~/.config/polybar/gh0stzk/rices/<rice>/`, and `~/.config/polybar/themes/gh0stzk-<rice>.ini` is a small wrapper that only adds what running a bspwm bar under i3 needs:
+
+- **Every bar the original launches**, in its original place and size: bottom bars stay at the bottom (`cristina`, `isabel`, and `cynthia`/`melissa`'s second bar), and multi-bar rices start all their bars side by side (`cynthia` 2, `karla` 3, `melissa` 2, `pamela` 6). The wrapper lists them in `; launch-primary = …` / `; launch-secondary = …` comment lines, which `polybar-launch.sh` reads (other monitors get the same bars minus the tray).
+- **`override-redirect = true`** on every bar. Otherwise i3 treats each bar as a dock window — full width, stacked at the screen edge, ignoring the original's width and offsets, so centered, floating and side-by-side bars all ended up left-aligned and stacked. The space the bars need is kept free the way gh0stzk's bspwm does it: the rice's own `TOP_PADDING`/`BOTTOM_PADDING`, set as i3 `gaps top`/`gaps bottom` in that theme's i3 file (switching to any other theme restores the normal gaps).
+- **Workspaces drawn by `gh0stzk-i3ws`** instead of the bspwm module: a small script that reads the original module's own labels, icons, fonts, colors, padding and separator and draws them from i3's state — including empty workspaces, which polybar's i3 module can't show (bspwm's can). It shows this rice's 9 workspaces (gh0stzk's bspwm has 6); `gh0stzk-varinka` continues its A–F letters with G–I, and any theme with per-number icons for only 6 workspaces shows the workspace number for 7–9, drawn in that theme's own label font/color/pill so it matches the rest. The same script stands in for `cynthia`'s layout-mode module (tabbed/stacked shows as "Monocle").
+- **The originals' helper commands**, from `~/.local/share/gh0stzk/bin` (put on polybar's PATH by `polybar-launch.sh`): `Weather` and `target` are gh0stzk's own scripts, unmodified; `bluetooth-polybar.sh` is his, reading the active rice's colors from its new location; `OpenApps`, `RiceSelector`, `NetManagerDM` and `Colorpicker` are stand-ins with the same names and options that open this rice's equivalents (app launcher, theme picker, wifi menu, colorpicker, power menu, updater, …). His EWW popups (the user card and music player) open this rice's app menu and CLIamp instead.
+- **Pending updates**: his updates module is kept as-is. It reads `~/.cache/Updates.txt`, which his Arch `Updates` script fills; a stand-in `Updates` (same name) fills it with this distro's count (`sedo-updates.sh`) and pokes polybar with `polybar-msg … hook 0` like his does — once a few seconds after the bars start, then hourly, and after the updater opened from the bar closes. Battery, adapter, backlight and network interface come from what `polybar-launch.sh` detects, through a generated `system.ini` (the file gh0stzk ships for hand-editing).
+- **Music controls — the one functional change**: his `mpd`/`mpd_control` modules need an MPD server. They're drawn by `gh0stzk-i3ws` from their own settings instead — the same format, icons, colors, fonts and song label (including its length limit) — but following any player through `playerctl` (Spotify, browsers, CLIamp, …), with previous/play-pause/next controlling that player. With nothing playing they show the original's own "No Music" style.
+
+Rofi, kitty, starship, dunst and i3 border colors come from each rice's own palette in its `theme-config.bash`, and dunst also uses the rice's own font, corner radius and position. Fonts the bars name that aren't installed elsewhere are downloaded: Bebas Neue, Phosphor and Maple Mono NF from the gh0stzk repo itself, Inconsolata's Semi Condensed weights, and JetBrains Mono where the distro doesn't package it.
+
+The weather widget uses gh0stzk's built-in OpenWeather key and IP-based location, as in the original.
+
 #### Desktop-wide theming (polybar + rofi + kitty + starship + dunst together)
 
 `~/.local/bin/polybar-theme.sh` (renamed in spirit, not on disk — the app menu entry is now **Desktop Theme**) applies matching **polybar, rofi, kitty, the Starship shell prompt, and dunst** together instead of just the bar. Each stays a separate, complete config per theme name — `~/.config/{polybar,rofi,kitty,starship,dunst}/themes/<name>.{ini,rasi,conf,toml,dunstrc}` (rofi ships a `<name>.rasi` and a `<name>-powermenu.rasi` pair) — applied with a plain file copy over a stable "current" file each tool actually reads (`polybar/config.ini`, `rofi/current.rasi` + `current-powermenu.rasi`, `kitty/current.conf`, `~/.config/starship.toml`, `dunst/dunstrc`), the same one-file-per-theme, no-splicing approach the polybar side already used. `~/.config/i3/config`'s own launcher/run keybindings, `app-menu.sh`, and `powermenu.sh` all point at the `current.rasi`/`current-powermenu.rasi` filenames rather than a hardcoded theme name, so they automatically follow whatever's active.
@@ -2911,17 +2936,19 @@ kitty picks up a new theme in two ways: any *newly opened* window reads `~/.conf
 
 **Calendar/task reminders were the one notification path still stuck on a fixed Catppuccin Mocha popup, unreachable by any of the above.** GNOME Calendar/Evolution fire reminders through a separate helper process, `evolution-alarm-notify`, which pops its own dedicated GTK window rather than going through the desktop's standard notification system — so no amount of retheming dunst/kitty/rofi/starship ever touched it, and it kept showing Mocha's purple/lavender regardless of the active theme. Building a full matching GTK theme for it was judged out of proportion (GTK apps aren't part of this rice's per-theme switcher at all — see the libadwaita note below), so it's replaced outright: `~/.local/bin/calendar-reminder-daemon.py` polls every enabled calendar directly via the real `EDataServer`/`ECal`/`ICalGLib` GObject-introspection API (the same one `evolution-alarm-notify` itself is built on, confirmed working against this machine's real Google/Exchange/local calendars), expands recurring events correctly via `generate_instances_sync`, reads each event's actual `VALARM` `TRIGGER` duration (e.g. "10 minutes before" — not a hardcoded lead time), and fires a themed `notify-send` call the moment an alarm becomes due, deduplicated against a small JSON state file so a reminder never fires twice across polls. Routing through dunst instead of a separate popup means reminders automatically pick up whichever theme is active and automatically respect Do Not Disturb — `dunstctl set-paused` already suppresses every `notify-send` call the same way it suppresses everything else, no separate toggle needed. `evolution-alarm-notify`'s own popup is disabled outright rather than just left unused: a per-user `~/.config/autostart/org.gnome.Evolution-alarm-notify.desktop` override (`Hidden=true`, same pattern already used for `nm-applet`/`pasystray`/`blueman`) stops it from autostarting, but it's *also* D-Bus-activatable (its own systemd `--user` unit declares `BusName=org.gnome.Evolution-alarm-notify`), which bypasses a plain autostart override the instant anything talks to that bus name regardless of systemd enablement — `systemctl --user mask evolution-alarm-notify.service` is needed in addition to actually keep it from ever running. `dnd-toggle.sh` is correspondingly simpler now than the DND toggle described above: it used to also flip `org.gnome.evolution-data-server.calendar`'s `notify-enable-display`/`notify-enable-audio` gsettings in lockstep, since dunst's own pause state didn't used to cover calendar reminders at all (they went through the separate popup); now that reminders are just another dunst notification, `dunstctl set-paused` alone already covers both.
 
+**Terminal apps with their own colors** (`~/.local/bin/app-theme-sync.sh`, run by `polybar-theme.sh` after every switch) — kitty's recolor doesn't reach apps that draw their own palette, so CLIamp (`Mod+m`) and Mistral Vibe (`Mod+a`) used to stay on fixed themes (catppuccin / nord) whatever the desktop theme. Now CLIamp gets a custom theme, `~/.config/cliamp/themes/rice.toml` (CLIamp's own custom-theme format), written from the active theme's kitty palette with the i3 focused-border color as accent and no background of its own (so the themed kitty background shows through), applied live to a running player with `cliamp theme rice`. Vibe is set to Textual's `ansi-dark` theme (`ansi-light` when the theme's background is light), which draws with the terminal's 16 colors, so kitty's live recolor reaches it too, even mid-session. The keybinding cheat sheet (`Mod+i`) likewise uses the terminal palette now instead of hardcoded Catppuccin Mocha colors.
+
 #### Square variants (no rounded corners)
 
-Every one of the 29 classic themes ships a second, `-square`-suffixed version — `aline-square`, `nord-square`, and so on — that keeps the exact same colors and module layout but removes every rounded corner: the bar window's own corner radius, every rounded pill/capsule end-cap drawn with polybar, and the matching rofi window/input-bar/selected-row corners. They sit alongside the originals in the same flat `polybar-theme.sh` list (58 of the 72 entries) rather than a separate menu, so picking `<name>-square` is just one more choice. (`hidrot`, `murz`, `murz-alt`, and the `sedo-*` themes are newer ports with no `-square` twin; `forest-numbered` has one, derived from `forest-square`.)
+Every one of the 21 classic themes ships a second, `-square`-suffixed version — `aline-square`, `jan-square`, and so on — that keeps the exact same colors and module layout but removes every rounded corner: the bar window's own corner radius, every rounded pill/capsule end-cap drawn with polybar, and the matching rofi window/input-bar/selected-row corners. They sit alongside the originals in the same flat `polybar-theme.sh` list (58 of the 72 entries) rather than a separate menu, so picking `<name>-square` is just one more choice. (`hidrot`, `murz`, `murz-alt`, and the `sedo-*` themes are newer ports with no `-square` twin; `forest-numbered` has one, derived from `forest-square`.)
 
 Polybar has no native per-widget border-radius — every "rounded corner" in this rice's themes is actually a dedicated Nerd Font glyph (`` / ``, the Powerline "half circle" pair) drawn as its own tiny module next to the widget(s) it brackets, colored to either match or transition between backgrounds so it *reads* as a curved cap. Squaring a theme means finding and removing exactly those decorative modules — nothing else — which takes a different shape per theme depending on how that theme built its brackets in the first place:
 
-- **`aline`, `cynthia`, `marisol`** use one shared `bi`/`bd` cap pair (`aline` also has a second `bi-tray`/`bd-tray` pair for its tray backdrop) — both removed, leaving the bracketed widgets as plain flat text with just their icon-prefix color, the same style already used by every non-bracketed theme in the set (`brenda`, `dracula`, `nord`, etc.).
+- **`aline`, `cynthia`, `marisol`** use one shared `bi`/`bd` cap pair (`aline` also has a second `bi-tray`/`bd-tray` pair for its tray backdrop) — both removed, leaving the bracketed widgets as plain flat text with just their icon-prefix color, the same style already used by every non-bracketed theme in the set (`brenda`, `jan`, `silvia`, etc.).
 - **`archcraft`** uses `LD`/`RD` decorator modules around its workspace/tray group — removed the same way; the `dot` (`U+F444`) separators between its otherwise-flat widgets are untouched, since those were never part of the rounding.
-- **`cristina` and `emilia`** individually bracket *every* widget group with its own two-letter cap pair (`bli`/`bld` for backlight, `voli`/`vold` for volume, `neti`/`netd` for network, and so on) — all 12 (`cristina`) / 22 (`emilia`) of them found and removed, since each is a real, separate decorative module with no other purpose.
+- **`emilia`** individually brackets *every* widget group with its own two-letter cap pair (`bli`/`bld` for backlight, `voli`/`vold` for volume, `neti`/`netd` for network, and so on) — all 22 of them found and removed, since each is a real, separate decorative module with no other purpose.
 - **`catppuccin-mocha`** is structurally different from all of the above: its "continuous ribbon" look comes from 14 `sep-<color>-<color>` transition modules connecting every single segment (not just group boundaries), each drawing the same half-circle glyph to blend one segment's background into the next. Removing all 14 turns the ribbon into a row of plain adjacent rectangles — same per-segment colors, square joints instead of curved ones, still one continuous strip since nothing but the connector itself is gone.
-- **The other 9 themes** (`brenda`, `daniela`, `dracula`, `h4ck3r`, `isabel`, `jan`, `karla`, `pamela`, `silvia`, `varinka`, `yael`, `z0mbi3`) never used the cap-glyph technique at all — their `-square` file only differs from the original in the bar's own corner radius line (`radius`/`radius-top`/`radius-bottom`), which is already `0` almost everywhere; `nord`'s `radius = 4` is the one real change in this group.
+- **The other themes** (`brenda`, `daniela`, `isabel`, `jan`, `pamela`, `silvia`, `varinka`, `yael`, `z0mbi3`) never used the cap-glyph technique at all — their `-square` file only differs from the original in the bar's own corner radius line (`radius`/`radius-top`/`radius-bottom`), which is already `0` almost everywhere.
 
 Every glyph module removed this way was found by scanning each theme's actual `label =`/`content =` values for the literal cap character — not guessed from module names, since the naming convention differs completely between themes (`bi`/`bd`, `LD`/`RD`, `bli`/`bld`, `sep-mauve-blue`, …) — then deleted along with its token in every `modules-left`/`-center`/`-right` line. Live-tested by applying `catppuccin-mocha-square` and screenshotting the actual running bar: every segment renders as a flat rectangle sitting directly against its neighbor, no curve anywhere, tray included.
 
@@ -3029,7 +3056,7 @@ sudo plymouth-set-default-theme -R bgrt
 
 ### 🦎 openSUSE Port: What's Actually Different
 
-`opensuse-setup-i3-cattpuccin.sh` was produced by diffing it against `fedroa-setup-i3-cattpuccin.sh` directly — everything below is what that diff actually shows, not a guess. The overwhelming majority of the file (every heredoc-generated config, all 72 theme entries, the calendar-reminder daemon, every helper script) has **zero** distro dependency and is untouched. What changed is package-manager calls, a few OBS repos standing in for Fedora's COPRs, and a handful of package names/system tools that genuinely differ.
+`opensuse-setup-i3-cattpuccin.sh` was produced by diffing it against `fedroa-setup-i3-cattpuccin.sh` directly — everything below is what that diff actually shows, not a guess. The overwhelming majority of the file (every heredoc-generated config, all 70 theme entries, the calendar-reminder daemon, every helper script) has **zero** distro dependency and is untouched. What changed is package-manager calls, a few OBS repos standing in for Fedora's COPRs, and a handful of package names/system tools that genuinely differ.
 
 **Package manager & repos:**
 
@@ -3060,7 +3087,7 @@ sudo plymouth-set-default-theme -R bgrt
 
 ### 🔵 OpenMandriva Port: What's Actually Different
 
-`openmandriva-setup-i3-cattpuccin.sh` was produced by mirroring `fedroa-setup-i3-cattpuccin.sh` directly to OpenMandriva Linux (Cooker / Rolling / Rock / Release). The overwhelming majority of the file (every heredoc-generated config, all 72 theme entries, the calendar-reminder daemon, every helper script) has **zero** distro dependency and is untouched. What changed:
+`openmandriva-setup-i3-cattpuccin.sh` was produced by mirroring `fedroa-setup-i3-cattpuccin.sh` directly to OpenMandriva Linux (Cooker / Rolling / Rock / Release). The overwhelming majority of the file (every heredoc-generated config, all 70 theme entries, the calendar-reminder daemon, every helper script) has **zero** distro dependency and is untouched. What changed:
 
 **Repository tree & architecture handling:**
 - OpenMandriva uses a 4-tier repository structure (`cooker`, `rolling`, `rock`, `release`) split into subrepos (`main`, `unsupported`, `restricted`, `non-free`). Community tiling window managers like `i3-wm` live in **`unsupported`**.
@@ -3226,6 +3253,151 @@ This is best-effort and never blocks the rest of the script — if snapper isn't
 - **HP plugin install is best-effort and only runs if a device is detected.** The script checks CUPS's discovered devices and the USB vendor ID `03f0` (Hewlett-Packard) before touching anything; if neither turns up, it logs a message and skips entirely rather than forcing an interactive EULA/download on everyone. If your HP printer only shows up *after* the script runs (plugged in later, or discovered once CUPS/avahi have had a moment to probe the network), just run `hp-plugin -i` yourself afterward — it's the exact same command, and it's a no-op if the plugin's already installed (checked via `/var/lib/hp/hplip.state`).
 - **`Mod+shift+XF86Assistant` is tuned to one specific laptop's hardware AI-assistant key**, not a standard binding — confirmed via `xev` that this key fires `Super_L`+`Shift_L`+`XF86Assistant` together as one burst rather than a bare `XF86Assistant`, so the modifiers in the bindsym have to match that exactly. A keyboard without a dedicated assistant key just never triggers it; one that has one but wires it differently needs its own `xev` capture and an edited bindsym to match.
 - Every config file this script manages is **overwritten on re-run** with no automatic backup — if you've hand-edited any of them, copy them aside first.
+
+---
+
+# ❄️ NixOS: Complete Beginner's Guide
+
+This guide assumes you have **never used NixOS before** and just want the two NixOS scripts — **[`post-install-nixos.sh`](post-install-nixos.sh)** (apps & tools) and **[`nixos-setup-i3-cattpuccin.sh`](nixos-setup-i3-cattpuccin.sh)** (the i3 desktop) — to work. Follow it top to bottom. You can copy-paste every command.
+
+### ❄️ What makes NixOS different (read this first)
+
+On Ubuntu/Fedora/Arch you install software by running a command that *changes your system right now* (`apt install`, `dnf install`, `pacman -S`). **NixOS doesn't work that way**, and understanding this one idea makes everything else click:
+
+- On NixOS, your **entire system is described by text files** — mainly `/etc/nixos/configuration.nix`. What's installed, which services run, your drivers: all of it lives in those files.
+- You don't install things one by one. You **edit the config, then "rebuild"** the system with `nixos-rebuild switch`. NixOS reads the files and makes the system match them.
+- Every rebuild creates a **"generation"** — a snapshot. If a change breaks something, you **pick the previous generation from the boot menu** and you're back to exactly how it was. Nothing is ever half-installed.
+
+Because of that, the NixOS scripts here **don't install apps directly**. Instead they **write a config file for you** (`/etc/nixos/postinstall.nix` for apps, `/etc/nixos/rice.nix` for the i3 desktop), hook it into your system config, and run the rebuild. The upside: everything you pick is reproducible, upgrades cleanly, and undoes in one reboot. That is the normal, recommended NixOS way.
+
+> **Two flavors of NixOS config.** Most people have a classic setup with a file at `/etc/nixos/configuration.nix` ("channels"). Some advanced users use a `/etc/nixos/flake.nix` ("flakes"). **The scripts handle both** — for channels they wire everything up automatically; for flakes they print the one line you need to paste. If you don't know which you have, you almost certainly have the classic `configuration.nix` one.
+
+### ❄️ Before you start
+
+1. **You need a working NixOS install already.** These scripts set up software *on* NixOS; they don't install NixOS itself. If you haven't installed NixOS yet, do the official graphical install first (<https://nixos.org/download>), then come back here.
+
+2. **Know how to open a terminal.** On most NixOS desktops: look for "Console", "Terminal", or press `Ctrl`+`Alt`+`T`.
+
+3. **You need `git` and your target release.** Check your NixOS version:
+   ```bash
+   nixos-version
+   ```
+   These scripts target **nixos-26.05**. If your version number starts with `26.05`, you're perfectly matched. A different number usually still works, but package names occasionally differ — if a rebuild later complains a package "does not exist", that's why (see [the FAQ](#️-nixos-faq)).
+
+4. **Get the scripts.** Install git temporarily and clone the repo (this `nix-shell` trick gives you git without permanently adding it):
+   ```bash
+   nix-shell -p git --run "git clone https://github.com/ms4ndst/linux-postinstall.git"
+   cd linux-postinstall
+   ```
+
+5. **Make a safety snapshot of your current config** (so you can always get back to today's working setup):
+   ```bash
+   sudo cp /etc/nixos/configuration.nix ~/configuration.nix.before-scripts
+   ```
+   (If that file doesn't exist, you're on a flake setup — see the flake note below.)
+
+### ❄️ Step-by-step: the post-install script
+
+This is the menu-driven one that installs apps, dev tools, browsers, etc. — the NixOS equivalent of the Fedora/Arch scripts.
+
+1. **Make it executable and run it with `sudo`:**
+   ```bash
+   chmod +x post-install-nixos.sh
+   sudo ./post-install-nixos.sh
+   ```
+   `sudo` means "run as administrator" — editing the system config and rebuilding needs that.
+
+2. **You'll see a menu** of numbered categories (Code Editors, Browsers, Gaming, and so on) — the same layout as the other distros' scripts. At the top it tells you whether it detected a **channels** or **flakes** setup.
+
+3. **Type a number and press Enter** to pick a category. The script will:
+   - add that category's packages to `/etc/nixos/postinstall.nix` (it writes this file for you),
+   - make sure your system config imports it,
+   - run `nixos-rebuild switch` to build and apply it.
+
+   The **first** rebuild downloads and builds a fair amount, so it can take several minutes — that's normal. Later ones are faster.
+
+4. **Pick as many categories as you want**, one after another. Each one rebuilds and is live immediately. You can also press:
+   - **`s`** to see everything you've selected so far,
+   - **`r`** to rebuild again without adding anything,
+   - **`0`** to quit.
+
+5. **When a rebuild finishes** with "Rebuild complete", those apps are installed and in your menus. If it ever fails, **nothing changed** — your previous setup is untouched; read the error (usually one unavailable package) and see [the recovery section](#️-if-something-goes-wrong-and-how-to-undo-anything).
+
+> **Flake users:** the script can't safely edit an arbitrary `flake.nix`, so after the first run it prints a line like `modules = [ ./configuration.nix ./postinstall.nix ];`. Open your `flake.nix`, add `./postinstall.nix` to your host's `modules = [ ... ];` list, save, then pick a category again (or just run `sudo nixos-rebuild switch --flake /etc/nixos#yourhostname`). You only do this once.
+
+> **A few apps aren't in NixOS's package set** (for example `chkrootkit`, `rkhunter`, the Zen browser, and a couple of AI CLIs). The script **tells you** when a category contains one of those instead of silently skipping it — everything else in that category still installs.
+
+### ❄️ Step-by-step: the i3 rice
+
+This builds the full Catppuccin-themed i3 tiling-desktop (bar, launcher, 70+ themes, keybindings). You can run it whether or not you ran the post-install script first.
+
+1. **Run it with `sudo`:**
+   ```bash
+   chmod +x nixos-setup-i3-cattpuccin.sh
+   sudo ./nixos-setup-i3-cattpuccin.sh
+   ```
+
+2. **What it does, in order:**
+   - writes `/etc/nixos/rice.nix` (the i3 toolkit: i3, polybar, rofi, kitty, the lock screen, fonts, and the services they need),
+   - adds it to your system config,
+   - runs `nixos-rebuild switch` to install all of that,
+   - then writes the actual look-and-feel config files into your home folder (`~/.config/...`), exactly like the other distros' rice scripts — so the live theme switcher works the same way.
+
+   The rebuild step is the long one (first time especially). Let it finish.
+
+3. **Log out, then pick "i3" at the login screen.** The script enables i3 as a **session** but does **not** force a login manager, so it won't disturb an existing desktop. At your display/login manager there's usually a small gear or session menu — choose **i3** there, then log in.
+   - If you have **no login manager** (you normally type your password in a text console), enable one by adding this to `/etc/nixos/configuration.nix` inside the outer `{ ... }` braces, then `sudo nixos-rebuild switch`:
+     ```nix
+     services.displayManager.lightdm.enable = true;
+     ```
+
+4. **First time in i3:** press `Mod`+`Enter` for a terminal (`Mod` is the **Super/Windows key**), `Mod`+`Space` for the app launcher, and `Mod`+`i` for the full keybinding cheat sheet. The whole keybinding list is in [⌨️ Keybinding Cheat Sheet](#️-keybinding-cheat-sheet) above.
+
+5. **Switch themes** from the app menu (`Mod`+`Alt`+`Space` → Desktop Theme) or run `~/.local/bin/polybar-theme.sh` in a terminal.
+
+### ❄️ If something goes wrong (and how to undo anything)
+
+NixOS makes this almost stress-free — you can always get back to a working system.
+
+- **A rebuild failed with a red error.** Good news: a *failed* rebuild changes nothing — you're still on your last working system. The error almost always names the cause; the most common is a package that doesn't exist on your NixOS version (see FAQ). Fix or remove it and run `sudo nixos-rebuild switch` again.
+
+- **The rebuild worked but you don't like the result, or something's broken.** Roll back to the previous generation:
+  ```bash
+  sudo nixos-rebuild switch --rollback
+  ```
+  That instantly returns to the setup you had before the last rebuild.
+
+- **You can't even log in / the desktop is broken.** Reboot. At the **boot menu** (GRUB/systemd-boot) choose **"NixOS — All configurations"** (or the older-dated entry); each entry is a previous generation. Pick the last one that worked and you're back to exactly that state. Nothing is lost.
+
+- **You want to completely undo these scripts.** Restore the backup you made at the start and rebuild:
+  ```bash
+  sudo cp ~/configuration.nix.before-scripts /etc/nixos/configuration.nix
+  sudo rm -f /etc/nixos/postinstall.nix /etc/nixos/rice.nix
+  sudo nixos-rebuild switch
+  ```
+  The home-folder i3 config files are cosmetic and harmless to leave, but you can delete `~/.config/{i3,polybar,rofi,kitty,dunst}` and `~/.local/bin` rice scripts if you want them gone too.
+
+- **See every generation / free up space later.** List them with `sudo nix-env --list-generations --profile /nix/var/nix/profiles/system`; old ones are cleaned up with `sudo nix-collect-garbage -d` (this also removes rollback targets, so only do it once you're happy).
+
+### ❄️ NixOS FAQ
+
+**Q: The rebuild says `error: attribute 'xyz' … does not exist`.**
+A: That package name isn't in *your* NixOS version's package set (the scripts target nixos-26.05). Either switch your system to the 26.05 channel, or open the generated file (`/etc/nixos/postinstall.nix` or `rice.nix`), delete that one line, and run `sudo nixos-rebuild switch` again. Everything else still installs.
+
+**Q: It says something is "unfree" and refuses to build.**
+A: Some apps (VS Code, Discord, Spotify, 1Password, Steam, Nvidia drivers…) have non-open licenses. The generated files already set `nixpkgs.config.allowUnfree = true;` so this normally just works. If you still see it, you have an `allowUnfree = false` set elsewhere in your own config — remove it, or leave that app out.
+
+**Q: Can I edit the generated files by hand?**
+A: You can, but **re-running a script overwrites them** (that's how the "pick more categories" flow stays reproducible). For permanent personal tweaks, put them in your own `configuration.nix` instead, which the scripts never overwrite.
+
+**Q: Do I have to keep the cloned repo?**
+A: No. Once the rebuilds are done, the installed software lives in your system config. You only need the repo again if you want to add more categories later.
+
+**Q: Will this mess up my existing desktop (GNOME/KDE)?**
+A: No. The i3 script adds i3 as an *extra* session and doesn't force a login manager, so your current desktop stays selectable at login. The post-install script only adds packages and services you chose.
+
+**Q: Channels vs flakes — which do I have?**
+A: Run `ls /etc/nixos`. If you see `flake.nix`, you're on flakes (follow the flake notes above). If you only see `configuration.nix`, you're on channels and everything is automatic.
 
 ---
 

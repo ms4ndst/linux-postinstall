@@ -352,6 +352,15 @@ def main():
         written += 1
         print(f"wrote {out_path}")
 
+    # Drop rice-<name>.lua colorschemes for themes no longer in THEMES (a
+    # removed rice would otherwise still show up in :colorscheme). current.lua
+    # isn't rice-* and is left alone.
+    for fname in os.listdir(NVIM_COLORS_DIR):
+        if fname.startswith("rice-") and fname.endswith(".lua") \
+                and fname[len("rice-"):-len(".lua")] not in THEMES:
+            os.remove(os.path.join(NVIM_COLORS_DIR, fname))
+            print(f"removed stale {fname}")
+
     print(f"\n{written} colorschemes written to {NVIM_COLORS_DIR}")
 
     wire_nvim_config()

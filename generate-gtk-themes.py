@@ -59,6 +59,7 @@ import colorsys
 import importlib.util
 import os
 import re
+import shutil
 
 # generate-vscode-themes.py has a hyphen in its filename, so it can't be
 # imported with a plain `import` statement - load it by file path instead.
@@ -484,6 +485,23 @@ def main():
             f.write(INDEX_THEME_TEMPLATE.format(name=name))
 
         print(f"wrote {theme_dir}")
+
+    # Drop Rice-<name> themes this generator wrote for themes no longer in
+    # THEMES (a removed rice would otherwise linger in gnome-tweaks/
+    # lxappearance). Only folders whose index.theme names them Rice-<name>,
+    # i.e. this generator's own output.
+    for entry in os.listdir(THEMES_ROOT):
+        if not entry.startswith("Rice-") or entry[len("Rice-"):] in THEMES:
+            continue
+        index = os.path.join(THEMES_ROOT, entry, "index.theme")
+        try:
+            with open(index, encoding="utf-8") as f:
+                ours = f"Name={entry}" in f.read()
+        except OSError:
+            ours = False
+        if ours:
+            shutil.rmtree(os.path.join(THEMES_ROOT, entry))
+            print(f"removed stale {entry}")
 
     print(f"\n{len(THEMES)} GTK4+GTK3 themes written to {THEMES_ROOT}/Rice-<name>/")
 
