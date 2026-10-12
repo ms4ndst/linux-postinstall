@@ -321,8 +321,8 @@ sudo ./post-install-ubuntu.sh
 
 #### Menu Navigation
 
-1. **Main Menu**: Shows all 28 categories (`0`–`28`)
-2. **Sub-Menus**: Ubuntu Studio (option `1`) has a sub-menu (`1`–`6`); Security Tools (option `25`) has a sub-menu to choose Full or Defensive-only; GUI Tweaks (option `22`), Browsers (option `29`), and Communication (option `30`) each have a sub-menu to install everything in the category or pick a single item
+1. **Main Menu**: Shows all 32 categories (`0`–`32`)
+2. **Sub-Menus**: Ubuntu Studio (option `1`) has a sub-menu (`1`–`6`); Security Tools (option `26`) has a sub-menu to choose Full or Defensive-only; GUI Tweaks (option `24`), Browsers (option `31`), and Communication (option `32`) each have a sub-menu to install everything in the category or pick a single item
 3. **Bulk Options**: `A`, `B`, `C` (see [Bulk Options](#-bulk-options-a--b--c) below)
 4. **`S`** — Show Installation Summary
 5. **`0`** — Exit
@@ -1127,8 +1127,8 @@ sudo ./post-install-fedora.sh
 
 #### Fedora Menu Navigation
 
-1. **Main Menu**: Shows all 28 categories (`0`–`28`)
-2. **Sub-Menus**: Creative Suite (option `1`) has a 6-item sub-menu (Full/Graphics/Video/Audio/Photography/Publishing); GUI Tweaks (option `19`), Security Tools (option `22`), Browsers (option `26`), and Communication (option `27`) each have their own sub-menu; Drivers & Extra Repos (option `28`) offers NVIDIA, Terra, and DisplayLink as separate opt-ins
+1. **Main Menu**: Shows all 31 categories (`0`–`31`)
+2. **Sub-Menus**: Creative Suite (option `1`) has a 6-item sub-menu (Full/Graphics/Video/Audio/Photography/Publishing); GUI Tweaks (option `25`), Security Tools (option `27`), Browsers (option `30`), and Communication (option `31`) each have their own sub-menu; Drivers & Extra Repos (option `2`) offers NVIDIA, Terra, and DisplayLink as separate opt-ins
 3. **Bulk Options**: `A`, `B`, `C` (see [Fedora Bulk Options](#-fedora-bulk-options-a--b--c) below)
 4. **`S`** — Show Installation Summary
 5. **`0`** — Exit
@@ -1494,7 +1494,7 @@ The Ubuntu script has its own, much smaller Drivers & Extra Repos category (Disp
 | **B** | Creative Suite (Full) | "All Creative" |
 | **C** | Everything in A and B, plus Database Tools, Containers & VMs, Gaming, Office & Productivity, System Utilities, GUI Tweaks, Windows Software Support, Android Tools, Security Tools (Full), DevOps & Cloud, Desktop Apps, Browsers, Communication | "EVERYTHING" |
 
-**App folders:** identical behavior to the Ubuntu script — A/B/C **auto-create** a GNOME app folder per category (no prompts); individual numbered categories *ask* first. NVIDIA driver / Terra repo (option `28`) are intentionally **not** part of any bulk option — both are meaningful, semi-interactive opt-ins that shouldn't fire unattended during "EVERYTHING".
+**App folders:** identical behavior to the Ubuntu script — A/B/C **auto-create** a GNOME app folder per category (no prompts); individual numbered categories *ask* first. NVIDIA driver / Terra repo (option `2`) are intentionally **not** part of any bulk option — both are meaningful, semi-interactive opt-ins that shouldn't fire unattended during "EVERYTHING".
 
 ---
 
@@ -1614,9 +1614,9 @@ On startup the script runs **`zypper dup --no-allow-vendor-change`** before anyt
 - ✅ **`package_exists` does NOT use `zypper info`.** A live check during development (and [openSUSE/zypper#504](https://github.com/openSUSE/zypper/issues/504)) confirmed `zypper info` returns exit `0` even for a package that doesn't exist at all anywhere — useless as an existence probe. `zypper install --dry-run` is documented to return `ZYPPER_EXIT_INF_CAP_NOT_FOUND` (**104**) specifically when a name matches no available/installed package, so that's the actual check used.
 - ✅ **OBS instead of COPR, one project at a time.** openSUSE has no single flat COPR-style namespace — `add_obs_repo(project, label)` enables one [Open Build Service](https://build.opensuse.org) project's repo at a time (`hardware` for Solaar, `security` for pentest tools, `devel:languages:go` for lazygit, …), each individually checked against a live OBS lookup during development, degrading gracefully (same spirit as `add_copr`) if a project has no current Tumbleweed build.
 - ✅ **`opi` instead of Terra.** openSUSE has no single second-tier catch-all repo the way Fedora has Terra — **[opi](https://github.com/openSUSE/opi)** (openSUSE's own official "OBS Package Installer," packaged directly in Tumbleweed's OSS repo, no extra repo needed) is offered as the closest genuine parity item, under Drivers & Extra Repos.
-- ✅ **Snapshots are native, not bolted on.** A default Tumbleweed install already ships Btrfs, a pre-created Snapper `root` config, `snapper-zypp-plugin` taking a real pre/post snapshot pair around *every* zypper/YaST transaction, and `grub2-snapper-plugin` wired into GRUB. The new **Snapshots & Backup** category (option `29`) mostly **verifies** that's in place and fills in anything a hand-partitioned install skipped, rather than building it from scratch the way a Btrfs+Snapper setup has to be built on Fedora/Arch.
+- ✅ **Snapshots are native, not bolted on.** A default Tumbleweed install already ships Btrfs, a pre-created Snapper `root` config, `snapper-zypp-plugin` taking a real pre/post snapshot pair around *every* zypper/YaST transaction, and `grub2-snapper-plugin` wired into GRUB. The new **Snapshots & Backup** category (option `5`) mostly **verifies** that's in place and fills in anything a hand-partitioned install skipped, rather than building it from scratch the way a Btrfs+Snapper setup has to be built on Fedora/Arch.
 - ✅ **Flathub is not preconfigured.** Unlike Fedora (Flathub ships enabled out of the box), Tumbleweed ships Flatpak itself but not the Flathub remote — `flatpak_install_flathub()` adds `https://dl.flathub.org/repo/flathub.flatpakrepo` itself before every Flatpak install.
-- ✅ **Two new hardware-adjacent categories carried over from the Arch script's own additions**: **Peripherals (Logitech)** (option `30`, Solaar) and **Printers (CUPS + HP)** (option `31`) are numbered identically to their equivalents in the Fedora/Arch scripts' own current menus.
+- ✅ **Two new hardware-adjacent categories carried over from the Arch script's own additions**: **Peripherals (Logitech)** (option `6`, Solaar) and **Printers (CUPS + HP)** (option `7`) are numbered identically to their equivalents in the Fedora/Arch scripts' own current menus.
 - ✅ **Genuine gaps are flagged, not papered over**: DisplayLink has no installable openSUSE package or OBS project at all (manual instructions only — see [openSUSE: Drivers & Extra Repos](#opensuse-drivers--extra-repos)); 1Password's own rpm repo deliberately blocks zypper access (AppImage fallback, per 1Password's own documented recommendation); `system-config-printer` has no confirmed openSUSE build (`yast2-printer` substituted). See [openSUSE Known Limitations](#-opensuse-known-limitations).
 - ✅ **Robust Error Handling**: same `package_exists`-before-`safe_install` safety net as the other three scripts — an unavailable package is skipped and logged, never a hard failure.
 
@@ -1688,7 +1688,7 @@ sudo ./post-install-opensuse.sh
 #### openSUSE Menu Navigation
 
 1. **Main Menu**: Shows all 31 categories (`0`–`31`)
-2. **Sub-Menus**: Creative Suite (option `1`) has a 6-item sub-menu (Full/Graphics/Video/Audio/Photography/Publishing); GUI Tweaks (option `19`) has an 8-item sub-menu whose GTK Themes item (`3`) opens its own further sub-menu (Nordic/Colloid/Material GNOME/Lycia); Security Tools (option `22`), Browsers (option `26`), and Communication (option `27`) each have their own sub-menu; Drivers & Extra Repos (option `28`) offers NVIDIA, `opi`, and DisplayLink as separate opt-ins; Snapshots & Backup (option `29`) has a 4-item sub-menu (Full Setup/Create Now/List/Open GUI); Peripherals (option `30`) and Printers (option `31`) each have a 2-item sub-menu
+2. **Sub-Menus**: Creative Suite (option `1`) has a 6-item sub-menu (Full/Graphics/Video/Audio/Photography/Publishing); GUI Tweaks (option `25`) has an 8-item sub-menu whose GTK Themes item (`3`) opens its own further sub-menu (Nordic/Colloid/Material GNOME/Lycia); Security Tools (option `27`), Browsers (option `30`), and Communication (option `31`) each have their own sub-menu; Drivers & Extra Repos (option `2`) offers NVIDIA, `opi`, and DisplayLink as separate opt-ins; Snapshots & Backup (option `5`) has a 4-item sub-menu (Full Setup/Create Now/List/Open GUI); Peripherals (option `6`) and Printers (option `7`) each have a 2-item sub-menu
 3. **Bulk Options**: `A`, `B`, `C` (see [openSUSE Bulk Options](#-opensuse-bulk-options-a--b--c) below)
 4. **`S`** — Show Installation Summary
 5. **`0`** — Exit
@@ -2051,7 +2051,7 @@ Option `27` opens a 5-item sub-menu (Zoom not included, same as the Fedora scrip
 
 #### openSUSE: Snapshots & Backup
 
-**New category, option `29`** — no Ubuntu-script equivalent, and a fundamentally different starting point from the Fedora/Arch scripts' own Btrfs+Snapper setups: Snapper-on-Btrfs is **native** to openSUSE. A default Tumbleweed install already ships Btrfs, a pre-created Snapper `root` config, `snapper-zypp-plugin` taking a real pre/post snapshot pair around *every* zypper/YaST transaction, the timeline/cleanup timers enabled, and `grub2-snapper-plugin` wired into GRUB's boot menu. So this category mostly **verifies** that's in place rather than building it from scratch.
+**New category, option `5`** — no Ubuntu-script equivalent, and a fundamentally different starting point from the Fedora/Arch scripts' own Btrfs+Snapper setups: Snapper-on-Btrfs is **native** to openSUSE. A default Tumbleweed install already ships Btrfs, a pre-created Snapper `root` config, `snapper-zypp-plugin` taking a real pre/post snapshot pair around *every* zypper/YaST transaction, the timeline/cleanup timers enabled, and `grub2-snapper-plugin` wired into GRUB's boot menu. So this category mostly **verifies** that's in place rather than building it from scratch.
 
 | # | Item | What it does |
 |---|------|---------------|
@@ -2287,8 +2287,8 @@ At startup the script runs `bootstrap_arch` (installs `yay` if missing, enables 
 
 #### Menu Navigation
 
-1. **Main Menu**: numbered categories `0`–`30`, grouped on screen into Creative & Drivers, Development, Data/System/Desktop, Compatibility & Devices, and Internet & Communication
-2. **Sub-Menus**: Creative Suite (`1`), Security Tools (`22`), Browsers (`26`), Communication (`27`), GUI Tweaks/Theming (`19`, itself branching into a GTK Themes sub-menu), Drivers & Extra Repos (`28`), Snapshots & Backup (`29`), Peripherals (`30`) each open their own sub-menu
+1. **Main Menu**: numbered categories `0`–`31`, grouped on screen into Creative & Drivers, Development, Data/System/Desktop, Compatibility & Devices, and Internet & Communication
+2. **Sub-Menus**: Creative Suite (`1`), Security Tools (`27`), Browsers (`30`), Communication (`31`), GUI Tweaks/Theming (`25`, itself branching into a GTK Themes sub-menu), Drivers & Extra Repos (`2`), Snapshots & Backup (`5`), Peripherals (`6`) each open their own sub-menu
 3. **Bulk Options**: `A` (All Dev Tools), `B` (All Creative), `C` (EVERYTHING) — see [Bulk Options](#-arch-bulk-options-a--b--c) below
 4. **`S`** — Show Installation Summary
 5. **`0`** — Exit

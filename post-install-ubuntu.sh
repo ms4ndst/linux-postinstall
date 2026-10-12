@@ -4226,28 +4226,28 @@ show_main_menu() {
     ui_section "Media & Creative"
     ui_cell  1 "Ubuntu Studio";      ui_cell  2 "Graphics & Images";    echo
     ui_cell  3 "Video Editing";      ui_cell  4 "Audio Production";      echo
-    ui_cell 17 "Gaming";             ui_cell 28 "Desktop Apps";          echo
+    ui_cell 5 "Gaming";             ui_cell 6 "Desktop Apps";          echo
     echo
     ui_section "Development"
-    ui_cell  5 "Code Editors";       ui_cell  6 "Python";               echo
-    ui_cell  7 "Web Development";    ui_cell  8 "Java";                 echo
-    ui_cell  9 "C/C++";              ui_cell 10 "Go";                   echo
-    ui_cell 11 "Rust";               ui_cell 12 "Node.js";              echo
-    ui_cell 13 "PHP";                ui_cell 14 "Ruby";                 echo
-    ui_cell 26 ".NET";               ui_cell 27 "DevOps & Cloud";       echo
-    ui_cell 20 "General Dev Tools";  ui_cell 21 "AI Tools";             echo
+    ui_cell  7 "Code Editors";       ui_cell  8 "Python";               echo
+    ui_cell  9 "Web Development";    ui_cell  10 "Java";                 echo
+    ui_cell  11 "C/C++";              ui_cell 12 "Go";                   echo
+    ui_cell 13 "Rust";               ui_cell 14 "Node.js";              echo
+    ui_cell 15 "PHP";                ui_cell 16 "Ruby";                 echo
+    ui_cell 17 ".NET";               ui_cell 18 "DevOps & Cloud";       echo
+    ui_cell 19 "General Dev Tools";  ui_cell 20 "AI Tools";             echo
     echo
     ui_section "Data, System & Desktop"
-    ui_cell 15 "Databases";          ui_cell 16 "Containers & VMs";     echo
-    ui_cell 19 "System Utilities";   ui_cell 22 "GUI Tweaks";           echo
-    ui_cell 18 "Office & Docs";      ui_cell 25 "Security Tools";       echo
+    ui_cell 21 "Databases";          ui_cell 22 "Containers & VMs";     echo
+    ui_cell 23 "System Utilities";   ui_cell 24 "GUI Tweaks";           echo
+    ui_cell 25 "Office & Docs";      ui_cell 26 "Security Tools";       echo
     echo
     ui_section "Compatibility & Devices"
-    ui_cell 23 "Windows (Wine)";     ui_cell 24 "Android Tools";        echo
-    ui_cell 31 "Drivers & Extra Repos"; ui_cell 32 "Printers (CUPS + HP)"; echo
+    ui_cell 27 "Windows (Wine)";     ui_cell 28 "Android Tools";        echo
+    ui_cell 29 "Drivers & Extra Repos"; ui_cell 30 "Printers (CUPS + HP)"; echo
     echo
     ui_section "Internet & Communication"
-    ui_cell 29 "Browsers";           ui_cell 30 "Communication";        echo
+    ui_cell 31 "Browsers";           ui_cell 32 "Communication";        echo
     echo
     ui_section "Bulk"
     ui_cell_alt A "All Dev Tools";   ui_cell_alt B "All Media";         echo
@@ -4504,24 +4504,24 @@ main() {
             2) reset_tracking; install_graphics; display_summary; prompt_menu_category "Graphics" "applications-graphics" "Graphics & Image Manipulation" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             3) reset_tracking; install_video; display_summary; prompt_menu_category "Video" "video" "Video Creation & Editing" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             4) reset_tracking; install_audio; display_summary; prompt_menu_category "Audio Production" "audio" "Audio Production & Editing" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            5) reset_tracking; install_code_editors; display_summary; prompt_menu_category "Code Editors" "text-editor" "Code Editors" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            6) reset_tracking; install_python; display_summary; prompt_menu_category "Python Development" "python" "Python Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            7) reset_tracking; install_web_dev; display_summary; prompt_menu_category "Web Development" "web" "Web Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            8) reset_tracking; install_java; display_summary; prompt_menu_category "Java Development" "java" "Java Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            9) reset_tracking; install_c_cpp; display_summary; prompt_menu_category "C/C++ Development" "application-x-executable" "C/C++ Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            10) reset_tracking; install_go; display_summary; prompt_menu_category "Go Development" "golang" "Go Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            11) reset_tracking; install_rust; display_summary; prompt_menu_category "Rust Development" "rust" "Rust Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            12) reset_tracking; install_nodejs_dev; display_summary; prompt_menu_category "Node.js Development" "nodejs" "Node.js Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            13) reset_tracking; install_php; display_summary; prompt_menu_category "PHP Development" "php" "PHP Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            14) reset_tracking; install_ruby; display_summary; prompt_menu_category "Ruby Development" "ruby" "Ruby Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            15) reset_tracking; install_databases; display_summary; prompt_menu_category "Database Tools" "database" "Database Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            16) reset_tracking; install_containers; display_summary; prompt_menu_category "Containers" "docker" "Container & Virtualization Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            17) reset_tracking; install_gaming; display_summary; prompt_menu_category "Gaming" "games" "Gaming Applications" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            18) reset_tracking; install_office; display_summary; prompt_menu_category "Office & Productivity" "office" "Office & Productivity Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            19) reset_tracking; install_system_utils; display_summary; prompt_menu_category "System Utilities" "utilities" "System Utilities" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            20) reset_tracking; install_dev_tools; display_summary; prompt_menu_category "General Development Tools" "development" "General Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            21) reset_tracking; install_ai_tools; display_summary; prompt_menu_category "AI Tools" "ai" "AI Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            22)
+            7) reset_tracking; install_code_editors; display_summary; prompt_menu_category "Code Editors" "text-editor" "Code Editors" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            8) reset_tracking; install_python; display_summary; prompt_menu_category "Python Development" "python" "Python Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            9) reset_tracking; install_web_dev; display_summary; prompt_menu_category "Web Development" "web" "Web Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            10) reset_tracking; install_java; display_summary; prompt_menu_category "Java Development" "java" "Java Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            11) reset_tracking; install_c_cpp; display_summary; prompt_menu_category "C/C++ Development" "application-x-executable" "C/C++ Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            12) reset_tracking; install_go; display_summary; prompt_menu_category "Go Development" "golang" "Go Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            13) reset_tracking; install_rust; display_summary; prompt_menu_category "Rust Development" "rust" "Rust Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            14) reset_tracking; install_nodejs_dev; display_summary; prompt_menu_category "Node.js Development" "nodejs" "Node.js Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            15) reset_tracking; install_php; display_summary; prompt_menu_category "PHP Development" "php" "PHP Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            16) reset_tracking; install_ruby; display_summary; prompt_menu_category "Ruby Development" "ruby" "Ruby Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            21) reset_tracking; install_databases; display_summary; prompt_menu_category "Database Tools" "database" "Database Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            22) reset_tracking; install_containers; display_summary; prompt_menu_category "Containers" "docker" "Container & Virtualization Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            5) reset_tracking; install_gaming; display_summary; prompt_menu_category "Gaming" "games" "Gaming Applications" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            25) reset_tracking; install_office; display_summary; prompt_menu_category "Office & Productivity" "office" "Office & Productivity Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            23) reset_tracking; install_system_utils; display_summary; prompt_menu_category "System Utilities" "utilities" "System Utilities" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            19) reset_tracking; install_dev_tools; display_summary; prompt_menu_category "General Development Tools" "development" "General Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            20) reset_tracking; install_ai_tools; display_summary; prompt_menu_category "AI Tools" "ai" "AI Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            24)
                 show_gui_tweaks_menu
                 read -r gui_choice
                 case "$gui_choice" in
@@ -4562,9 +4562,9 @@ main() {
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
-            23) reset_tracking; install_windows_support; display_summary; prompt_menu_category "Windows Software Support" "wine" "Windows Software Support (Wine)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            24) reset_tracking; install_android_tools; display_summary; prompt_menu_category "Android Tools" "phone" "Android Tools (adb, fastboot, scrcpy)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            25)
+            27) reset_tracking; install_windows_support; display_summary; prompt_menu_category "Windows Software Support" "wine" "Windows Software Support (Wine)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            28) reset_tracking; install_android_tools; display_summary; prompt_menu_category "Android Tools" "phone" "Android Tools (adb, fastboot, scrcpy)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            26)
                 show_security_menu
                 read -r sec_choice
                 case "$sec_choice" in
@@ -4574,10 +4574,10 @@ main() {
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
-            26) reset_tracking; install_dotnet; display_summary; prompt_menu_category ".NET Development" "dotnet" ".NET Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            27) reset_tracking; install_devops; display_summary; prompt_menu_category "DevOps & Cloud" "cloud" "DevOps & Cloud Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            28) reset_tracking; install_desktop_apps; display_summary; prompt_menu_category "Desktop Apps" "applications-other" "Desktop Applications" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            29)
+            17) reset_tracking; install_dotnet; display_summary; prompt_menu_category ".NET Development" "dotnet" ".NET Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            18) reset_tracking; install_devops; display_summary; prompt_menu_category "DevOps & Cloud" "cloud" "DevOps & Cloud Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            6) reset_tracking; install_desktop_apps; display_summary; prompt_menu_category "Desktop Apps" "applications-other" "Desktop Applications" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            31)
                 show_browsers_menu
                 read -r br_choice
                 case "$br_choice" in
@@ -4593,7 +4593,7 @@ main() {
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
-            30)
+            32)
                 show_communication_menu
                 read -r comm_choice
                 case "$comm_choice" in
@@ -4607,7 +4607,7 @@ main() {
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
-            31)
+            29)
                 show_drivers_menu
                 read -r drv_choice
                 case "$drv_choice" in
@@ -4617,7 +4617,7 @@ main() {
                     *) log ERROR "Invalid choice"; sleep 2 ;;
                 esac
                 ;;
-            32)
+            30)
                 show_printers_menu
                 read -r printer_choice
                 case "$printer_choice" in
