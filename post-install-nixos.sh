@@ -249,6 +249,15 @@ generate_module() {
   # allowUnfree elsewhere.
   nixpkgs.config.allowUnfree = true;
 
+  # Markdown terminal helpers (the shell scripts' md/mdb, which need `glow`
+  # from System Utilities). Declarative here rather than editing ~/.bashrc:
+  #   md <file>  - render + page a markdown file
+  #   mdb [dir]  - glow's TUI markdown browser for a directory
+  programs.bash.interactiveShellInit = ''
+    md()  { glow -p "$@"; }
+    mdb() { glow "''${1:-.}"; }
+  '';
+
   environment.systemPackages = with pkgs; [
 HEADER
     [ -n "$pkgs" ] && printf '%s\n' "$pkgs"

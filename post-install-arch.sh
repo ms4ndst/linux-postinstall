@@ -2802,6 +2802,7 @@ install_gui_tweaks() {
     install_nerd_fonts
     if ! $IS_OMARCHY; then configure_terminal_font; fi
     install_chris_titus_mybash
+    ensure_md_aliases
     if ! $IS_OMARCHY; then install_gui_tools; install_gnome_extensions; fi
     configure_logiops
     configure_mousiki
@@ -3027,6 +3028,39 @@ set_terminal_font() {
     else
         log WARNING "Failed to set GNOME Terminal font"
     fi
+}
+
+# Markdown terminal aliases (md/mdb via glow). Kept in a file outside the
+# mybash-managed ~/.bashrc so a mybash reinstall won't clobber them; the one
+# source line is (re-)added to ~/.bashrc here, after mybash's own setup.sh has
+# regenerated it. Idempotent - safe to call every time.
+ensure_md_aliases() {
+    local u uh
+    u="${SUDO_USER:-$(logname 2>/dev/null)}"
+    uh=$(eval echo ~"$u" 2>/dev/null || echo "/home/$u")
+    [ -d "$uh" ] || return 0
+    mkdir -p "$uh/.config/bash"
+    cat > "$uh/.config/bash/aliases.sh" <<'ALIASES'
+# Personal shell aliases - kept out of the mybash-managed ~/.bashrc so a
+# mybash reinstall won't overwrite them. Sourced from ~/.bashrc.
+
+# Markdown in the terminal via glow:
+md()  { glow -p "$@"; }      # render + page a file:  md README.md
+mdb() { glow "${1:-.}"; }    # TUI browser for a dir: mdb   (or mdb ~/docs)
+ALIASES
+    if ! grep -q 'config/bash/aliases.sh' "$uh/.bashrc" 2>/dev/null; then
+        cat >> "$uh/.bashrc" <<'SRC'
+
+# Personal aliases (kept in ~/.config/bash/aliases.sh so a mybash reinstall
+# won't overwrite them). Re-added automatically by the post-install script.
+if [ -f "$HOME/.config/bash/aliases.sh" ]; then
+  source "$HOME/.config/bash/aliases.sh"
+fi
+SRC
+    fi
+    chown -R "$u:$u" "$uh/.config/bash" 2>/dev/null || true
+    chown "$u:$u" "$uh/.bashrc" 2>/dev/null || true
+    log INFO "Markdown aliases (md/mdb via glow) set up in ~/.config/bash/aliases.sh"
 }
 
 install_chris_titus_mybash() {
@@ -3551,7 +3585,7 @@ main() {
                         0) continue ;;
                         1) reset_tracking; install_gui_tweaks; display_summary; read -p "$pause_prompt" _ ;;
                         2) reset_tracking; install_nerd_fonts; display_summary; read -p "$pause_prompt" _ ;;
-                        3) reset_tracking; install_chris_titus_mybash; display_summary; read -p "$pause_prompt" _ ;;
+                        3) reset_tracking; install_chris_titus_mybash; ensure_md_aliases; display_summary; read -p "$pause_prompt" _ ;;
                         4) omarchy_theme_picker ;;
                         *) log ERROR "Invalid choice"; sleep 2 ;;
                     esac
@@ -3575,7 +3609,7 @@ main() {
                             ;;
                         4) reset_tracking; install_cursor_themes;     display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                         5) reset_tracking; install_nerd_fonts; configure_terminal_font; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-                        6) reset_tracking; install_chris_titus_mybash; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                        6) reset_tracking; install_chris_titus_mybash; ensure_md_aliases; display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                         7) reset_tracking; install_gui_tools;         display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                         8) reset_tracking; install_gnome_extensions;  display_summary; prompt_menu_category "GUI Tweaks" "preferences" "GUI Customization & Tweaks" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
                         *) log ERROR "Invalid choice"; sleep 2 ;;
