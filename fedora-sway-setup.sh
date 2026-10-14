@@ -3056,6 +3056,20 @@ EOF
 # ----------------------------------------------------------------------------
 # 11. lock script (swaylock)
 # ----------------------------------------------------------------------------
+# swaylock-effects (the fork with --screenshots/--effect-* effects and a live
+# --clock) is not in Fedora's repos - install it from COPR, best-effort: plain
+# swaylock works, lock.sh just falls back to the flat look without effects.
+if command -v dnf >/dev/null 2>&1; then
+  if ! swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
+    log "Installing swaylock-effects from COPR (eddsalkield/swaylock-effects)..."
+    if sudo dnf copr enable -y eddsalkield/swaylock-effects >/dev/null 2>&1 &&
+       sudo dnf install -y swaylock-effects >/dev/null 2>&1; then
+      log "swaylock-effects installed - the lock screen gets effects and a live clock."
+    else
+      warn "swaylock-effects not installable - the lock screen stays plain (blur/effects need the COPR package)."
+    fi
+  fi
+fi
 log "Writing lock script..."
 cat > "$BIN/lock.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
@@ -3078,7 +3092,17 @@ fi
 # The keypress highlight picks the accent half the array away (opposite-ish hue).
 ACCENTS=(f5e0dc f2cdcd f5c2e7 cba6f7 f38ba8 eba0ac fab387 f9e2af a6e3a1 94e2d5 89dceb 74c7ec 89b4fa b4befe)
 ACCENT_IDX=$((RANDOM % ${#ACCENTS[@]}))
-ACCENT="${ACCENTS[$ACCENT_IDX]}"
+
+# Prefer the ACTIVE desktop theme's own accent for the ring (read straight
+# from the borders file waybar-theme.sh keeps in step with the theme pick) -
+# the lock then always matches whatever theme is running. Falls back to a
+# random Mocha accent when it can't be read.
+ACCENT="$(awk '/^client\.focused /{print $2; exit}' \
+           "$HOME/.config/sway/current-borders.conf" 2>/dev/null || true)"
+case "$ACCENT" in
+  \#*) ACCENT="${ACCENT#\#}" ;;
+  *) ACCENT="${ACCENTS[$ACCENT_IDX]}" ;;
+esac
 KEYHL="${ACCENTS[$(( (ACCENT_IDX + 7) % ${#ACCENTS[@]} ))]}"
 
 # NOTE: do NOT blank the displays with an explicit sway power-off:
@@ -3093,11 +3117,23 @@ KEYHL="${ACCENTS[$(( (ACCENT_IDX + 7) % ${#ACCENTS[@]} ))]}"
 # in --help). NOTE: swaylock has no custom greeter/wrong-text flags, so no
 # custom lock messages here.
 if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
+  # Cycle a different look each lock - all layered over a live screenshot of
+  # the screen being locked (one of swaylock-effects' effects is applied on
+  # top of the previous, so combos stack).
+  case $((RANDOM % 4)) in
+    0) EFFECTS=(--effect-blur 8x3 --effect-vignette 0.4:0.4) ;;
+    1) EFFECTS=(--effect-pixelate 12 --effect-blur 2x2 --effect-vignette 0.4:0.4) ;;
+    2) EFFECTS=(--effect-greyscale --effect-blur 10x4 --effect-vignette 0.5:0.5) ;;
+    3) EFFECTS=(--effect-scale 0.75 --effect-blur 6x3 --effect-vignette 0.4:0.4) ;;
+  esac
   swaylock \
     --screenshots \
-    --effect-blur 8x3 \
-    --effect-vignette 0.4:0.4 \
-    --clock --indicator \
+    "${EFFECTS[@]}" \
+    --clock \
+    --timestr '%H:%M' \
+    --datestr '%A, %d %B' \
+    --font 'JetBrainsMono Nerd Font' \
+    --indicator \
     --indicator-radius 110 \
     --indicator-thickness 14 \
     --inside-color 1e1e2ecc \
