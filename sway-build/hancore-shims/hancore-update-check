@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# hancore-update-check shim: the HANCORE waybar themes' custom/update
+# module execs this (was: omarchy-update-available, which checks for
+# Omarchy's own updates). Mirrors the rice's own polybar-updates.sh
+# exactly: prints a pending-dnf-update count on every line, including
+# "0" when there are none, and loops internally on a 15-minute sleep
+# (same tail-script pattern as polybar-updates.sh - waybar just shows the
+# most recent line, so the count is visible immediately at bar startup).
+#
+# The module's on-click opens software-update.sh in a floating kitty
+# (UpdatesTask window rule in the sway config).
+set -u
+while true; do
+  count="$(timeout 10 dnf check-update -q 2>/dev/null | grep -cE '^\S+\.(x86_64|noarch|i686|aarch64|s390x|ppc64le)[[:space:]]')"
+  printf '󰂪 %s\n' "${count:-0}"
+  sleep 900
+done

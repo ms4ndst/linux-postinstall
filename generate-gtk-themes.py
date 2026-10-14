@@ -448,15 +448,17 @@ def main():
         colors = parse_theme_colors(ini_path)
         roles = resolve_roles(colors)
         css = build_gtk_css(template, roles)
-        # A theme's own gtk-4.0/gtk.css *replaces* GTK4's built-in stylesheet
-        # rather than layering on it, so every widget the template doesn't
-        # style itself lost all styling - sliders (GtkScale) rendered with no
-        # trough or knob at all and expander/dropdown arrows vanished
-        # (pavucontrol's volume sliders were invisible). Importing GTK's own
-        # Default stylesheet first keeps every widget drawn; the template's
-        # @define-colors and rules below then override its colors.
-        base = "Default-light" if name in _vscode_gen.LIGHT_THEMES else "Default-dark"
-        css = f'@import url("resource:///org/gtk/libgtk/theme/Default/{base}.css");\n\n' + css
+        # History of the "@import resource:.../Default-dark.css" line that
+        # used to be prepended here: it worked on GTK <=4.14, but on GTK
+        # >=4.16 (Fedora 43+) that resource no longer exists, and a failed
+        # @import makes GTK reject the ENTIRE stylesheet - every Rice-*
+        # GTK4 theme silently fell back to Adwaita (gnome-calendar rendered
+        # unthemed with no error unless you looked for it). Verified live:
+        # the same css with just the import line removed themes the app
+        # correctly. libadwaita apps always draw their own widget chrome
+        # (Adwaita) beneath a named theme's color overrides, so the
+        # sliders/arrows problem that import worked around is covered there
+        # anyway; plain-GTK4 apps keep the template's own rules.
 
         theme_dir = os.path.join(THEMES_ROOT, f"Rice-{name}")
         gtk4_dir = os.path.join(theme_dir, "gtk-4.0")

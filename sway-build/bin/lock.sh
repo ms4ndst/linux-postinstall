@@ -21,9 +21,13 @@ ACCENT_IDX=$((RANDOM % ${#ACCENTS[@]}))
 ACCENT="${ACCENTS[$ACCENT_IDX]}"
 KEYHL="${ACCENTS[$(( (ACCENT_IDX + 7) % ${#ACCENTS[@]} ))]}"
 
-# Blank the displays immediately on lock rather than waiting for swayidle's own
-# DPMS timer - any key/mouse wakes them straight into the running swaylock.
-blank() { swaymsg "output * power off" >/dev/null 2>&1 || true; }
+# NOTE: the i3 original blanked the displays here via `xset dpms`, which
+# wakes on input on X11. Do NOT port that to an explicit sway power-off:
+# `swaymsg "output * power off"` has NO wake-on-input (only swayidle's
+# resume hook re-powers displays, and it only fires for swayidle's own
+# 50-min display timeout) - locking would leave a black screen with no
+# way back in. swayidle's 50-min timeout (with its resume hook) handles
+# display power-off; swaylock itself covers the visual lock.
 
 # swaylock-effects adds --screenshots/--effect-blur (the equivalent of the i3
 # rice's i3lock-color blur); plain swaylock lacks them. Detect by grepping
@@ -55,7 +59,6 @@ if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
     --text-clear-color cdd6f4ff \
     --text-caps-lock-color f9e2afff &
   LOCK_PID=$!
-  blank
   wait "$LOCK_PID"
 elif command -v swaylock >/dev/null 2>&1; then
   swaylock -c 1e1e2e \
@@ -66,7 +69,6 @@ elif command -v swaylock >/dev/null 2>&1; then
     --ring-wrong-color f38ba8ff \
     --text-color cdd6f4ff &
   LOCK_PID=$!
-  blank
   wait "$LOCK_PID"
 else
   echo "lock.sh: swaylock is not installed" >&2

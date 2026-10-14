@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# hancore-battery-status shim: the HANCORE waybar themes' battery modules
+# run this for their tooltip text (was: omarchy-battery-status, part of
+# Omarchy). Prints a short upower summary of the first battery.
+set -u
+dev="$(upower -e 2>/dev/null | grep -m1 '_BAT')"
+if [ -z "$dev" ]; then
+  echo "No battery"
+  exit 0
+fi
+upower -i "$dev" | awk -F: '
+  /state|percentage|time to (full|empty)/ {
+    gsub(/^[ \t]+|[ \t]+$/, "", $2); gsub(/^[ \t]+/, "", $1);
+    printf "%s: %s\n", $1, $2
+  }'

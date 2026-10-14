@@ -83,6 +83,11 @@ if [ ! -d "$WAYBAR_DIR" ]; then
   exit 1
 fi
 
+# Record the pick up front (not at the end): a mid-switch failure under
+# set -e would otherwise leave the name file pointing at the previous
+# theme while the bar already runs the new one.
+echo "$CHOSEN" > "$CURRENT_THEME_FILE"
+
 # GTK3/GTK4 theme - "-square" variants share the base rice's palette, so a real
 # GTK theme only ever exists as Rice-<base-name>. Export before relaunching the
 # bar so freshly-forked apps inherit it immediately (no logout).
@@ -102,6 +107,14 @@ fi
 
 cp "$WAYBAR_DIR/config.jsonc" "$WAYBAR_CONFIG"
 cp "$WAYBAR_DIR/style.css" "$WAYBAR_STYLE"
+# The HANCORE theme styles @import "../omarchy/current/theme/waybar.css"
+# for their @background/@foreground/@transparent - copy this theme's own
+# palette there too, so the bar follows the switch (a theme without a
+# palette.css - e.g. one of the old rice's own - is skipped, no breakage).
+if [ -f "$WAYBAR_DIR/palette.css" ]; then
+  mkdir -p "$HOME/.config/omarchy/current/theme"
+  cp "$WAYBAR_DIR/palette.css" "$HOME/.config/omarchy/current/theme/waybar.css"
+fi
 ~/.local/bin/waybar-launch.sh
 
 if [ -f "$ROFI_FILE" ]; then
@@ -170,5 +183,4 @@ else
   notify-send "Desktop Theme" "No neovim theme for $BASE_NAME, keeping previous"
 fi
 
-echo "$CHOSEN" > "$CURRENT_THEME_FILE"
 notify-send "Desktop Theme" "Switched to $CHOSEN"

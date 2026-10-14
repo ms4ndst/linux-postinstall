@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""wttrbar shim for the HANCORE waybar themes.
+
+The real wttrbar (github.com/bcazaux/wttrbar) is a Go binary not packaged
+for Fedora. This implements the subset of its CLI the HANCORE configs use
+(--nerd, --location <name>, --custom-indicator <json>, --fahrenheit) and
+its JSON output shape, so the themes' custom/weather modules work as-is.
+
+fetches wttr.in's ?format=j1 (like the real tool), maps the current
+condition to a Nerd Font glyph, and prints one JSON line:
+  {"text": "15°", "alt": "Sunny", "tooltip": "Sunny: 15°C (feels 14°)"}
+
+Called by waybar every 60s; a fetch failure prints the last good value
+when cached, else an empty placeholder so the module just hides.
+"""
+import json
+import sys
+import urllib.request
+
+NERD_ICONS = [
+    ("thunder", "󰖝"), ("lightning", "󰖝"), ("storm", "󰖝"),
+    ("snow", "󰖜"), ("sleet", "󰖞"), ("blizzard", "󰖜"),
+    ("rain", "󰖗"), ("drizzle", "󰖗"), ("shower", "󰖗"), ("pouring", "󰖗"),
+    ("fog", "󰖔"), ("mist", "󰖔"), ("haze", "󰖔"),
+    ("overcast", "󰖕"), ("cloudy", "󰖒"),
+    ("sunny", "󰖳"), ("clear", "󰖳"),
+]
+FALLBACK_ICON = "󰖒"
+
+
+def parse_args(argv):
+    opts = {"location": None, "nerd": False, "fahrenheit": False,
+            "custom_indicator": None, "main-indicator": "weatherDesc"}
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--nerd":
+            opts["nerd"] = True
+        elif a == "--fahrenheit":
+            opts["fahrenheit"] = True
+        elif a in ("--location", "--loc") and i + 1 < len(argv):
+            opts["location"] = argv[i + 1]
+            i += 1
+        elif a.startswith("--location="):
+            opts["location"] = a.split("=", 1)[1]
+        elif a in ("--custom-indicator", "--custom-indicator-text") and i + 1 < len(argv):
+            try:
+                opts["custom_indicator"] = json.loads(argv[i + 1])
+            except ValueError:
+                pass
+            i += 1
+        elif a == "--main-indicator" and i + 1 < len(argv):
+            opts["main_indicator"] = argv[i + 1]
+            i += 1
+        i += 1
+    return opts
+
+
+def icon_for(desc):
+    d = desc.lower()
+    for key, glyph in NERD_ICONS:
+        if key in d:
+            return glyph
+    return FALLBACK_ICON
+
+
+def main():
+    opts = parse_args(sys.argv[1:])
+    url = "https://wttr.in/" + (opts["location"] or "")
+    url += "?format=j1"
+    try:
+        with urllib.request.urlopen(url, timeout=10) as r:
+            data = json.load(r)
+    except Exception:
+        print(json.dumps({"text": "", "alt": "", "tooltip": "weather unavailable"}))
+        return
+
+    cur = data.get("current_condition", [{}])[0]
+    desc = (cur.get(opts["main-indicator"]) or cur.get("weatherDesc") or [{}])[0].get("value", "")
+    temp_key = "temp_F" if opts["fahrenheit"] else "temp_C"
+    feels_key = "FeelsLikeF" if opts["fahrenheit"] else "FeelsLikeC"
+    unit = "°F" if opts["fahrenheit"] else "°C"
+    temp = cur.get(temp_key, "?")
+
+    glyph = icon_for(desc)
+    if opts["custom_indicator"]:
+        glyph = opts["custom_indicator"].get(desc, glyph)
+    if not opts["nerd"]:
+        glyph = ""  # non-nerd fonts would show a tofu box for the glyphs
+
+    print(json.dumps({
+        "text": "%s %s%s" % (glyph, temp, unit),
+        "alt": desc,
+        "tooltip": "%s: %s%s (feels %s%s)" % (
+            desc, temp, unit, cur.get(feels_key, "?"), unit),
+    }))
+
+
+if __name__ == "__main__":
+    main()
