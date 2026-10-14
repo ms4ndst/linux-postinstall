@@ -357,6 +357,13 @@ button {
   font-weight: normal;
   color: #cdd6f4;
   background-color: #2c2d3d;
+  /* Load-bearing: GTK3 layers the default (Adwaita) stylesheet UNDER every
+     custom theme, and that base paints buttons with a LIGHT gradient
+     background-image. Overriding background-color alone does not hide it -
+     wherever a more specific rule resets the color (dialog action-area
+     buttons, swappy's color swatches), the default's white gradient shows
+     through as unreadable white buttons. Kill the image at the base. */
+  background-image: none;
   text-shadow: none; }
   notebook > header > tabs > arrow,
   button.flat {
