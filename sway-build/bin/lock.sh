@@ -80,15 +80,64 @@ if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
   LOCK_PID=$!
   wait "$LOCK_PID"
 elif command -v swaylock >/dev/null 2>&1; then
-  swaylock -c 1e1e2e \
-    --inside-color 1e1e2ecc \
-    --ring-color "${ACCENT}ff" \
-    --key-hl-color "${KEYHL}ff" \
-    --ring-ver-color f9e2afff \
-    --ring-wrong-color f38ba8ff \
-    --text-color cdd6f4ff &
-  LOCK_PID=$!
-  wait "$LOCK_PID"
+  # Plain swaylock: replicate swaylock-effects' signature look with tools the
+  # rice already ships - grim takes a live screenshot of each output,
+  # ImageMagick blurs + darkens it and bakes a clock/date on top, and swaylock
+  # -i displays the result per output. Trade-off vs the effects fork: the
+  # clock is frozen at lock time instead of ticking.
+  LOCKDIR="$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/lock.XXXXXX")"
+  trap 'rm -rf "$LOCKDIR"' EXIT
+  FONT="$(fc-match -f '%{file}' 'JetBrainsMono Nerd Font' 2>/dev/null || true)"
+  IMAGES=()
+  while read -r name _w h; do
+    img="$LOCKDIR/$name.png"
+    if env -u LD_LIBRARY_PATH grim -o "$name" "$img" 2>/dev/null; then
+      magick "$img" \
+        -resize 6% -resize 1700% \
+        -fill '#1e1e2e' -colorize 35 \
+        -font "$FONT" \
+        -gravity north -fill '#f5f0ee' \
+        -pointsize "$(( h / 6 ))" -annotate "+0+$(( h / 6 ))" "$(date +%H:%M)" \
+        -pointsize "$(( h / 24 ))" -annotate "+0+$(( h / 6 + h / 5 ))" "$(date '+%A, %d %B')" \
+        "$img" 2>/dev/null && IMAGES+=(-i "$name:$img")
+    fi
+  done < <(swaymsg -t get_outputs 2>/dev/null | \
+           jq -r '.[] | select(.active) | "\(.name) \(.current_mode.width) \(.current_mode.height)"')
+  if [ "${#IMAGES[@]}" -gt 0 ]; then
+    swaylock "${IMAGES[@]}" \
+      --indicator \
+      --indicator-radius 110 \
+      --indicator-thickness 14 \
+      --inside-color 1e1e2ecc \
+      --ring-color "${ACCENT}ff" \
+      --line-uses-ring \
+      --key-hl-color "${KEYHL}ff" \
+      --bs-hl-color f38ba8ff \
+      --ring-ver-color f9e2afff \
+      --inside-ver-color 1e1e2ecc \
+      --ring-wrong-color f38ba8ff \
+      --inside-wrong-color 1e1e2ecc \
+      --separator-color 313244ff \
+      --text-color cdd6f4ff \
+      --text-ver-color cdd6f4ff \
+      --text-wrong-color f38ba8ff \
+      --text-clear-color cdd6f4ff \
+      --text-caps-lock-color f9e2afff &
+
+    LOCK_PID=$!
+    wait "$LOCK_PID"
+  else
+    # no grim/magick or screenshot failed: the flat-color lock still works
+    swaylock -c 1e1e2e \
+      --inside-color 1e1e2ecc \
+      --ring-color "${ACCENT}ff" \
+      --key-hl-color "${KEYHL}ff" \
+      --ring-ver-color f9e2afff \
+      --ring-wrong-color f38ba8ff \
+      --text-color cdd6f4ff &
+    LOCK_PID=$!
+    wait "$LOCK_PID"
+  fi
 else
   echo "lock.sh: swaylock is not installed" >&2
   exit 1
