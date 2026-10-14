@@ -24,8 +24,12 @@ STARSHIP_THEMES_DIR="$HOME/.config/starship/themes"
 STARSHIP_CURRENT="$HOME/.config/starship.toml"
 DUNST_THEMES_DIR="$HOME/.config/dunst/themes"
 DUNST_CURRENT="$HOME/.config/dunst/dunstrc"
-SWAY_THEMES_DIR="$HOME/.config/sway/themes"
+# The i3 rice's per-theme border fragments (client.* color lines) are valid
+# sway syntax too, so reuse them directly; the sway config includes the written
+# current-borders.conf. Keyed by base name (no -square/-numbered/-alt).
+SWAY_THEMES_DIR="$HOME/.config/i3/themes"
 SWAY_CURRENT="$HOME/.config/sway/current-borders.conf"
+mkdir -p "$HOME/.config/sway"
 NVIM_COLORS_DIR="$HOME/.config/nvim/colors"
 NVIM_CURRENT="$NVIM_COLORS_DIR/current.lua"
 # Kept at the polybar path for continuity with the i3 rice's state file name.

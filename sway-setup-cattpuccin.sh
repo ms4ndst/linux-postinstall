@@ -49,11 +49,25 @@ if ! command -v dnf >/dev/null 2>&1; then
   echo "This script targets Fedora (dnf not found). Aborting." >&2
   exit 1
 fi
+# Keep sudo warm for the whole run (prevents a mid-install credential
+# timeout from aborting a later sudo step under set -e).
+sudo -v || true
+( while true; do sudo -n true 2>/dev/null; sleep 50; kill -0 "$$" 2>/dev/null || exit; done ) &
+SUDO_KEEPALIVE_PID=$!
+trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null' EXIT
 
 CONF="$HOME/.config"
 BIN="$HOME/.local/bin"
 FONTS="$HOME/.local/share/fonts"
 mkdir -p "$CONF" "$BIN" "$FONTS"
+# Remove stale i3-only bar scripts from a previous i3-rice install so the
+# Wayland switcher/app-menu can never invoke polybar (which cannot use
+# layer-shell and floats as a broken window on sway), and stop any X11
+# bar/compositor/tray left running from an i3 session.
+rm -f "$BIN/polybar-launch.sh" "$BIN/polybar-theme.sh"
+pkill -x polybar 2>/dev/null || true
+pkill -x picom 2>/dev/null || true
+pkill -x snixembed 2>/dev/null || true
 
 # ----------------------------------------------------------------------------
 # 0. Safety net: snapper snapshot of / before touching anything
@@ -616,6 +630,11 @@ client.focused          #cba6f7  #1e1e2e  #cdd6f4  #cba6f7   #cba6f7
 client.unfocused        #313244  #1e1e2e  #6c7086  #313244   #313244
 client.focused_inactive #45475a  #1e1e2e  #a6adc8  #45475a   #45475a
 client.urgent           #f38ba8  #1e1e2e  #f38ba8  #f38ba8   #f38ba8
+
+# Per-theme border colors: waybar-theme.sh writes the active theme's client.*
+# palette here on every switch. A missing file is a silent no-op (the colors
+# above stay in effect), so this is safe before the first theme switch.
+include ~/.config/sway/current-borders.conf
 
 floating_modifier $mod
 
@@ -13757,10 +13776,10 @@ cat > "$BIN/polybar-layout.sh" <<'EOF'
 # is actually opened (unlike fullscreen/floating, which are immediately
 # visible on their own). Also shows stacked/tabbed if the container is in
 # one of those layouts (Mod+t cycles split h/v; stacked/tabbed reachable via
-# i3-msg directly, no dedicated keybinding in this rice).
+# swaymsg directly, no dedicated keybinding in this rice).
 #
 # Polled on a short interval (like caffeine/dnd above) rather than an
-# `i3-msg -t subscribe` event loop - simpler, no long-running subprocess to
+# `swaymsg -t subscribe` event loop - simpler, no long-running subprocess to
 # manage, and split-direction changes don't need sub-second responsiveness.
 layout=$(swaymsg -t get_tree 2>/dev/null | jq -r '
   def emit(pl):
@@ -20242,10 +20261,10 @@ cp "$CONF/kitty/themes/catppuccin-mocha.conf" "$CONF/kitty/current.conf"
 #     whichever desktop theme is active, the same way kitty/rofi/dunst
 #     already do. i3 has no equivalent of kitty's `set-colors` remote-
 #     control push, so unlike kitty this can't retint already-open windows
-#     live - waybar-theme.sh instead runs a plain `i3-msg reload` after
+#     live - waybar-theme.sh instead runs a plain `swaymsg reload` after
 #     swapping the file, which re-reads client.* for every window
 #     immediately (existing windows/layout are untouched by a reload,
-#     unlike `i3-msg restart`).
+#     unlike `swaymsg reload`).
 #
 #     Colors are derived from each theme's own already-generated kitty
 #     palette (background/foreground/cursor/color1/7/8), the same
@@ -34770,7 +34789,7 @@ def icon_for(name):
 
 
 def i3(kind):
-    out = subprocess.run(["i3-msg", "-t", kind], capture_output=True, text=True).stdout
+    out = subprocess.run(["swaymsg", "-t", kind], capture_output=True, text=True).stdout
     return json.loads(out or "null")
 
 
@@ -34816,7 +34835,7 @@ def render_state():
                       .replace("%name%", name).replace("%index%", str(idx)))
         piece = styled(f"label-{state}", label)
         if click:
-            piece = "%{A1:i3-msg -q workspace number " + name + ":}" + piece + "%{A}"
+            piece = "%{A1:swaymsg -q workspace number " + name + ":}" + piece + "%{A}"
         parts.append(piece)
     sep = styled("label-separator", MOD.get("label-separator", ""))
     out = sep.join(parts)
@@ -34824,7 +34843,7 @@ def render_state():
         up, down = "prev_on_output", "next_on_output"
         if MOD.get("reverse-scroll", "false") == "true":
             up, down = down, up
-        out = ("%{A4:i3-msg -q workspace " + up + ":}%{A5:i3-msg -q workspace " + down + ":}"
+        out = ("%{A4:swaymsg -q workspace " + up + ":}%{A5:swaymsg -q workspace " + down + ":}"
                + out + "%{A}%{A}")
     return out
 
@@ -34940,7 +34959,7 @@ def emit(last):
 last = emit(None)
 while True:
     proc = subprocess.Popen(
-        ["i3-msg", "-t", "subscribe", "-m", '["workspace","window","output"]'],
+        ["swaymsg", "-t", "subscribe", "-m", '["workspace","window","output"]'],
         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
     for _ in proc.stdout:
         last = emit(last)
@@ -34967,7 +34986,7 @@ case "$1" in
   --fetch)         kitty --hold fastfetch ;;
   --yazi)          kitty -e yazi ;;
   --nvim)          kitty -e nvim ;;
-  --scratch)       i3-msg -q scratchpad show ;;
+  --scratch)       swaymsg -q scratchpad show ;;
   --filemanager)   pcmanfm ;;
   --browser)       gtk-launch "$(xdg-settings get default-web-browser 2>/dev/null)" 2>/dev/null || xdg-open https://duckduckgo.com ;;
   --editor)        if command -v code >/dev/null 2>&1; then code; else kitty -e nvim; fi ;;
@@ -47630,41 +47649,7 @@ fi
 #      override location, mirroring the same /etc-vs-/usr split systemd
 #      unit files themselves use.
 # ----------------------------------------------------------------------------
-log "Installing DPMS-wake-after-resume systemd-sleep hook (needs sudo)..."
-sudo tee /etc/systemd/system-sleep/i3-dpms-wake > /dev/null <<'HOOKEOF'
-#!/bin/sh
-# systemd-sleep hook: forces the display back on after resume. On some
-# hardware/drivers, DPMS state set before suspend - lock.sh's own `xset
-# dpms force off`, run right after starting i3lock so the screen doesn't
-# stay lit until the idle timer would otherwise catch up - isn't reliably
-# cleared by resume alone, leaving the monitor stuck showing nothing even
-# though the system is genuinely awake (keyboard backlight on, etc.) until
-# something explicitly asserts DPMS back on. systemd-logind runs every
-# script in this directory with two arguments ($1=pre/post, $2=the sleep
-# action) both right before AND right after suspend/hibernate - this only
-# acts on "post" (after resume), not "pre".
-#
-# Runs as root (that's how systemd-sleep hooks work), so it has to reach
-# into each logged-in graphical user's own session explicitly rather than
-# just running `xset` directly - DISPLAY/XAUTHORITY aren't inherited from
-# anywhere at this point. XAUTHORITY's location varies by display manager
-# (GDM keeps it under /run/user/<uid>/gdm/, other setups use ~/.Xauthority
-# directly) - found dynamically per user rather than hardcoded to one
-# convention, since a setup script installing this shouldn't only work
-# under this one machine's specific display manager.
-case "$1" in
-  post)
-    for user in $(who | awk '{print $1}' | sort -u); do
-      uid="$(id -u "$user" 2>/dev/null)" || continue
-      xauth="$(find "/run/user/$uid" -maxdepth 3 -iname "Xauthority" 2>/dev/null | head -1)"
-      [ -z "$xauth" ] && xauth="/home/$user/.Xauthority"
-      [ -f "$xauth" ] || continue
-      su "$user" -c "DISPLAY=:0 XAUTHORITY=$xauth xset dpms force on" >/dev/null 2>&1
-    done
-    ;;
-esac
-HOOKEOF
-sudo chmod +x /etc/systemd/system-sleep/i3-dpms-wake
+# (X11 DPMS-wake systemd-sleep hook dropped - swayidle handles resume on sway)
 
 # ----------------------------------------------------------------------------
 # 11a. Block-art screensaver (Terminal Text Effects) - Mod+Escape, and shown
@@ -47863,7 +47848,7 @@ choice=$(printf '<span foreground="%s" font="JetBrainsMono Nerd Font 26"></sp
 case "$choice" in
   *""*)     ~/.local/bin/lock.sh --with-screensaver ;;
   *""*)  systemctl suspend ;;
-  *""*)   i3-msg exit ;;
+  *""*)   swaymsg exit ;;
   *""*)   systemctl reboot ;;
   *""*) systemctl poweroff ;;
 esac
@@ -48248,8 +48233,12 @@ STARSHIP_THEMES_DIR="$HOME/.config/starship/themes"
 STARSHIP_CURRENT="$HOME/.config/starship.toml"
 DUNST_THEMES_DIR="$HOME/.config/dunst/themes"
 DUNST_CURRENT="$HOME/.config/dunst/dunstrc"
-SWAY_THEMES_DIR="$HOME/.config/sway/themes"
+# The i3 rice's per-theme border fragments (client.* color lines) are valid
+# sway syntax too, so reuse them directly; the sway config includes the written
+# current-borders.conf. Keyed by base name (no -square/-numbered/-alt).
+SWAY_THEMES_DIR="$HOME/.config/i3/themes"
 SWAY_CURRENT="$HOME/.config/sway/current-borders.conf"
+mkdir -p "$HOME/.config/sway"
 NVIM_COLORS_DIR="$HOME/.config/nvim/colors"
 NVIM_CURRENT="$NVIM_COLORS_DIR/current.lua"
 # Kept at the polybar path for continuity with the i3 rice's state file name.
@@ -48411,7 +48400,7 @@ cat > "$BIN/app-theme-sync.sh" <<'EOF'
 #     draws with the terminal's 16 colors - kitty's live recolor then
 #     reaches it too, even mid-session. light vs dark from the background.
 KITTY_CURRENT="$HOME/.config/kitty/current.conf"
-I3_CURRENT="$HOME/.config/i3/current-borders.conf"
+I3_CURRENT="$HOME/.config/sway/current-borders.conf"
 [ -f "$KITTY_CURRENT" ] || exit 0
 kc() { awk -v k="$1" '$1 == k { print $2; exit }' "$KITTY_CURRENT"; }
 hex() { [[ "$1" =~ ^#[0-9A-Fa-f]{6}$ ]] && printf '%s' "$1" || printf '%s' "$2"; }
@@ -48483,7 +48472,7 @@ cat > "$BIN/cursor-theme.sh" <<'EOF'
 # re-checking it live, so a theme switch alone left i3's own borders
 # showing the previous theme even after Xresources/gtk-cursor-theme-name
 # were already updated and GTK apps had already picked up the new one.
-# `i3-msg restart` preserves the running session/layout (unlike `exit`)
+# `swaymsg reload` preserves the running session/layout (unlike `exit`)
 # and re-runs i3's own `exec` lines, which also relaunches polybar - so a
 # separate waybar-launch.sh call isn't needed on top of this.
 #
@@ -48525,7 +48514,7 @@ done
 gsettings set org.gnome.desktop.interface cursor-theme "$CHOSEN" 2>/dev/null || true
 
 XCURSOR_THEME="$CHOSEN" xsetroot -cursor_name left_ptr
-i3-msg restart >/dev/null
+swaymsg reload >/dev/null
 
 notify-send "Cursor Theme" "Switched to $CHOSEN"
 EOF
@@ -48674,8 +48663,8 @@ COMMANDS=(
   "~/.local/bin/colorpicker.sh"
   "~/.local/bin/lock.sh --with-screensaver"
   "~/.local/bin/powermenu.sh"
-  "i3-msg reload"
-  "i3-msg restart"
+  "swaymsg reload"
+  "swaymsg reload"
   "kitty --class KeybindingsHelp -e ~/.local/bin/keybindings-help.sh"
 )
 
@@ -48708,7 +48697,7 @@ cat > "$BIN/cliamp-toggle.sh" <<'EOF'
 #
 # `scratchpad show` only toggles a window that has already been moved to
 # the scratchpad at least once - on a plain floating window it just fails
-# (confirmed: i3-msg reports success:false, does nothing). So the first
+# (confirmed: swaymsg reports success:false, does nothing). So the first
 # hide request for a freshly-launched window falls back to `move
 # scratchpad`; every request after that is a real, working toggle.
 #
@@ -48720,9 +48709,9 @@ cat > "$BIN/cliamp-toggle.sh" <<'EOF'
 # Harmless when the window ends up hidden instead of shown (confirmed:
 # repositioning a scratchpad-hidden window doesn't un-hide it).
 if pgrep -x cliamp >/dev/null; then
-  i3-msg '[con_mark="cliamp-scratch"] scratchpad show' | grep -q '"success":true' \
-    || i3-msg '[con_mark="cliamp-scratch"] move scratchpad' >/dev/null
-  i3-msg '[con_mark="cliamp-scratch"] resize set 700 500, move position center' >/dev/null
+  swaymsg '[con_mark="cliamp-scratch"] scratchpad show' | grep -q '"success":true' \
+    || swaymsg '[con_mark="cliamp-scratch"] move scratchpad' >/dev/null
+  swaymsg '[con_mark="cliamp-scratch"] resize set 700 500, move position center' >/dev/null
 else
   exec kitty --class Cliamp -e cliamp
 fi
@@ -48770,7 +48759,7 @@ cat > "$BIN/ai-window-toggle.sh" <<'EOF'
 # as "python3", never "vibe".
 mark=ai-window-scratch
 
-current_ws=$(i3-msg -t get_tree | python3 -c "
+current_ws=$(swaymsg -t get_tree | python3 -c "
 import json, sys
 t = json.load(sys.stdin)
 def walk(n, ws=None):
@@ -48792,10 +48781,10 @@ if [ -z "$current_ws" ]; then
   workdir="$(cat "$HOME/.config/ai-window/workdir" 2>/dev/null || echo "$HOME")"
   exec kitty --class AIVibe -e vibe --workdir "$workdir"
 elif [ "$current_ws" = "__i3_scratch" ]; then
-  i3-msg "[con_mark=\"$mark\"] scratchpad show" >/dev/null
-  i3-msg "[con_mark=\"$mark\"] resize set 900 650, move position center" >/dev/null
+  swaymsg "[con_mark=\"$mark\"] scratchpad show" >/dev/null
+  swaymsg "[con_mark=\"$mark\"] resize set 900 650, move position center" >/dev/null
 else
-  i3-msg "[con_mark=\"$mark\"] move scratchpad" >/dev/null
+  swaymsg "[con_mark=\"$mark\"] move scratchpad" >/dev/null
 fi
 EOF
 chmod +x "$BIN/ai-window-toggle.sh"
@@ -48812,7 +48801,7 @@ cat > "$BIN/claude-desktop-toggle.sh" <<'EOF'
 # actually visible.
 mark=claude-desktop-scratch
 
-current_ws=$(i3-msg -t get_tree | python3 -c "
+current_ws=$(swaymsg -t get_tree | python3 -c "
 import json, sys
 t = json.load(sys.stdin)
 def walk(n, ws=None):
@@ -48829,10 +48818,10 @@ walk(t)
 if [ -z "$current_ws" ]; then
   exec claude-desktop-unofficial
 elif [ "$current_ws" = "__i3_scratch" ]; then
-  i3-msg "[con_mark=\"$mark\"] scratchpad show" >/dev/null
-  i3-msg "[con_mark=\"$mark\"] resize set 1200 850, move position center" >/dev/null
+  swaymsg "[con_mark=\"$mark\"] scratchpad show" >/dev/null
+  swaymsg "[con_mark=\"$mark\"] resize set 1200 850, move position center" >/dev/null
 else
-  i3-msg "[con_mark=\"$mark\"] move scratchpad" >/dev/null
+  swaymsg "[con_mark=\"$mark\"] move scratchpad" >/dev/null
 fi
 EOF
 chmod +x "$BIN/claude-desktop-toggle.sh"
@@ -48852,7 +48841,7 @@ mark=mistral-vibe-scratch
 url="https://chat.mistral.ai"
 profile="$HOME/.local/share/mistral-vibe-app"
 
-current_ws=$(i3-msg -t get_tree | python3 -c "
+current_ws=$(swaymsg -t get_tree | python3 -c "
 import json, sys
 t = json.load(sys.stdin)
 def walk(n, ws=None):
@@ -48875,10 +48864,10 @@ if [ -z "$current_ws" ]; then
   done
   notify-send "Mistral Vibe" "Needs a Chromium-based browser (Chrome, Chromium, Brave, Edge or Vivaldi) - install one from the post-install script's Browsers category."
 elif [ "$current_ws" = "__i3_scratch" ]; then
-  i3-msg "[con_mark=\"$mark\"] scratchpad show" >/dev/null
-  i3-msg "[con_mark=\"$mark\"] resize set 1200 850, move position center" >/dev/null
+  swaymsg "[con_mark=\"$mark\"] scratchpad show" >/dev/null
+  swaymsg "[con_mark=\"$mark\"] resize set 1200 850, move position center" >/dev/null
 else
-  i3-msg "[con_mark=\"$mark\"] move scratchpad" >/dev/null
+  swaymsg "[con_mark=\"$mark\"] move scratchpad" >/dev/null
 fi
 EOF
 chmod +x "$BIN/mistral-vibe-toggle.sh"

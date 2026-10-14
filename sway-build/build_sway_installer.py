@@ -289,6 +289,75 @@ def post_clean(s):
                   '# Theme: Catppuccin Mocha | Layout: gapped (Sway native compositing)')
     s = s.replace('[i3-setup]', '[sway-setup]')
     s = s.replace('before fedroa-setup-i3-cattpuccin.sh', 'before sway-setup-cattpuccin.sh')
+
+    # I. i3-msg -> swaymsg everywhere (scratchpad toggles, app-menu reload/
+    #    restart, cursor-theme, powermenu logout). sway has no `restart`, so
+    #    restart folds into reload. Ordered: specific forms first, then catch-all.
+    before = s
+    s = s.replace('i3-msg restart', 'swaymsg reload')
+    s = s.replace('i3-msg reload', 'swaymsg reload')
+    s = s.replace('i3-msg exit', 'swaymsg exit')
+    s = s.replace('i3-msg', 'swaymsg')
+    removed.append(("i3-msg -> swaymsg", 1 if s != before else 0))
+
+    # J. Clean up stale i3/polybar bar scripts from a previous i3-rice install
+    #    on the same machine (the switcher/app-menu would otherwise be able to
+    #    invoke polybar, which floats as a broken XWayland window on sway), and
+    #    stop any X11 bar/compositor/tray still running. Injected right after
+    #    the config/bin/fonts dirs are created.
+    cleanup = (
+        'mkdir -p "$CONF" "$BIN" "$FONTS"\n'
+        '# Remove stale i3-only bar scripts from a previous i3-rice install so the\n'
+        '# Wayland switcher/app-menu can never invoke polybar (which cannot use\n'
+        '# layer-shell and floats as a broken window on sway), and stop any X11\n'
+        '# bar/compositor/tray left running from an i3 session.\n'
+        'rm -f "$BIN/polybar-launch.sh" "$BIN/polybar-theme.sh"\n'
+        'pkill -x polybar 2>/dev/null || true\n'
+        'pkill -x picom 2>/dev/null || true\n'
+        'pkill -x snixembed 2>/dev/null || true\n'
+    )
+    s, n = re.subn(r'^mkdir -p "\$CONF" "\$BIN" "\$FONTS"\n', cleanup, s, count=1, flags=re.M)
+    removed.append(("stale polybar cleanup", n))
+
+    # K. Keep sudo alive for the whole run so a credential timeout during the
+    #    long install can't abort a later sudo-gated step under set -e (the most
+    #    likely cause of a half-finished install). Injected after the dnf guard.
+    keepalive = (
+        'if ! command -v dnf >/dev/null 2>&1; then\n'
+        '  echo "This script targets Fedora (dnf not found). Aborting." >&2\n'
+        '  exit 1\n'
+        'fi\n'
+        '# Keep sudo warm for the whole run (prevents a mid-install credential\n'
+        '# timeout from aborting a later sudo step under set -e).\n'
+        'sudo -v || true\n'
+        '( while true; do sudo -n true 2>/dev/null; sleep 50; '
+        'kill -0 "$$" 2>/dev/null || exit; done ) &\n'
+        'SUDO_KEEPALIVE_PID=$!\n'
+        'trap '"'"'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null'"'"' EXIT\n'
+    )
+    s, n = re.subn(
+        r'if ! command -v dnf >/dev/null 2>&1; then\n'
+        r'  echo "This script targets Fedora \(dnf not found\)\. Aborting\." >&2\n'
+        r'  exit 1\nfi\n',
+        keepalive, s, count=1)
+    removed.append(("sudo keep-alive", n))
+
+    # L. Drop the X11-only DPMS-wake systemd-sleep hook (xset-based, useless on
+    #    sway where swayidle handles resume) - it's also a sudo call that can
+    #    abort the install. swayidle's `resume` already powers outputs back on.
+    s, n = re.subn(
+        r'^log "Installing DPMS-wake-after-resume systemd-sleep hook[^\n]*\n'
+        r'sudo tee /etc/systemd/system-sleep/i3-dpms-wake[^\n]*<<\'HOOKEOF\'\n'
+        r'(?:[^\n]*\n)*?HOOKEOF\n'
+        r'sudo chmod \+x /etc/systemd/system-sleep/i3-dpms-wake\n',
+        '# (X11 DPMS-wake systemd-sleep hook dropped - swayidle handles resume on sway)\n',
+        s, count=1, flags=re.M)
+    removed.append(("drop X11 dpms-wake hook", n))
+
+    # M. app-theme-sync reads the active theme's focused-border color; point it
+    #    at the sway border file the switcher now writes.
+    s = s.replace('I3_CURRENT="$HOME/.config/i3/current-borders.conf"',
+                  'I3_CURRENT="$HOME/.config/sway/current-borders.conf"')
     return s, removed
 
 result, removed = post_clean(result)
