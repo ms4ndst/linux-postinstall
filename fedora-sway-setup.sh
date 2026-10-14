@@ -4858,7 +4858,7 @@ cat <<'EOF'
 
  Cheat sheet (Mod = Super/Windows key):
    Mod+Return        open kitty
-   Mod+d             app launcher (rofi)
+   Mod+space         app launcher (rofi)
    Mod+e             file manager (pcmanfm)
    Mod+shift+w       wallpaper picker (azote)
    Mod+l             lock screen
@@ -4868,13 +4868,13 @@ cat <<'EOF'
    Mod+shift+g       colorpicker (click a pixel, hex copied to clipboard)
    Mod+shift+q       close focused window
    Mod+f             fullscreen toggle
-   Mod+shift+space   floating toggle
+   Mod+shift+f       floating toggle
    Mod+1..9          switch workspace
    Mod+shift+1..9    move window to workspace
    Mod+h/j/k/l-ish   focus (h/j/k/; — see config)
    Mod+ctrl+h/l      focus next/prev monitor
    Mod+ctrl+shift+h/l move workspace to next/prev monitor
-   Mod+shift+r       restart Sway
+   Mod+shift+r       reload Sway (same as Mod+shift+c)
    Mod+shift+e       exit Sway (with confirm)
    XF86 media/volume/brightness keys all bound - see config for specifics.
 
