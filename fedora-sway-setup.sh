@@ -2977,7 +2977,7 @@ fi
 # Parse "srgb(r,g,b)" / "srgba(r,g,b,a)" decimals into #RRGGBB (0-255 range;
 # magick's txt: output is 8-bit decimals here, not Q16 scaled).
 RGB=$(printf '%s' "$PIX" | grep -oE 'srgba?\([0-9]+,[0-9]+,[0-9]+' | head -1 | grep -oE '[0-9]+' | head -3)
-read -r R G B <<< "$(printf '%s ' $RGB)"
+read -r R G B <<< "$(printf '%s ' "$RGB")"
 if [ -z "${R:-}" ] || [ -z "${G:-}" ] || [ -z "${B:-}" ]; then
   notify-send -h string:x-dunst-stack-tag:colorpicker "Colorpicker" "could not parse color: $PIX"
   exit 1
