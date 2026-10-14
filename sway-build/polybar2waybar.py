@@ -280,9 +280,20 @@ def main():
         elif t == "internal/date":
             datef = sec.get("date", "%Y-%m-%d")
             timef = sec.get("time", "%H:%M")
-            lbl = strip_action(sec.get("label", "")).replace("%date%", datef).replace("%time%", timef).strip()
-            if not lbl:
-                lbl = f"{datef}  {timef}"
+            # waybar's clock renders strftime only INSIDE a `{:...}` placeholder;
+            # a bare %Y-%m-%d prints literally. Wrap the date..time span in one
+            # `{:...}` (date precedes time in every theme here), keeping any
+            # surrounding icon/padding text outside the braces.
+            label = strip_action(sec.get("label", ""))
+            has_d, has_t = "%date%" in label, "%time%" in label
+            if has_d and has_t:
+                lbl = label.replace("%date%", "{:" + datef, 1).replace("%time%", timef + "}", 1).strip()
+            elif has_d:
+                lbl = label.replace("%date%", "{:" + datef + "}").strip()
+            elif has_t:
+                lbl = label.replace("%time%", "{:" + timef + "}").strip()
+            else:
+                lbl = "{:" + datef + "  " + timef + "}"
             mod = {"format": lbl, "interval": 1, "tooltip": False}
             clicks(sec, mod)
             # calendar launch was in the %{A:...:} zone

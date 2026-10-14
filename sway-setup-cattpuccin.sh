@@ -642,6 +642,8 @@ floating_modifier $mod
 # numlock on at login (replaces i3's `numlockx on`); set your own layout here.
 input type:keyboard {
     xkb_numlock enabled
+    # @@XKB_LAYOUT@@ is filled from the system layout (localectl) at install time.
+    xkb_layout "@@XKB_LAYOUT@@"
 }
 # Catppuccin cursor on the desktop and in every app (replaces i3's
 # xsetroot/.Xresources cursor plumbing). Adwaita/24 are
@@ -837,6 +839,8 @@ exec ~/.local/bin/fix-mx-scroll.sh
 # lock before sleep. Kept in a script so the timeouts are easy to tune.
 exec_always ~/.local/bin/swayidle-launch.sh
 SWAY_EOF
+__xkb="$(localectl status 2>/dev/null | sed -n 's/.*X11 Layout: *//p' | head -1)"
+sed -i "s/@@XKB_LAYOUT@@/${__xkb:-us}/" "$CONF/sway/config"
 
 # ----------------------------------------------------------------------------
 # 5. picom
@@ -936,7 +940,7 @@ cat > "$CONF/waybar/themes/aline/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-aline gnome-calendar"
@@ -1147,7 +1151,7 @@ cat > "$CONF/waybar/themes/aline-square/config.jsonc" <<'WB_EOF'
     }
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-aline gnome-calendar"
@@ -1415,7 +1419,7 @@ cat > "$CONF/waybar/themes/alireza/config.jsonc" <<'WB_EOF'
     "interval": 1
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-alireza gnome-calendar"
@@ -1577,7 +1581,7 @@ cat > "$CONF/waybar/themes/alireza-square/config.jsonc" <<'WB_EOF'
     "interval": 1
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-alireza gnome-calendar"
@@ -1746,7 +1750,7 @@ cat > "$CONF/waybar/themes/archblur/config.jsonc" <<'WB_EOF'
     "interval": 1
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-archblur gnome-calendar"
@@ -1923,7 +1927,7 @@ cat > "$CONF/waybar/themes/archblur-square/config.jsonc" <<'WB_EOF'
     "interval": 1
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-archblur gnome-calendar"
@@ -2128,7 +2132,7 @@ cat > "$CONF/waybar/themes/archcraft/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-archcraft gnome-calendar"
@@ -2334,7 +2338,7 @@ cat > "$CONF/waybar/themes/archcraft-square/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-archcraft gnome-calendar"
@@ -2510,7 +2514,7 @@ cat > "$CONF/waybar/themes/breddie/config.jsonc" <<'WB_EOF'
     "interval": 1
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-breddie gnome-calendar"
@@ -2672,7 +2676,7 @@ cat > "$CONF/waybar/themes/breddie-square/config.jsonc" <<'WB_EOF'
     "interval": 1
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-breddie gnome-calendar"
@@ -2878,7 +2882,7 @@ cat > "$CONF/waybar/themes/brenda/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-brenda gnome-calendar"
@@ -3093,7 +3097,7 @@ cat > "$CONF/waybar/themes/brenda-square/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-brenda gnome-calendar"
@@ -3339,7 +3343,7 @@ cat > "$CONF/waybar/themes/catppuccin-mocha/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-catppuccin-mocha gnome-calendar"
@@ -3529,7 +3533,7 @@ cat > "$CONF/waybar/themes/catppuccin-mocha-square/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-catppuccin-mocha gnome-calendar"
@@ -3694,7 +3698,7 @@ cat > "$CONF/waybar/themes/classic/config.jsonc" <<'WB_EOF'
     "interval": 1
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-classic gnome-calendar"
@@ -3855,7 +3859,7 @@ cat > "$CONF/waybar/themes/classic-square/config.jsonc" <<'WB_EOF'
     "interval": 1
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-classic gnome-calendar"
@@ -4064,7 +4068,7 @@ cat > "$CONF/waybar/themes/cynthia/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-cynthia gnome-calendar"
@@ -4256,7 +4260,7 @@ cat > "$CONF/waybar/themes/cynthia-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-cynthia gnome-calendar"
@@ -4412,7 +4416,7 @@ cat > "$CONF/waybar/themes/daniela/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-daniela gnome-calendar"
@@ -4571,7 +4575,7 @@ cat > "$CONF/waybar/themes/daniela-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-daniela gnome-calendar"
@@ -4864,7 +4868,7 @@ cat > "$CONF/waybar/themes/emilia/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-emilia gnome-calendar"
@@ -5078,7 +5082,7 @@ cat > "$CONF/waybar/themes/emilia-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-emilia gnome-calendar"
@@ -5267,7 +5271,7 @@ cat > "$CONF/waybar/themes/forest/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%a, %d %B at %H:%M",
+    "format": "{:%a, %d %B at %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-forest gnome-calendar"
@@ -5463,7 +5467,7 @@ cat > "$CONF/waybar/themes/forest-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%a, %d %B at %H:%M",
+    "format": "{:%a, %d %B at %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-forest gnome-calendar"
@@ -5582,7 +5586,7 @@ cat > "$CONF/waybar/themes/gh0stzk-aline/config.jsonc" <<'WB_EOF'
     "on-click": "OpenApps --powermenu"
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -5806,7 +5810,7 @@ cat > "$CONF/waybar/themes/gh0stzk-brenda/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -6038,7 +6042,7 @@ cat > "$CONF/waybar/themes/gh0stzk-cristina/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -6306,7 +6310,7 @@ cat > "$CONF/waybar/themes/gh0stzk-cynthia/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   }
@@ -6490,7 +6494,7 @@ cat > "$CONF/waybar/themes/gh0stzk-daniela/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   }
@@ -6671,7 +6675,7 @@ cat > "$CONF/waybar/themes/gh0stzk-emilia/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -6845,7 +6849,7 @@ cat > "$CONF/waybar/themes/gh0stzk-h4ck3r/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -7027,7 +7031,7 @@ cat > "$CONF/waybar/themes/gh0stzk-isabel/config.jsonc" <<'WB_EOF'
     "spacing": 7
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -7195,7 +7199,7 @@ cat > "$CONF/waybar/themes/gh0stzk-jan/config.jsonc" <<'WB_EOF'
     "spacing": 5
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -7353,7 +7357,7 @@ cat > "$CONF/waybar/themes/gh0stzk-karla/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -7421,7 +7425,7 @@ cat > "$CONF/waybar/themes/gh0stzk-pamela/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -7674,7 +7678,7 @@ cat > "$CONF/waybar/themes/gh0stzk-silvia/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -7870,7 +7874,7 @@ cat > "$CONF/waybar/themes/gh0stzk-varinka/config.jsonc" <<'WB_EOF'
     "spacing": 5
   },
   "clock": {
-    "format": "%I:%M %P%Y-%m-%d",
+    "format": "%I:%M %P}{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   },
@@ -8073,7 +8077,7 @@ cat > "$CONF/waybar/themes/gh0stzk-yael/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%I:%M %P %Y-%m-%d",
+    "format": "%I:%M %P }{:%Y-%m-%d",
     "interval": 1,
     "tooltip": false
   }
@@ -8161,7 +8165,7 @@ cat > "$CONF/waybar/themes/hidrot/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%{T3}%H:%M%{T-}",
+    "format": "%{T3}{:%H:%M}%{T-}",
     "interval": 1,
     "tooltip": false
   },
@@ -8388,7 +8392,7 @@ cat > "$CONF/waybar/themes/isabel/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-isabel gnome-calendar"
@@ -8566,7 +8570,7 @@ cat > "$CONF/waybar/themes/isabel-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-isabel gnome-calendar"
@@ -8763,7 +8767,7 @@ cat > "$CONF/waybar/themes/jan/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-jan gnome-calendar"
@@ -8961,7 +8965,7 @@ cat > "$CONF/waybar/themes/jan-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-jan gnome-calendar"
@@ -9148,7 +9152,7 @@ cat > "$CONF/waybar/themes/marisol/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-marisol gnome-calendar"
@@ -9322,7 +9326,7 @@ cat > "$CONF/waybar/themes/marisol-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-marisol gnome-calendar"
@@ -9394,7 +9398,7 @@ cat > "$CONF/waybar/themes/murz/config.jsonc" <<'WB_EOF'
     "interval": 1800
   },
   "clock": {
-    "format": "%{T3}%a, %b %d %H:%M:%S%{T-}",
+    "format": "%{T3}{:%a, %b %d %H:%M:%S}%{T-}",
     "interval": 1,
     "tooltip": false
   },
@@ -9523,7 +9527,7 @@ cat > "$CONF/waybar/themes/murz-alt/config.jsonc" <<'WB_EOF'
     "interval": 1800
   },
   "clock": {
-    "format": "%{T3}%a, %b %d %H:%M:%S%{T-}",
+    "format": "%{T3}{:%a, %b %d %H:%M:%S}%{T-}",
     "interval": 1,
     "tooltip": false
   },
@@ -9747,7 +9751,7 @@ cat > "$CONF/waybar/themes/pamela/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-pamela gnome-calendar"
@@ -9934,7 +9938,7 @@ cat > "$CONF/waybar/themes/pamela-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-pamela gnome-calendar"
@@ -10063,7 +10067,7 @@ cat > "$CONF/waybar/themes/sedo-dracula/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d %A - %B%d ( %H:%M )",
+    "format": "{:%Y-%m-%d %A - %B%d ( %H:%M )}",
     "interval": 1,
     "tooltip": false
   },
@@ -10180,7 +10184,7 @@ cat > "$CONF/waybar/themes/sedo-everblush/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d %A - %B%d [%H:%M]",
+    "format": "{:%Y-%m-%d %A - %B%d [%H:%M]}",
     "interval": 1,
     "tooltip": false
   },
@@ -10295,7 +10299,7 @@ cat > "$CONF/waybar/themes/sedo-everforest/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d %I:%M %P",
+    "format": "{:%Y-%m-%d %I:%M %P}",
     "interval": 1,
     "tooltip": false
   },
@@ -10441,7 +10445,7 @@ cat > "$CONF/waybar/themes/sedo-gotham/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d %H:%M",
+    "format": "{:%Y-%m-%d %H:%M}",
     "interval": 1,
     "tooltip": false
   },
@@ -10597,7 +10601,7 @@ cat > "$CONF/waybar/themes/sedo-gruvbox/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d %I:%M %P",
+    "format": "{:%Y-%m-%d %I:%M %P}",
     "interval": 1,
     "tooltip": false
   },
@@ -10714,7 +10718,7 @@ cat > "$CONF/waybar/themes/sedo-nightfox/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d %A - %B%d [%H:%M]",
+    "format": "{:%Y-%m-%d %A - %B%d [%H:%M]}",
     "interval": 1,
     "tooltip": false
   },
@@ -10825,7 +10829,7 @@ cat > "$CONF/waybar/themes/sedo-nord/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d %A - %B%d [%H:%M]",
+    "format": "{:%Y-%m-%d %A - %B%d [%H:%M]}",
     "interval": 1,
     "tooltip": false
   },
@@ -10933,7 +10937,7 @@ cat > "$CONF/waybar/themes/sedo-onedark/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%{T1} [ %a / %b%d ] %H:%M %{T-}",
+    "format": "%{T1}{: [ %a / %b%d ] %H:%M} %{T-}",
     "interval": 1,
     "tooltip": false
   },
@@ -11071,7 +11075,7 @@ cat > "$CONF/waybar/themes/sedo-tokyo-night/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "clock": {
-    "format": "%Y-%m-%d %A - %B%d ( %H:%M )",
+    "format": "{:%Y-%m-%d %A - %B%d ( %H:%M ) }",
     "interval": 1,
     "tooltip": false
   },
@@ -11258,7 +11262,7 @@ cat > "$CONF/waybar/themes/silvia/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-silvia gnome-calendar"
@@ -11460,7 +11464,7 @@ cat > "$CONF/waybar/themes/silvia-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-silvia gnome-calendar"
@@ -11640,7 +11644,7 @@ cat > "$CONF/waybar/themes/tobi/config.jsonc" <<'WB_EOF'
     "interval": 1
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-tobi gnome-calendar"
@@ -11805,7 +11809,7 @@ cat > "$CONF/waybar/themes/tobi-square/config.jsonc" <<'WB_EOF'
     "interval": 1
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-tobi gnome-calendar"
@@ -12002,7 +12006,7 @@ cat > "$CONF/waybar/themes/varinka/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-varinka gnome-calendar"
@@ -12196,7 +12200,7 @@ cat > "$CONF/waybar/themes/varinka-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-varinka gnome-calendar"
@@ -12377,7 +12381,7 @@ cat > "$CONF/waybar/themes/yael/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-yael gnome-calendar"
@@ -12564,7 +12568,7 @@ cat > "$CONF/waybar/themes/yael-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-yael gnome-calendar"
@@ -12742,7 +12746,7 @@ cat > "$CONF/waybar/themes/z0mbi3/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-z0mbi3 gnome-calendar"
@@ -12923,7 +12927,7 @@ cat > "$CONF/waybar/themes/z0mbi3-square/config.jsonc" <<'WB_EOF'
     "spacing": 8
   },
   "clock": {
-    "format": "%Y-%m-%d  %H:%M",
+    "format": "{:%Y-%m-%d  %H:%M}",
     "interval": 1,
     "tooltip": false,
     "on-click": "GTK_THEME=Rice-z0mbi3 gnome-calendar"

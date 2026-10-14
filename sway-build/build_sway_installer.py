@@ -169,6 +169,11 @@ while i < len(lines):
         out.append('cat > "$CONF/sway/config" <<\'SWAY_EOF\'')
         out.append(cfg)
         out.append("SWAY_EOF")
+        # Fill the keyboard layout from the system config at INSTALL time
+        # (localectl's X11 Layout); default to us if unset.
+        out.append('__xkb="$(localectl status 2>/dev/null | sed -n '
+                   "'s/.*X11 Layout: *//p' | head -1)\"")
+        out.append('sed -i "s/@@XKB_LAYOUT@@/${__xkb:-us}/" "$CONF/sway/config"')
         i = consume_trailers(j)
         continue
     if action == "replace_script":
