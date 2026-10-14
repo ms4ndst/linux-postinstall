@@ -9,7 +9,7 @@
 #           VS Code together - the same mechanism the old embedded
 #           Catppuccin collection used.
 # Installs: sway, swaybg, swayidle, swaylock, waybar, kanshi, rofi, dunst,
-#           kitty, flameshot, ImageMagick, brightnessctl, playerctl,
+#           kitty, swappy, ImageMagick, brightnessctl, playerctl,
 #           fastfetch, Nerd Font, tray helpers, GTK/icon/cursor themes,
 #           rofi power menu, copyq clipboard history, udiskie USB
 #           automount, pcmanfm file manager, gammastep night light,
@@ -4193,10 +4193,11 @@ ROWS=(
   "Mod+ctrl+l|Focus monitor to the right"
   "Mod+ctrl+shift+l|Move workspace to the monitor on the right"
   "Mod+m|CLIamp terminal music player, toggle show/hide"
+  "Mod+shift+m|CLIamp first-time setup"
   "Mod+n|Toggle Do Not Disturb"
   "Mod+p|Printer setup"
   "Mod+shift+p|Power menu"
-  "Print|Screenshot (flameshot)"
+  "Print|Screenshot (slurp region select, swappy annotation if installed)"
   "Mod+r|Resize mode (h/j/k/l, Return/Escape to exit)"
   "Mod+shift+r|Reload Sway"
   "Mod+Return|Open kitty"

@@ -2852,21 +2852,65 @@ chmod +x fedora-sway-setup.sh
 
 Log in through the **Sway** session at your display manager. Configs land in `~/.config` and helper scripts in `~/.local/bin`; re-running the script is safe but overwrites every config it manages — back up your own dotfiles first.
 
-Keybinds are the i3 rice's set (see the [Keybinding Cheat Sheet](#️-keybinding-cheat-sheet) below) with sway realities applied: `Mod+shift+c` and `Mod+shift+r` both `reload` (**sway has no i3-style `restart` command**), and `Mod+shift+e` exits through a swaynag confirmation. The app menu's equivalent entries are **Reload Sway** and **Restart Waybar** (a bar relaunch, since a compositor restart doesn't exist).
+Keybinds are the i3 rice's set with sway realities applied — see [Sway Keybinds](#️-sway-keybinds) below: `Mod+shift+c` and `Mod+shift+r` both `reload` (**sway has no i3-style `restart` command**), and `Mod+shift+e` exits through a swaynag confirmation. The app menu's equivalent entries are **Reload Sway** and **Restart Waybar** (a bar relaunch, since a compositor restart doesn't exist).
 
 ---
 
 ### ⌨️ Sway Keybinds
 
-The full table lives in the i3 section's [Keybinding Cheat Sheet](#️-keybinding-cheat-sheet) and is shared by the sway rice; the on-screen copy is `Mod+i`. Sway-specific differences:
+`Mod` = Super/Windows key. The on-screen copy of this table is `Mod+i` (`~/.local/bin/keybindings-help.sh`, kept in sync by hand).
 
-| Binding | Action | Note |
-|---|---|---|
-| `Mod+shift+c` / `Mod+shift+r` | Reload sway config | Sway has no `restart`; both binds reload |
-| `Mod+shift+e` | Exit sway | swaynag confirmation dialog |
-| `Mod+l` | Lock screen | `lock.sh`: screensaver first, then the password lock |
-| `Mod+alt+space` | App menu | Mod1 = Alt |
-| `Mod+Escape` | Screensaver | `tte` block art, any keypress dismisses |
+| Binding | Action |
+| --- | --- |
+| `Mod+1..9` | Switch to workspace 1–9 |
+| `Mod+shift+1..9` | Move window to workspace 1–9 |
+| `Mod+a` | Toggle the floating “AI window” — [Mistral Vibe CLI](https://docs.mistral.ai/getting-started/quickstarts/vibe-code/install-cli) (scratchpad show/hide) |
+| `Mod+shift+a` | Toggle the floating Mistral Vibe web app |
+| `Mod+b` | Split horizontal (for next window) |
+| `Mod+c` | Toggle caffeine (inhibit screen-lock/sleep) |
+| `Mod+shift+c` | Reload Sway |
+| `Mod+e` | File manager (`pcmanfm`) |
+| `Mod+shift+e` | Exit Sway (swaynag confirmation) |
+| `Mod+Escape` | Block-art screensaver, on demand |
+| `Mod+f` | Fullscreen toggle |
+| `Mod+shift+f` | Floating toggle |
+| `Mod+shift+g` | Colorpicker — click any on-screen pixel, its hex color is copied to the clipboard |
+| `Mod+h` | Focus left |
+| `Mod+ctrl+h` | Focus monitor to the left |
+| `Mod+shift+h` | Move window left |
+| `Mod+ctrl+shift+h` | Move workspace to the monitor on the left |
+| `Mod+i` | Show this keybinding cheat sheet in a floating window |
+| `Mod+j` | Focus down |
+| `Mod+shift+j` | Move window down |
+| `Mod+k` | Focus up |
+| `Mod+shift+k` | Move window up |
+| `Mod+l` | Lock screen (`lock.sh`: screensaver first, then the password lock) |
+| `Mod+ctrl+l` | Focus monitor to the right |
+| `Mod+ctrl+shift+l` | Move workspace to the monitor on the right |
+| `Mod+m` | Toggle CLIamp terminal music player (floating scratchpad) |
+| `Mod+shift+m` | CLIamp first-time setup |
+| `Mod+n` | Toggle Do Not Disturb (pauses dunst) |
+| `Mod+p` | Printer setup (`system-config-printer`) |
+| `Mod+shift+p` | Power menu (rofi) |
+| `Print` | Screenshot — slurp region select, grim capture, swappy annotation if installed (else saved to `~/Pictures/Screenshots` and copied to the clipboard) |
+| `Mod+r` | Resize mode (h/j/k/l, Return/Escape to exit) |
+| `Mod+shift+r` | Reload Sway (sway has no i3-style `restart`) |
+| `Mod+Return` | Open kitty |
+| `Mod+shift+q` | Close focused window |
+| `Mod+semicolon` | Focus right |
+| `Mod+shift+semicolon` | Move window right |
+| `Mod+space` | Rofi app launcher (drun) |
+| `Mod+alt+space` | App menu (Mod1 = Alt) |
+| `Mod+ctrl+space` | Toggle tiling/floating focus |
+| `Mod+shift+space` | Rofi run launcher |
+| `Mod+t` | Toggle split layout direction (splith/splitv) |
+| `Mod+v` | Split vertical (for next window) |
+| `Mod+shift+v` | Clipboard history (copyq) |
+| `Mod+shift+w` | Wallpaper picker |
+| `Mod+shift+XF86Assistant` / `Mod+Shift+F23` | Toggle Claude Desktop (F23 = the Copilot key) |
+| `XF86Audio Play/Next/Prev` | Media control (playerctl) |
+| `XF86Audio Raise/Lower/Mute Volume` | Volume, with a dunst level popup |
+| `XF86MonBrightness Up/Down` | Brightness, with a dunst level popup |
 
 ---
 
@@ -2888,7 +2932,7 @@ Edit `sway-build/bin/*.sh` (the `~/.local/bin` helpers), `hancore-theme-gen.py` 
 - **tuned-ppd conflict:** Fedora's `tuned-ppd` conflicts with `power-profiles-daemon` (the bar's power-profile widget backend). The install is best-effort: with tuned-ppd in place the widget stays inert; swap the packages manually to enable it.
 - **libadwaita apps** (gnome-calendar and every GNOME 47+ app) deliberately block theme CSS. The rice maps the active theme's accent hue to GNOME's closest preset accent color plus `prefer-dark` — as far as GNOME permits.
 - **GTK3 vs GTK4 rounding:** the generated GTK4 themes drop `@keyframes`-style rules that abort GTK3 sheets, so a few animated accents are GTK4-only.
-- **Flameshot** still captures via its X11 legacy path under XWayland — native Wayland screenshotting is the `Print` key (grim/slurp).
+- **Screenshots are Wayland-native:** the `Print` key uses slurp + grim (+ swappy for annotation). Flameshot is X11-oriented and does not capture on sway, so it is not installed or bound at all.
 
 ---
 
