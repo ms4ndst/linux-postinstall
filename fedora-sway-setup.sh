@@ -1795,20 +1795,56 @@ cat > "$BIN/vscode-theme-sync" <<'HANCORESHIM_EOF'
 # vscode-theme-sync: point VS Code's workbench.colorTheme at this rice's
 # generated extension theme for the ACTIVE desktop theme (label = the
 # title-cased theme name, exactly how generate-vscode-themes.py
-# contributes it). Run by app-theme-sync.sh on every theme switch; VS Code
-# watches settings.json and applies the new editor theme live.
+# contributes it) - for VS Code AND any installed forks (Cursor, and
+# Antigravity - a Cursor-lineage fork; its data folder is ~/.antigravity,
+# verified from its app.asar). Each installed app gets the same
+# workbench.colorTheme and a copy of the extension, so their workbench
+# chrome - title bar, tab bar, window control buttons - follows the
+# desktop theme too instead of the fork's stock default.
+# Run by app-theme-sync.sh on every theme switch; the apps watch
+# settings.json and apply the new editor theme live.
 #
 # settings.json is JSONC - comments and trailing commas are legal there
 # (jq chokes on both) and the file may have CRLF endings - so the edit is
 # a line-level regex swap in python instead of a JSON round-trip.
 set -u
-VS_SETTINGS="$HOME/.config/Code/User/settings.json"
 name="$(cat "$HOME/.config/waybar/current-theme-name" 2>/dev/null || true)"
-[ -n "$name" ] && [ -f "$VS_SETTINGS" ] || exit 0
-
+[ -n "$name" ] || exit 0
 label="$(printf '%s' "$name" | tr '-' ' ' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1')"
 
-python3 - "$VS_SETTINGS" "$label" <<'VSEOF'
+MASTER_EXT="$HOME/.vscode/extensions/linux-postinstall-rice-themes"
+MASTER_VER="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$MASTER_EXT/package.json" 2>/dev/null | head -1)"
+
+# config-dir name | extensions dir  (an app counts as installed when
+# ~/.config/<name> exists - the forks all create it on first run)
+APPS=(
+  "Code|$HOME/.vscode/extensions"
+  "Cursor|$HOME/.cursor/extensions"
+  "Antigravity|$HOME/.antigravity/extensions"
+)
+
+ver_of() { sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$1/package.json" 2>/dev/null | head -1; }
+
+for entry in "${APPS[@]}"; do
+  conf="${entry%%|*}"
+  extdir="${entry#*|}"
+  [ -d "$HOME/.config/$conf" ] || continue   # app not installed
+
+  # Keep a copy of the extension in every fork's extensions dir. The
+  # master (maintained by generate-vscode-themes.py at section 15) is
+  # the VS Code copy itself; forks get refreshed whenever its version
+  # moves, so a theme regeneration reaches them on the next switch.
+  if [ -n "$MASTER_VER" ] && [ "$extdir" != "$HOME/.vscode/extensions" ]; then
+    if [ "$(ver_of "$extdir/linux-postinstall-rice-themes")" != "$MASTER_VER" ]; then
+      mkdir -p "$extdir"
+      rm -rf "$extdir/linux-postinstall-rice-themes"
+      cp -a "$MASTER_EXT" "$extdir/linux-postinstall-rice-themes" 2>/dev/null || true
+    fi
+  fi
+
+  settings="$HOME/.config/$conf/User/settings.json"
+  mkdir -p "$(dirname "$settings")"
+  python3 - "$settings" "$label" <<'VSEOF'
 import re
 import sys
 
@@ -1816,7 +1852,7 @@ path, label = sys.argv[1], sys.argv[2]
 try:
     src = open(path, encoding="utf-8").read()
 except OSError:
-    sys.exit(0)
+    src = "{}"
 
 pat = re.compile(r'("workbench[.]colorTheme"\s*:\s*)"[^"]*"')
 if pat.search(src):
@@ -1825,6 +1861,7 @@ else:
     out = '{' + chr(10) + '    "workbench.colorTheme": "%s",' % label + src[1:]
 open(path, "w", encoding="utf-8").write(out)
 VSEOF
+done
 HANCORESHIM_EOF
 chmod +x "$BIN/wttrbar" "$BIN/hancore-battery-status" "$BIN/hancore-update-check" "$BIN/vscode-theme-sync"
 
