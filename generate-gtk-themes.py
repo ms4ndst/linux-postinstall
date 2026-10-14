@@ -390,6 +390,36 @@ _HEX_LITERAL_RE = re.compile(r"#[0-9a-fA-F]{6}\b")
 _RGBA_TRIPLE_RE = re.compile(r"(rgba?\(\s*)(\d+)(\s*,\s*)(\d+)(\s*,\s*)(\d+)")
 
 
+def fix_action_button_contrast(css, light_fg):
+    """Suggested/destructive action buttons get DARK text on an accent/red
+    background (see the templates). A handful of palettes have dark
+    accents or dark reds, where that pairing is unreadable - verified on
+    the HANCORE collection (six themes). Flip any action-button state
+    block whose text/background luminance gap is too small over to the
+    theme's light text color instead. Blocks the regex can't resolve a
+    solid background for (the translucent .osd variants) are left alone.
+    """
+    def lum(h):
+        r, g, b = (c / 255.0 for c in hex_to_rgb(h))
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+    def fix(m):
+        block = m.group(0)
+        bgm = re.search(
+            r"(?:linear-gradient\(to (?:right|bottom),|background(?:-color)?:)\s*"
+            r"#([0-9a-fA-F]{6})", block)
+        fgm = re.search(r"(?<!-)color:\s*(#[0-9a-fA-F]{6})", block)
+        if not bgm or not fgm:
+            return block
+        bg, fg = bgm.group(1), fgm.group(1)
+        if abs(lum(bg) - lum(fg)) >= 0.25:
+            return block
+        return block.replace(fg, light_fg, 1)
+
+    return re.sub(r"button\.(?:suggested|destructive)-action[^{]*\{[^}]*\}",
+                  fix, css)
+
+
 def build_gtk3_css(template_text, classification, colors):
     resolved = resolve_gtk3_roles(colors)
 
@@ -448,6 +478,7 @@ def main():
         colors = parse_theme_colors(ini_path)
         roles = resolve_roles(colors)
         css = build_gtk_css(template, roles)
+        css = fix_action_button_contrast(css, roles["text"])
         # History of the "@import resource:.../Default-dark.css" line that
         # used to be prepended here: it worked on GTK <=4.14, but on GTK
         # >=4.16 (Fedora 43+) that resource no longer exists, and a failed
@@ -474,6 +505,8 @@ def main():
             f.write(css)
 
         gtk3_css = build_gtk3_css(gtk3_template, gtk3_classification, colors)
+        gtk3_css = fix_action_button_contrast(gtk3_css,
+                                              resolve_gtk3_roles(colors)["text"])
         gtk3_dir = os.path.join(theme_dir, "gtk-3.0")
         os.makedirs(gtk3_dir, exist_ok=True)
         with open(os.path.join(gtk3_dir, "gtk.css"), "w", encoding="utf-8") as f:
