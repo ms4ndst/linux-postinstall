@@ -244,7 +244,7 @@ def post_clean(s):
         'log "Installing Wayland stack + Sway + rice toolkit via dnf..."\n'
         'sudo dnf install -y \\\n'
         '  sway swaybg swayidle swaylock waybar kanshi \\\n'
-        '  grim slurp wl-clipboard \\\n'
+        '  grim slurp swappy wl-clipboard \\\n'
         '  rofi-wayland dunst kitty \\\n'
         '  xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \\\n'
         '  network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \\\n'
@@ -363,6 +363,13 @@ def post_clean(s):
     #    at the sway border file the switcher now writes.
     s = s.replace('I3_CURRENT="$HOME/.config/i3/current-borders.conf"',
                   'I3_CURRENT="$HOME/.config/sway/current-borders.conf"')
+
+    # N. Mistral Vibe opens a Chromium --app window whose --class only becomes a
+    #    matchable WM_CLASS under XWayland; force it so the sway float rule
+    #    [class="MistralVibe"] matches (native Wayland gives it the browser's
+    #    own app_id instead, so it opens as a normal tiled window).
+    s = s.replace('--class=MistralVibe \\', '--class=MistralVibe --ozone-platform=x11 \\')
+    removed.append(("mistral --ozone-platform=x11", 1 if '--ozone-platform=x11' in s else 0))
     return s, removed
 
 result, removed = post_clean(result)

@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
-# Region screenshot via grim + slurp (replaces `flameshot gui`). Saves to
-# ~/Pictures/Screenshots/ and copies the PNG to the Wayland clipboard. With no
-# region selected (Escape), exits cleanly. Pass `full` to capture the whole
-# focused output instead of selecting a region.
+# Region screenshot for the Sway rice. flameshot is X11-oriented and does NOT
+# capture on sway/wlroots (its portal path hangs), so this uses the Wayland
+# tools: slurp selects a region, grim captures it. If swappy (a flameshot-style
+# annotation editor) is installed, the shot is piped to it for arrows/text/blur
+# + save/copy; otherwise it's saved to ~/Pictures/Screenshots and copied to the
+# clipboard directly. Pass `full` to capture the whole output instead of a region.
 set -u
 DIR="$HOME/Pictures/Screenshots"
 mkdir -p "$DIR"
 OUT="$DIR/shot-$(date +%Y%m%d-%H%M%S).png"
 
 if [ "${1:-region}" = "full" ]; then
-  grim "$OUT" || exit 1
+  GEO=""
 else
-  GEO="$(slurp 2>/dev/null)" || exit 0
+  GEO="$(slurp 2>/dev/null)" || exit 0   # Escape/cancel -> exit quietly
   [ -n "$GEO" ] || exit 0
-  grim -g "$GEO" "$OUT" || exit 1
 fi
 
-wl-copy --type image/png < "$OUT" 2>/dev/null || true
-command -v notify-send >/dev/null && notify-send "Screenshot" "Saved to $OUT and copied to clipboard"
+if command -v swappy >/dev/null 2>&1; then
+  # flameshot-style editor (save/copy from inside swappy's UI)
+  if [ -n "$GEO" ]; then grim -g "$GEO" - | swappy -f -; else grim - | swappy -f -; fi
+else
+  if [ -n "$GEO" ]; then grim -g "$GEO" "$OUT" || exit 1; else grim "$OUT" || exit 1; fi
+  wl-copy --type image/png < "$OUT" 2>/dev/null || true
+  command -v notify-send >/dev/null && notify-send "Screenshot" "Saved to $OUT and copied to clipboard"
+fi

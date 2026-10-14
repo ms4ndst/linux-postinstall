@@ -94,7 +94,7 @@ fi
 log "Installing Wayland stack + Sway + rice toolkit via dnf..."
 sudo dnf install -y \
   sway swaybg swayidle swaylock waybar kanshi \
-  grim slurp wl-clipboard \
+  grim slurp swappy wl-clipboard \
   rofi-wayland dunst kitty \
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \
   network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
@@ -680,8 +680,8 @@ for_window [app_id="(org.pulseaudio.pavucontrol|pavucontrol)"] floating enable, 
 # Claude Desktop (Electron) - app_id under native Wayland, class under XWayland.
 for_window [app_id="(com.anthropic.Claude|claude)"] floating enable, resize set 1200 850, move position center
 for_window [app_id="(com.anthropic.Claude|claude)"] mark claude-desktop-scratch
-for_window [class="claude"] floating enable, resize set 1200 850, move position center
-for_window [class="claude"] mark claude-desktop-scratch
+for_window [class="com.anthropic.Claude"] floating enable, resize set 1200 850, move position center
+for_window [class="com.anthropic.Claude"] mark claude-desktop-scratch
 # Mistral Vibe (chat.mistral.ai in a Chromium app-mode window, class MistralVibe)
 for_window [app_id="MistralVibe"] floating enable, resize set 1200 850, move position center
 for_window [app_id="MistralVibe"] mark mistral-vibe-scratch
@@ -13423,25 +13423,32 @@ RICE_EOF
 chmod +x "$BIN/swayidle-launch.sh"
 cat > "$BIN/screenshot.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
-# Region screenshot via grim + slurp (replaces `flameshot gui`). Saves to
-# ~/Pictures/Screenshots/ and copies the PNG to the Wayland clipboard. With no
-# region selected (Escape), exits cleanly. Pass `full` to capture the whole
-# focused output instead of selecting a region.
+# Region screenshot for the Sway rice. flameshot is X11-oriented and does NOT
+# capture on sway/wlroots (its portal path hangs), so this uses the Wayland
+# tools: slurp selects a region, grim captures it. If swappy (a flameshot-style
+# annotation editor) is installed, the shot is piped to it for arrows/text/blur
+# + save/copy; otherwise it's saved to ~/Pictures/Screenshots and copied to the
+# clipboard directly. Pass `full` to capture the whole output instead of a region.
 set -u
 DIR="$HOME/Pictures/Screenshots"
 mkdir -p "$DIR"
 OUT="$DIR/shot-$(date +%Y%m%d-%H%M%S).png"
 
 if [ "${1:-region}" = "full" ]; then
-  grim "$OUT" || exit 1
+  GEO=""
 else
-  GEO="$(slurp 2>/dev/null)" || exit 0
+  GEO="$(slurp 2>/dev/null)" || exit 0   # Escape/cancel -> exit quietly
   [ -n "$GEO" ] || exit 0
-  grim -g "$GEO" "$OUT" || exit 1
 fi
 
-wl-copy --type image/png < "$OUT" 2>/dev/null || true
-command -v notify-send >/dev/null && notify-send "Screenshot" "Saved to $OUT and copied to clipboard"
+if command -v swappy >/dev/null 2>&1; then
+  # flameshot-style editor (save/copy from inside swappy's UI)
+  if [ -n "$GEO" ]; then grim -g "$GEO" - | swappy -f -; else grim - | swappy -f -; fi
+else
+  if [ -n "$GEO" ]; then grim -g "$GEO" "$OUT" || exit 1; else grim "$OUT" || exit 1; fi
+  wl-copy --type image/png < "$OUT" 2>/dev/null || true
+  command -v notify-send >/dev/null && notify-send "Screenshot" "Saved to $OUT and copied to clipboard"
+fi
 RICE_EOF
 chmod +x "$BIN/screenshot.sh"
 cat > "$BIN/wallpaper-picker.sh" <<'RICE_EOF'
@@ -49031,7 +49038,7 @@ walk(t)
 if [ -z "$current_ws" ]; then
   for b in google-chrome-stable google-chrome chromium chromium-browser brave-browser microsoft-edge-stable vivaldi-stable vivaldi; do
     if command -v "$b" >/dev/null 2>&1; then
-      exec "$b" --user-data-dir="$profile" --class=MistralVibe \
+      exec "$b" --user-data-dir="$profile" --class=MistralVibe --ozone-platform=x11 \
         --no-first-run --no-default-browser-check --app="$url"
     fi
   done
