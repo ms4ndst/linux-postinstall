@@ -7,6 +7,10 @@
 # Kept later than the screensaver mark on purpose (DPMS/display-power is a
 # separate subsystem from the idle screensaver).
 # exec_always re-runs this on reload, so single-instance it first.
+# The idle context inherits sway's login-time PATH, which does NOT include
+# ~/.local/bin - the pipx tools the lock/screensaver chain needs (tte) live
+# there, so re-add it before exec.
+export PATH="$HOME/.local/bin:$PATH"
 set -u
 pkill -x swayidle 2>/dev/null
 for _ in 1 2 3 4 5; do pgrep -x swayidle >/dev/null 2>&1 || break; sleep 0.1; done
