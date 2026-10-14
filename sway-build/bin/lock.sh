@@ -105,7 +105,6 @@ elif command -v swaylock >/dev/null 2>&1; then
            jq -r '.[] | select(.active) | "\(.name) \(.current_mode.width) \(.current_mode.height)"')
   if [ "${#IMAGES[@]}" -gt 0 ]; then
     swaylock "${IMAGES[@]}" \
-      --indicator \
       --indicator-radius 110 \
       --indicator-thickness 14 \
       --inside-color 1e1e2ecc \
