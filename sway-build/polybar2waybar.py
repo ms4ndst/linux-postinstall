@@ -155,6 +155,21 @@ def main():
         return left, center, right
     left, center, right = mod_sections(primary_bars)
 
+    # Spacing. polybar's bar padding/module-margin are in "spaces"; waybar adds
+    # none of its own, so flat themes (no powerline cap glyphs) end up cramped.
+    # Translate bar padding -> a px window gutter (fixes the clock touching the
+    # edge), and for flat themes give every widget internal padding.
+    def _px(v, mul=6):
+        return int(re.sub(r"[^0-9]", "", str(v)) or 0) * mul
+    pad_l, pad_r = _px(primary.get("padding-left", "0")), _px(primary.get("padding-right", "0"))
+    PWR_CAPS = set(""
+                   "")
+    has_powerline = any(
+        any(ch in PWR_CAPS for ch in (sec.get("label", "") or ""))
+        for name, sec in sections.items()
+        if name.startswith("module/") and sec.get("type") == "custom/text")
+    flat = not has_powerline
+
     waybar = {
         "layer": "top", "position": "top", "height": height,
         "modules-left": [], "modules-center": [], "modules-right": [],
@@ -165,6 +180,9 @@ def main():
                f" font-size: {base_font_size}pt; }}")
     win = [f"background: {bar_bg or 'rgba(30,30,46,1)'};",
            f"color: {bar_fg or '#cdd6f4'};"]
+    # Always keep a small right gutter so the clock's last digit isn't clipped.
+    win.append(f"padding-left: {pad_l}px;")
+    win.append(f"padding-right: {max(pad_r, 6)}px;")
     css.append("window#waybar { " + " ".join(win) + " }")
     if radius and float(radius) > 0:
         css.append(f"window#waybar {{ border-radius: {radius}px; }}")
@@ -311,9 +329,23 @@ def main():
             emit_css_box(wid, fg=R(sec.get("label-volume-foreground")),
                          bg=R(sec.get("format-volume-background")))
         elif t == "internal/network":
-            lbl = strip_action(sec.get("label-connected", "{ifname}")).replace("%ifname%", "{ifname}")
-            mod = {"format-ethernet": lbl.strip(), "format-disconnected": "",
-                   "interface": sec.get("interface", "") or None, "tooltip": False}
+            lbl = strip_action(sec.get("label-connected", "{ifname}"))
+            for a, b in (("%ifname%", "{ifname}"), ("%local_ip%", "{ipaddr}"),
+                         ("%essid%", "{essid}"), ("%signal%", "{signalStrength}"),
+                         ("%downspeed%", "{bandwidthDownBytes}"),
+                         ("%upspeed%", "{bandwidthUpBytes}"),
+                         ("%netspeed%", "{bandwidthDownBytes}"),
+                         ("%linkspeed%", "{bandwidthDownBits}")):
+                lbl = lbl.replace(a, b)
+            lbl = lbl.strip()
+            # Show on both wired and wireless; leave disconnected blank so the
+            # inactive side takes no space (matches the polybar themes).
+            iface = R(sec.get("interface", "")).strip()
+            if not iface or iface.startswith("${"):
+                iface = None  # unresolved polybar launch env -> let waybar auto-detect
+            mod = {"format-ethernet": lbl, "format-wifi": lbl,
+                   "format-linked": lbl, "format-disconnected": "",
+                   "interface": iface, "tooltip": False}
             mod = {k: v for k, v in mod.items() if v is not None}
             clicks(sec, mod)
             emit_css_box(wid, fg=R(sec.get("label-connected-foreground")),
@@ -326,8 +358,16 @@ def main():
             emit_css_box(wid, fg=R(sec.get("label-discharging-foreground")),
                          bg=R(sec.get("format-discharging-background")))
         elif t in ("internal/memory",):
-            mod = {"format": strip_action(sec.get("label", "{percentage}%")).replace("%percentage_used%", "{percentage}"),
-                   "interval": 2, "tooltip": False}
+            # waybar memory tokens: {percentage}, {used}/{avail}/{total} in GiB.
+            # Map polybar's MB/GB tokens to GiB (closest waybar offers).
+            ml = strip_action(sec.get("label", "{percentage}%"))
+            for a, b in (("%percentage_used%", "{percentage}"),
+                         ("%percentage_free%", "{percentage}"),
+                         ("%gb_used%", "{used:0.1f}G"), ("%mb_used%", "{used:0.1f}G"),
+                         ("%gb_free%", "{avail:0.1f}G"), ("%mb_free%", "{avail:0.1f}G"),
+                         ("%gb_total%", "{total:0.1f}G"), ("%mb_total%", "{total:0.1f}G")):
+                ml = ml.replace(a, b)
+            mod = {"format": ml, "interval": 2, "tooltip": False}
             emit_css_box(wid, fg=R(sec.get("label-foreground")), bg=R(sec.get("format-background")))
         elif t in ("internal/cpu",):
             mod = {"format": strip_action(sec.get("label", "{usage}%")).replace("%percentage%", "{usage}"),
@@ -400,6 +440,13 @@ def main():
     out = {k: v for k, v in waybar.items()}
     for wid, mod in defs.items():
         out[wid] = mod
+
+    # Flat themes (no powerline caps) have touching widgets - give every module
+    # internal horizontal padding so they read as separated. Powerline/chip
+    # themes carry their own spacing via caps and label padding, so skip them.
+    if flat and used_ids:
+        sels = ", ".join(sorted({css_sel(w) for w in used_ids}))
+        css.append(f"{sels} {{ padding: 0 7px; }}")
 
     (outdir / "config.jsonc").write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     (outdir / "style.css").write_text("\n".join(css) + "\n", encoding="utf-8")

@@ -981,6 +981,8 @@ cat > "$CONF/waybar/themes/aline/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -1064,7 +1066,7 @@ cat > "$CONF/waybar/themes/aline/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/aline/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #FAF4ED; color: #575279; }
+window#waybar { background: #FAF4ED; color: #575279; padding-left: 12px; padding-right: 12px; }
 #custom-bi { color: #F2E9E1; background: #FAF4ED; font-size: 14pt; }
 #workspaces button.focused { color: #56949F; }
 #workspaces button.urgent { color: #B4637A; }
@@ -1192,6 +1194,8 @@ cat > "$CONF/waybar/themes/aline-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -1267,7 +1271,7 @@ cat > "$CONF/waybar/themes/aline-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/aline-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #FAF4ED; color: #575279; }
+window#waybar { background: #FAF4ED; color: #575279; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #56949F; }
 #workspaces button.urgent { color: #B4637A; }
 #clock { background: #F2E9E1; font-size: 10pt; }
@@ -1285,6 +1289,7 @@ window#waybar { background: #FAF4ED; color: #575279; }
 #cpu { background: #F2E9E1; }
 #custom-updates { color: #EA9D34; background: #F2E9E1; }
 #tray { background: #3D3757; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-filesystem, #custom-layout, #custom-media, #custom-network-wireless, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/alireza"
 cat > "$CONF/waybar/themes/alireza/config.jsonc" <<'WB_EOF'
@@ -1354,6 +1359,8 @@ cat > "$CONF/waybar/themes/alireza/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -1428,7 +1435,7 @@ cat > "$CONF/waybar/themes/alireza/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/alireza/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #191A21; color: #F8F8F2; }
+window#waybar { background: #191A21; color: #F8F8F2; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #workspaces button.focused { color: #BD93F9; border-bottom: 2px solid #BD93F9; }
 #workspaces button { color: #938BFF; }
@@ -1447,6 +1454,7 @@ window#waybar { border-radius: 8px; }
 #custom-updates { color: #F1FA8C; }
 #custom-layout { color: #F8F8F2; }
 #clock { color: #F8F8F2; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/alireza-square"
 cat > "$CONF/waybar/themes/alireza-square/config.jsonc" <<'WB_EOF'
@@ -1516,6 +1524,8 @@ cat > "$CONF/waybar/themes/alireza-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -1590,7 +1600,7 @@ cat > "$CONF/waybar/themes/alireza-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/alireza-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #191A21; color: #F8F8F2; }
+window#waybar { background: #191A21; color: #F8F8F2; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #BD93F9; border-bottom: 2px solid #BD93F9; }
 #workspaces button { color: #938BFF; }
 #workspaces button.urgent { color: #F8F8F2; background: #FF5E76; }
@@ -1608,6 +1618,7 @@ window#waybar { background: #191A21; color: #F8F8F2; }
 #custom-updates { color: #F1FA8C; }
 #custom-layout { color: #F8F8F2; }
 #clock { color: #F8F8F2; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/archblur"
 cat > "$CONF/waybar/themes/archblur/config.jsonc" <<'WB_EOF'
@@ -1685,6 +1696,8 @@ cat > "$CONF/waybar/themes/archblur/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -1764,7 +1777,7 @@ cat > "$CONF/waybar/themes/archblur/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/archblur/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #282828; color: #EBDBB2; }
+window#waybar { background: #282828; color: #EBDBB2; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 10px; }
 #custom-launcher { color: #FE8019; }
 #workspaces button.focused { color: #FE8019; border-bottom: 2px solid #FE8019; }
@@ -1785,6 +1798,7 @@ window#waybar { border-radius: 10px; }
 #custom-layout { color: #EBDBB2; }
 #clock { color: #EBDBB2; }
 #custom-power { color: #FB4934; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/archblur-square"
 cat > "$CONF/waybar/themes/archblur-square/config.jsonc" <<'WB_EOF'
@@ -1862,6 +1876,8 @@ cat > "$CONF/waybar/themes/archblur-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -1941,7 +1957,7 @@ cat > "$CONF/waybar/themes/archblur-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/archblur-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #282828; color: #EBDBB2; }
+window#waybar { background: #282828; color: #EBDBB2; padding-left: 12px; padding-right: 12px; }
 #custom-launcher { color: #FE8019; }
 #workspaces button.focused { color: #FE8019; border-bottom: 2px solid #FE8019; }
 #workspaces button { color: #A89984; }
@@ -1961,6 +1977,7 @@ window#waybar { background: #282828; color: #EBDBB2; }
 #custom-layout { color: #EBDBB2; }
 #clock { color: #EBDBB2; }
 #custom-power { color: #FB4934; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/archcraft"
 cat > "$CONF/waybar/themes/archcraft/config.jsonc" <<'WB_EOF'
@@ -2063,6 +2080,8 @@ cat > "$CONF/waybar/themes/archcraft/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": " {ifname}",
+    "format-wifi": " {ifname}",
+    "format-linked": " {ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -2141,7 +2160,7 @@ cat > "$CONF/waybar/themes/archcraft/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/archcraft/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1e222a; color: #c8ccd4; }
+window#waybar { background: #1e222a; color: #c8ccd4; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #custom-LD { color: #292e39; font-size: 14pt; }
 #workspaces button.focused { color: #1e222a; background: #61afef; }
@@ -2269,6 +2288,8 @@ cat > "$CONF/waybar/themes/archcraft-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": " {ifname}",
+    "format-wifi": " {ifname}",
+    "format-linked": " {ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -2347,7 +2368,7 @@ cat > "$CONF/waybar/themes/archcraft-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/archcraft-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1e222a; color: #c8ccd4; }
+window#waybar { background: #1e222a; color: #c8ccd4; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #1e222a; background: #61afef; }
 #workspaces button { color: #c8ccd4; background: #292e39; }
 #workspaces button.urgent { color: #1e222a; background: #e06c75; }
@@ -2380,6 +2401,7 @@ window#waybar { background: #1e222a; color: #c8ccd4; }
 #custom-dot { color: #727c91; }
 #custom-date-icon { color: #da6e89; background: #292e39; font-size: 10pt; }
 #clock { color: #c8ccd4; background: #292e39; font-size: 10pt; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-date-icon, #custom-dnd, #custom-dot, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/breddie"
 cat > "$CONF/waybar/themes/breddie/config.jsonc" <<'WB_EOF'
@@ -2449,6 +2471,8 @@ cat > "$CONF/waybar/themes/breddie/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -2523,7 +2547,7 @@ cat > "$CONF/waybar/themes/breddie/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/breddie/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1A1B26; color: #E5E9F0; }
+window#waybar { background: #1A1B26; color: #E5E9F0; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #workspaces button.focused { color: #ACB0D0; border-bottom: 2px solid #ACB0D0; }
 #workspaces button { color: #444B61; }
@@ -2542,6 +2566,7 @@ window#waybar { border-radius: 8px; }
 #custom-updates { color: #EBCB8C; }
 #custom-layout { color: #E5E9F0; }
 #clock { color: #E5E9F0; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/breddie-square"
 cat > "$CONF/waybar/themes/breddie-square/config.jsonc" <<'WB_EOF'
@@ -2611,6 +2636,8 @@ cat > "$CONF/waybar/themes/breddie-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -2685,7 +2712,7 @@ cat > "$CONF/waybar/themes/breddie-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/breddie-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1A1B26; color: #E5E9F0; }
+window#waybar { background: #1A1B26; color: #E5E9F0; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #ACB0D0; border-bottom: 2px solid #ACB0D0; }
 #workspaces button { color: #444B61; }
 #workspaces button.urgent { color: #1A1B26; background: #EBCB8C; }
@@ -2703,6 +2730,7 @@ window#waybar { background: #1A1B26; color: #E5E9F0; }
 #custom-updates { color: #EBCB8C; }
 #custom-layout { color: #E5E9F0; }
 #clock { color: #E5E9F0; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/brenda"
 cat > "$CONF/waybar/themes/brenda/config.jsonc" <<'WB_EOF'
@@ -2802,6 +2830,8 @@ cat > "$CONF/waybar/themes/brenda/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": " {ifname}",
+    "format-wifi": " {ifname}",
+    "format-linked": " {ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -2891,7 +2921,7 @@ cat > "$CONF/waybar/themes/brenda/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/brenda/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #2D353B; color: #D3C6AA; }
+window#waybar { background: #2D353B; color: #D3C6AA; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #workspaces button.focused { color: #A8501F; }
 #workspaces button { color: #96406B; }
@@ -2918,6 +2948,7 @@ window#waybar { border-radius: 8px; }
 #tray { background: #2D353B; }
 #custom-date-icon { color: #2D353B; background: #7FBBB3; }
 #clock { color: #2D353B; background: #F8F5E4; }
+#battery, #clock, #cpu, #custom-backlight, #custom-backlight-icon, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-cpu-icon, #custom-date-icon, #custom-dnd, #custom-layout, #custom-media, #custom-memory-icon, #custom-network-icon, #custom-network-wireless, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/brenda-square"
 cat > "$CONF/waybar/themes/brenda-square/config.jsonc" <<'WB_EOF'
@@ -3017,6 +3048,8 @@ cat > "$CONF/waybar/themes/brenda-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": " {ifname}",
+    "format-wifi": " {ifname}",
+    "format-linked": " {ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -3106,7 +3139,7 @@ cat > "$CONF/waybar/themes/brenda-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/brenda-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #2D353B; color: #D3C6AA; }
+window#waybar { background: #2D353B; color: #D3C6AA; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #A8501F; }
 #workspaces button { color: #96406B; }
 #workspaces button.urgent { color: #B33440; }
@@ -3132,6 +3165,7 @@ window#waybar { background: #2D353B; color: #D3C6AA; }
 #tray { background: #2D353B; }
 #custom-date-icon { color: #2D353B; background: #7FBBB3; }
 #clock { color: #2D353B; background: #F8F5E4; }
+#battery, #clock, #cpu, #custom-backlight, #custom-backlight-icon, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-cpu-icon, #custom-date-icon, #custom-dnd, #custom-layout, #custom-media, #custom-memory-icon, #custom-network-icon, #custom-network-wireless, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/catppuccin-mocha"
 cat > "$CONF/waybar/themes/catppuccin-mocha/config.jsonc" <<'WB_EOF'
@@ -3238,6 +3272,8 @@ cat > "$CONF/waybar/themes/catppuccin-mocha/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -3352,7 +3388,7 @@ cat > "$CONF/waybar/themes/catppuccin-mocha/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/catppuccin-mocha/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1e1e2e; color: #cdd6f4; }
+window#waybar { background: #1e1e2e; color: #cdd6f4; padding-left: 6px; padding-right: 6px; }
 window#waybar { border-radius: 8px; }
 #workspaces button.focused { color: #cba6f7; border-bottom: 2px solid #cba6f7; }
 #workspaces button { color: #a6adc8; }
@@ -3464,6 +3500,8 @@ cat > "$CONF/waybar/themes/catppuccin-mocha-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -3542,7 +3580,7 @@ cat > "$CONF/waybar/themes/catppuccin-mocha-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/catppuccin-mocha-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1e1e2e; color: #cdd6f4; }
+window#waybar { background: #1e1e2e; color: #cdd6f4; padding-left: 6px; padding-right: 6px; }
 #workspaces button.focused { color: #cba6f7; border-bottom: 2px solid #cba6f7; }
 #workspaces button { color: #a6adc8; }
 #workspaces button.urgent { color: #f38ba8; border-bottom: 2px solid #f38ba8; }
@@ -3564,6 +3602,7 @@ window#waybar { background: #1e1e2e; color: #cdd6f4; }
 #custom-layout { color: #1e1e2e; background: #f5c2e7; }
 #custom-date-icon { color: #1e1e2e; background: #b4befe; font-size: 10pt; }
 #clock { color: #1e1e2e; background: #b4befe; font-size: 10pt; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-date-icon, #custom-dnd, #custom-layout, #custom-media, #custom-network-wireless, #custom-tray-cap, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/classic"
 cat > "$CONF/waybar/themes/classic/config.jsonc" <<'WB_EOF'
@@ -3633,6 +3672,8 @@ cat > "$CONF/waybar/themes/classic/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -3707,7 +3748,7 @@ cat > "$CONF/waybar/themes/classic/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/classic/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #282828; color: #EBDBB2; }
+window#waybar { background: #282828; color: #EBDBB2; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #EBDBB2; border-bottom: 2px solid #EBDBB2; }
 #workspaces button { color: #A89984; }
 #workspaces button.urgent { color: #282828; background: #FB4934; }
@@ -3725,6 +3766,7 @@ window#waybar { background: #282828; color: #EBDBB2; }
 #custom-updates { color: #A89984; }
 #custom-layout { color: #EBDBB2; }
 #clock { color: #EBDBB2; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/classic-square"
 cat > "$CONF/waybar/themes/classic-square/config.jsonc" <<'WB_EOF'
@@ -3794,6 +3836,8 @@ cat > "$CONF/waybar/themes/classic-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -3868,7 +3912,7 @@ cat > "$CONF/waybar/themes/classic-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/classic-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #282828; color: #EBDBB2; }
+window#waybar { background: #282828; color: #EBDBB2; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #EBDBB2; border-bottom: 2px solid #EBDBB2; }
 #workspaces button { color: #A89984; }
 #workspaces button.urgent { color: #282828; background: #FB4934; }
@@ -3886,6 +3930,7 @@ window#waybar { background: #282828; color: #EBDBB2; }
 #custom-updates { color: #A89984; }
 #custom-layout { color: #EBDBB2; }
 #clock { color: #EBDBB2; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/cynthia"
 cat > "$CONF/waybar/themes/cynthia/config.jsonc" <<'WB_EOF'
@@ -3980,6 +4025,8 @@ cat > "$CONF/waybar/themes/cynthia/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -4077,7 +4124,7 @@ cat > "$CONF/waybar/themes/cynthia/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/cynthia/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #181616; color: #C5C9C5; }
+window#waybar { background: #181616; color: #C5C9C5; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #custom-bi { color: #242121; background: #181616; font-size: 14pt; }
 #workspaces button.focused { color: #7FB4CA; }
@@ -4172,6 +4219,8 @@ cat > "$CONF/waybar/themes/cynthia-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -4269,7 +4318,7 @@ cat > "$CONF/waybar/themes/cynthia-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/cynthia-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #181616; color: #C5C9C5; }
+window#waybar { background: #181616; color: #C5C9C5; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #7FB4CA; }
 #workspaces button { color: #87A987; }
 #workspaces button.urgent { color: #E46876; }
@@ -4277,6 +4326,7 @@ window#waybar { background: #181616; color: #C5C9C5; }
 #custom-network-wireless { background: #242121; }
 #custom-caffeine { color: #87A987; }
 #custom-dnd { color: #E46876; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-filesystem, #custom-layout, #custom-media, #custom-network-wireless, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/daniela"
 cat > "$CONF/waybar/themes/daniela/config.jsonc" <<'WB_EOF'
@@ -4344,6 +4394,8 @@ cat > "$CONF/waybar/themes/daniela/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -4425,7 +4477,7 @@ cat > "$CONF/waybar/themes/daniela/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/daniela/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1A1B26; color: #C0CAF5; }
+window#waybar { background: #1A1B26; color: #C0CAF5; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #workspaces button.focused { color: #7AA2F7; }
 #workspaces button { color: #565F89; }
@@ -4436,6 +4488,7 @@ window#waybar { border-radius: 8px; }
 #custom-caffeine { color: #9ECE6A; }
 #custom-dnd { color: #F7768E; }
 #custom-updates { color: #E0AF68; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-filesystem, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/daniela-square"
 cat > "$CONF/waybar/themes/daniela-square/config.jsonc" <<'WB_EOF'
@@ -4503,6 +4556,8 @@ cat > "$CONF/waybar/themes/daniela-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -4584,7 +4639,7 @@ cat > "$CONF/waybar/themes/daniela-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/daniela-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1A1B26; color: #C0CAF5; }
+window#waybar { background: #1A1B26; color: #C0CAF5; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #7AA2F7; }
 #workspaces button { color: #565F89; }
 #workspaces button.urgent { color: #F7768E; }
@@ -4594,6 +4649,7 @@ window#waybar { background: #1A1B26; color: #C0CAF5; }
 #custom-caffeine { color: #9ECE6A; }
 #custom-dnd { color: #F7768E; }
 #custom-updates { color: #E0AF68; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-filesystem, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/emilia"
 cat > "$CONF/waybar/themes/emilia/config.jsonc" <<'WB_EOF'
@@ -4732,6 +4788,8 @@ cat > "$CONF/waybar/themes/emilia/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -4881,7 +4939,7 @@ cat > "$CONF/waybar/themes/emilia/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/emilia/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1E1A17; color: #E8DCC8; }
+window#waybar { background: #1E1A17; color: #E8DCC8; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #custom-bli { color: #2B241F; background: #1E1A17; font-size: 14pt; }
 #custom-backlight { background: #2B241F; }
@@ -5010,6 +5068,8 @@ cat > "$CONF/waybar/themes/emilia-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -5091,7 +5151,7 @@ cat > "$CONF/waybar/themes/emilia-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/emilia-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1E1A17; color: #E8DCC8; }
+window#waybar { background: #1E1A17; color: #E8DCC8; padding-left: 12px; padding-right: 12px; }
 #custom-backlight { background: #2B241F; }
 #pulseaudio { background: #2B241F; }
 #custom-media { color: #B08BBB; background: #2B241F; }
@@ -5109,6 +5169,7 @@ window#waybar { background: #1E1A17; color: #E8DCC8; }
 #cpu { background: #2B241F; }
 #custom-updates { color: #E0A458; background: #2B241F; }
 #clock { background: #2B241F; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-filesystem, #custom-layout, #custom-media, #custom-network-wireless, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/forest"
 cat > "$CONF/waybar/themes/forest/config.jsonc" <<'WB_EOF'
@@ -5195,6 +5256,8 @@ cat > "$CONF/waybar/themes/forest/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -5247,7 +5310,7 @@ cat > "$CONF/waybar/themes/forest/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "memory": {
-    "format": "%mb_used%",
+    "format": "{used:0.1f}G",
     "interval": 2,
     "tooltip": false
   },
@@ -5280,7 +5343,7 @@ cat > "$CONF/waybar/themes/forest/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/forest/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #212B30; color: #C4C7C5; }
+window#waybar { background: #212B30; color: #C4C7C5; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #workspaces button.focused { color: #00B19F; }
 #workspaces button { color: #3F5360; }
@@ -5305,6 +5368,7 @@ window#waybar { border-radius: 8px; }
 #custom-layout { color: #6D8895; }
 #custom-dots { color: #3F5360; }
 #custom-dots { color: #3F5360; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-dots, #custom-dots-tight, #custom-filesystem, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/forest-square"
 cat > "$CONF/waybar/themes/forest-square/config.jsonc" <<'WB_EOF'
@@ -5391,6 +5455,8 @@ cat > "$CONF/waybar/themes/forest-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -5443,7 +5509,7 @@ cat > "$CONF/waybar/themes/forest-square/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "memory": {
-    "format": "%mb_used%",
+    "format": "{used:0.1f}G",
     "interval": 2,
     "tooltip": false
   },
@@ -5476,7 +5542,7 @@ cat > "$CONF/waybar/themes/forest-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/forest-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #212B30; color: #C4C7C5; }
+window#waybar { background: #212B30; color: #C4C7C5; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #00B19F; }
 #workspaces button { color: #3F5360; }
 #workspaces button.urgent { color: #EC7875; }
@@ -5500,6 +5566,7 @@ window#waybar { background: #212B30; color: #C4C7C5; }
 #custom-layout { color: #6D8895; }
 #custom-dots { color: #3F5360; }
 #custom-dots { color: #3F5360; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-dots, #custom-dots-tight, #custom-filesystem, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/gh0stzk-aline"
 cat > "$CONF/waybar/themes/gh0stzk-aline/config.jsonc" <<'WB_EOF'
@@ -5635,9 +5702,10 @@ cat > "$CONF/waybar/themes/gh0stzk-aline/config.jsonc" <<'WB_EOF'
     "on-click-right": "OpenApps --soundcontrol"
   },
   "network": {
-    "format-ethernet": "%downspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "custom/updates": {
@@ -5651,7 +5719,7 @@ cat > "$CONF/waybar/themes/gh0stzk-aline/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-aline/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "Inconsolata Semi Condensed Bold", "JetBrains Mono"; font-size: 11pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 6px; padding-right: 6px; }
 #custom-launcher { background: ${color.bg}; }
 #custom-sep { background: ${color.bg}; }
 #custom-bi { color: ${color.mc}; background: ${color.bg}; }
@@ -5793,9 +5861,10 @@ cat > "$CONF/waybar/themes/gh0stzk-brenda/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false,
     "on-click": "NetManagerDM"
   },
@@ -5826,7 +5895,7 @@ cat > "$CONF/waybar/themes/gh0stzk-brenda/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-brenda/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 6px; }
 window#waybar { border-radius: 1px; }
 #custom-launcher { color: ${color.blue-gray}; background: ${color.green}; font-size: 12pt; }
 #custom-sep { color: ${color.bg}; }
@@ -5853,6 +5922,7 @@ window#waybar { border-radius: 1px; }
 #tray { background: ${color.bg}; }
 #custom-sep { color: ${color.bg}; }
 #custom-power { color: ${color.mbg}; background: ${color.red}; }
+#battery, #clock, #cpu, #custom-bluetooth, #custom-colorpicker, #custom-filesystem, #custom-gz-bspwm, #custom-gz-mpd_control, #custom-launcher, #custom-mplayer, #custom-power, #custom-sep, #custom-updates, #custom-usercard, #custom-weather, #memory, #network, #pulseaudio, #tray { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/gh0stzk-cristina"
 cat > "$CONF/waybar/themes/gh0stzk-cristina/config.jsonc" <<'WB_EOF'
@@ -6028,9 +6098,10 @@ cat > "$CONF/waybar/themes/gh0stzk-cristina/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "custom/bod": {
@@ -6062,7 +6133,7 @@ cat > "$CONF/waybar/themes/gh0stzk-cristina/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-cristina/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 12px; padding-right: 6px; }
 #custom-launcher { color: ${color.blue}; }
 #custom-sep2 { color: ${color.indigo}; }
 #custom-sep2 { color: ${color.indigo}; }
@@ -6250,9 +6321,10 @@ cat > "$CONF/waybar/themes/gh0stzk-cynthia/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "custom/power": {
@@ -6318,7 +6390,7 @@ cat > "$CONF/waybar/themes/gh0stzk-cynthia/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-cynthia/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 6px; padding-right: 6px; }
 #custom-launcher { color: ${color.fg}; font-size: 16pt; }
 #custom-sep2 { color: ${color.indigo}; }
 #custom-browser { color: ${color.orange}; background: ${color.bg}; }
@@ -6478,9 +6550,10 @@ cat > "$CONF/waybar/themes/gh0stzk-daniela/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "pulseaudio": {
@@ -6502,7 +6575,7 @@ cat > "$CONF/waybar/themes/gh0stzk-daniela/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-daniela/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "Bebas Neue", "JetBrains Mono"; font-size: 13pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 6px; }
 #custom-launcher { font-size: 13pt; }
 #custom-sep { color: ${color.bg}; }
 #custom-sep { color: ${color.bg}; }
@@ -6522,6 +6595,7 @@ window#waybar { background: ${color.bg}; color: ${color.fg}; }
 #custom-sep { color: ${color.bg}; }
 #custom-sep { color: ${color.bg}; }
 #custom-sep { color: ${color.bg}; }
+#battery, #clock, #cpu, #custom-bluetooth, #custom-colorpicker, #custom-filesystem, #custom-gz-bspwm, #custom-gz-mpd_control, #custom-launcher, #custom-mplayer, #custom-power, #custom-sep, #custom-updates, #custom-usercard, #custom-weather, #memory, #network, #pulseaudio, #tray { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/gh0stzk-emilia"
 cat > "$CONF/waybar/themes/gh0stzk-emilia/config.jsonc" <<'WB_EOF'
@@ -6659,9 +6733,10 @@ cat > "$CONF/waybar/themes/gh0stzk-emilia/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "pulseaudio": {
@@ -6691,7 +6766,7 @@ cat > "$CONF/waybar/themes/gh0stzk-emilia/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-emilia/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 6px; }
 window#waybar { border-radius: 4.0px; }
 #custom-launcher { color: ${color.blue-arch}; font-size: 15pt; }
 #custom-dots { color: ${color.blue-gray}; font-size: 11pt; }
@@ -6785,7 +6860,9 @@ cat > "$CONF/waybar/themes/gh0stzk-h4ck3r/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%local_ip%",
+    "format-ethernet": "{ipaddr}",
+    "format-wifi": "{ipaddr}",
+    "format-linked": "{ipaddr}",
     "format-disconnected": "",
     "interface": "tun0",
     "tooltip": false
@@ -6865,7 +6942,7 @@ cat > "$CONF/waybar/themes/gh0stzk-h4ck3r/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-h4ck3r/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 6px; }
 #custom-launcher { color: ${color.yellow}; font-size: 17pt; }
 #custom-dots { color: ${color.blue}; font-size: 12pt; }
 #custom-sep { color: ${color.bg}; }
@@ -6887,6 +6964,7 @@ window#waybar { background: ${color.bg}; color: ${color.fg}; }
 #tray { background: ${color.bg}; }
 #custom-sep { color: ${color.bg}; }
 #custom-power { color: ${color.red}; }
+#battery, #clock, #cpu, #custom-bluetooth, #custom-colorpicker, #custom-dots, #custom-gz-bspwm, #custom-gz-target, #custom-launcher, #custom-mplayer, #custom-power, #custom-sep, #custom-updates, #custom-usercard, #network, #pulseaudio, #tray { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/gh0stzk-isabel"
 cat > "$CONF/waybar/themes/gh0stzk-isabel/config.jsonc" <<'WB_EOF'
@@ -7022,9 +7100,10 @@ cat > "$CONF/waybar/themes/gh0stzk-isabel/config.jsonc" <<'WB_EOF'
     "on-click-right": "OpenApps --soundcontrol"
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "tray": {
@@ -7044,7 +7123,7 @@ cat > "$CONF/waybar/themes/gh0stzk-isabel/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-isabel/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "Inconsolata Semi Condensed Bold", "JetBrains Mono"; font-size: 11pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 12px; padding-right: 12px; }
 #custom-launcher { color: ${color.fg}; font-size: 16pt; }
 #custom-sep2 { color: ${color.indigo}; }
 #custom-sep2 { color: ${color.indigo}; }
@@ -7070,6 +7149,7 @@ window#waybar { background: ${color.bg}; color: ${color.fg}; }
 #custom-sep { color: ${color.bg-alt}; }
 #custom-sep { color: ${color.bg-alt}; }
 #custom-power { color: ${color.red}; }
+#battery, #clock, #cpu, #custom-bluetooth, #custom-colorpicker, #custom-filesystem, #custom-gz-bspwm, #custom-gz-mpd_control, #custom-launcher, #custom-mplayer, #custom-power, #custom-sep, #custom-sep2, #custom-title, #custom-updates, #custom-usercard, #custom-weather, #memory, #network, #pulseaudio, #tray { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/gh0stzk-jan"
 cat > "$CONF/waybar/themes/gh0stzk-jan/config.jsonc" <<'WB_EOF'
@@ -7180,9 +7260,10 @@ cat > "$CONF/waybar/themes/gh0stzk-jan/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "pulseaudio": {
@@ -7212,7 +7293,7 @@ cat > "$CONF/waybar/themes/gh0stzk-jan/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-jan/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "Inconsolata Semi Condensed Extra Bold", "JetBrains Mono"; font-size: 11pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 12px; padding-right: 12px; }
 #custom-launcher { color: ${color.blue-arch}; }
 #custom-sep2 { color: ${color.blue-arch}; }
 #custom-colorpicker { color: ${color.pink}; }
@@ -7224,6 +7305,7 @@ window#waybar { background: ${color.bg}; color: ${color.fg}; }
 #custom-sep2 { color: ${color.blue-arch}; }
 #tray { background: ${color.bg}; }
 #custom-power { color: ${color.red}; }
+#battery, #clock, #cpu, #custom-bluetooth, #custom-colorpicker, #custom-filesystem, #custom-gz-bspwm, #custom-launcher, #custom-mplayer, #custom-power, #custom-sep, #custom-sep2, #custom-title, #custom-updates, #custom-usercard, #memory, #network, #pulseaudio, #tray { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/gh0stzk-karla"
 cat > "$CONF/waybar/themes/gh0stzk-karla/config.jsonc" <<'WB_EOF'
@@ -7316,9 +7398,10 @@ cat > "$CONF/waybar/themes/gh0stzk-karla/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "pulseaudio": {
@@ -7370,11 +7453,12 @@ cat > "$CONF/waybar/themes/gh0stzk-karla/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-karla/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 6px; }
 window#waybar { border-radius: 12.0px; }
 #custom-launcher { color: ${color.blue-arch}; font-size: 13pt; }
 #pulseaudio { color: ${color.fg}; }
 #tray { background: ${color.bg}; }
+#battery, #clock, #cpu, #custom-bluetooth, #custom-filesystem, #custom-gz-bspwm, #custom-gz-mpd_control, #custom-launcher, #custom-mplayer, #custom-power, #custom-sep, #custom-sep2, #custom-updates, #custom-usercard, #custom-weather, #language, #memory, #network, #pulseaudio, #tray { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/gh0stzk-pamela"
 cat > "$CONF/waybar/themes/gh0stzk-pamela/config.jsonc" <<'WB_EOF'
@@ -7485,9 +7569,10 @@ cat > "$CONF/waybar/themes/gh0stzk-pamela/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "pulseaudio": {
@@ -7524,7 +7609,7 @@ cat > "$CONF/waybar/themes/gh0stzk-pamela/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-pamela/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "Material Design Icons Desktop", "JetBrains Mono"; font-size: 14pt; }
-window#waybar { background: ${color.bg-alt}; color: ${color.fg}; }
+window#waybar { background: ${color.bg-alt}; color: ${color.fg}; padding-left: 0px; padding-right: 6px; }
 window#waybar { border-radius: 6px; }
 #custom-mplayer { color: ${color.green}; }
 #custom-r00t { color: ${color.cyan}; }
@@ -7540,6 +7625,7 @@ window#waybar { border-radius: 6px; }
 #custom-colorpicker { color: ${color.green}; }
 #custom-power { color: ${color.red}; }
 #tray { background: ${color.bg-alt}; }
+#backlight, #battery, #clock, #cpu, #custom-bluetooth, #custom-colorpicker, #custom-filesystem, #custom-gz-bspwm, #custom-gz-mpd, #custom-gz-mpd_control, #custom-launcher, #custom-mplayer, #custom-power, #custom-r00t, #custom-sep, #custom-updates, #custom-weather, #memory, #network, #pulseaudio, #tray { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/gh0stzk-silvia"
 cat > "$CONF/waybar/themes/gh0stzk-silvia/config.jsonc" <<'WB_EOF'
@@ -7672,9 +7758,10 @@ cat > "$CONF/waybar/themes/gh0stzk-silvia/config.jsonc" <<'WB_EOF'
     "on-click-right": "OpenApps --soundcontrol"
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "clock": {
@@ -7689,7 +7776,7 @@ cat > "$CONF/waybar/themes/gh0stzk-silvia/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-silvia/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 12px; padding-right: 6px; }
 #custom-launcher { color: ${color.fg}; font-size: 18pt; }
 #custom-sep2 { color: ${color.indigo}; font-size: 13pt; }
 #custom-sep2 { color: ${color.indigo}; font-size: 13pt; }
@@ -7710,6 +7797,7 @@ window#waybar { background: ${color.bg}; color: ${color.fg}; }
 #custom-sep { color: ${color.bg-alt}; }
 #tray { background: ${color.bg}; }
 #custom-sep { color: ${color.bg-alt}; }
+#battery, #clock, #cpu, #custom-bluetooth, #custom-colorpicker, #custom-filesystem, #custom-gz-bspwm, #custom-launcher, #custom-mplayer, #custom-power, #custom-sep, #custom-sep2, #custom-title, #custom-updates, #custom-usercard, #custom-weather, #memory, #network, #pulseaudio, #tray { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/gh0stzk-varinka"
 cat > "$CONF/waybar/themes/gh0stzk-varinka/config.jsonc" <<'WB_EOF'
@@ -7865,9 +7953,10 @@ cat > "$CONF/waybar/themes/gh0stzk-varinka/config.jsonc" <<'WB_EOF'
     "on-click-right": "OpenApps --soundcontrol"
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "tray": {
@@ -7887,7 +7976,7 @@ cat > "$CONF/waybar/themes/gh0stzk-varinka/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-varinka/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "Maple Mono NF", "JetBrains Mono"; font-size: 8pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #custom-launcher { color: ${color.red}; font-size: 15pt; }
 #custom-sep { color: ${color.bg}; }
@@ -7922,6 +8011,7 @@ window#waybar { border-radius: 8px; }
 #custom-sep { color: ${color.bg}; }
 #custom-sep { color: ${color.bg}; }
 #custom-power { color: ${color.red}; font-size: 10pt; }
+#battery, #clock, #cpu, #custom-bluetooth, #custom-colorpicker, #custom-filesystem, #custom-gz-bspwm, #custom-gz-mpd_control, #custom-launcher, #custom-mplayer, #custom-power, #custom-sep, #custom-sep2, #custom-spl, #custom-spr, #custom-title, #custom-updates, #custom-usercard, #custom-weather, #language, #memory, #network, #pulseaudio, #tray { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/gh0stzk-yael"
 cat > "$CONF/waybar/themes/gh0stzk-yael/config.jsonc" <<'WB_EOF'
@@ -8049,8 +8139,9 @@ cat > "$CONF/waybar/themes/gh0stzk-yael/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "",
+    "format-wifi": "",
+    "format-linked": "",
     "format-disconnected": "",
-    "interface": "${system.sys_network_interface}",
     "tooltip": false
   },
   "custom/mplayer": {
@@ -8085,7 +8176,7 @@ cat > "$CONF/waybar/themes/gh0stzk-yael/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/gh0stzk-yael/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 6px; }
 window#waybar { border-radius: 5px; }
 #custom-launcher { color: ${color.blue-arch}; font-size: 14pt; }
 #custom-sep { color: ${color.bg}; }
@@ -8122,6 +8213,7 @@ window#waybar { border-radius: 5px; }
 #custom-sep { color: ${color.bg}; }
 #custom-sep { color: ${color.bg}; }
 #clock { background: ${color.blue}; font-size: 9pt; }
+#battery, #clock, #cpu, #custom-bluetooth, #custom-colorpicker, #custom-filesystem, #custom-gz-bspwm, #custom-gz-mpd, #custom-gz-mpd_control, #custom-launcher, #custom-mplayer, #custom-power, #custom-sep, #custom-title, #custom-updates, #custom-usercard, #memory, #network, #pulseaudio, #tray { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/hidrot"
 cat > "$CONF/waybar/themes/hidrot/config.jsonc" <<'WB_EOF'
@@ -8208,7 +8300,9 @@ cat > "$CONF/waybar/themes/hidrot/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%{T1} %{T-}%{T3}%downspeed%%{T-}",
+    "format-ethernet": "%{T1} %{T-}%{T3}{bandwidthDownBytes}%{T-}",
+    "format-wifi": "%{T1} %{T-}%{T3}{bandwidthDownBytes}%{T-}",
+    "format-linked": "%{T1} %{T-}%{T3}{bandwidthDownBytes}%{T-}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -8219,7 +8313,7 @@ cat > "$CONF/waybar/themes/hidrot/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/hidrot/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 11pt; }
-window#waybar { background: rgba(46,52,64,0.600); color: #eceff4; }
+window#waybar { background: rgba(46,52,64,0.600); color: #eceff4; padding-left: 0px; padding-right: 6px; }
 #custom-weather { background: #3b4252; }
 #custom-margin { color: rgba(46,52,64,0.000); }
 #clock { background: #3b4252; }
@@ -8324,6 +8418,8 @@ cat > "$CONF/waybar/themes/isabel/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -8401,7 +8497,7 @@ cat > "$CONF/waybar/themes/isabel/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/isabel/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #10181A; color: #A8C5C0; }
+window#waybar { background: #10181A; color: #A8C5C0; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #workspaces button.urgent { color: #D67F7F; }
 #custom-dots { color: #4FD6BE; }
@@ -8418,6 +8514,7 @@ window#waybar { border-radius: 8px; }
 #custom-dots { color: #4FD6BE; }
 #custom-dots { color: #4FD6BE; }
 #custom-dots { color: #4FD6BE; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-dots, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/isabel-square"
 cat > "$CONF/waybar/themes/isabel-square/config.jsonc" <<'WB_EOF'
@@ -8502,6 +8599,8 @@ cat > "$CONF/waybar/themes/isabel-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -8579,7 +8678,7 @@ cat > "$CONF/waybar/themes/isabel-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/isabel-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #10181A; color: #A8C5C0; }
+window#waybar { background: #10181A; color: #A8C5C0; padding-left: 12px; padding-right: 12px; }
 #workspaces button.urgent { color: #D67F7F; }
 #custom-dots { color: #4FD6BE; }
 #custom-dots { color: #4FD6BE; }
@@ -8595,6 +8694,7 @@ window#waybar { background: #10181A; color: #A8C5C0; }
 #custom-dots { color: #4FD6BE; }
 #custom-dots { color: #4FD6BE; }
 #custom-dots { color: #4FD6BE; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-dots, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/jan"
 cat > "$CONF/waybar/themes/jan/config.jsonc" <<'WB_EOF'
@@ -8699,6 +8799,8 @@ cat > "$CONF/waybar/themes/jan/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -8781,7 +8883,7 @@ cat > "$CONF/waybar/themes/jan/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/jan/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: rgba(33,42,76,0.902); color: #27FBFE; }
+window#waybar { background: rgba(33,42,76,0.902); color: #27FBFE; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #custom-launcher { color: #19BFFE; }
 #workspaces button.focused { color: #F200F4; }
@@ -8793,6 +8895,7 @@ window#waybar { border-radius: 8px; }
 #custom-dnd { color: #FB007A; }
 #custom-updates { color: #F2ED00; }
 #custom-power { color: #DB330A; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/jan-square"
 cat > "$CONF/waybar/themes/jan-square/config.jsonc" <<'WB_EOF'
@@ -8897,6 +9000,8 @@ cat > "$CONF/waybar/themes/jan-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -8979,7 +9084,7 @@ cat > "$CONF/waybar/themes/jan-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/jan-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: rgba(33,42,76,0.902); color: #27FBFE; }
+window#waybar { background: rgba(33,42,76,0.902); color: #27FBFE; padding-left: 12px; padding-right: 12px; }
 #custom-launcher { color: #19BFFE; }
 #workspaces button.focused { color: #F200F4; }
 #workspaces button { color: #8DF202; }
@@ -8990,6 +9095,7 @@ window#waybar { background: rgba(33,42,76,0.902); color: #27FBFE; }
 #custom-dnd { color: #FB007A; }
 #custom-updates { color: #F2ED00; }
 #custom-power { color: #DB330A; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/marisol"
 cat > "$CONF/waybar/themes/marisol/config.jsonc" <<'WB_EOF'
@@ -9084,6 +9190,8 @@ cat > "$CONF/waybar/themes/marisol/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -9161,7 +9269,7 @@ cat > "$CONF/waybar/themes/marisol/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/marisol/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: rgba(36,28,28,0.902); color: #F5E6E0; }
+window#waybar { background: rgba(36,28,28,0.902); color: #F5E6E0; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #custom-bi { color: #332727; font-size: 14pt; }
 #workspaces button.focused { color: #E8B84C; }
@@ -9258,6 +9366,8 @@ cat > "$CONF/waybar/themes/marisol-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -9335,7 +9445,7 @@ cat > "$CONF/waybar/themes/marisol-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/marisol-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: rgba(36,28,28,0.902); color: #F5E6E0; }
+window#waybar { background: rgba(36,28,28,0.902); color: #F5E6E0; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #E8B84C; }
 #workspaces button { color: #6FA8C7; }
 #workspaces button.urgent { color: #E8604C; }
@@ -9345,6 +9455,7 @@ window#waybar { background: rgba(36,28,28,0.902); color: #F5E6E0; }
 #custom-dnd { color: #E8604C; }
 #custom-updates { color: #E8B84C; }
 #tray { background: #332727; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-layout, #custom-media, #custom-network-wireless, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/murz"
 cat > "$CONF/waybar/themes/murz/config.jsonc" <<'WB_EOF'
@@ -9432,7 +9543,9 @@ cat > "$CONF/waybar/themes/murz/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%{T1} %{T-}%{T3}%downspeed%%{T-}",
+    "format-ethernet": "%{T1} %{T-}%{T3}{bandwidthDownBytes}%{T-}",
+    "format-wifi": "%{T1} %{T-}%{T3}{bandwidthDownBytes}%{T-}",
+    "format-linked": "%{T1} %{T-}%{T3}{bandwidthDownBytes}%{T-}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -9443,7 +9556,7 @@ cat > "$CONF/waybar/themes/murz/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/murz/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 11pt; }
-window#waybar { background: rgba(40,40,40,0.000); color: #fbf1c7; }
+window#waybar { background: rgba(40,40,40,0.000); color: #fbf1c7; padding-left: 0px; padding-right: 6px; }
 #custom-pill-left { color: rgba(40,40,40,0.600); }
 #workspaces button.focused { color: #b8bb26; }
 #workspaces button { color: #d3869b; }
@@ -9561,7 +9674,9 @@ cat > "$CONF/waybar/themes/murz-alt/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%{T1} %{T-}%{T3}%downspeed%%{T-}",
+    "format-ethernet": "%{T1} %{T-}%{T3}{bandwidthDownBytes}%{T-}",
+    "format-wifi": "%{T1} %{T-}%{T3}{bandwidthDownBytes}%{T-}",
+    "format-linked": "%{T1} %{T-}%{T3}{bandwidthDownBytes}%{T-}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -9572,7 +9687,7 @@ cat > "$CONF/waybar/themes/murz-alt/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/murz-alt/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 11pt; }
-window#waybar { background: rgba(40,40,40,0.000); color: #fbf1c7; }
+window#waybar { background: rgba(40,40,40,0.000); color: #fbf1c7; padding-left: 0px; padding-right: 6px; }
 #custom-pill-left { color: rgba(40,40,40,0.600); }
 #workspaces button.focused { color: #b8bb26; }
 #workspaces button { color: #d3869b; }
@@ -9683,6 +9798,8 @@ cat > "$CONF/waybar/themes/pamela/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -9765,7 +9882,7 @@ cat > "$CONF/waybar/themes/pamela/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/pamela/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: rgba(29,31,40,0.749); color: #FDFDFD; }
+window#waybar { background: rgba(29,31,40,0.749); color: #FDFDFD; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #custom-launcher { color: #8897F4; }
 #workspaces button.focused { color: #F2A272; }
@@ -9778,6 +9895,7 @@ window#waybar { border-radius: 8px; }
 #custom-dnd { color: #F37F97; }
 #custom-updates { color: #F2A272; }
 #custom-power { color: #F37F97; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/pamela-square"
 cat > "$CONF/waybar/themes/pamela-square/config.jsonc" <<'WB_EOF'
@@ -9870,6 +9988,8 @@ cat > "$CONF/waybar/themes/pamela-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -9952,7 +10072,7 @@ cat > "$CONF/waybar/themes/pamela-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/pamela-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: rgba(29,31,40,0.749); color: #FDFDFD; }
+window#waybar { background: rgba(29,31,40,0.749); color: #FDFDFD; padding-left: 12px; padding-right: 12px; }
 #custom-launcher { color: #8897F4; }
 #workspaces button.focused { color: #F2A272; }
 #workspaces button { color: #8897F4; }
@@ -9964,6 +10084,7 @@ window#waybar { background: rgba(29,31,40,0.749); color: #FDFDFD; }
 #custom-dnd { color: #F37F97; }
 #custom-updates { color: #F2A272; }
 #custom-power { color: #F37F97; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/sedo-dracula"
 cat > "$CONF/waybar/themes/sedo-dracula/config.jsonc" <<'WB_EOF'
@@ -10053,9 +10174,10 @@ cat > "$CONF/waybar/themes/sedo-dracula/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${env:NET_INTERFACE}",
     "tooltip": false
   },
   "custom/battery-i3": {
@@ -10086,12 +10208,13 @@ cat > "$CONF/waybar/themes/sedo-dracula/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/sedo-dracula/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 12px; }
 #workspaces button.focused { color: ${color.cyan}; background: ${color.blue}; border-bottom: 2px solid ${color.cyan}; }
 #workspaces button { color: ${color.bg}; background: ${color.blue}; }
 #network { color: ${color.yellow}; }
 #clock { color: ${color.bg}; }
 #tray { background: ${color.bg}; }
+#clock, #custom-battery-i3, #custom-bspL, #custom-bspR, #custom-bspRR, #custom-date-cap-l, #custom-date-cap-r, #custom-distR, #custom-distro-i3, #custom-mpd, #custom-sep, #custom-sep2, #custom-tray-gap, #custom-updates-i3, #network, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/sedo-everblush"
 cat > "$CONF/waybar/themes/sedo-everblush/config.jsonc" <<'WB_EOF'
@@ -10166,9 +10289,10 @@ cat > "$CONF/waybar/themes/sedo-everblush/config.jsonc" <<'WB_EOF'
     "on-click": "kitty --class UpdatesTask -e ~/.local/bin/software-update.sh"
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${env:NET_INTERFACE}",
     "tooltip": false
   },
   "custom/filesystem": {
@@ -10203,12 +10327,13 @@ cat > "$CONF/waybar/themes/sedo-everblush/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/sedo-everblush/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 12px; }
 #workspaces button.focused { color: ${color.orange}; background: ${color.alt-bg}; border-bottom: 2px solid ${color.cyan}; }
 #workspaces button { color: ${color.bg}; background: ${color.alt-bg}; }
 #network { color: ${color.alt-fg}; }
 #clock { color: ${color.bg}; }
 #tray { background: ${color.bg}; }
+#clock, #custom-battery-i3, #custom-date-cap-l, #custom-date-cap-r, #custom-distro-i3, #custom-filesystem, #custom-mpd, #custom-sep2, #custom-tray-gap, #custom-updates-i3, #custom-weather-i3, #network, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/sedo-everforest"
 cat > "$CONF/waybar/themes/sedo-everforest/config.jsonc" <<'WB_EOF'
@@ -10285,9 +10410,10 @@ cat > "$CONF/waybar/themes/sedo-everforest/config.jsonc" <<'WB_EOF'
     "on-click-right": "kitty --class UpdatesTask -e ~/.local/bin/software-update.sh"
   },
   "network": {
-    "format-ethernet": "%downspeed%  %upspeed%",
+    "format-ethernet": "{bandwidthDownBytes}  {bandwidthUpBytes}",
+    "format-wifi": "{bandwidthDownBytes}  {bandwidthUpBytes}",
+    "format-linked": "{bandwidthDownBytes}  {bandwidthUpBytes}",
     "format-disconnected": "",
-    "interface": "${env:NET_INTERFACE}",
     "tooltip": false
   },
   "custom/battery-i3": {
@@ -10322,12 +10448,13 @@ cat > "$CONF/waybar/themes/sedo-everforest/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/sedo-everforest/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 30px; }
 #workspaces button.focused { color: ${color.orange-drk}; background: ${color.fg}; border-bottom: 2px solid ${color.bg}; }
 #workspaces button { color: ${color.aqua-drk}; background: ${color.fg}; }
 #network { color: ${color.fg}; }
 #clock { color: ${color.fg}; }
 #tray { background: ${color.bg}; }
+#clock, #custom-battery-i3, #custom-bgi, #custom-bgr, #custom-date-cap-l, #custom-date-cap-r, #custom-mpd, #custom-sep0, #custom-sep1, #custom-tray-gap, #custom-updates-i3, #custom-weather-i3, #network, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/sedo-gotham"
 cat > "$CONF/waybar/themes/sedo-gotham/config.jsonc" <<'WB_EOF'
@@ -10431,9 +10558,10 @@ cat > "$CONF/waybar/themes/sedo-gotham/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${env:NET_INTERFACE}",
     "tooltip": false
   },
   "custom/date-prev-cap-r": {
@@ -10464,7 +10592,7 @@ cat > "$CONF/waybar/themes/sedo-gotham/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/sedo-gotham/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.base1}; color: ${color.fg}; }
+window#waybar { background: ${color.base1}; color: ${color.fg}; padding-left: 6px; padding-right: 6px; }
 window#waybar { border-radius: 4px; }
 #workspaces button.focused { color: ${color.yellow}; background: ${color.base3}; border-bottom: 2px solid ${color.yellow}; }
 #workspaces button { color: ${color.magenta}; background: ${color.base3}; }
@@ -10473,6 +10601,7 @@ window#waybar { border-radius: 4px; }
 #network { color: ${color.base7}; }
 #clock { color: ${color.base7}; }
 #tray { background: ${color.base1}; }
+#clock, #custom-bspL, #custom-bspL01, #custom-bspR, #custom-bspR01, #custom-date-cap-l, #custom-date-cap-r, #custom-date-prev-cap-r, #custom-media-i3, #custom-sep, #custom-tray-gap, #custom-upL, #custom-upR, #custom-updates-i3, #custom-volR, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/sedo-gruvbox"
 cat > "$CONF/waybar/themes/sedo-gruvbox/config.jsonc" <<'WB_EOF'
@@ -10575,9 +10704,10 @@ cat > "$CONF/waybar/themes/sedo-gruvbox/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%{T3} %{T-}%upspeed% -%{T3}  %{T-}%downspeed%",
+    "format-ethernet": "%{T3} %{T-}{bandwidthUpBytes} -%{T3}  %{T-}{bandwidthDownBytes}",
+    "format-wifi": "%{T3} %{T-}{bandwidthUpBytes} -%{T3}  %{T-}{bandwidthDownBytes}",
+    "format-linked": "%{T3} %{T-}{bandwidthUpBytes} -%{T3}  %{T-}{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${env:NET_INTERFACE}",
     "tooltip": false
   },
   "custom/netR": {
@@ -10620,12 +10750,13 @@ cat > "$CONF/waybar/themes/sedo-gruvbox/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/sedo-gruvbox/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 6px; padding-right: 6px; }
 #workspaces button.focused { color: ${color.secondary}; background: ${color.aqua}; border-bottom: 2px solid ${color.bg}; }
 #workspaces button { color: ${color.fg-alt}; background: ${color.fg}; }
 #network { color: ${color.bg}; }
 #clock { color: ${color.bg}; }
 #tray { background: ${color.bg}; }
+#clock, #custom-battery-i3, #custom-btL, #custom-btR, #custom-date-cap-l, #custom-date-cap-r, #custom-hlrd, #custom-hrrd, #custom-lrd, #custom-mpd, #custom-netL, #custom-netR, #custom-rrd, #custom-sep0, #custom-tray-gap, #custom-upL, #custom-upR, #custom-updates-i3, #custom-weather-i3, #network, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/sedo-nightfox"
 cat > "$CONF/waybar/themes/sedo-nightfox/config.jsonc" <<'WB_EOF'
@@ -10700,9 +10831,10 @@ cat > "$CONF/waybar/themes/sedo-nightfox/config.jsonc" <<'WB_EOF'
     "on-click": "kitty --class UpdatesTask -e ~/.local/bin/software-update.sh"
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${env:NET_INTERFACE}",
     "tooltip": false
   },
   "custom/filesystem": {
@@ -10737,12 +10869,13 @@ cat > "$CONF/waybar/themes/sedo-nightfox/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/sedo-nightfox/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 12px; }
 #workspaces button.focused { color: ${color.orange}; background: ${color.alt-bg}; border-bottom: 2px solid ${color.cyan}; }
 #workspaces button { color: ${color.bg}; background: ${color.alt-bg}; }
 #network { color: ${color.alt-fg}; }
 #clock { color: ${color.bg}; }
 #tray { background: ${color.bg}; }
+#clock, #custom-battery-i3, #custom-date-cap-l, #custom-date-cap-r, #custom-distro-i3, #custom-filesystem, #custom-mpd, #custom-sep2, #custom-tray-gap, #custom-updates-i3, #custom-weather-i3, #network, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/sedo-nord"
 cat > "$CONF/waybar/themes/sedo-nord/config.jsonc" <<'WB_EOF'
@@ -10815,9 +10948,10 @@ cat > "$CONF/waybar/themes/sedo-nord/config.jsonc" <<'WB_EOF'
     "on-click": "kitty --class UpdatesTask -e ~/.local/bin/software-update.sh"
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${env:NET_INTERFACE}",
     "tooltip": false
   },
   "custom/battery-i3": {
@@ -10848,12 +10982,13 @@ cat > "$CONF/waybar/themes/sedo-nord/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/sedo-nord/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 12px; }
 #workspaces button.focused { color: ${color.orange}; background: ${color.alt-bg}; border-bottom: 2px solid ${color.cyan}; }
 #workspaces button { color: ${color.bg}; background: ${color.alt-bg}; }
 #network { color: ${color.alt-fg}; }
 #clock { color: ${color.bg}; }
 #tray { background: ${color.bg}; }
+#clock, #custom-battery-i3, #custom-date-cap-l, #custom-date-cap-r, #custom-distro-i3, #custom-mpd, #custom-sep2, #custom-tray-gap, #custom-updates-i3, #custom-weather-i3, #network, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/sedo-onedark"
 cat > "$CONF/waybar/themes/sedo-onedark/config.jsonc" <<'WB_EOF'
@@ -10927,9 +11062,10 @@ cat > "$CONF/waybar/themes/sedo-onedark/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%downspeed%  %upspeed%",
+    "format-ethernet": "{bandwidthDownBytes}  {bandwidthUpBytes}",
+    "format-wifi": "{bandwidthDownBytes}  {bandwidthUpBytes}",
+    "format-linked": "{bandwidthDownBytes}  {bandwidthUpBytes}",
     "format-disconnected": "",
-    "interface": "${env:NET_INTERFACE}",
     "tooltip": false
   },
   "custom/date-cap-l": {
@@ -10956,7 +11092,7 @@ cat > "$CONF/waybar/themes/sedo-onedark/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/sedo-onedark/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.background}; color: ${color.foreground}; }
+window#waybar { background: ${color.background}; color: ${color.foreground}; padding-left: 0px; padding-right: 6px; }
 #workspaces button.focused { color: ${color.altcyan}; border-bottom: 2px solid ${color.altcyan}; }
 #workspaces button { color: ${color.cyan}; }
 #workspaces button.urgent { color: ${color.red}; }
@@ -10964,6 +11100,7 @@ window#waybar { background: ${color.background}; color: ${color.foreground}; }
 #network { color: ${color.altgreen}; }
 #clock { color: ${color.background}; }
 #tray { background: ${color.background}; }
+#clock, #custom-date-cap-l, #custom-date-cap-r, #custom-mpd, #custom-sep, #custom-tray-gap, #custom-updates-i3, #custom-wl, #custom-wr, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/sedo-tokyo-night"
 cat > "$CONF/waybar/themes/sedo-tokyo-night/config.jsonc" <<'WB_EOF'
@@ -11065,9 +11202,10 @@ cat > "$CONF/waybar/themes/sedo-tokyo-night/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "network": {
-    "format-ethernet": "%netspeed%",
+    "format-ethernet": "{bandwidthDownBytes}",
+    "format-wifi": "{bandwidthDownBytes}",
+    "format-linked": "{bandwidthDownBytes}",
     "format-disconnected": "",
-    "interface": "${env:NET_INTERFACE}",
     "tooltip": false
   },
   "custom/date-cap-l": {
@@ -11094,7 +11232,7 @@ cat > "$CONF/waybar/themes/sedo-tokyo-night/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/sedo-tokyo-night/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 9pt; }
-window#waybar { background: ${color.bg}; color: ${color.fg}; }
+window#waybar { background: ${color.bg}; color: ${color.fg}; padding-left: 0px; padding-right: 6px; }
 #workspaces button.focused { color: ${color.yellow}; border-bottom: 2px solid ${color.yellow}; }
 #workspaces button { color: ${color.blue}; }
 #cpu { color: ${color.red}; }
@@ -11102,6 +11240,7 @@ window#waybar { background: ${color.bg}; color: ${color.fg}; }
 #network { color: ${color.amber}; }
 #clock { background: ${color.yellow}; }
 #tray { background: ${color.bg}; }
+#clock, #cpu, #custom-battery-i3, #custom-bd, #custom-bi, #custom-date-cap-l, #custom-date-cap-r, #custom-dots, #custom-filesystem, #custom-mpd, #custom-sep, #custom-tray-gap, #custom-updates-i3, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/silvia"
 cat > "$CONF/waybar/themes/silvia/config.jsonc" <<'WB_EOF'
@@ -11194,6 +11333,8 @@ cat > "$CONF/waybar/themes/silvia/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -11276,7 +11417,7 @@ cat > "$CONF/waybar/themes/silvia/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/silvia/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #3C3836; color: #EBDBB2; }
+window#waybar { background: #3C3836; color: #EBDBB2; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #custom-launcher { color: #EBDBB2; }
 #workspaces button.focused { color: #8EC07C; }
@@ -11304,6 +11445,7 @@ window#waybar { border-radius: 8px; }
 #custom-dots { color: #D65D0E; }
 #custom-dots { color: #D65D0E; }
 #custom-power { color: #CC241D; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-dots, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/silvia-square"
 cat > "$CONF/waybar/themes/silvia-square/config.jsonc" <<'WB_EOF'
@@ -11396,6 +11538,8 @@ cat > "$CONF/waybar/themes/silvia-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -11478,7 +11622,7 @@ cat > "$CONF/waybar/themes/silvia-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/silvia-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #3C3836; color: #EBDBB2; }
+window#waybar { background: #3C3836; color: #EBDBB2; padding-left: 12px; padding-right: 12px; }
 #custom-launcher { color: #EBDBB2; }
 #workspaces button.focused { color: #8EC07C; }
 #workspaces button { color: #928374; }
@@ -11505,6 +11649,7 @@ window#waybar { background: #3C3836; color: #EBDBB2; }
 #custom-dots { color: #D65D0E; }
 #custom-dots { color: #D65D0E; }
 #custom-power { color: #CC241D; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-dots, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/tobi"
 cat > "$CONF/waybar/themes/tobi/config.jsonc" <<'WB_EOF'
@@ -11575,6 +11720,8 @@ cat > "$CONF/waybar/themes/tobi/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -11623,7 +11770,7 @@ cat > "$CONF/waybar/themes/tobi/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "memory": {
-    "format": "%mb_used%",
+    "format": "{used:0.1f}G",
     "interval": 2,
     "tooltip": false
   },
@@ -11653,7 +11800,7 @@ cat > "$CONF/waybar/themes/tobi/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/tobi/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1E1E2E; color: #D9E0EE; }
+window#waybar { background: #1E1E2E; color: #D9E0EE; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 10px; }
 #workspaces button.focused { color: #62B4F9; border-bottom: 2px solid #62B4F9; }
 #workspaces button { color: #6E6C7E; }
@@ -11670,6 +11817,7 @@ window#waybar { border-radius: 10px; }
 #custom-updates { color: #FAE3B0; }
 #custom-layout { color: #D9E0EE; }
 #clock { color: #D9E0EE; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-filesystem, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/tobi-square"
 cat > "$CONF/waybar/themes/tobi-square/config.jsonc" <<'WB_EOF'
@@ -11740,6 +11888,8 @@ cat > "$CONF/waybar/themes/tobi-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -11788,7 +11938,7 @@ cat > "$CONF/waybar/themes/tobi-square/config.jsonc" <<'WB_EOF'
     "tooltip": false
   },
   "memory": {
-    "format": "%mb_used%",
+    "format": "{used:0.1f}G",
     "interval": 2,
     "tooltip": false
   },
@@ -11818,7 +11968,7 @@ cat > "$CONF/waybar/themes/tobi-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/tobi-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #1E1E2E; color: #D9E0EE; }
+window#waybar { background: #1E1E2E; color: #D9E0EE; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #62B4F9; border-bottom: 2px solid #62B4F9; }
 #workspaces button { color: #6E6C7E; }
 #workspaces button.urgent { color: #1E1E2E; background: #F28FAD; }
@@ -11834,6 +11984,7 @@ window#waybar { background: #1E1E2E; color: #D9E0EE; }
 #custom-updates { color: #FAE3B0; }
 #custom-layout { color: #D9E0EE; }
 #clock { color: #D9E0EE; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-filesystem, #custom-layout, #custom-media, #custom-network-wireless, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/varinka"
 cat > "$CONF/waybar/themes/varinka/config.jsonc" <<'WB_EOF'
@@ -11938,6 +12089,8 @@ cat > "$CONF/waybar/themes/varinka/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -12020,7 +12173,7 @@ cat > "$CONF/waybar/themes/varinka/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/varinka/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: rgba(33,37,41,0.980); color: #F8F9FA; }
+window#waybar { background: rgba(33,37,41,0.980); color: #F8F9FA; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #custom-launcher { color: #DE8658; }
 #workspaces button.focused { color: #F8F9FA; }
@@ -12028,6 +12181,7 @@ window#waybar { border-radius: 8px; }
 #workspaces button.urgent { color: #DC5BBC; }
 #custom-dnd { color: #DC5BBC; }
 #custom-power { color: #DE8658; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/varinka-square"
 cat > "$CONF/waybar/themes/varinka-square/config.jsonc" <<'WB_EOF'
@@ -12132,6 +12286,8 @@ cat > "$CONF/waybar/themes/varinka-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -12214,13 +12370,14 @@ cat > "$CONF/waybar/themes/varinka-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/varinka-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: rgba(33,37,41,0.980); color: #F8F9FA; }
+window#waybar { background: rgba(33,37,41,0.980); color: #F8F9FA; padding-left: 12px; padding-right: 12px; }
 #custom-launcher { color: #DE8658; }
 #workspaces button.focused { color: #F8F9FA; }
 #workspaces button { color: #ADB5BD; }
 #workspaces button.urgent { color: #DC5BBC; }
 #custom-dnd { color: #DC5BBC; }
 #custom-power { color: #DE8658; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/yael"
 cat > "$CONF/waybar/themes/yael/config.jsonc" <<'WB_EOF'
@@ -12313,6 +12470,8 @@ cat > "$CONF/waybar/themes/yael/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -12395,7 +12554,7 @@ cat > "$CONF/waybar/themes/yael/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/yael/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #161616; color: #FFFFFF; }
+window#waybar { background: #161616; color: #FFFFFF; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #custom-launcher { color: #33B1FF; }
 #workspaces button.focused { color: #161616; background: #33B1FF; }
@@ -12408,6 +12567,7 @@ window#waybar { border-radius: 8px; }
 #custom-dnd { color: #EE5396; }
 #custom-updates { color: #FFE97B; }
 #custom-power { color: #33B1FF; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/yael-square"
 cat > "$CONF/waybar/themes/yael-square/config.jsonc" <<'WB_EOF'
@@ -12500,6 +12660,8 @@ cat > "$CONF/waybar/themes/yael-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -12582,7 +12744,7 @@ cat > "$CONF/waybar/themes/yael-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/yael-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #161616; color: #FFFFFF; }
+window#waybar { background: #161616; color: #FFFFFF; padding-left: 12px; padding-right: 12px; }
 #custom-launcher { color: #33B1FF; }
 #workspaces button.focused { color: #161616; background: #33B1FF; }
 #workspaces button { color: #82CFFF; }
@@ -12594,6 +12756,7 @@ window#waybar { background: #161616; color: #FFFFFF; }
 #custom-dnd { color: #EE5396; }
 #custom-updates { color: #FFE97B; }
 #custom-power { color: #33B1FF; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-launcher, #custom-layout, #custom-media, #custom-network-wireless, #custom-power, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/z0mbi3"
 cat > "$CONF/waybar/themes/z0mbi3/config.jsonc" <<'WB_EOF'
@@ -12678,6 +12841,8 @@ cat > "$CONF/waybar/themes/z0mbi3/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -12755,7 +12920,7 @@ cat > "$CONF/waybar/themes/z0mbi3/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/z0mbi3/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #0D0F18; color: #A5B6CF; }
+window#waybar { background: #0D0F18; color: #A5B6CF; padding-left: 12px; padding-right: 12px; }
 window#waybar { border-radius: 8px; }
 #workspaces button.focused { color: #8EA6C4; }
 #workspaces button { color: #6E8DB4; }
@@ -12775,6 +12940,7 @@ window#waybar { border-radius: 8px; }
 #custom-updates { color: #ECD3A0; background: #151720; }
 #tray { background: #151720; }
 #clock { background: #151720; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-layout, #custom-media, #custom-network-wireless, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 mkdir -p "$CONF/waybar/themes/z0mbi3-square"
 cat > "$CONF/waybar/themes/z0mbi3-square/config.jsonc" <<'WB_EOF'
@@ -12859,6 +13025,8 @@ cat > "$CONF/waybar/themes/z0mbi3-square/config.jsonc" <<'WB_EOF'
   },
   "network": {
     "format-ethernet": "{ifname}",
+    "format-wifi": "{ifname}",
+    "format-linked": "{ifname}",
     "format-disconnected": "",
     "tooltip": false
   },
@@ -12936,7 +13104,7 @@ cat > "$CONF/waybar/themes/z0mbi3-square/config.jsonc" <<'WB_EOF'
 WB_EOF
 cat > "$CONF/waybar/themes/z0mbi3-square/style.css" <<'WB_EOF'
 * { border: none; border-radius: 0; min-height: 0; font-family: "JetBrainsMono Nerd Font", "JetBrains Mono"; font-size: 10pt; }
-window#waybar { background: #0D0F18; color: #A5B6CF; }
+window#waybar { background: #0D0F18; color: #A5B6CF; padding-left: 12px; padding-right: 12px; }
 #workspaces button.focused { color: #8EA6C4; }
 #workspaces button { color: #6E8DB4; }
 #workspaces button.urgent { color: #DD6777; }
@@ -12955,6 +13123,7 @@ window#waybar { background: #0D0F18; color: #A5B6CF; }
 #custom-updates { color: #ECD3A0; background: #151720; }
 #tray { background: #151720; }
 #clock { background: #151720; }
+#battery, #clock, #cpu, #custom-backlight, #custom-bluetooth, #custom-caffeine, #custom-cliamp, #custom-dnd, #custom-layout, #custom-media, #custom-network-wireless, #custom-sep, #custom-updates, #memory, #network, #pulseaudio, #tray, #workspaces { padding: 0 7px; }
 WB_EOF
 
 # Seed the live config with the default theme (catppuccin-mocha).
