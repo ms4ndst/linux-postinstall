@@ -274,7 +274,7 @@ bindsym $mod+shift+e exec swaynag -t warning -m 'Exit sway?' -B 'Yes' 'swaymsg e
 bindsym $mod+l exec ~/.local/bin/lock.sh --with-screensaver
 bindsym $mod+shift+p exec ~/.local/bin/fresh-env ~/.local/bin/powermenu.sh
 # grim + slurp replace flameshot gui (region select -> save + copy).
-bindsym Print exec ~/.local/bin/screenshot.sh
+bindsym Print exec ~/.local/bin/fresh-env ~/.local/bin/screenshot.sh
 
 # --- colorpicker (grab any on-screen pixel's color as hex) ---
 bindsym $mod+shift+g exec ~/.local/bin/colorpicker.sh
