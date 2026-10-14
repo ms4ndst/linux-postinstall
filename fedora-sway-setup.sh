@@ -878,6 +878,16 @@ def adapt_config(cfg, name):
         "tooltip": True,
     }
 
+    # 3d. mpris: pin interval to 1s. The module is event-driven by default
+    #     (interval 0 = refresh only on MPRIS property changes), but the
+    #     {dynamic} text (artist/position/length rotation) only advances on
+    #     interval ticks - themes shipping interval 5 made the now-playing
+    #     widget visibly laggy: its text updated in 5-second jumps. 1s keeps
+    #     the position ticking and the rotation smooth; track changes
+    #     still arrive instantly via events.
+    if isinstance(cfg.get("mpris"), dict):
+        cfg["mpris"]["interval"] = 1
+
     # 4. Drop module blocks with no equivalent: the known set, plus any
     #    block that still references omarchy/$OMARCHY_PATH/hyprctl.
     module_keys = [k for k, v in cfg.items()
