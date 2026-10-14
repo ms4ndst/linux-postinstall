@@ -744,6 +744,9 @@ bindsym XF86AudioNext exec playerctl next
 bindsym XF86AudioPrev exec playerctl previous
 
 # --- AI assistant key ---
+# Copilot/AI key: Wayland reports it as Super+Shift+F23 (Microsoft Copilot-key
+# standard); XF86Assistant was the X11 keysym. Bind both for portability.
+bindsym $mod+Shift+F23 exec ~/.local/bin/claude-desktop-toggle.sh
 bindsym $mod+shift+XF86Assistant exec ~/.local/bin/claude-desktop-toggle.sh
 bindsym $mod+shift+a exec ~/.local/bin/mistral-vibe-toggle.sh
 
