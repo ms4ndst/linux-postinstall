@@ -2933,24 +2933,6 @@ EOF
 
 
 # ----------------------------------------------------------------------------
-# Flameshot >=14 defaults to capturing via the XDG desktop portal's
-# org.freedesktop.portal.Screenshot interface, which nothing implements on a
-# bare sway session (no xdg-desktop-portal + WM-specific backend running) -
-# "flameshot gui" just errors with "Could not locate org.freedesktop.portal.
-# desktop" instead of taking a screenshot. useX11LegacyScreenshot=true makes
-# it capture via Qt's native X11 grab instead, which needs no portal at all.
-log "Writing flameshot config (legacy X11 capture, no portal needed)..."
-mkdir -p "$CONF/flameshot"
-if [ -f "$CONF/flameshot/flameshot.ini" ] && ! grep -q '^useX11LegacyScreenshot=' "$CONF/flameshot/flameshot.ini"; then
-  sed -i '/^\[General\]/a useX11LegacyScreenshot=true' "$CONF/flameshot/flameshot.ini"
-elif [ ! -f "$CONF/flameshot/flameshot.ini" ]; then
-  cat > "$CONF/flameshot/flameshot.ini" <<'EOF'
-[General]
-useX11LegacyScreenshot=true
-EOF
-fi
-
-# ----------------------------------------------------------------------------
 # 9c. Colorpicker (Mod+shift+g) - grab any on-screen pixel's color as hex
 # ----------------------------------------------------------------------------
 log "Writing colorpicker script..."
@@ -4872,7 +4854,7 @@ cat <<'EOF'
    Mod+l             lock screen
    Mod+shift+p       power menu (lock/suspend/logout/reboot/shutdown)
    Mod+shift+v       clipboard history (copyq)
-   Print             screenshot (flameshot gui)
+   Print             screenshot (slurp region select + grim, swappy annotate)
    Mod+shift+g       colorpicker (click a pixel, hex copied to clipboard)
    Mod+shift+q       close focused window
    Mod+f             fullscreen toggle
