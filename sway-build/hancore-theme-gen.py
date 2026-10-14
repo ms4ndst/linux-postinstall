@@ -922,7 +922,11 @@ WORKSPACE_STATES_CSS = """/* --- appended by this rice's installer: universal wo
    system's waybar marks the current workspace with .visible (verified
    by probe: the class moves with focus; .focused/.active are never
    emitted by sway/workspaces here) - all three are styled so the block
-   also works on waybar builds that do use .focused/.active. */
+   also works on waybar builds that do use .focused/.active. Urgent is
+   the theme accent as a filled pill (bold, base text) so it reads as
+   attention while staying in the theme's own color language - and
+   stays distinct from the focused workspace, which is accent TEXT on
+   no background. */
 window#waybar #workspaces button.focused,
 window#waybar #workspaces button.active,
 window#waybar #workspaces button.visible {
@@ -930,7 +934,7 @@ window#waybar #workspaces button.visible {
 }
 window#waybar #workspaces button.urgent {
   color: @BASE@;
-  background-color: @RED@;
+  background-color: @ACCENT@;
   font-weight: bold;
 }
 /* Caffeine widget (custom/caffeine, replacing the native idle_inhibitor):
@@ -1079,8 +1083,7 @@ def process_theme(src_dir, name):
                       palette_inline, css_text, count=1, flags=re.M)
     ws_css = (WORKSPACE_STATES_CSS
               .replace("@ACCENT@", palette["accent"])
-              .replace("@BASE@", palette["base"])
-              .replace("@RED@", palette["red"]))
+              .replace("@BASE@", palette["base"]))
     write_text(tdir / "style.css", css_text.rstrip("\n") + "\n" + ws_css)
     write_text(tdir / "palette.css", PALETTE_CSS_TEMPLATE.format(name=name, **palette))
 
