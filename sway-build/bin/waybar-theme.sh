@@ -5,7 +5,7 @@
 # of just the bar. Each is its own COMPLETE, standalone config (a waybar
 # config.jsonc + style.css, a rofi .rasi pair, a kitty color .conf, a starship
 # .toml, a dunst dunstrc, a sway client.* border fragment) applied with a plain
-# file copy. Port of the i3 rice's polybar-theme.sh.
+# file copy. One pick retints the whole desktop.
 #
 # Usage:
 #   waybar-theme.sh          # prompts via rofi
@@ -24,15 +24,15 @@ STARSHIP_THEMES_DIR="$HOME/.config/starship/themes"
 STARSHIP_CURRENT="$HOME/.config/starship.toml"
 DUNST_THEMES_DIR="$HOME/.config/dunst/themes"
 DUNST_CURRENT="$HOME/.config/dunst/dunstrc"
-# The i3 rice's per-theme border fragments (client.* color lines) are valid
-# sway syntax too, so reuse them directly; the sway config includes the written
-# current-borders.conf. Keyed by base name (no -square/-numbered/-alt).
-SWAY_THEMES_DIR="$HOME/.config/i3/themes"
+# The per-theme border fragments (client.* color lines) are valid sway
+# syntax; the sway config includes the written current-borders.conf. Keyed
+# by base name (no -square/-numbered/-alt).
+SWAY_THEMES_DIR="$HOME/.config/sway/themes"
 SWAY_CURRENT="$HOME/.config/sway/current-borders.conf"
 mkdir -p "$HOME/.config/sway"
 NVIM_COLORS_DIR="$HOME/.config/nvim/colors"
 NVIM_CURRENT="$NVIM_COLORS_DIR/current.lua"
-# Kept at the polybar path for continuity with the i3 rice's state file name.
+# The active theme's name; seeded by section 6 and re-written on every pick.
 CURRENT_THEME_FILE="$HOME/.config/waybar/current-theme-name"
 MARK=" "
 

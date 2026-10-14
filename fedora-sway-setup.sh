@@ -122,7 +122,7 @@ fi
 
 # network-manager-applet/pasystray/blueman/udiskie are still installed above -
 # their tray-icon *applets* (nm-applet, pasystray, blueman-applet) are
-# deliberately never autostarted (see the i3 config below); polybar's own
+# deliberately never autostarted (see the sway config below); waybar's own
 # wifi/volume/bluetooth widgets replace that display, but the underlying
 # packages (NetworkManager, PulseAudio, bluetoothd, umount automation) still
 # need to be present. udiskie IS autostarted, just in --tray mode.
@@ -149,7 +149,7 @@ if [ ! -d "$FONTS/JetBrainsMonoNerd" ]; then
   TMPZIP="$(mktemp --suffix=.zip)"
   # Best-effort: under set -e, an unguarded curl failure here (flaky network,
   # GitHub rate limit, renamed release asset) would abort the WHOLE script
-  # before any i3/picom/polybar/rofi/dunst/kitty config below ever gets
+  # before any sway/waybar/rofi/dunst/kitty config below ever gets
   # written - the font is cosmetic, it shouldn't be able to take those down.
   if curl -fLo "$TMPZIP" \
       "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip" 2>/dev/null; then
@@ -157,7 +157,7 @@ if [ ! -d "$FONTS/JetBrainsMonoNerd" ]; then
     unzip -o "$TMPZIP" -d "$FONTS/JetBrainsMonoNerd" >/dev/null
     fc-cache -f "$FONTS/JetBrainsMonoNerd"
   else
-    warn "Nerd Font download failed (network issue?) - configs below still reference 'JetBrainsMono Nerd Font'; install it manually later or edit the font name in ~/.config/{i3,polybar,rofi,kitty}."
+    warn "Nerd Font download failed (network issue?) - configs below still reference 'JetBrainsMono Nerd Font'; install it manually later or edit the font name in ~/.config/{sway,rofi,kitty}."
   fi
   rm -f "$TMPZIP"
 else
@@ -165,10 +165,9 @@ else
 fi
 
 # ----------------------------------------------------------------------------
-# 4. i3 config
+# 4. Sway config
 # ----------------------------------------------------------------------------
-log "Writing i3 config..."
-mkdir -p "$CONF/i3"
+log "Writing Sway config..."
 mkdir -p "$CONF/sway"
 cat > "$CONF/sway/config" <<'SWAY_EOF'
 set $mod Mod4
@@ -196,16 +195,16 @@ include ~/.config/sway/current-borders.conf
 floating_modifier $mod
 
 # --- input ---
-# numlock on at login (replaces i3's `numlockx on`); set your own layout here.
+# numlock on at login; set your own layout here.
 input type:keyboard {
     xkb_numlock enabled
     # @@XKB_LAYOUT@@ is filled from the system layout (localectl) at install time.
     xkb_layout "@@XKB_LAYOUT@@"
 }
-# Catppuccin cursor on the desktop and in every app (replaces i3's
-# xsetroot/.Xresources cursor plumbing). Adwaita/24 are
+# Cursor theme on the desktop and in every app. The include file is
+# rewritten live by cursor-theme.sh on every switch; Adwaita/24 here is
 # filled in by the installer from the cursor theme it installs.
-seat seat0 xcursor_theme Adwaita 24
+include ~/.config/sway/cursor-theme.conf
 
 # --- window rules ---
 # Keep a visible 2px border on every window regardless of what the app asks
@@ -221,7 +220,7 @@ for_window [app_id="blueman-manager"] floating enable, resize set 500 400, move 
 for_window [app_id="(com.github.hluk.copyq|copyq)"] floating enable, resize set 450 500, move position center
 for_window [class="copyq"] floating enable, resize set 450 500, move position center
 # cliamp music player scratchpad (mark on its OWN line - a chained `mark`
-# silently never applies, same gotcha as i3 and confirmed to carry over).
+# silently never applies (confirmed to carry over).
 for_window [app_id="Cliamp"] floating enable, resize set 700 500, move position center
 for_window [app_id="Cliamp"] mark cliamp-scratch
 for_window [app_id="CliampSetup"] fullscreen enable
@@ -268,7 +267,7 @@ bindsym $mod+n exec ~/.local/bin/dnd-toggle.sh
 bindsym $mod+Escape exec kitty --class Screensaver -e ~/.local/bin/screensaver.sh
 bindsym $mod+shift+q kill
 bindsym $mod+shift+c reload
-bindsym $mod+shift+r restart
+bindsym $mod+shift+r reload
 bindsym $mod+shift+e exec swaynag -t warning -m 'Exit sway?' -B 'Yes' 'swaymsg exit'
 
 # --- lock / screenshot / power ---
@@ -294,8 +293,7 @@ bindsym $mod+a exec ~/.local/bin/ai-window-toggle.sh
 bindsym $mod+i exec kitty --class KeybindingsHelp -e ~/.local/bin/keybindings-help.sh
 
 # --- app menu (rofi utility menu) ---
-# Mod1 (= Alt). In sway "alt" as a bare modifier name is fine, but Mod1 is kept
-# for parity with the i3 rice.
+# Mod1 (= Alt); "Mod1" and "alt" are both fine in sway.
 bindsym $mod+Mod1+space exec ~/.local/bin/app-menu.sh
 
 # --- volume / brightness / media ---
@@ -403,12 +401,13 @@ exec ~/.local/bin/battwatch.sh
 exec dex-autostart -a -e sway
 exec ~/.local/bin/fix-mx-scroll.sh
 # Idle/lock: swayidle replaces the xss-lock + xset s/dpms stack. Screensaver +
-# lock at 20min; display off at 50min (strictly later, same as the i3 rice);
+# lock at 20min; display off at 50min (strictly later, screensaver first);
 # lock before sleep. Kept in a script so the timeouts are easy to tune.
 exec_always ~/.local/bin/swayidle-launch.sh
 SWAY_EOF
 __xkb="$(localectl status 2>/dev/null | sed -n 's/.*X11 Layout: *//p' | head -1)"
 sed -i "s/@@XKB_LAYOUT@@/${__xkb:-us}/" "$CONF/sway/config"
+printf 'seat seat0 xcursor_theme %s 24\n' "$CURSOR_THEME_NAME" > "$CONF/sway/cursor-theme.conf"
 
 # ----------------------------------------------------------------------------
 # 5. picom
@@ -445,7 +444,7 @@ mkdir -p "$CONF/picom"
 if [ "$CLEAN_THEMES" = "1" ]; then
   log "Cleaning out existing desktop themes (waybar/rofi/kitty/dunst/starship/borders/nvim/GTK)..."
   rm -rf "$CONF/waybar/themes" "$CONF/rofi/themes" "$CONF/kitty/themes" \
-         "$CONF/dunst/themes" "$CONF/starship/themes" "$CONF/i3/themes" \
+         "$CONF/dunst/themes" "$CONF/starship/themes" "$CONF/sway/themes" \
          "$CONF/polybar/themes"
   rm -f "$CONF/rofi/current.rasi" "$CONF/rofi/current-powermenu.rasi" \
          "$CONF/kitty/current.conf" "$CONF/dunst/dunstrc" \
@@ -489,7 +488,7 @@ For each theme dir in the clone's config/ (excluding "test"):
        .config/kitty/themes/<n>.conf
        .config/dunst/themes/<n>.dunstrc
        .config/starship/themes/<n>.toml
-       .config/i3/themes/<n>.conf            (sway client.* borders)
+       .config/sway/themes/<n>.conf           (sway client.* borders)
        .config/polybar/themes/<n>.ini       ([colors] block - feeds the
          repo's generate-gtk/nvim/vscode-themes.py, exactly like the old
          rice's own themes)
@@ -853,6 +852,31 @@ def adapt_config(cfg, name):
             "tooltip": False,
             "on-click": "kitty --class UpdatesTask -e ~/.local/bin/software-update.sh",
         }
+
+    # 3c. idle_inhibitor -> custom/caffeine: the native module is an
+    #     independent Wayland inhibitor that never reflected the rice's
+    #     Mod+C caffeine toggle (two mechanisms, no shared state).
+    #     Replace it everywhere with a widget backed by
+    #     ~/.local/bin/caffeine-state.sh, so one mechanism (caffeine)
+    #     drives both the keybind and the bar, and the icon always shows
+    #     the real state. Clicking the widget runs the same toggle.
+    for lk in ("modules-left", "modules-center", "modules-right"):
+        arr = cfg.get(lk)
+        if isinstance(arr, list):
+            cfg[lk] = ["custom/caffeine" if m == "idle_inhibitor" else m
+                       for m in arr]
+    for key, block in list(cfg.items()):
+        if isinstance(block, dict) and isinstance(block.get("modules"), list):
+            block["modules"] = ["custom/caffeine" if m == "idle_inhibitor" else m
+                                for m in block["modules"]]
+    cfg.pop("idle_inhibitor", None)
+    cfg["custom/caffeine"] = {
+        "exec": "~/.local/bin/caffeine-state.sh",
+        "return-type": "json",
+        "interval": 2,
+        "on-click": "~/.local/bin/caffeine-toggle.sh",
+        "tooltip": True,
+    }
 
     # 4. Drop module blocks with no equivalent: the known set, plus any
     #    block that still references omarchy/$OMARCHY_PATH/hyprctl.
@@ -1278,7 +1302,7 @@ style = "bg:{star_blue}"
 format = '[ $time ]($style)'
 '''
 
-# sway client.* border colors (i3-compatible syntax, sway reads it too)
+# sway client.* border colors
 BORDERS_TEMPLATE = """client.focused          {accent}  {base}  {text}  {accent}   {accent}
 client.unfocused        {surface1}  {base}  {subtext}  {surface1}   {surface1}
 client.focused_inactive {surface2}  {base}  {subtext}  {surface2}   {surface2}
@@ -1364,6 +1388,20 @@ window#waybar #workspaces button.urgent {
   color: @BASE@;
   background-color: @RED@;
   font-weight: bold;
+}
+/* Caffeine widget (custom/caffeine, replacing the native idle_inhibitor):
+   activated = the rice's stay-awake is on (Mod+C or clicking the widget),
+   flagged in the theme accent so it reads at a glance. The light-bulb
+   glyph is one of the tallest Nerd Font icons - at the themes' base font
+   size with their zero padding it overflows the label box and gets
+   clipped at the bar edge (verified live on v7.2) - so pin a smaller
+   font and side padding for it. */
+window#waybar #custom-caffeine {
+  font-size: 12px;
+  padding: 0 4px;
+}
+window#waybar #custom-caffeine.activated {
+  color: @ACCENT@;
 }
 """
 
@@ -1526,7 +1564,7 @@ def process_theme(src_dir, name):
                DUNST_TEMPLATE.format(**p))
     write_text(CONF / "starship" / "themes" / (name + ".toml"),
                STARSHIP_TEMPLATE.format(**starship_colors(palette, by_role)))
-    write_text(CONF / "i3" / "themes" / (name + ".conf"),
+    write_text(CONF / "sway" / "themes" / (name + ".conf"),
                BORDERS_TEMPLATE.format(**p))
     write_text(CONF / "polybar" / "themes" / (name + ".ini"),
                COLORS_INI_TEMPLATE.format(name=name, **p))
@@ -1567,7 +1605,7 @@ def main():
         om.mkdir(parents=True, exist_ok=True)
         shutil.copy2(t / "palette.css", om / "waybar.css")
         (CONF / "sway").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(CONF / "i3" / "themes" / (name + ".conf"),
+        shutil.copy2(CONF / "sway" / "themes" / (name + ".conf"),
                      CONF / "sway" / "current-borders.conf")
         shutil.copy2(CONF / "rofi" / "themes" / (name + ".rasi"), CONF / "rofi" / "current.rasi")
         shutil.copy2(CONF / "rofi" / "themes" / (name + "-powermenu.rasi"),
@@ -1785,10 +1823,10 @@ ICO_BT=$''
 ICO_COFFEE=$''      # nf-fa-coffee
 ICO_BELL=$''      # nf-fa-bell
 ICO_BELL_OFF=$''  # nf-fa-bell-slash
-ICO_SPLIT_H=$'󰯌'   # nf-md-view_split_vertical (vertical divider -> side-by-side panes = i3 splith)
-ICO_SPLIT_V=$'󰯋'   # nf-md-view_split_horizontal (horizontal divider -> stacked panes = i3 splitv)
-ICO_STACKING=$'󰕪'  # nf-md-view_agenda (i3 "stacked" layout)
-ICO_TABBED=$'󰓩'    # nf-md-tab (i3 "tabbed" layout)
+ICO_SPLIT_H=$'󰯌'   # nf-md-view_split_vertical (vertical divider -> side-by-side panes = sway splith)
+ICO_SPLIT_V=$'󰯋'   # nf-md-view_split_horizontal (horizontal divider -> stacked panes = sway splitv)
+ICO_STACKING=$'󰕪'  # nf-md-view_agenda (sway "stacked" layout)
+ICO_TABBED=$'󰓩'    # nf-md-tab (sway "tabbed" layout)
 
 # ----------------------------------------------------------------------------
 # 6b. Multi-monitor helper script (polybar per output) + autorandr hotplug hook
@@ -1841,6 +1879,10 @@ cat > "$BIN/fresh-env" <<'EOF'
 set -u
 gt="$(sed -n 's/^GTK_THEME=//p' "$HOME/.config/environment.d/gtk-theme.conf" 2>/dev/null || true)"
 [ -n "$gt" ] && export GTK_THEME="$gt"
+# Same for the cursor theme, so apps launched from sway's binds pick
+# up a cursor-theme.sh switch without a re-login.
+ct="$(sed -n 's/^XCURSOR_THEME=//p' "$HOME/.config/environment.d/cursor-theme.conf" 2>/dev/null || true)"
+[ -n "$ct"] && export XCURSOR_THEME="$ct"
 exec "$@"
 EOF
 chmod +x "$BIN/fresh-env"
@@ -1856,9 +1898,8 @@ CFG="$HOME/.config/sway"
 SAVED="$CFG/wallpaper-saved"
 IMG=""
 [ -f "$SAVED" ] && IMG="$(cat "$SAVED")"
-# Fall back to the sway wallpaper, then the installer's seeded i3 path.
+# Fall back to the sway wallpaper seeded by the installer.
 [ -n "$IMG" ] && [ -f "$IMG" ] || IMG="$CFG/wallpaper.png"
-[ -f "$IMG" ] || IMG="$HOME/.config/i3/wallpaper.png"
 [ -f "$IMG" ] || exit 0
 
 pkill -x swaybg 2>/dev/null
@@ -1869,14 +1910,13 @@ RICE_EOF
 chmod +x "$BIN/swaybg-restore.sh"
 cat > "$BIN/swayidle-launch.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
-# Idle management for the Sway rice - replaces the i3 rice's xss-lock + `xset s
-# 1200 dpms 3000 3000 3000` stack. Mirrors those timings exactly:
+# Idle management for the Sway rice via swayidle. Timings:
 #   - 20min (1200s): show the screensaver and lock (lock.sh --with-screensaver,
 #     which blanks immediately on lock via its own logic)
 #   - 50min (3000s): power the displays off; power back on when activity resumes
 #   - before sleep: lock first so resume lands on the lock screen
-# Kept later than the screensaver mark on purpose (same reasoning as the i3
-# rice: DPMS/display-power is a separate subsystem from the idle screensaver).
+# Kept later than the screensaver mark on purpose (DPMS/display-power is a
+# separate subsystem from the idle screensaver).
 # exec_always re-runs this on reload, so single-instance it first.
 set -u
 pkill -x swayidle 2>/dev/null
@@ -1921,7 +1961,7 @@ RICE_EOF
 chmod +x "$BIN/screenshot.sh"
 cat > "$BIN/wallpaper-picker.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
-# Rofi-based wallpaper picker (replaces i3's nitrogen GUI). Lists images from
+# Rofi-based wallpaper picker. Lists images from
 # the usual wallpaper dirs, sets the pick with swaybg, and saves the path so
 # swaybg-restore.sh brings it back on the next login/reload. If azote (the
 # Wayland-native nitrogen equivalent) is installed, prefer its GUI instead.
@@ -1971,10 +2011,9 @@ notify-send "Wallpaper" "Set to $(basename "$IMG")"
 RICE_EOF
 chmod +x "$BIN/wallpaper-picker.sh"
 
-# nitrogen (installed in section 1) handles wallpaper instead of a feh
-# script - it natively fills every connected output with `nitrogen
-# --restore` on its own, so there's no per-monitor tiling logic to write
-# here. See section 12 for the initial wallpaper pick.
+# swaybg handles the wallpaper: swaybg-restore.sh fills every connected
+# output with the saved pick, so there's no per-monitor tiling logic to
+# write here. See section 12 for the initial wallpaper seed.
 
 # autorandr's postswitch hook fires on every profile change (monitor plugged/
 # unplugged/reconfigured) - re-run polybar and re-restore the wallpaper so
@@ -2035,20 +2074,14 @@ cat > "$BIN/caffeine-toggle.sh" <<'EOF'
 # click again to release. Nothing changes system-wide while it's off.
 #
 # Two things happen while active:
-#   1. xset's screensaver/DPMS timers are disabled, so xss-lock never fires
-#      (it triggers off X11's screensaver-activation signal) and the display
-#      never blanks/suspends.
+#   1. swayidle is stopped entirely, so no idle timeout can blank/lock the
+#      display while caffeinated.
 #   2. A backgrounded `systemd-inhibit` holds idle/sleep/lid-switch locks so
 #      systemd-logind won't suspend even on lid close, matching what the
 #      screensaver-based inhibition alone wouldn't cover.
 PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/caffeine.pid"
-# Must match the i3 config's own startup `xset s 1200 dpms 3000 3000 3000`
-# exactly - this used to be a stale "300 dpms 300 600 900" (5min) left
-# over from an earlier default, so toggling caffeine off silently dropped
-# the real idle timeout down to 5min from then on for the rest of the
-# session, cutting the screensaver's own on-screen time short well before
-# intended.
-IDLE_RESTORE="1200 dpms 3000 3000 3000"
+# Toggling OFF must restore the real idle lock/DPMS timing, not a stale
+# default: swayidle-launch.sh re-arms exactly what a fresh login gets.
 
 if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
   kill "$(cat "$PIDFILE")" 2>/dev/null
@@ -2060,7 +2093,7 @@ if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
 else
   # stop swayidle entirely so nothing blanks/locks while caffeinated
   pkill -x swayidle 2>/dev/null || true
-  systemd-inhibit --what=idle:sleep:handle-lid-switch --who="i3-caffeine" \
+  systemd-inhibit --what=idle:sleep:handle-lid-switch --who="sway-caffeine" \
       --why="User requested via caffeine-toggle.sh" --mode=block \
       sleep infinity &
   disown
@@ -2069,6 +2102,22 @@ else
 fi
 EOF
 chmod +x "$BIN/caffeine-toggle.sh"
+cat > "$BIN/caffeine-state.sh" <<'EOF'
+#!/usr/bin/env bash
+# Waybar custom/caffeine widget backend: reports the rice's caffeine state
+# (Mod+C / ~/.local/bin/caffeine-toggle.sh) as waybar JSON, so the bar icon
+# reflects the toggle however it was triggered - by the keybind, by clicking
+# the widget (which runs the same toggle script), or by anything else. This
+# replaces the native idle_inhibitor module, which was an independent
+# Wayland inhibitor that never showed caffeine's actual state.
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/caffeine.pid"
+if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+  printf '{"text":"󰛨","class":"activated","tooltip":"Caffeine: ON - screen lock/sleep inhibited (click or Mod+C to release)"}\n'
+else
+  printf '{"text":"󰛩","class":"deactivated","tooltip":"Caffeine: OFF (click or Mod+C to stay awake)"}\n'
+fi
+EOF
+chmod +x "$BIN/caffeine-state.sh"
 
 cat > "$BIN/polybar-caffeine.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -2419,7 +2468,7 @@ cat > "$BIN/polybar-layout.sh" <<'EOF'
 #!/usr/bin/env bash
 # polybar custom/script module: shows the focused container's current split
 # direction - i.e. what direction the NEXT window opened there will go,
-# set via Mod+v/Mod+b (see i3 config) - not visible anywhere else in i3
+# set via Mod+v/Mod+b (see the sway config) - not visible anywhere else in sway
 # itself, since split direction has no on-screen effect until a new window
 # is actually opened (unlike fullscreen/floating, which are immediately
 # visible on their own). Also shows stacked/tabbed if the container is in
@@ -2456,7 +2505,7 @@ cat > "$BIN/fix-mx-scroll.sh" <<'EOF'
 # setting it to 1 (which can be a no-op if Solaar's cached state already
 # reads true even though the mouse itself isn't honoring it). Retries for up
 # to 20s since the mouse may not have finished reconnecting over Bluetooth
-# yet by the time i3 starts.
+# yet by the time sway starts.
 DEVICE="MX Anywhere 3S"
 for _ in $(seq 1 10); do
   if solaar show 2>/dev/null | grep -q "$DEVICE"; then
@@ -2680,7 +2729,7 @@ log "Writing calendar-reminder-daemon guard-and-launch wrapper..."
 cat > "$BIN/calendar-reminder-daemon-launch.sh" <<'EOF'
 #!/usr/bin/env bash
 # Guard-and-launch wrapper for calendar-reminder-daemon.py, kept as its own
-# script rather than inlined in i3's exec line. Inlining it as
+# script rather than inlined in sway's exec line. Inlining it as
 # `sh -c 'pgrep -f calendar-reminder-daemon.py >/dev/null || python3
 # ~/.local/bin/calendar-reminder-daemon.py'` looked fine but never actually
 # worked: pgrep -f matches against a process's FULL command line, and that
@@ -2700,7 +2749,7 @@ chmod +x "$BIN/calendar-reminder-daemon-launch.sh"
 # ----------------------------------------------------------------------------
 # 6c2. Battery watcher - low-battery and "charger not keeping up" warnings
 # ----------------------------------------------------------------------------
-# i3 has no battery warnings of its own (GNOME/KDE do): the polybar battery
+# sway has no battery warnings of its own (GNOME/KDE do): the waybar battery
 # widget only shows the level, so a battery running down - including while
 # plugged in to a charger too weak for the current load - went unnoticed
 # until the laptop died. Pop-ups go through dunst; the hard backstop is
@@ -2714,7 +2763,7 @@ cat > "$BIN/battwatch.sh" <<'EOF'
 #   - low at 15%, critical at 8% while discharging
 # Each warning fires once per event, not every minute; they share one dunst
 # stack tag, so a newer warning replaces an older one. Started once from
-# i3's config (exec, not exec_always); the flock makes a second copy exit
+# sway's config (exec, not exec_always); the flock makes a second copy exit
 # at once, without pgrep and its self-matching pitfalls.
 exec 9>"${XDG_RUNTIME_DIR:-/tmp}/battwatch.lock"
 flock -n 9 || exit 0
@@ -2772,9 +2821,9 @@ chmod +x "$BIN/battwatch.sh"
 # 6d. Disable the redundant tray applets' own autostart entries
 # ----------------------------------------------------------------------------
 # network-manager-applet/pasystray/blueman all ship their OWN
-# /etc/xdg/autostart/*.desktop entries independent of the i3 exec lines
+# /etc/xdg/autostart/*.desktop entries independent of the sway exec lines
 # above - removing those exec lines alone isn't enough, since
-# dex-autostart -a -e i3 (further up in the i3 config) would still pick
+# dex-autostart -a -e sway (further up in the sway config) would still pick
 # these up and relaunch them. The standard fix for a system-wide autostart
 # entry you don't want, without touching the system file itself (which
 # would need root and would affect every user), is a per-user override with
@@ -2886,7 +2935,7 @@ EOF
 # ----------------------------------------------------------------------------
 # Flameshot >=14 defaults to capturing via the XDG desktop portal's
 # org.freedesktop.portal.Screenshot interface, which nothing implements on a
-# bare i3 session (no xdg-desktop-portal + WM-specific backend running) -
+# bare sway session (no xdg-desktop-portal + WM-specific backend running) -
 # "flameshot gui" just errors with "Could not locate org.freedesktop.portal.
 # desktop" instead of taking a screenshot. useX11LegacyScreenshot=true makes
 # it capture via Qt's native X11 grab instead, which needs no portal at all.
@@ -2907,8 +2956,8 @@ fi
 log "Writing colorpicker script..."
 cat > "$BIN/colorpicker.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
-# Grab any on-screen pixel's color as hex and copy it to the clipboard - Sway
-# rice port of the i3 rice's slop+import+xclip colorpicker. slurp -p picks a
+# Grab any on-screen pixel's color as hex and copy it to the clipboard.
+# slurp -p picks a
 # single point, grim captures just that pixel, ImageMagick samples it, wl-copy
 # puts the hex on the Wayland clipboard. A small solid swatch PNG is generated
 # as the notification icon so the popup shows the picked color, not just text.
@@ -2922,7 +2971,7 @@ for dep in slurp grim magick wl-copy; do
 done
 
 # slurp -p: point mode, outputs "x,y 1x1". A plain cancel (Escape) exits slurp
-# non-zero -> stay silent, same as the i3 rice's user-cancel path.
+# non-zero -> stay silent (user cancel).
 GEOM=$(slurp -p 2>/dev/null) || exit 0
 [ -n "$GEOM" ] || exit 0
 
@@ -2969,12 +3018,12 @@ cat > "$CONF/fastfetch/config.jsonc" <<'EOF'
 EOF
 
 # ----------------------------------------------------------------------------
-# 11. lock script (i3lock-color + xss-lock)
+# 11. lock script (swaylock)
 # ----------------------------------------------------------------------------
 log "Writing lock script..."
 cat > "$BIN/lock.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
-# Sway rice lock screen (swaylock) - port of the i3 rice's i3lock-color lock.sh.
+# Sway rice lock screen (swaylock), with a random Mocha accent per lock.
 # Guard against overlapping invocations: swayidle calls this on idle/sleep AND
 # Mod+l calls it directly - flock closes the TOCTOU gap so a second swaylock
 # never starts on top of one already holding the session.
@@ -2996,20 +3045,17 @@ ACCENT_IDX=$((RANDOM % ${#ACCENTS[@]}))
 ACCENT="${ACCENTS[$ACCENT_IDX]}"
 KEYHL="${ACCENTS[$(( (ACCENT_IDX + 7) % ${#ACCENTS[@]} ))]}"
 
-# NOTE: the i3 original blanked the displays here via `xset dpms`, which
-# wakes on input on X11. Do NOT port that to an explicit sway power-off:
+# NOTE: do NOT blank the displays with an explicit sway power-off:
 # `swaymsg "output * power off"` has NO wake-on-input (only swayidle's
 # resume hook re-powers displays, and it only fires for swayidle's own
 # 50-min display timeout) - locking would leave a black screen with no
 # way back in. swayidle's 50-min timeout (with its resume hook) handles
 # display power-off; swaylock itself covers the visual lock.
 
-# swaylock-effects adds --screenshots/--effect-blur (the equivalent of the i3
-# rice's i3lock-color blur); plain swaylock lacks them. Detect by grepping
-# --help for effect-blur (swaylock DOES list its flags in --help, unlike
-# i3lock), same spirit as the i3 rice's i3lock-color package check. NOTE:
-# swaylock has no custom greeter/wrong-text flags, so the i3 rice's witty
-# lock messages have no equivalent here and are intentionally dropped.
+# swaylock-effects adds --screenshots/--effect-blur; plain swaylock lacks
+# them. Detect by grepping --help for effect-blur (swaylock lists its flags
+# in --help). NOTE: swaylock has no custom greeter/wrong-text flags, so no
+# custom lock messages here.
 if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
   swaylock \
     --screenshots \
@@ -3096,20 +3142,8 @@ if ls -d /sys/class/power_supply/BAT* >/dev/null 2>&1 && [ -f /etc/UPower/UPower
 fi
 
 # ----------------------------------------------------------------------------
-# 10c. DPMS-wake-after-resume fix - a systemd-sleep hook, not a user script.
-#      lock.sh (above) forces DPMS off right after starting i3lock so the
-#      screen doesn't stay lit until the idle timer would otherwise catch
-#      up; on some hardware/drivers that DPMS-off state isn't reliably
-#      cleared by resume alone, leaving the monitor stuck black even though
-#      the system is genuinely awake (keyboard backlight on, etc.) until
-#      something explicitly asserts DPMS back on. systemd-logind runs every
-#      script in /etc/systemd/system-sleep/ with two arguments (pre/post,
-#      then the sleep action) both right before AND right after suspend -
-#      this only acts on "post". Installed to /etc rather than
-#      /usr/lib/systemd/system-sleep/ (where the OS's own packaged hooks
-#      live, e.g. nvidia/displaylink) since /etc is the correct local-admin
-#      override location, mirroring the same /etc-vs-/usr split systemd
-#      unit files themselves use.
+# 10c. DPMS-wake-after-resume hook - dropped on sway: swayidle's resume
+#      hook re-powers the displays after suspend.
 # ----------------------------------------------------------------------------
 # (X11 DPMS-wake systemd-sleep hook dropped - swayidle handles resume on sway)
 
@@ -3119,8 +3153,8 @@ fi
 #      above). Inspired by Omarchy's built-in one, same underlying tool
 #      (`tte`) AND the same logo style Omarchy itself ships (a solid Unicode
 #      half-block render, not typed ASCII letters), just run in a plain
-#      fullscreen kitty window instead of Omarchy's Astal/AGS shell (which i3
-#      doesn't have an equivalent of).
+#      fullscreen kitty window instead of Omarchy's Astal/AGS shell (which this
+#      rice doesn't have an equivalent of).
 # ----------------------------------------------------------------------------
 log "Installing Terminal Text Effects (tte) via pipx for the screensaver..."
 if command -v pipx >/dev/null 2>&1; then
@@ -3138,7 +3172,7 @@ cat > "$BIN/screensaver.sh" <<'EOF'
 # style Omarchy itself ships (its logo.txt is a solid Unicode half-block
 # render, not typed ASCII letters - see omarchy-transcode-ascii --mode
 # block), just run in a plain fullscreen kitty window instead of Omarchy's
-# Astal/AGS shell (which i3 doesn't have an equivalent of). Exits on any
+# Astal/AGS shell (which this rice doesn't have an equivalent of). Exits on any
 # keypress OR mouse movement.
 LOGO="$HOME/.config/screensaver/logo.txt"
 FEDORA_SVG="/usr/share/fedora-logos/fedora_logo.svg"
@@ -3676,7 +3710,7 @@ cat > "$BIN/waybar-theme.sh" <<'RICE_EOF'
 # of just the bar. Each is its own COMPLETE, standalone config (a waybar
 # config.jsonc + style.css, a rofi .rasi pair, a kitty color .conf, a starship
 # .toml, a dunst dunstrc, a sway client.* border fragment) applied with a plain
-# file copy. Port of the i3 rice's polybar-theme.sh.
+# file copy. One pick retints the whole desktop.
 #
 # Usage:
 #   waybar-theme.sh          # prompts via rofi
@@ -3695,15 +3729,15 @@ STARSHIP_THEMES_DIR="$HOME/.config/starship/themes"
 STARSHIP_CURRENT="$HOME/.config/starship.toml"
 DUNST_THEMES_DIR="$HOME/.config/dunst/themes"
 DUNST_CURRENT="$HOME/.config/dunst/dunstrc"
-# The i3 rice's per-theme border fragments (client.* color lines) are valid
-# sway syntax too, so reuse them directly; the sway config includes the written
-# current-borders.conf. Keyed by base name (no -square/-numbered/-alt).
-SWAY_THEMES_DIR="$HOME/.config/i3/themes"
+# The per-theme border fragments (client.* color lines) are valid sway
+# syntax; the sway config includes the written current-borders.conf. Keyed
+# by base name (no -square/-numbered/-alt).
+SWAY_THEMES_DIR="$HOME/.config/sway/themes"
 SWAY_CURRENT="$HOME/.config/sway/current-borders.conf"
 mkdir -p "$HOME/.config/sway"
 NVIM_COLORS_DIR="$HOME/.config/nvim/colors"
 NVIM_CURRENT="$NVIM_COLORS_DIR/current.lua"
-# Kept at the polybar path for continuity with the i3 rice's state file name.
+# The active theme's name; seeded by section 6 and re-written on every pick.
 CURRENT_THEME_FILE="$HOME/.config/waybar/current-theme-name"
 MARK=" "
 
@@ -3864,7 +3898,7 @@ cat > "$BIN/app-theme-sync.sh" <<'EOF'
 # Brings the terminal apps that draw their OWN colors in line with the
 # active desktop theme - kitty's colors alone don't reach them. Run by
 # waybar-theme.sh after every theme switch (and once by the setup script),
-# reading the theme's kitty palette and i3 focused-border color that
+# reading the theme's kitty palette and sway focused-border color that
 # waybar-theme.sh has just put in place.
 #   - cliamp (Mod+m): a custom theme, ~/.config/cliamp/themes/rice.toml
 #     (cliamp's own custom-theme format; no bg, so the themed kitty
@@ -3874,7 +3908,7 @@ cat > "$BIN/app-theme-sync.sh" <<'EOF'
 #     draws with the terminal's 16 colors - kitty's live recolor then
 #     reaches it too, even mid-session. light vs dark from the background.
 KITTY_CURRENT="$HOME/.config/kitty/current.conf"
-I3_CURRENT="$HOME/.config/sway/current-borders.conf"
+BORDERS_CURRENT="$HOME/.config/sway/current-borders.conf"
 [ -f "$KITTY_CURRENT" ] || exit 0
 kc() { awk -v k="$1" '$1 == k { print $2; exit }' "$KITTY_CURRENT"; }
 hex() { [[ "$1" =~ ^#[0-9A-Fa-f]{6}$ ]] && printf '%s' "$1" || printf '%s' "$2"; }
@@ -3894,7 +3928,7 @@ set_toml_key() {
 }
 
 fg="$(hex "$(kc foreground)" '#cdd6f4')"
-accent="$(hex "$(awk '/^client.focused /{ print $2; exit }' "$I3_CURRENT" 2>/dev/null)" "$(hex "$(kc color5)" "$fg")")"
+accent="$(hex "$(awk '/^client.focused /{ print $2; exit }' "$BORDERS_CURRENT" 2>/dev/null)" "$(hex "$(kc color5)" "$fg")")"
 
 if command -v cliamp >/dev/null 2>&1; then
   mkdir -p "$HOME/.config/cliamp/themes"
@@ -3941,7 +3975,7 @@ systemctl --user try-restart xdg-desktop-portal-manual.service   xdg-desktop-por
 # selected-day and buttons follow the rice's hue as closely as GNOME
 # permits.
 if command -v python3 >/dev/null 2>&1; then
-  python3 - "$I3_CURRENT" <<'ACCENTEOF'
+  python3 - "$BORDERS_CURRENT" <<'ACCENTEOF'
 import colorsys, re, subprocess, sys
 borders = open(sys.argv[1], encoding="utf-8").read() if len(sys.argv) > 1 else ""
 m = re.search(r"client\.focused\s+(#[0-9a-fA-F]{6})", borders)
@@ -3971,22 +4005,13 @@ chmod +x "$BIN/app-theme-sync.sh"
 log "Writing cursor-theme.sh..."
 cat > "$BIN/cursor-theme.sh" <<'EOF'
 #!/usr/bin/env bash
-# Switches the X11/GTK mouse cursor theme between the 6 real Qogir variants
+# Switches the mouse cursor theme between the 6 real Qogir variants
 # installed during setup (see the Qogir cursor theme step) - the -Light
 # suffix variants aren't offered since they're cursor-identical aliases of
-# their non-Light counterpart. Applies live via the same mechanisms that
-# made polybar/GTK actually pick up a cursor theme in the first place
-# (Xresources via xrdb, gtk-cursor-theme-name), not just next login.
-#
-# i3 itself needs a real restart (not just polybar) - confirmed live: i3
-# is its own xcb/cursor-library client, same as polybar, and loads its
-# cursor (used for window borders/decorations) once rather than
-# re-checking it live, so a theme switch alone left i3's own borders
-# showing the previous theme even after Xresources/gtk-cursor-theme-name
-# were already updated and GTK apps had already picked up the new one.
-# `swaymsg reload` preserves the running session/layout (unlike `exit`)
-# and re-runs i3's own `exec` lines, which also relaunches polybar - so a
-# separate waybar-launch.sh call isn't needed on top of this.
+# their non-Light counterpart. Applies live: sway's own root cursor
+# updates immediately via `swaymsg seat seat0 xcursor_theme`, the sway
+# config's include file is rewritten so a reload keeps the pick, and
+# environment.d + GTK settings carry it to newly started apps.
 #
 # Usage:
 #   cursor-theme.sh          # prompts via rofi
@@ -4014,23 +4039,107 @@ XCURSOR_THEME=$CHOSEN
 XCURSOR_SIZE=24
 CONF
 
-cat > "$HOME/.Xresources" <<RES
-Xcursor.theme: $CHOSEN
-Xcursor.size: 24
-RES
-xrdb -merge "$HOME/.Xresources"
+# Sway, not X11: the compositor's own pointer comes from the seat's
+# xcursor_theme setting, which the main sway config re-applies from this
+# include file on every reload (the old hardcoded "xcursor_theme Adwaita"
+# line in the config re-pinned Adwaita on each reload, silently undoing
+# the switch).
+mkdir -p "$HOME/.config/sway"
+printf 'seat seat0 xcursor_theme %s 24\n' "$CHOSEN" > "$HOME/.config/sway/cursor-theme.conf"
 
 for gtk_settings in "$HOME/.config/gtk-3.0/settings.ini" "$HOME/.config/gtk-4.0/settings.ini"; do
   [ -f "$gtk_settings" ] && sed -i "s/^gtk-cursor-theme-name=.*/gtk-cursor-theme-name=$CHOSEN/" "$gtk_settings"
 done
 gsettings set org.gnome.desktop.interface cursor-theme "$CHOSEN" 2>/dev/null || true
 
-XCURSOR_THEME="$CHOSEN" xsetroot -cursor_name left_ptr
-swaymsg reload >/dev/null
+# Apply live: sway's seat command retints the pointer immediately, no
+# reload needed; reload stays as the belt-and-braces path via the include
+# file above.
+swaymsg "seat seat0 xcursor_theme $CHOSEN 24" >/dev/null 2>&1 || true
+swaymsg reload >/dev/null 2>&1 || true
+# Make apps launched via systemd/dbus (portals, search providers) pick up
+# the new theme without a re-login too.
+systemctl --user set-environment XCURSOR_THEME="$CHOSEN" XCURSOR_SIZE=24 2>/dev/null || true
 
 notify-send "Cursor Theme" "Switched to $CHOSEN"
 EOF
 chmod +x "$BIN/cursor-theme.sh"
+cat > "$BIN/icon-theme.sh" <<'EOF'
+#!/usr/bin/env bash
+# icon-theme switcher - the icon-theme counterpart of cursor-theme.sh.
+#
+# WHY THIS EXISTS: on a bare sway session there is no xsettings daemon, so
+# GTK3/GTK4 apps read the icon theme from ~/.config/gtk-3.0/settings.ini and
+# gtk-4.0/settings.ini - NOT from gsettings (gsettings only matters when a
+# settings daemon bridges dconf into xsettings, which nothing here runs).
+# lxappearance only writes ~/.gtkrc-2.0 (GTK2), so picking a theme there
+# silently never reaches GTK3/4 apps. This script writes every location
+# consistently in one shot: settings.ini (gtk-3 + gtk-4), ~/.gtkrc-2.0 and
+# gsettings (for any future daemon/portal consumer).
+#
+# Usage:
+#   icon-theme.sh          # prompts via rofi with the installed themes
+#   icon-theme.sh <name>   # applies directly, no prompt
+set -euo pipefail
+
+# Real icon themes only: an index.theme with an Icon Theme/Name, from both
+# /usr/share/icons and ~/.local/share/icons (user installs), deduped.
+ALL_DIRS=("$HOME/.local/share/icons" "/usr/share/icons")
+declare -A SEEN
+THEMES=()
+for d in "${ALL_DIRS[@]}"; do
+  [ -d "$d" ] || continue
+  for t in "$d"/*/; do
+    name="$(basename "$t")"
+    [ -f "$t/index.theme" ] && [ "${SEEN[$name]:-}" = "" ] || continue
+    grep -q "^\[Icon Theme\]" "$t/index.theme" 2>/dev/null || continue
+    SEEN[$name]=1
+    THEMES+=("$name")
+  done
+done
+if [ "${#THEMES[@]}" -eq 0 ]; then
+  notify-send "Icon Theme" "No icon themes found in /usr/share/icons"
+  exit 1
+fi
+
+CHOSEN="${1:-}"
+if [ -z "$CHOSEN" ]; then
+  CHOSEN="$(printf '%s\n' "${THEMES[@]}" | rofi -dmenu -i -p "Icon Theme" -theme ~/.config/rofi/current.rasi)"
+  [ -n "$CHOSEN" ] || exit 0
+fi
+
+valid=0
+for t in "${THEMES[@]}"; do [ "$t" = "$CHOSEN" ] && valid=1; done
+if [ "$valid" -ne 1 ]; then
+  notify-send "Icon Theme" "Unknown icon theme: $CHOSEN"
+  exit 1
+fi
+
+mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
+for f in "$HOME/.config/gtk-3.0/settings.ini" "$HOME/.config/gtk-4.0/settings.ini"; do
+  if [ -f "$f" ] && grep -q '^gtk-icon-theme-name=' "$f"; then
+    sed -i "s/^gtk-icon-theme-name=.*/gtk-icon-theme-name=$CHOSEN/" "$f"
+  elif [ -f "$f" ]; then
+    sed -i "/^\[Settings\]/a gtk-icon-theme-name=$CHOSEN" "$f"
+  else
+    printf '[Settings]\ngtk-icon-theme-name=%s\n' "$CHOSEN" > "$f"
+  fi
+done
+
+if [ -f "$HOME/.gtkrc-2.0" ] && grep -q '^gtk-icon-theme-name=' "$HOME/.gtkrc-2.0"; then
+  sed -i "s/^gtk-icon-theme-name=.*/gtk-icon-theme-name=\"$CHOSEN\"/" "$HOME/.gtkrc-2.0"
+else
+  printf 'gtk-icon-theme-name="%s"\n' "$CHOSEN" >> "$HOME/.gtkrc-2.0"
+fi
+
+gsettings set org.gnome.desktop.interface icon-theme "$CHOSEN" 2>/dev/null || true
+
+notify-send "Icon Theme" "Switched to $CHOSEN (newly started apps pick it up)"
+
+# NOTE: already-running apps keep their loaded icon theme until restarted -
+# same as every other GTK setting on a session without a settings daemon.
+EOF
+chmod +x "$BIN/icon-theme.sh"
 
 # ----------------------------------------------------------------------------
 # 11d2. Keybinding cheat sheet (Mod+alt+space -> Keybinding Help) - printed in
@@ -4052,7 +4161,7 @@ RESET=$'\033[0m'
 
 # binding|action - same rows as the README cheat sheet table, kept in sync
 # by hand (this is a small, curated display list, not something parsed out
-# of i3/config, same shape as app-menu.sh's own LABELS/COMMANDS). Sorted
+# of the sway config, same shape as app-menu.sh's own LABELS/COMMANDS). Sorted
 # alphabetically by key; where a key has more than one binding, the plain
 # Mod+<key> form comes before any Mod+<modifier>+<key> form, and
 # multi-modifier forms come after single-modifier ones - same rule the
@@ -4064,9 +4173,9 @@ ROWS=(
   "Mod+shift+a|Mistral Vibe web app, toggle show/hide"
   "Mod+b|Split horizontal (for next window)"
   "Mod+c|Toggle caffeine (inhibit screen-lock/sleep)"
-  "Mod+shift+c|Reload i3"
+  "Mod+shift+c|Reload Sway"
   "Mod+e|File manager (pcmanfm)"
-  "Mod+shift+e|Exit i3 (with confirm)"
+  "Mod+shift+e|Exit Sway (with confirm)"
   "Mod+Escape|Block-art screensaver, on demand"
   "Mod+f|Fullscreen toggle"
   "Mod+shift+f|Floating toggle"
@@ -4089,7 +4198,7 @@ ROWS=(
   "Mod+shift+p|Power menu"
   "Print|Screenshot (flameshot)"
   "Mod+r|Resize mode (h/j/k/l, Return/Escape to exit)"
-  "Mod+shift+r|Restart i3"
+  "Mod+shift+r|Reload Sway"
   "Mod+Return|Open kitty"
   "Mod+shift+q|Close focused window"
   "Mod+semicolon|Focus right"
@@ -4101,7 +4210,7 @@ ROWS=(
   "Mod+t|Toggle container layout split direction"
   "Mod+v|Split vertical (for next window)"
   "Mod+shift+v|Clipboard history (copyq)"
-  "Mod+shift+w|Wallpaper picker (nitrogen)"
+  "Mod+shift+w|Wallpaper picker"
   "Mod+shift+XF86Assistant|Claude Desktop, toggle show/hide"
   "XF86Audio Play/Next/Prev|Media control (playerctl)"
   "XF86Audio Raise/Lower/Mute Volume|Volume, with a dunst level popup"
@@ -4141,11 +4250,12 @@ cat > "$BIN/app-menu.sh" <<'EOF'
 # actions that actually exist here rather than Omarchy's much larger
 # package/theme management menu (no equivalent in this setup). Actions that
 # need interactive input (Set Screensaver) open in their own floating kitty
-# window - see the AppMenuTask for_window rule in i3/config - matching how
+# window - see the AppMenuTask for_window rule in the sway config - matching how
 # copyq/cliamp already float; everything else just runs directly.
 LABELS=(
   $'  Desktop Theme'
   $'  Cursor Theme'
+  $'  Icon Theme'
   $'  Set Screensaver Text/Image'
   $'  Preview Screensaver'
   $'  Set AI Window Folder'
@@ -4157,13 +4267,14 @@ LABELS=(
   $'  Colorpicker'
   $'  Lock Screen'
   $'  Power Menu'
-  $'  Reload i3'
-  $'  Restart i3'
+  $'  Reload Sway'
+  $'  Restart Waybar'
   $'  Keybinding Help'
 )
 COMMANDS=(
   "~/.local/bin/waybar-theme.sh"
   "~/.local/bin/cursor-theme.sh"
+  "~/.local/bin/icon-theme.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/set-screensaver-text.sh"
   "kitty --class Screensaver -e ~/.local/bin/screensaver.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/set-ai-window-folder.sh"
@@ -4176,7 +4287,7 @@ COMMANDS=(
   "~/.local/bin/lock.sh --with-screensaver"
   "~/.local/bin/powermenu.sh"
   "swaymsg reload"
-  "swaymsg reload"
+  "~/.local/bin/waybar-launch.sh"
   "kitty --class KeybindingsHelp -e ~/.local/bin/keybindings-help.sh"
 )
 
@@ -4196,7 +4307,7 @@ chmod +x "$BIN/app-menu.sh"
 log "Writing cliamp-toggle.sh..."
 cat > "$BIN/cliamp-toggle.sh" <<'EOF'
 #!/usr/bin/env bash
-# Toggles the floating Cliamp window via i3's scratchpad instead of leaving
+# Toggles the floating Cliamp window via sway's scratchpad instead of leaving
 # "quit the TUI" as the only way to get it out of the way (kitty exits the
 # moment its child process does, so closing the window has always meant
 # killing playback too). cliamp exposes both MPRIS and its own IPC socket
@@ -4213,7 +4324,7 @@ cat > "$BIN/cliamp-toggle.sh" <<'EOF'
 # hide request for a freshly-launched window falls back to `move
 # scratchpad`; every request after that is a real, working toggle.
 #
-# i3's own remembered scratchpad geometry isn't reliable here - confirmed
+# The scratchpad's own remembered geometry isn't reliable here - confirmed
 # directly: after being hidden and shown again, the window reappeared at
 # rect (-350, -250), well off a 1920x1200 screen, instead of the centered
 # position it had before. Reassert size/position explicitly every time
@@ -4251,7 +4362,7 @@ chmod +x "$BIN/cliamp-setup.sh"
 log "Writing ai-window-toggle.sh (Mistral Vibe CLI)..."
 cat > "$BIN/ai-window-toggle.sh" <<'EOF'
 #!/usr/bin/env bash
-# Toggles a floating "AI window" running Mistral Vibe CLI (`vibe`) via i3's
+# Toggles a floating "AI window" running Mistral Vibe CLI (`vibe`) via sway's
 # scratchpad - same show/hide-without-killing pattern as cliamp-toggle.sh,
 # so an in-progress Vibe conversation/session isn't lost by just tucking
 # the window away.
@@ -4261,7 +4372,7 @@ cat > "$BIN/ai-window-toggle.sh" <<'EOF'
 # unreliable here: `scratchpad show` on this window reported success:true
 # while actually leaving it shoved off-screen (negative coordinates) on its
 # *current* workspace, still counted visible/focused, instead of actually
-# parking it in i3's hidden __i3_scratch workspace. Asking i3 directly
+# parking it in sway's hidden __i3_scratch workspace. Asking sway directly
 # which workspace the marked container is on right now and picking the one
 # correct action for that state sidesteps the ambiguous return value
 # entirely: no mark found -> launch fresh; already in __i3_scratch -> show
@@ -4304,10 +4415,10 @@ chmod +x "$BIN/ai-window-toggle.sh"
 log "Writing claude-desktop-toggle.sh..."
 cat > "$BIN/claude-desktop-toggle.sh" <<'EOF'
 #!/usr/bin/env bash
-# Toggles Claude Desktop via i3's scratchpad - same show/hide-without-
+# Toggles Claude Desktop via sway's scratchpad - same show/hide-without-
 # killing pattern as ai-window-toggle.sh/cliamp-toggle.sh, so an
 # in-progress conversation isn't lost by just tucking the window away.
-# Same direct "ask i3 which workspace the marked container is on right
+# Same direct "ask sway which workspace the marked container is on right
 # now" approach as ai-window-toggle.sh, for the same reason: `scratchpad
 # show`'s own success:true return doesn't reliably mean the window is
 # actually visible.
@@ -4342,7 +4453,7 @@ log "Writing mistral-vibe-toggle.sh..."
 cat > "$BIN/mistral-vibe-toggle.sh" <<'EOF'
 #!/usr/bin/env bash
 # Toggles the Mistral Vibe web app (chat.mistral.ai - Le Chat was renamed
-# Vibe in 2026) via i3's scratchpad, same show/hide-without-killing
+# Vibe in 2026) via sway's scratchpad, same show/hide-without-killing
 # pattern as claude-desktop-toggle.sh. Mistral ships no Linux desktop app,
 # so it runs in a Chromium-family browser's --app mode (no tabs/toolbar).
 # --class only takes effect for a browser's first process, which is why it
@@ -4387,22 +4498,17 @@ chmod +x "$BIN/mistral-vibe-toggle.sh"
 # ----------------------------------------------------------------------------
 # 12. Wallpaper fallback (solid Catppuccin base color) if none exists
 # ----------------------------------------------------------------------------
-if [ ! -f "$CONF/i3/wallpaper.png" ]; then
+if [ ! -f "$CONF/sway/wallpaper.png" ]; then
   if command -v convert >/dev/null 2>&1; then
     log "Generating a solid Catppuccin-base fallback wallpaper..."
-    convert -size 1920x1080 xc:'#1e1e2e' "$CONF/i3/wallpaper.png"
+    convert -size 1920x1080 xc:'#1e1e2e' "$CONF/sway/wallpaper.png"
   else
-    warn "ImageMagick not found — drop your own image at $CONF/i3/wallpaper.png"
-    touch "$CONF/i3/wallpaper.png"
+    warn "ImageMagick not found — drop your own image at $CONF/sway/wallpaper.png"
+    touch "$CONF/sway/wallpaper.png"
   fi
 fi
-# Feed it to nitrogen so there's an actual saved pick to `--restore` on first
-# login instead of a blank/undefined X background - re-run `nitrogen` (bound
-# to Mod+shift+w) any time to pick a real image; this only bootstraps one.
-if command -v nitrogen >/dev/null 2>&1 && [ ! -f "$CONF/nitrogen/bg-saved.cfg" ]; then
-  nitrogen --set-zoom-fill --save "$CONF/i3/wallpaper.png" >/dev/null 2>&1 \
-    || warn "nitrogen couldn't set the initial wallpaper (no X session yet?) — run 'nitrogen --set-zoom-fill --save ~/.config/i3/wallpaper.png' once you're in an i3 session, or just press Mod+shift+w to pick a real image."
-fi
+# swaybg-restore.sh picks this up at login (exec_always) if no pick was made
+# yet - press Mod+shift+w any time to choose a real image; this only seeds one.
 
 # ----------------------------------------------------------------------------
 # 13. Base GTK theme - follows the active desktop theme (best-effort, cosmetic only)
@@ -4417,10 +4523,9 @@ GTK_THEME_NAME="Rice-$(cat "$HOME/.config/waybar/current-theme-name" 2>/dev/null
 # Qogir cursor theme (all 6 real variants - the upstream -Light suffix
 # variants are skipped, since they're just aliases with identical cursor
 # art to their non-Light counterpart, differing only in icon-theme colors
-# this cursor-only install never uses). i3 itself has no cursor-theme
-# concept of its own - it's a bare window manager that never sets one, so
-# without this the pointer just falls back to X11's stock default
-# everywhere (GTK apps too: gtk-cursor-theme-size was already being set
+# this cursor-only install never uses). Without an explicit pick the
+# pointer would never change at all - sway's seat default is stock
+# Adwaita everywhere (GTK apps too: gtk-cursor-theme-size was already being set
 # below, but never gtk-cursor-theme-name, so the size applied to a theme
 # that was never actually chosen). No prebuilt cursor-only release exists
 # upstream - vinceliuice/Qogir-icon-theme ships cursors bundled inside its
@@ -4751,7 +4856,7 @@ cat <<'EOF'
     geoclue2 automatically if available, otherwise edit
     ~/.config/gammastep/config.ini to set a fixed lat/lon (see
     `man gammastep`).
- 7. Press Mod+shift+w (nitrogen) to pick a real wallpaper - a solid dark
+ 7. Press Mod+shift+w to pick a real wallpaper - a solid dark
     placeholder is set initially so login isn't blank.
  8. Desktop theming comes from the HANCORE waybar collection - pick a
     theme with the app menu (Mod+alt+space -> Desktop Theme) or

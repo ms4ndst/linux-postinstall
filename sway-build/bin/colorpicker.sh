@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Grab any on-screen pixel's color as hex and copy it to the clipboard - Sway
-# rice port of the i3 rice's slop+import+xclip colorpicker. slurp -p picks a
+# Grab any on-screen pixel's color as hex and copy it to the clipboard.
+# slurp -p picks a
 # single point, grim captures just that pixel, ImageMagick samples it, wl-copy
 # puts the hex on the Wayland clipboard. A small solid swatch PNG is generated
 # as the notification icon so the popup shows the picked color, not just text.
@@ -14,7 +14,7 @@ for dep in slurp grim magick wl-copy; do
 done
 
 # slurp -p: point mode, outputs "x,y 1x1". A plain cancel (Escape) exits slurp
-# non-zero -> stay silent, same as the i3 rice's user-cancel path.
+# non-zero -> stay silent (user cancel).
 GEOM=$(slurp -p 2>/dev/null) || exit 0
 [ -n "$GEOM" ] || exit 0
 

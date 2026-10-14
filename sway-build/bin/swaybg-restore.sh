@@ -8,9 +8,8 @@ CFG="$HOME/.config/sway"
 SAVED="$CFG/wallpaper-saved"
 IMG=""
 [ -f "$SAVED" ] && IMG="$(cat "$SAVED")"
-# Fall back to the sway wallpaper, then the installer's seeded i3 path.
+# Fall back to the sway wallpaper seeded by the installer.
 [ -n "$IMG" ] && [ -f "$IMG" ] || IMG="$CFG/wallpaper.png"
-[ -f "$IMG" ] || IMG="$HOME/.config/i3/wallpaper.png"
 [ -f "$IMG" ] || exit 0
 
 pkill -x swaybg 2>/dev/null

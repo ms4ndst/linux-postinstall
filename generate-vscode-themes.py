@@ -245,6 +245,26 @@ def build_ui_colors(c):
         "editorHoverWidget.background": mantle,
         "editorHoverWidget.border": surface0,
 
+        # Dialog surfaces (message boxes, quick input, checkboxes, secondary
+        # buttons). Leaving these unset lets VS Code mix stock vs-dark
+        # defaults in, which made save/confirm dialogs read poorly.
+        "quickInput.background": mantle,
+        "quickInput.foreground": text,
+        "quickInputList.focusBackground": surface0,
+        "checkbox.background": surface0,
+        "checkbox.border": surface1,
+        "checkbox.foreground": text,
+        "button.secondaryBackground": surface0,
+        "button.secondaryForeground": text,
+        "button.secondaryHoverBackground": surface1,
+        "inputOption.activeBorder": accent,
+        "inputOption.activeBackground": with_alpha(surface0, "50"),
+        "textPreformat.foreground": accent,
+        "textCodeBlock.background": mantle,
+        "menu.border": surface0,
+        "notificationCenter.border": surface0,
+        "sideBar.border": surface0,
+
         "peekView.border": accent,
         "peekViewEditor.background": mantle,
         "peekViewResult.background": mantle,

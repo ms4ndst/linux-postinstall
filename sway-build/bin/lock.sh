@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sway rice lock screen (swaylock) - port of the i3 rice's i3lock-color lock.sh.
+# Sway rice lock screen (swaylock), with a random Mocha accent per lock.
 # Guard against overlapping invocations: swayidle calls this on idle/sleep AND
 # Mod+l calls it directly - flock closes the TOCTOU gap so a second swaylock
 # never starts on top of one already holding the session.
@@ -21,20 +21,17 @@ ACCENT_IDX=$((RANDOM % ${#ACCENTS[@]}))
 ACCENT="${ACCENTS[$ACCENT_IDX]}"
 KEYHL="${ACCENTS[$(( (ACCENT_IDX + 7) % ${#ACCENTS[@]} ))]}"
 
-# NOTE: the i3 original blanked the displays here via `xset dpms`, which
-# wakes on input on X11. Do NOT port that to an explicit sway power-off:
+# NOTE: do NOT blank the displays with an explicit sway power-off:
 # `swaymsg "output * power off"` has NO wake-on-input (only swayidle's
 # resume hook re-powers displays, and it only fires for swayidle's own
 # 50-min display timeout) - locking would leave a black screen with no
 # way back in. swayidle's 50-min timeout (with its resume hook) handles
 # display power-off; swaylock itself covers the visual lock.
 
-# swaylock-effects adds --screenshots/--effect-blur (the equivalent of the i3
-# rice's i3lock-color blur); plain swaylock lacks them. Detect by grepping
-# --help for effect-blur (swaylock DOES list its flags in --help, unlike
-# i3lock), same spirit as the i3 rice's i3lock-color package check. NOTE:
-# swaylock has no custom greeter/wrong-text flags, so the i3 rice's witty
-# lock messages have no equivalent here and are intentionally dropped.
+# swaylock-effects adds --screenshots/--effect-blur; plain swaylock lacks
+# them. Detect by grepping --help for effect-blur (swaylock lists its flags
+# in --help). NOTE: swaylock has no custom greeter/wrong-text flags, so no
+# custom lock messages here.
 if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
   swaylock \
     --screenshots \

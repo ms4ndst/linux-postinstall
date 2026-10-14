@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rofi-based wallpaper picker (replaces i3's nitrogen GUI). Lists images from
+# Rofi-based wallpaper picker. Lists images from
 # the usual wallpaper dirs, sets the pick with swaybg, and saves the path so
 # swaybg-restore.sh brings it back on the next login/reload. If azote (the
 # Wayland-native nitrogen equivalent) is installed, prefer its GUI instead.

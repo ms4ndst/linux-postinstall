@@ -22,7 +22,7 @@ For each theme dir in the clone's config/ (excluding "test"):
        .config/kitty/themes/<n>.conf
        .config/dunst/themes/<n>.dunstrc
        .config/starship/themes/<n>.toml
-       .config/i3/themes/<n>.conf            (sway client.* borders)
+       .config/sway/themes/<n>.conf           (sway client.* borders)
        .config/polybar/themes/<n>.ini       ([colors] block - feeds the
          repo's generate-gtk/nvim/vscode-themes.py, exactly like the old
          rice's own themes)
@@ -386,6 +386,31 @@ def adapt_config(cfg, name):
             "tooltip": False,
             "on-click": "kitty --class UpdatesTask -e ~/.local/bin/software-update.sh",
         }
+
+    # 3c. idle_inhibitor -> custom/caffeine: the native module is an
+    #     independent Wayland inhibitor that never reflected the rice's
+    #     Mod+C caffeine toggle (two mechanisms, no shared state).
+    #     Replace it everywhere with a widget backed by
+    #     ~/.local/bin/caffeine-state.sh, so one mechanism (caffeine)
+    #     drives both the keybind and the bar, and the icon always shows
+    #     the real state. Clicking the widget runs the same toggle.
+    for lk in ("modules-left", "modules-center", "modules-right"):
+        arr = cfg.get(lk)
+        if isinstance(arr, list):
+            cfg[lk] = ["custom/caffeine" if m == "idle_inhibitor" else m
+                       for m in arr]
+    for key, block in list(cfg.items()):
+        if isinstance(block, dict) and isinstance(block.get("modules"), list):
+            block["modules"] = ["custom/caffeine" if m == "idle_inhibitor" else m
+                                for m in block["modules"]]
+    cfg.pop("idle_inhibitor", None)
+    cfg["custom/caffeine"] = {
+        "exec": "~/.local/bin/caffeine-state.sh",
+        "return-type": "json",
+        "interval": 2,
+        "on-click": "~/.local/bin/caffeine-toggle.sh",
+        "tooltip": True,
+    }
 
     # 4. Drop module blocks with no equivalent: the known set, plus any
     #    block that still references omarchy/$OMARCHY_PATH/hyprctl.
@@ -811,7 +836,7 @@ style = "bg:{star_blue}"
 format = '[ $time ]($style)'
 '''
 
-# sway client.* border colors (i3-compatible syntax, sway reads it too)
+# sway client.* border colors
 BORDERS_TEMPLATE = """client.focused          {accent}  {base}  {text}  {accent}   {accent}
 client.unfocused        {surface1}  {base}  {subtext}  {surface1}   {surface1}
 client.focused_inactive {surface2}  {base}  {subtext}  {surface2}   {surface2}
@@ -897,6 +922,20 @@ window#waybar #workspaces button.urgent {
   color: @BASE@;
   background-color: @RED@;
   font-weight: bold;
+}
+/* Caffeine widget (custom/caffeine, replacing the native idle_inhibitor):
+   activated = the rice's stay-awake is on (Mod+C or clicking the widget),
+   flagged in the theme accent so it reads at a glance. The light-bulb
+   glyph is one of the tallest Nerd Font icons - at the themes' base font
+   size with their zero padding it overflows the label box and gets
+   clipped at the bar edge (verified live on v7.2) - so pin a smaller
+   font and side padding for it. */
+window#waybar #custom-caffeine {
+  font-size: 12px;
+  padding: 0 4px;
+}
+window#waybar #custom-caffeine.activated {
+  color: @ACCENT@;
 }
 """
 
@@ -1059,7 +1098,7 @@ def process_theme(src_dir, name):
                DUNST_TEMPLATE.format(**p))
     write_text(CONF / "starship" / "themes" / (name + ".toml"),
                STARSHIP_TEMPLATE.format(**starship_colors(palette, by_role)))
-    write_text(CONF / "i3" / "themes" / (name + ".conf"),
+    write_text(CONF / "sway" / "themes" / (name + ".conf"),
                BORDERS_TEMPLATE.format(**p))
     write_text(CONF / "polybar" / "themes" / (name + ".ini"),
                COLORS_INI_TEMPLATE.format(name=name, **p))
@@ -1100,7 +1139,7 @@ def main():
         om.mkdir(parents=True, exist_ok=True)
         shutil.copy2(t / "palette.css", om / "waybar.css")
         (CONF / "sway").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(CONF / "i3" / "themes" / (name + ".conf"),
+        shutil.copy2(CONF / "sway" / "themes" / (name + ".conf"),
                      CONF / "sway" / "current-borders.conf")
         shutil.copy2(CONF / "rofi" / "themes" / (name + ".rasi"), CONF / "rofi" / "current.rasi")
         shutil.copy2(CONF / "rofi" / "themes" / (name + "-powermenu.rasi"),
