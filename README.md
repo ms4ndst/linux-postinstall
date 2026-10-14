@@ -17,7 +17,9 @@ The RPM/apt/pacman scripts share the same Catppuccin-themed menu-driven UX, the 
 
 **NixOS is different by design.** NixOS doesn't install packages imperatively, so `post-install-nixos.sh` keeps the same category menu but, instead of installing each pick, accumulates your choices into a single generated module (`/etc/nixos/postinstall.nix`), imports it (automatically for a classic `configuration.nix`, or by printing the one line to add for a flake), and runs `nixos-rebuild switch`. The result is reproducible, rolls back through the normal generation/boot-menu mechanism, and survives future rebuilds. It targets nixpkgs **nixos-26.05**; a few items the other scripts pull from vendor repos aren't in nixpkgs (or are flake-only) and are reported rather than silently dropped.
 
-There are also standalone i3+Catppuccin rice scripts that aren't part of that set: **[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh)** (Fedora), **[`opensuse-setup-i3-cattpuccin.sh`](opensuse-setup-i3-cattpuccin.sh)** (openSUSE), **[`openmandriva-setup-i3-cattpuccin.sh`](openmandriva-setup-i3-cattpuccin.sh)** (OpenMandriva) and **[`nixos-setup-i3-cattpuccin.sh`](nixos-setup-i3-cattpuccin.sh)** (NixOS) each build a full Catppuccin Mocha–themed **i3 tiling window manager** desktop on top of their respective distro — single-purpose rice scripts, not menu-driven package browsers. Run one after (or independently of) its matching post-install script. See [i3 + Catppuccin Rice Script](#-i3--catppuccin-rice-script-fedora--opensuse) below. The NixOS rice installs its toolkit through a generated `/etc/nixos/rice.nix` (i3lock-color and snixembed are packaged there, so none of the other rices' build-from-source fallbacks run), then writes the exact same dotfiles into `$HOME` so the live theme switcher works identically.
+The repo's flagship rice today is the Wayland setup: **[`fedora-sway-setup.sh`](fedora-sway-setup.sh)** — a complete **Sway desktop for Fedora 44**, themed by the 89-theme [HANCORE-linux/waybar-themes](https://github.com/HANCORE-linux/waybar-themes) collection (fetched and adapted at install time), where **one theme pick retints waybar, rofi, kitty, dunst, starship, the sway window borders, GTK 2/3/4, Neovim and VS Code together**. It supersedes the i3 rices below on Fedora. See [Sway + HANCORE Rice Script](#-sway--hancore-rice-script-fedora) below.
+
+There are also standalone i3+Catppuccin rice scripts — the predecessors of the Sway rice — that aren't part of that set: **[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh)** (Fedora), **[`opensuse-setup-i3-cattpuccin.sh`](opensuse-setup-i3-cattpuccin.sh)** (openSUSE), **[`openmandriva-setup-i3-cattpuccin.sh`](openmandriva-setup-i3-cattpuccin.sh)** (OpenMandriva) and **[`nixos-setup-i3-cattpuccin.sh`](nixos-setup-i3-cattpuccin.sh)** (NixOS) each build a full Catppuccin Mocha–themed **i3 tiling window manager** desktop on top of their respective distro — single-purpose rice scripts, not menu-driven package browsers. Run one after (or independently of) its matching post-install script. See [i3 + Catppuccin Rice Script](#-i3--catppuccin-rice-script-fedora--opensuse) below. The NixOS rice installs its toolkit through a generated `/etc/nixos/rice.nix` (i3lock-color and snixembed are packaged there, so none of the other rices' build-from-source fallbacks run), then writes the exact same dotfiles into `$HOME` so the live theme switcher works identically.
 
 ---
 
@@ -201,6 +203,14 @@ There are also standalone i3+Catppuccin rice scripts that aren't part of that se
   - [⚠️ Arch Known Limitations](#-arch-known-limitations)
   - [⚙️ Arch Customization](#-arch-customization)
   - [🐛 Arch Troubleshooting](#-arch-troubleshooting)
+- [🪟 Sway + HANCORE Rice Script (Fedora)](#-sway--hancore-rice-script-fedora)
+  - [🚀 Sway Script Overview](#-sway-script-overview)
+  - [📦 What Gets Installed (Sway)](#-what-gets-installed-sway)
+  - [🎨 Desktop-wide Theming (HANCORE)](#-desktop-wide-theming-hancore)
+  - [📥 Sway Script Installation & Usage](#-sway-script-installation--usage)
+  - [⌨️ Sway Keybinds](#️-sway-keybinds)
+  - [🔧 Maintaining the Script (sway-build)](#-maintaining-the-script-sway-build)
+  - [⚠️ Sway Script Known Limitations](#️-sway-script-known-limitations)
 - [🎨 i3 + Catppuccin Rice Script (Fedora & openSUSE)](#-i3--catppuccin-rice-script-fedora--opensuse)
   - [🚀 i3 Script Overview](#-i3-script-overview)
   - [📦 What Gets Installed](#-what-gets-installed)
@@ -2796,6 +2806,92 @@ ls -lt /var/log/arch_post_install_*.log | head -1 | awk '{print $NF}' | xargs ca
 
 ---
 
+# 🪟 Sway + HANCORE Rice Script (Fedora)
+
+### 🚀 Sway Script Overview
+
+[`fedora-sway-setup.sh`](fedora-sway-setup.sh) is this repo's flagship rice: a complete **Sway (Wayland) tiling desktop for Fedora 44** — the successor of the i3 rice below, rebuilt around the 89-theme [HANCORE-linux/waybar-themes](https://github.com/HANCORE-linux/waybar-themes) collection instead of a fixed embedded Catppuccin set. It installs the full Wayland stack and then wires every app into one theme system: **a single pick in the Desktop Theme menu retints waybar, rofi, kitty, dunst, starship, the sway window borders, GTK 2/3/4, Neovim and VS Code together.**
+
+It is a single-purpose, idempotent-ish script meant to run once on a fresh Fedora install: it takes a **snapper snapshot of `/` first** (a rollback point), installs everything via `dnf`, adapts the HANCORE collection from its Omarchy/Hyprland home to plain Sway at install time, and writes all configs into `$HOME` (`~/.config/sway`, `waybar`, `rofi`, `kitty`, `dunst`, `starship`, `nvim`, a `Rice-*` GTK theme per HANCORE theme in `~/.themes`, helper scripts in `~/.local/bin`, and a VS Code color-theme extension). At startup it asks whether to **wipe all existing desktop themes first**, which is the recommended path when moving to the collection.
+
+**Run it as your own user, never with sudo** — it calls sudo itself where needed and installs into `$HOME`; under sudo every config would land in root's home.
+
+---
+
+### 📦 What Gets Installed (Sway)
+
+**Core stack:** `sway`, `swaybg` (wallpaper, restored on every login/reload), `swayidle` + `swaylock` (idle lock at 20min, displays off at 50min; a random Catppuccin Mocha accent ring per lock, with screenshot blur when `swaylock-effects` is detected), `waybar`, `kanshi` (monitor profiles), `rofi` (Wayland app launcher, run dialog and menus), `dunst`, `kitty`, `grim`/`slurp` (screenshots and the pixel colorpicker), `wl-clipboard`, and the xdg-desktop-portal stack (`wlr` + `gtk`) so Flatpaks and browsers get native file dialogs.
+
+**Session helpers:** NetworkManager/PipeWire/Bluetooth managed through waybar's own widgets (the tray applets are deliberately suppressed), `copyq` clipboard history, `udiskie` USB automount, `gammastep` night light, `pcmanfm` file manager, `gnome-calendar` (themed per active theme), the CUPS/HP printer stack, `fastfetch`, JetBrainsMono Nerd Font, and a Qogir cursor-theme set (all 6 real variants, extracted cursor-only).
+
+**Rice extras:** [CLIamp](https://www.cliamp.stream/) terminal music player (`Mod+m`, floating scratchpad), floating AI windows for Mistral Vibe CLI (`Mod+a`) and Claude Desktop (`Mod+shift+a`/the Copilot key), an Omarchy-style **app menu** (`Mod+alt+space`) with one entry for every rice utility, an on-screen **keybinding cheat sheet** (`Mod+i`), a hand-rolled **caffeine** screen-blank inhibitor (`Mod+c` plus a waybar widget), **Do Not Disturb** (`Mod+n`), a **block-art screensaver** powered by `tte` (`Mod+Escape`, and automatically before an idle lock), floating volume/brightness OSD popups, a calendar-reminder daemon feeding dunst, and a floating kitty **software-update terminal** (the bar's update widget shows the pending count and opens it).
+
+---
+
+### 🎨 Desktop-wide Theming (HANCORE)
+
+All 89 HANCORE themes are adapted at install time by [`sway-build/hancore-theme-gen.py`](sway-build/hancore-theme-gen.py) (embedded in the script):
+
+- `hyprland/*` bar modules become `sway/*`; Omarchy/Hyprland-only modules (voice typing, pacman updates, GPU usage, the Omarchy logo) are dropped, and their commands are rewritten to this rice's own tools (app menu, power menu, colorpicker, caffeine/DND toggles, the update terminal, kitty, `swaymsg`)
+- each theme's CSS palette is classified against the 26 canonical Catppuccin Mocha roles in HLS space (the same algorithm as `generate-gtk-themes.py`), and matching **rofi** (launcher + power menu), **kitty**, **dunst**, **starship** and **sway client-border** themes are generated alongside the waybar config, in `~/.config/{waybar,rofi,kitty,dunst,starship,sway}/themes/`
+- a `[colors]` ini per theme feeds `generate-{gtk,nvim,vscode}-themes.py`: a `Rice-<name>` GTK theme (GTK 2/3/4), `rice-<name>` Neovim colors, and a VS Code color theme via the generated `linux-postinstall-rice-themes` extension
+- the bar's **workspace numbers** are accent-colored on the focused desktop and flagged red on any workspace holding a window that wants attention (a link opening a tab on another desktop, chat pings); the **clock** left-click cycles time formats and right-click opens a per-theme-GTK `gnome-calendar`; the **caffeine widget** lights up while screen-blanking is inhibited
+- **Cursor Theme** and **Icon Theme** app-menu entries switch the Qogir cursor variants and the installed icon themes live — no logout
+- Chromium-portal apps (e.g. Microsoft Edge) follow the theme through the xdg-desktop-portal GTK backend, which the switcher restarts on every pick; libadwaita apps get GNOME's closest preset accent color (see Known Limitations)
+
+Switching is `~/.local/bin/waybar-theme.sh [name]` (rofi picker via the app menu's **Desktop Theme** entry); `~/.local/bin/app-theme-sync.sh` then retints the terminal apps, VS Code and the GNOME accent in one pass.
+
+---
+
+### 📥 Sway Script Installation & Usage
+
+```bash
+chmod +x fedora-sway-setup.sh
+./fedora-sway-setup.sh     # as your own user, NOT sudo
+```
+
+Log in through the **Sway** session at your display manager. Configs land in `~/.config` and helper scripts in `~/.local/bin`; re-running the script is safe but overwrites every config it manages — back up your own dotfiles first.
+
+Keybinds are the i3 rice's set (see the [Keybinding Cheat Sheet](#️-keybinding-cheat-sheet) below) with sway realities applied: `Mod+shift+c` and `Mod+shift+r` both `reload` (**sway has no i3-style `restart` command**), and `Mod+shift+e` exits through a swaynag confirmation. The app menu's equivalent entries are **Reload Sway** and **Restart Waybar** (a bar relaunch, since a compositor restart doesn't exist).
+
+---
+
+### ⌨️ Sway Keybinds
+
+The full table lives in the i3 section's [Keybinding Cheat Sheet](#️-keybinding-cheat-sheet) and is shared by the sway rice; the on-screen copy is `Mod+i`. Sway-specific differences:
+
+| Binding | Action | Note |
+|---|---|---|
+| `Mod+shift+c` / `Mod+shift+r` | Reload sway config | Sway has no `restart`; both binds reload |
+| `Mod+shift+e` | Exit sway | swaynag confirmation dialog |
+| `Mod+l` | Lock screen | `lock.sh`: screensaver first, then the password lock |
+| `Mod+alt+space` | App menu | Mod1 = Alt |
+| `Mod+Escape` | Screensaver | `tte` block art, any keypress dismisses |
+
+---
+
+### 🔧 Maintaining the Script (sway-build)
+
+The rice's helper scripts and theme generators live in [`sway-build/`](sway-build/) and are **embedded into `fedora-sway-setup.sh` as heredocs**. `sway-build/build_fedora_sway.py` re-syncs those embeds in place — it is a self-refresh, not a generator chain:
+
+```bash
+python3 -I sway-build/build_fedora_sway.py   # re-embed sway-build/* into fedora-sway-setup.sh
+bash -n fedora-sway-setup.sh                 # smoke test
+```
+
+Edit `sway-build/bin/*.sh` (the `~/.local/bin` helpers), `hancore-theme-gen.py` (the theme adapter), `hancore-shims/` (the bar's helper binaries), or `rice-gen-driver.py` (the GTK/Neovim/VS Code generator driver), re-run the build, and the installer picks it up. Everything else — the sway config, the remaining heredocs, the prose — is edited directly in `fedora-sway-setup.sh`. The old i3-to-sway generation chain in `sway-build/` is kept for reference only and nothing consumes it.
+
+---
+
+### ⚠️ Sway Script Known Limitations
+
+- **tuned-ppd conflict:** Fedora's `tuned-ppd` conflicts with `power-profiles-daemon` (the bar's power-profile widget backend). The install is best-effort: with tuned-ppd in place the widget stays inert; swap the packages manually to enable it.
+- **libadwaita apps** (gnome-calendar and every GNOME 47+ app) deliberately block theme CSS. The rice maps the active theme's accent hue to GNOME's closest preset accent color plus `prefer-dark` — as far as GNOME permits.
+- **GTK3 vs GTK4 rounding:** the generated GTK4 themes drop `@keyframes`-style rules that abort GTK3 sheets, so a few animated accents are GTK4-only.
+- **Flameshot** still captures via its X11 legacy path under XWayland — native Wayland screenshotting is the `Print` key (grim/slurp).
+
+---
+
 # 🎨 i3 + Catppuccin Rice Script (Fedora & openSUSE)
 ![screenshot](i3_screenshot.png)
 ### 🚀 i3 Script Overview
@@ -3418,6 +3514,15 @@ All scripts in this repo are provided **as-is** without warranty. You are free t
 
 ## 🙏 Acknowledgments
 
+- **[HANCORE-linux/waybar-themes](https://github.com/HANCORE-linux/waybar-themes)**: For the 89-theme collection the Sway rice fetches and adapts at install time (MIT)
+- **[swaywm/sway](https://github.com/swaywm/sway)** and the Wayland/wlroots ecosystem: For the compositor the Fedora Sway rice is built on
+- **[Alexays/Waybar](https://github.com/Alexays/Waybar)**: For the Wayland status bar every theme retints
+- **[davatorium/rofi](https://github.com/davatorium/rofi)**: For the Wayland-capable launcher behind the app launcher, run dialog, theme picker, and app menu
+- **[kovidgoyal/kitty](https://github.com/kovidgoyal/kitty)**, **[dunst-project/dunst](https://github.com/dunst-project/dunst)**, and **[starship/starship](https://github.com/starship/starship)**: For the terminal, notification daemon, and prompt the theme system retints together
+- **[emersion/grim](https://github.com/emersion/grim)** and **[emersion/slurp](https://github.com/emersion/slurp)**: For the screenshots and the pixel-accurate colorpicker
+- **[bugaevc/wl-clipboard](https://github.com/bugaevc/wl-clipboard)**: For the Wayland clipboard the colorpicker and copy helpers use
+- **[catppuccin/catppuccin](https://github.com/catppuccin/catppuccin)**: For the canonical Mocha palette roles every generated GTK/Neovim/VS Code theme is classified against
+- **[PapirusDevelopmentTeam/papirus-icon-theme](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme)**: For the icon theme
 - **Ubuntu Community**, **Fedora Community**, and **Arch Linux Community**: For the excellent package repositories
 - **[Omarchy](https://omarchy.org) / Basecamp**: For the opinionated Hyprland-based Arch distro the Arch script detects and defers to
 - **Arch Linux AUR maintainers** and the **[yay](https://github.com/Jguer/yay)** project: For making the AUR usable as an automated fallback layer
@@ -3455,4 +3560,4 @@ All scripts in this repo are provided **as-is** without warranty. You are free t
 
 ---
 
-*Last updated: September 3, 2026*
+*Last updated: October 14, 2026*
