@@ -227,6 +227,7 @@ sudo dnf install -y --setopt=strict=0 \
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \
   networkmanager-applet blueman lxqt-policykit pipewire-pulse \
   copyq udiskie pcmanfm gammastep libnotify gnome-calendar \
+  azote \
   system-config-printer hplip \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq imagemagick fortune-mod \

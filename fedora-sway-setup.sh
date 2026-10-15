@@ -109,6 +109,7 @@ sudo dnf install -y \
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \
   network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
   copyq udiskie pcmanfm gammastep libnotify gnome-calendar \
+  azote \
   system-config-printer hplip \
   lxappearance papirus-icon-theme \
   fastfetch git curl unzip jq ImageMagick fortune-mod \
