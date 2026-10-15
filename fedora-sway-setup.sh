@@ -3141,6 +3141,21 @@ RICE_EOF
 chmod +x "$BIN/colorpicker.sh"
 
 # ----------------------------------------------------------------------------
+# 9d. swappy (screenshot editor) config
+# ----------------------------------------------------------------------------
+# Without a config, swappy defaults save_dir to $XDG_DESKTOP_DIR/$HOME/Desktop
+# and every Save (button or Ctrl+S) drops a swappy-*.png on the Desktop
+# silently - reads like "nothing happens". Point it at the same directory
+# screenshot.sh uses, with the date format the old rice's swappy files carry.
+log "Writing swappy config..."
+mkdir -p "$CONF/swappy"
+cat > "$CONF/swappy/config" <<'EOF'
+[Default]
+save_dir=$HOME/Pictures/Screenshots
+save_filename_format=%Y-%m-%d_%H-%M.png
+EOF
+
+# ----------------------------------------------------------------------------
 # 10. fastfetch
 # ----------------------------------------------------------------------------
 log "Writing fastfetch config..."
