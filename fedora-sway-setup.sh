@@ -276,7 +276,7 @@ for_window [app_id="Screensaver"] fullscreen enable
 bindsym $mod+Return exec kitty
 bindsym $mod+space exec ~/.local/bin/fresh-env rofi -show drun -theme ~/.config/rofi/current.rasi
 bindsym $mod+shift+space exec ~/.local/bin/fresh-env rofi -show run -theme ~/.config/rofi/current.rasi
-bindsym $mod+e exec ~/.local/bin/fresh-env strata
+bindsym $mod+e exec ~/.local/bin/fresh-env ~/.local/bin/strata
 # Wayland wallpaper picker (azote is nitrogen's Wayland-native equivalent;
 # falls back to the rice's own rofi picker if azote isn't installed).
 bindsym $mod+shift+w exec ~/.local/bin/fresh-env ~/.local/bin/wallpaper-picker.sh
@@ -2008,7 +2008,7 @@ gt="$(sed -n 's/^GTK_THEME=//p' "$HOME/.config/environment.d/gtk-theme.conf" 2>/
 # Same for the cursor theme, so apps launched from sway's binds pick
 # up a cursor-theme.sh switch without a re-login.
 ct="$(sed -n 's/^XCURSOR_THEME=//p' "$HOME/.config/environment.d/cursor-theme.conf" 2>/dev/null || true)"
-[ -n "$ct"] && export XCURSOR_THEME="$ct"
+[ -n "$ct" ] && export XCURSOR_THEME="$ct"
 exec "$@"
 EOF
 chmod +x "$BIN/fresh-env"
