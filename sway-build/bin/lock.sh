@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# Sway rice lock screen (swaylock) in the Catppuccin Mocha indicator scheme
-# (github.com/catppuccin/swaylock, themes/mocha.conf): subtle dark ring at
-# rest, green keypress dots, blue while verifying, maroon on wrong password.
-# All colors live in ~/.config/swaylock/config, seeded by the installer, and
-# swaylock reads them via -C - so both branches below share one scheme.
+# Sway rice lock screen: Catppuccin Mocha scheme (~/.config/swaylock/config,
+# seeded from github.com/catppuccin/swaylock) over a blurred live screenshot,
+# with a random fortune quote baked in below the indicator - and, when the
+# binary is swaylock-effects, a live clock at center.
 # Guard against overlapping invocations: swayidle calls this on idle/sleep AND
 # Mod+l calls it directly - flock closes the TOCTOU gap so a second swaylock
 # never starts on top of one already holding the session.
@@ -26,35 +25,61 @@ fi
 # way back in. swayidle's 50-min timeout (with its resume hook) handles
 # display power-off; swaylock itself covers the visual lock.
 
-# swaylock-effects (the fork with --screenshots/--effect-* effects and a
-# live --clock) takes priority when available.
+# A random short geek quote under the ring. The i3 rice showed these via
+# i3lock-color's --greeter flag; the sway engine has no greeter text option
+# at all, so the quote is composited into the lock background itself
+# (fortune -s: short one-liner fortunes only, folded by caption:).
+FORTUNE=""
+if command -v fortune >/dev/null 2>&1; then
+  FORTUNE="$(fortune -s 2>/dev/null | tr '\t\n' '  ' | tr -s ' ' \
+             | sed 's/ *$//' | cut -c1-140)"
+fi
+
+# Build the per-output lock backgrounds: a live screenshot of each output,
+# blurred + darkened (the fast downscale/upscale blur), with the quote
+# centered below the indicator/clock block.
+LOCKDIR="$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/lock.XXXXXX")"
+trap 'rm -rf "$LOCKDIR"' EXIT
+FONT="$(fc-match -f '%{file}' 'JetBrainsMono Nerd Font' 2>/dev/null || true)"
+IMAGES=()
+while read -r name w h; do
+  img="$LOCKDIR/$name.png"
+  if ! env -u LD_LIBRARY_PATH grim -o "$name" "$img" 2>/dev/null; then
+    continue
+  fi
+  if [ -n "$FORTUNE" ]; then
+    magick "$img" \
+      \( -clone 0 -resize 6% -resize 1700% -fill '#1e1e2e' -colorize 35 \) \
+      -delete 0 \
+      \( -size "$((w * 7 / 12))x" -background none -font "$FONT" \
+         -pointsize "$((h / 32))" -fill '#a6adc8' caption:"$FORTUNE" \) \
+      -gravity center -geometry "+0+$((h / 5))" -composite \
+      "$img" 2>/dev/null && IMAGES+=(-i "$name:$img")
+  else
+    magick "$img" -resize 6% -resize 1700% \
+      -fill '#1e1e2e' -colorize 35 "$img" 2>/dev/null \
+      && IMAGES+=(-i "$name:$img")
+  fi
+done < <(swaymsg -t get_outputs 2>/dev/null | \
+         jq -r '.[] | select(.active) | "\(.name) \(.current_mode.width) \(.current_mode.height)"')
+
+# swaylock-effects (the fork with the live --clock) takes priority when the
+# binary supports it; plain swaylock uses the same backgrounds, just without
+# the clock. NOTE: this fork (jirutka v1.7.0.0) has no --time-color/
+# --date-color - the clock renders in the config's text-color (Catppuccin
+# cdd6f4) instead of the preview's lavender.
 if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
-  # Cycle a different look each lock - all layered over a live screenshot of
-  # the screen being locked (swaylock-effects applies its --effect-* flags
-  # on top of the previous, so combos stack). NOTE: this fork (jirutka
-  # v1.7.0.0) has no --time-color/--date-color - the clock renders in the
-  # config's text-color (Catppuccin cdd6f4) instead of the preview's
-  # lavender; a deliberate trade for a maintained binary.
-  case $((RANDOM % 4)) in
-    0) EFFECTS=(--effect-blur 8x3 --effect-vignette 0.4:0.4) ;;
-    1) EFFECTS=(--effect-pixelate 12 --effect-blur 2x2 --effect-vignette 0.4:0.4) ;;
-    2) EFFECTS=(--effect-greyscale --effect-blur 10x4 --effect-vignette 0.5:0.5) ;;
-    3) EFFECTS=(--effect-scale 0.75 --effect-blur 6x3 --effect-vignette 0.4:0.4) ;;
-  esac
-  swaylock -C "$LOCKCFG" \
-    --screenshots \
-    "${EFFECTS[@]}" \
+  swaylock -C "$LOCKCFG" "${IMAGES[@]}" \
     --clock \
     --timestr '%H:%M:%S' \
-    --datestr '%a, %d/%m/%Y' &
-  LOCK_PID=$!
-  wait "$LOCK_PID"
+    --datestr '%a, %d/%m/%Y'
 elif command -v swaylock >/dev/null 2>&1; then
-  # Plain swaylock: this IS the catppuccin/swaylock preview look - a flat
-  # Mocha background (color=1e1e2e from the config) with the subtle
-  # indicator and its state colors. Nothing else; the screenshot on the
-  # project page is exactly this command.
-  swaylock -C "$LOCKCFG"
+  if [ "${#IMAGES[@]}" -gt 0 ]; then
+    swaylock -C "$LOCKCFG" "${IMAGES[@]}"
+  else
+    # no fortune-possible backgrounds (grim/magick failed): flat Mocha lock
+    swaylock -C "$LOCKCFG"
+  fi
 else
   echo "lock.sh: swaylock is not installed" >&2
   exit 1
