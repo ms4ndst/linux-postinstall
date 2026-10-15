@@ -237,6 +237,12 @@ for_window [app_id="CliampSetup"] fullscreen enable
 # no window type, so float them here - e.g. "Authenticate to unlock
 # 1Password" after the screensaver locks the vault.
 for_window [app_id="lxqt-policykit-agent"] floating enable, move position center
+# Generic dialog handling for XWayland apps: they still carry the X11
+# window-type property that i3 auto-floated on; match it here. Native
+# Wayland apps have no window type (only a parent), so windows like
+# LibreOffice's CSV import dialog need their own rules if they bother.
+for_window [shell="xwayland" window_type="dialog"] floating enable
+for_window [shell="xwayland" window_type="utility"] floating enable
 for_window [app_id="AIVibe"] floating enable, resize set 900 650, move position center
 for_window [app_id="AIVibe"] mark ai-window-scratch
 for_window [app_id="AppMenuTask"] floating enable, resize set 600 400, move position center
