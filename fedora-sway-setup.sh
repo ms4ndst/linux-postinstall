@@ -276,7 +276,7 @@ for_window [app_id="Screensaver"] fullscreen enable
 bindsym $mod+Return exec kitty
 bindsym $mod+space exec ~/.local/bin/fresh-env rofi -show drun -theme ~/.config/rofi/current.rasi
 bindsym $mod+shift+space exec ~/.local/bin/fresh-env rofi -show run -theme ~/.config/rofi/current.rasi
-bindsym $mod+e exec ~/.local/bin/fresh-env pcmanfm
+bindsym $mod+e exec ~/.local/bin/fresh-env strata
 # Wayland wallpaper picker (azote is nitrogen's Wayland-native equivalent;
 # falls back to the rice's own rofi picker if azote isn't installed).
 bindsym $mod+shift+w exec ~/.local/bin/fresh-env ~/.local/bin/wallpaper-picker.sh
@@ -4399,7 +4399,7 @@ ROWS=(
   "Mod+b|Split horizontal (for next window)"
   "Mod+c|Toggle caffeine (inhibit screen-lock/sleep)"
   "Mod+shift+c|Reload Sway"
-  "Mod+e|File manager (pcmanfm)"
+  "Mod+e|File manager (Strata)"
   "Mod+shift+e|Exit Sway (with confirm)"
   "Mod+Escape|Block-art screensaver, on demand"
   "Mod+f|Fullscreen toggle"
@@ -5171,7 +5171,7 @@ cat <<'EOF'
  Cheat sheet (Mod = Super/Windows key):
    Mod+Return        open kitty
    Mod+space         app launcher (rofi)
-   Mod+e             file manager (pcmanfm)
+   Mod+e             file manager (Strata)
    Mod+shift+w       wallpaper picker (azote)
    Mod+l             lock screen
    Mod+shift+p       power menu (lock/suspend/logout/reboot/shutdown)
