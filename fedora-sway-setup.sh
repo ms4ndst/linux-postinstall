@@ -50,6 +50,13 @@ BIN="$HOME/.local/bin"
 FONTS="$HOME/.local/share/fonts"
 mkdir -p "$CONF" "$BIN" "$FONTS"
 
+# Default cursor theme - MUST be defined before the sway config is written:
+# the config's cursor include file is seeded from it (section 4), long
+# before the Qogir cursor section (13) that re-derives it. A previous
+# version had this assignment only in section 13 and the script aborted
+# with "CURSOR_THEME_NAME: unbound variable" at the seeding line.
+CURSOR_THEME_NAME="Qogir"
+
 # Theme replacement: this script installs the HANCORE-linux/waybar-themes
 # collection in place of this rice's old embedded theme collection. Answer
 # y here to wipe every existing desktop theme first (waybar/rofi/kitty/

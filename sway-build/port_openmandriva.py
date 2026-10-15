@@ -174,20 +174,25 @@ om_fetch_tarball() {  # <url> <dest dir> - downloads and unpacks, prints the top
 # launchers/menus would all fail on sway. Build upstream rofi (which has
 # Wayland support compiled into the same binary since 1.7.5) into
 # /usr/local - it shadows the packaged X11-only build via PATH order.
-if ! rofi --help 2>&1 | grep -qi wayland && [ ! -x /usr/local/bin/rofi ]; then
-  log "Building rofi from source with Wayland (OpenMandriva's rofi is X11-only)..."
+if [ ! -x /usr/local/bin/rofi ]; then
+  log "Building rofi from source with Wayland (OpenMandriva's packaged rofi is X11-only)..."
+  # NOTE: rofi 1.7.8's meson has NO -Dwayland option (only drun/window/check/
+  # imdkit, per its meson_options.txt) - passing one makes meson setup fail.
+  # Since 1.7.5 the same binary does X11 + Wayland, and meson enables Wayland
+  # automatically when the wayland deps are present.
   om_build_deps meson ninja gcc glibc-devel pkgconf \
     'pkgconfig(cairo)' 'pkgconfig(pango)' 'pkgconfig(glib-2.0)' 'pkgconfig(gio-2.0)' \
     'pkgconfig(gdk-pixbuf-2.0)' 'pkgconfig(libxkbcommon)' 'pkgconfig(libxkbcommon-x11)' \
-    'pkgconfig(wayland-client)' 'pkgconfig(wayland-cursor)' 'pkgconfig(xcb)'
+    'pkgconfig(wayland-client)' 'pkgconfig(wayland-cursor)' 'pkgconfig(xcb)' \
+    wayland-scanner wayland-protocols-devel
   OMT="$(mktemp -d)"
   if d="$(om_fetch_tarball https://github.com/davatorium/rofi/releases/download/1.7.8/rofi-1.7.8.tar.gz "$OMT")" \
       && meson setup "$OMT/build" "$d" --buildtype release --prefix /usr/local \
-           -Dwayland=enabled >/dev/null 2>&1 \
+           >/dev/null 2>&1 \
       && ninja -C "$OMT/build" >/dev/null 2>&1 \
       && sudo ninja -C "$OMT/build" install >/dev/null 2>&1 \
       && [ -x /usr/local/bin/rofi ]; then
-    log "rofi (Wayland) installed to /usr/local/bin - it shadows the X11-only packaged one."
+    log "rofi (with Wayland) installed to /usr/local/bin - it shadows the X11-only packaged one."
   else
     warn "rofi Wayland build failed - launchers/menus won't work; check the build deps."
   fi
