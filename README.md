@@ -2808,6 +2808,8 @@ ls -lt /var/log/arch_post_install_*.log | head -1 | awk '{print $NF}' | xargs ca
 
 # 🪟 Sway + HANCORE Rice Script (Fedora)
 
+![sway](sway.png)
+
 ### 🚀 Sway Script Overview
 
 [`fedora-sway-setup.sh`](fedora-sway-setup.sh) is this repo's flagship rice: a complete **Sway (Wayland) tiling desktop for Fedora 44** — the successor of the i3 rice below, rebuilt around the 89-theme [HANCORE-linux/waybar-themes](https://github.com/HANCORE-linux/waybar-themes) collection instead of a fixed embedded Catppuccin set. It installs the full Wayland stack and then wires every app into one theme system: **a single pick in the Desktop Theme menu retints waybar, rofi, kitty, dunst, starship, the sway window borders, GTK 2/3/4, Neovim and VS Code together.**
