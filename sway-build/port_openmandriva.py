@@ -491,10 +491,10 @@ fi''')
     ffmpeg ffmpegthumbs lib64raw \\
     >/dev/null 2>&1 || warn "Strata runtime deps reported errors - continuing anyway."''')
     out = out.replace(
-        "# runtime deps per the upstream README (package names verified against\n"
-        "# the Fedora 44 repos); failures are non-fatal - the bar keeps pcmanfm.",
-        "# runtime deps per the upstream README (package names verified against\n"
-        "# OpenMandriva Rolling's repos); failures are non-fatal - the bar keeps pcmanfm.")
+        "  # runtime deps per the upstream README (package names verified against\n"
+        "  # the Fedora 44 repos); failures are non-fatal - the bar keeps pcmanfm.",
+        "  # runtime deps per the upstream README (package names verified against\n"
+        "  # OpenMandriva Rolling's repos); failures are non-fatal - the bar keeps pcmanfm.")
     out = out.replace("# plain Sway on Fedora:", "# plain Sway:")
     out = out.replace('"""Adapt HANCORE-linux/waybar-themes to this rice\'s Sway/Fedora setup.',
                       '"""Adapt HANCORE-linux/waybar-themes to this rice\'s Sway setup.')

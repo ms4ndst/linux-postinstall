@@ -5275,7 +5275,7 @@ if command -v strata >/dev/null 2>&1; then
 else
   log "Installing Strata (GTK4 file manager)..."
   # runtime deps per the upstream README (package names verified against
-  # the Fedora 44 repos); failures are non-fatal - the bar keeps pcmanfm.
+  # OpenMandriva Rolling's repos); failures are non-fatal - the bar keeps pcmanfm.
   sudo dnf install -y --setopt=strict=0 \
     gtk4.0 gtksourceview5 lib64poppler-glib bubblewrap gvfs \
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav \
