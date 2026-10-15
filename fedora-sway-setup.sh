@@ -4132,6 +4132,8 @@ cat > "$BIN/app-theme-sync.sh" <<'EOF'
 #   - Mistral Vibe (Mod+a): Textual's ansi-dark/ansi-light theme, which
 #     draws with the terminal's 16 colors - kitty's live recolor then
 #     reaches it too, even mid-session. light vs dark from the background.
+#   - Strata (Mod+E file manager): a custom theme in its own TOML format
+#     (~/.config/strata/themes/rice.toml), live-reloaded by the app.
 KITTY_CURRENT="$HOME/.config/kitty/current.conf"
 BORDERS_CURRENT="$HOME/.config/sway/current-borders.conf"
 [ -f "$KITTY_CURRENT" ] || exit 0
@@ -4168,6 +4170,50 @@ red = "$(hex "$(kc color1)" '#f38ba8')"
 TOML
   set_toml_key "$HOME/.config/cliamp/config.toml" theme rice
   pgrep -x cliamp >/dev/null && cliamp theme rice >/dev/null 2>&1
+fi
+
+if command -v strata >/dev/null 2>&1; then
+  # Strata ignores desktop GTK themes by design (it pins GTK to its own
+  # built-in theme and drops GTK_THEME), so it gets themed through its
+  # own custom-theme TOML instead: nine semantic tokens written from
+  # the live kitty/border palette, selected once in settings.toml, and
+  # live-reloaded whenever this file changes (matugen-style - a running
+  # Strata re-tints every open window without a restart). Token mapping:
+  # the kitty palette carries base/surface1/surface2 as background/
+  # color0/color8, so surface is stepped between them and border blends
+  # background with surface2; dim text is subtext (color15), danger red.
+  bg_s="$(hex "$(kc background)" '#1e1e2e')"
+  sur1_s="$(hex "$(kc color0)" '#4b4e55')"
+  sur2_s="$(hex "$(kc color8)" '#585b70')"
+  mixhex() {
+    local t="${3:-50}"
+    local ar=$((16#${1:1:2})) ag=$((16#${1:3:2})) ab=$((16#${1:5:2}))
+    local br=$((16#${2:1:2})) bgx=$((16#${2:3:2})) bb=$((16#${2:5:2}))
+    printf '#%02x%02x%02x' \
+      $(( (ar * (100 - t) + br * t) / 100 )) \
+      $(( (ag * (100 - t) + bgx * t) / 100 )) \
+      $(( (ab * (100 - t) + bb * t) / 100 ))
+  }
+  mkdir -p "$HOME/.config/strata/themes"
+  cat > "$HOME/.config/strata/themes/rice.toml" <<TOML
+# Written by ~/.local/bin/app-theme-sync.sh from the active desktop theme
+name = "Rice"
+background = "$bg_s"
+surface = "$(mixhex "$bg_s" "$sur1_s" 50)"
+text = "$fg"
+accent = "$accent"
+danger = "$(hex "$(kc color1)" '#f38ba8')"
+muted = "$sur1_s"
+highlight = "$sur2_s"
+border = "$(mixhex "$bg_s" "$sur2_s" 60)"
+dim_text = "$(hex "$(kc color15)" "$fg")"
+TOML
+  # Strata's settings.toml requires BOTH mode and theme; a bare theme
+  # key makes the file unparseable, and Strata then disables saving
+  # for the whole session to preserve it (verified against the
+  # upstream Preferences schema).
+  set_toml_key "$HOME/.config/strata/settings.toml" mode theme
+  set_toml_key "$HOME/.config/strata/settings.toml" theme rice
 fi
 
 if command -v vibe >/dev/null 2>&1 || [ -d "$HOME/.vibe" ]; then
