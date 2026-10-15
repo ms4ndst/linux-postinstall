@@ -3187,6 +3187,7 @@ done < <(swaymsg -t get_outputs 2>/dev/null | \
 # cdd6f4) instead of the preview's lavender.
 if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
   swaylock -C "$LOCKCFG" "${IMAGES[@]}" \
+    --indicator-idle-visible \
     --clock \
     --timestr '%H:%M:%S' \
     --datestr '%a, %d/%m/%Y'
