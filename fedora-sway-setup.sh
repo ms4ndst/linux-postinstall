@@ -3159,8 +3159,10 @@ if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
     --screenshots \
     "${EFFECTS[@]}" \
     --clock \
-    --timestr '%H:%M' \
-    --datestr '%A, %d %B' &
+    --timestr '%H:%M:%S' \
+    --datestr '%a, %d/%m/%Y' \
+    --time-color b4befeff \
+    --date-color b4befeff &
   LOCK_PID=$!
   wait "$LOCK_PID"
 elif command -v swaylock >/dev/null 2>&1; then
