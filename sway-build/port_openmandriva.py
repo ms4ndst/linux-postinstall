@@ -478,6 +478,23 @@ fi''')
     sub("# 2. Nerd Font (JetBrainsMono) — official Fedora repos don't ship patched fonts",
         "# 2. Nerd Font (JetBrainsMono) — OpenMandriva ships the patched font\n"
         "#    (fonts-ttf-nerd-jetbrains-mono), so this section usually skips itself")
+
+    # ---- Strata runtime deps: OpenMandriva package names ------------------
+    sub('''  sudo dnf install -y \\
+    gtk4 gtksourceview5 poppler-glib bubblewrap gvfs \\
+    gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugin-libav \\
+    ffmpeg ffmpegthumbnailer LibRaw \\
+    >/dev/null 2>&1 || warn "Strata runtime deps reported errors - continuing anyway."''',
+        '''  sudo dnf install -y --setopt=strict=0 \\
+    gtk4.0 gtksourceview5 lib64poppler-glib bubblewrap gvfs \\
+    gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav \\
+    ffmpeg ffmpegthumbs lib64raw \\
+    >/dev/null 2>&1 || warn "Strata runtime deps reported errors - continuing anyway."''')
+    out = out.replace(
+        "# runtime deps per the upstream README (package names verified against\n"
+        "# the Fedora 44 repos); failures are non-fatal",
+        "# runtime deps per the upstream README (package names verified against\n"
+        "# OpenMandriva Rolling's repos); failures are non-fatal")
     out = out.replace("# plain Sway on Fedora:", "# plain Sway:")
     out = out.replace('"""Adapt HANCORE-linux/waybar-themes to this rice\'s Sway/Fedora setup.',
                       '"""Adapt HANCORE-linux/waybar-themes to this rice\'s Sway setup.')

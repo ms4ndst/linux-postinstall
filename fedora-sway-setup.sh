@@ -4956,6 +4956,66 @@ else
 fi
 
 # ----------------------------------------------------------------------------
+# 14d. Strata (GTK4 file manager) - github.com/lgse/strata
+# ----------------------------------------------------------------------------
+# Not packaged for Fedora - the upstream release ships a generic glibc
+# tarball (built on Arch, but there is nothing Arch-specific in it: one
+# static-ish binary + desktop metadata). glibc >= 2.39 and GTK >= 4.12
+# are required - both satisfied by Fedora 44 and OpenMandriva Rolling.
+# The D-Bus FileManager1 service and the inode/directory default handler
+# are deliberately NOT touched: nautilus already answers
+# org.freedesktop.FileManager1 here, and pcmanfm stays the default folder
+# handler - Strata is an addition, launchable from the app menu.
+# Strata's own in-app updater (Settings -> Updates) can upgrade it later.
+if command -v strata >/dev/null 2>&1; then
+  log "Strata already installed, skipping."
+else
+  log "Installing Strata (GTK4 file manager)..."
+  # runtime deps per the upstream README (package names verified against
+  # the Fedora 44 repos); failures are non-fatal - the bar keeps pcmanfm.
+  sudo dnf install -y \
+    gtk4 gtksourceview5 poppler-glib bubblewrap gvfs \
+    gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugin-libav \
+    ffmpeg ffmpegthumbnailer LibRaw \
+    >/dev/null 2>&1 || warn "Strata runtime deps reported errors - continuing anyway."
+  __strata_ver="1.0.0"
+  case "$(uname -m)" in
+    x86_64)  __strata_target="x86_64-unknown-linux-gnu" ;;
+    aarch64) __strata_target="aarch64-unknown-linux-gnu" ;;
+    *) __strata_target="" ;;
+  esac
+  __strata_ok=""
+  if [ -n "$__strata_target" ]; then
+    __strata_dir="$(mktemp -d)"
+    __strata_base="https://github.com/lgse/strata/releases/download/v${__strata_ver}/strata-${__strata_ver}-${__strata_target}"
+    if curl -fsSL --max-time 300 -o "$__strata_dir/strata.tar.gz" "${__strata_base}.tar.gz" >/dev/null 2>&1 \
+       && curl -fsSL --max-time 60 -o "$__strata_dir/strata.tar.gz.sha256" "${__strata_base}.tar.gz.sha256" >/dev/null 2>&1 \
+       && sed "s/strata-${__strata_ver}-${__strata_target}\.tar\.gz/strata.tar.gz/" "$__strata_dir/strata.tar.gz.sha256" \
+            | (cd "$__strata_dir" && sha256sum --check - >/dev/null 2>&1) \
+       && tar -xzf "$__strata_dir/strata.tar.gz" -C "$__strata_dir"; then
+      __strata_src="$__strata_dir/strata-${__strata_ver}-${__strata_target}"
+      mkdir -p "$HOME/.local/bin" \
+        "$HOME/.local/share/applications" \
+        "$HOME/.local/share/icons/hicolor/scalable/apps"
+      install -Dm755 "$__strata_src/strata" "$HOME/.local/bin/strata"
+      sed "s|^Exec=.*|Exec=$HOME/.local/bin/strata %U|" \
+        "$__strata_src/io.github.lgse.Strata.desktop" \
+        > "$HOME/.local/share/applications/io.github.lgse.Strata.desktop"
+      install -Dm644 "$__strata_src/io.github.lgse.Strata.svg" \
+        "$HOME/.local/share/icons/hicolor/scalable/apps/io.github.lgse.Strata.svg"
+      update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
+      gtk-update-icon-cache -qtf "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
+      if command -v strata >/dev/null 2>&1; then
+        log "Strata installed ($(command -v strata)) - launch from the app menu."
+        __strata_ok=1
+      fi
+    fi
+    rm -rf "$__strata_dir"
+  fi
+  [ -n "$__strata_ok" ] || warn "Strata install failed (network issue or checksum mismatch) - install manually from https://github.com/lgse/strata/releases if you want it."
+fi
+
+# ----------------------------------------------------------------------------
 # 15. GTK / Neovim / VS Code themes matching every installed bar theme
 # ----------------------------------------------------------------------------
 # The HANCORE themes (and any of the old collection the user kept) are
