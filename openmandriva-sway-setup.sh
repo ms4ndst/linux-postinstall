@@ -292,26 +292,26 @@ om_fetch_tarball() {  # <url> <dest dir> - downloads and unpacks, prints the top
 # Wayland support compiled into the same binary since 1.7.5) into
 # /usr/local - it shadows the packaged X11-only build via PATH order.
 if [ ! -x /usr/local/bin/rofi ]; then
-  log "Building rofi from source with Wayland (OpenMandriva's packaged rofi is X11-only)..."
-  # NOTE: rofi 1.7.8's meson has NO -Dwayland option (only drun/window/check/
-  # imdkit, per its meson_options.txt) - passing one makes meson setup fail.
-  # Since 1.7.5 the same binary does X11 + Wayland, and meson enables Wayland
-  # automatically when the wayland deps are present.
+  log "Building rofi-wayland from source (OpenMandriva's packaged rofi is X11-only)..."
+  # NOT upstream davatorium/rofi - upstream 1.7.x is X11-only (its meson has
+  # no wayland option at all). Wayland rofi is the lbonn/rofi fork that
+  # Fedora packages as "rofi-wayland". Build it Wayland-ONLY (-Dxcb=disabled
+  # skips the entire xcb stack: xcb-cursor, cairo-xcb, startup-notification
+  # etc. that OpenMandriva doesn't all carry). Deps are OM's real package
+  # names (verified against the repo metadata), not pkgconfig() virtuals.
   om_build_deps meson ninja gcc glibc-devel pkgconf \
-    'pkgconfig(cairo)' 'pkgconfig(pango)' 'pkgconfig(glib-2.0)' 'pkgconfig(gio-2.0)' \
-    'pkgconfig(gdk-pixbuf-2.0)' 'pkgconfig(libxkbcommon)' 'pkgconfig(libxkbcommon-x11)' \
-    'pkgconfig(wayland-client)' 'pkgconfig(wayland-cursor)' 'pkgconfig(xcb)' \
-    wayland-scanner wayland-protocols-devel
+    lib64glib2.0-devel lib64cairo-devel lib64pango1.0-devel lib64pangocairo1.0-devel \
+    libxkbcommon-devel lib64gdk_pixbuf2.0-devel lib64wayland-devel wayland-protocols-devel
   OMT="$(mktemp -d)"
-  if d="$(om_fetch_tarball https://github.com/davatorium/rofi/releases/download/1.7.8/rofi-1.7.8.tar.gz "$OMT")" \
+  if d="$(om_fetch_tarball https://github.com/lbonn/rofi/archive/refs/tags/1.7.9%2Bwayland1.tar.gz "$OMT")" \
       && meson setup "$OMT/build" "$d" --buildtype release --prefix /usr/local \
-           >/dev/null 2>&1 \
+           -Dwayland=enabled -Dxcb=disabled >/dev/null 2>&1 \
       && ninja -C "$OMT/build" >/dev/null 2>&1 \
       && sudo ninja -C "$OMT/build" install >/dev/null 2>&1 \
       && [ -x /usr/local/bin/rofi ]; then
-    log "rofi (with Wayland) installed to /usr/local/bin - it shadows the X11-only packaged one."
+    log "rofi-wayland 1.7.9 installed to /usr/local/bin - it shadows the X11-only packaged one."
   else
-    warn "rofi Wayland build failed - launchers/menus won't work; check the build deps."
+    warn "rofi-wayland build failed - launchers/menus won't work; check the build deps above."
   fi
   rm -rf "$OMT"
 fi
