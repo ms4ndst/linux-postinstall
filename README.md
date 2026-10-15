@@ -2820,11 +2820,13 @@ It is a single-purpose, idempotent-ish script meant to run once on a fresh Fedor
 
 ### 📦 What Gets Installed (Sway)
 
-**Core stack:** `sway`, `swaybg` (wallpaper, restored on every login/reload), `swayidle` + `swaylock` (idle lock at 20min, displays off at 50min; a random Catppuccin Mocha accent ring per lock, with screenshot blur when `swaylock-effects` is detected), `waybar`, `kanshi` (monitor profiles), `rofi` (Wayland app launcher, run dialog and menus), `dunst`, `kitty`, `grim`/`slurp` (screenshots and the pixel colorpicker), `wl-clipboard`, and the xdg-desktop-portal stack (`wlr` + `gtk`) so Flatpaks and browsers get native file dialogs.
+**Core stack:** `sway`, `swaybg` (wallpaper, restored on every login/reload), `swayidle` + `swaylock` (idle lock at 20min, displays off at 50min) - with **swaylock-effects** built from source into `/usr/local` (no usable Fedora package or COPR exists), the lock gets a live clock, a blurred screenshot background, and the [Catppuccin Mocha indicator scheme](https://github.com/catppuccin/swaylock) from `~/.config/swaylock/config`, `waybar`, `kanshi` (monitor profiles), `rofi` (Wayland app launcher, run dialog and menus), `dunst`, `kitty`, `grim`/`slurp` (screenshots and the pixel colorpicker), `wl-clipboard`, and the xdg-desktop-portal stack (`wlr` + `gtk`) so Flatpaks and browsers get native file dialogs.
 
 **Session helpers:** NetworkManager/PipeWire/Bluetooth managed through waybar's own widgets (the tray applets are deliberately suppressed), `copyq` clipboard history, `udiskie` USB automount, `gammastep` night light, `pcmanfm` file manager, `gnome-calendar` (themed per active theme), the CUPS/HP printer stack, `fastfetch`, JetBrainsMono Nerd Font, and a Qogir cursor-theme set (all 6 real variants, extracted cursor-only).
 
 **Rice extras:** [CLIamp](https://www.cliamp.stream/) terminal music player (`Mod+m`, floating scratchpad), floating AI windows for Mistral Vibe CLI (`Mod+a`) and Claude Desktop (`Mod+shift+a`/the Copilot key), an Omarchy-style **app menu** (`Mod+alt+space`) with one entry for every rice utility, an on-screen **keybinding cheat sheet** (`Mod+i`), a hand-rolled **caffeine** screen-blank inhibitor (`Mod+c` plus a waybar widget), **Do Not Disturb** (`Mod+n`), a **block-art screensaver** powered by `tte` (`Mod+Escape`, and automatically before an idle lock), floating volume/brightness OSD popups, a calendar-reminder daemon feeding dunst, and a floating kitty **software-update terminal** (the bar's update widget shows the pending count and opens it).
+
+**Lock screen** (`Mod+l`, `~/.local/bin/lock.sh`): the screen is snapshotted with `grim`, blurred and darkened with ImageMagick, and a random short [fortune](https://en.wikipedia.org/wiki/Fortune_%28Unix%29) quote is baked in below the indicator - a fresh geek quote every lock (`fortune -s`, `fortune-mod`). On top of that background, swaylock-effects draws a **live clock** (`HH:MM:SS` + weekday/date, visible immediately via `--indicator-idle-visible`) and the Catppuccin Mocha ring states: green keypress dots, blue while verifying, maroon on a wrong password. The whole color scheme lives in `~/.config/swaylock/config` (32 keys, exactly how catppuccin/swaylock intends it to be used); if the swaylock-effects build is unavailable, lock.sh falls back to plain swaylock over the same backgrounds minus the live clock.
 
 ---
 
@@ -2929,6 +2931,7 @@ Edit `sway-build/bin/*.sh` (the `~/.local/bin` helpers), `hancore-theme-gen.py` 
 
 ### ⚠️ Sway Script Known Limitations
 
+- **swaylock-effects is swaylock 1.7-era:** the maintained fork ([jirutka/swaylock-effects](https://github.com/jirutka/swaylock-effects), Dec 2023) that provides the live clock trails Fedora's swaylock 1.8.6 by two years; the installer builds it into `/usr/local` (the Fedora package stays untouched underneath, remove with `sudo rm /usr/local/bin/swaylock*`), and lock.sh falls back to plain 1.8.6 automatically if the build fails. The fork also has no separate clock color - the clock renders in the config's text color rather than the preview's lavender.
 - **tuned-ppd conflict:** Fedora's `tuned-ppd` conflicts with `power-profiles-daemon` (the bar's power-profile widget backend). The install is best-effort: with tuned-ppd in place the widget stays inert; swap the packages manually to enable it.
 - **libadwaita apps** (gnome-calendar and every GNOME 47+ app) deliberately block theme CSS. The rice maps the active theme's accent hue to GNOME's closest preset accent color plus `prefer-dark` — as far as GNOME permits.
 - **GTK3 vs GTK4 rounding:** the generated GTK4 themes drop `@keyframes`-style rules that abort GTK3 sheets, so a few animated accents are GTK4-only.
@@ -3558,6 +3561,9 @@ All scripts in this repo are provided **as-is** without warranty. You are free t
 
 ## 🙏 Acknowledgments
 
+- **[catppuccin/swaylock](https://github.com/catppuccin/swaylock)**: For the lock screen's Mocha indicator scheme
+- **[jirutka/swaylock-effects](https://github.com/jirutka/swaylock-effects)** (maintaining [mortie's](https://github.com/mortie/swaylock-effects) fork): For the live clock and screenshot effects, built from source by the installer
+- **fortune-mod maintainers**: For the random geek quote under the lock ring
 - **[HANCORE-linux/waybar-themes](https://github.com/HANCORE-linux/waybar-themes)**: For the 89-theme collection the Sway rice fetches and adapts at install time (MIT)
 - **[swaywm/sway](https://github.com/swaywm/sway)** and the Wayland/wlroots ecosystem: For the compositor the Fedora Sway rice is built on
 - **[Alexays/Waybar](https://github.com/Alexays/Waybar)**: For the Wayland status bar every theme retints
@@ -3604,4 +3610,4 @@ All scripts in this repo are provided **as-is** without warranty. You are free t
 
 ---
 
-*Last updated: October 14, 2026*
+*Last updated: October 15, 2026*
