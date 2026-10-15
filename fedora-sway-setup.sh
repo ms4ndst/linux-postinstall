@@ -3148,7 +3148,10 @@ fi
 if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
   # Cycle a different look each lock - all layered over a live screenshot of
   # the screen being locked (swaylock-effects applies its --effect-* flags
-  # on top of the previous, so combos stack).
+  # on top of the previous, so combos stack). NOTE: this fork (jirutka
+  # v1.7.0.0) has no --time-color/--date-color - the clock renders in the
+  # config's text-color (Catppuccin cdd6f4) instead of the preview's
+  # lavender; a deliberate trade for a maintained binary.
   case $((RANDOM % 4)) in
     0) EFFECTS=(--effect-blur 8x3 --effect-vignette 0.4:0.4) ;;
     1) EFFECTS=(--effect-pixelate 12 --effect-blur 2x2 --effect-vignette 0.4:0.4) ;;
@@ -3160,9 +3163,7 @@ if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
     "${EFFECTS[@]}" \
     --clock \
     --timestr '%H:%M:%S' \
-    --datestr '%a, %d/%m/%Y' \
-    --time-color b4befeff \
-    --date-color b4befeff &
+    --datestr '%a, %d/%m/%Y' &
   LOCK_PID=$!
   wait "$LOCK_PID"
 elif command -v swaylock >/dev/null 2>&1; then
