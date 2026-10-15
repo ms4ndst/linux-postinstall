@@ -47,39 +47,11 @@ if swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
   LOCK_PID=$!
   wait "$LOCK_PID"
 elif command -v swaylock >/dev/null 2>&1; then
-  # Plain swaylock: replicate swaylock-effects' signature look with tools the
-  # rice already ships - grim takes a live screenshot of each output,
-  # ImageMagick blurs + darkens it and bakes a clock/date on top, and swaylock
-  # -i displays the result per output. Trade-off vs the effects fork: the
-  # clock is frozen at lock time instead of ticking.
-  LOCKDIR="$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/lock.XXXXXX")"
-  trap 'rm -rf "$LOCKDIR"' EXIT
-  FONT="$(fc-match -f '%{file}' 'JetBrainsMono Nerd Font' 2>/dev/null || true)"
-  IMAGES=()
-  while read -r name _w h; do
-    img="$LOCKDIR/$name.png"
-    if env -u LD_LIBRARY_PATH grim -o "$name" "$img" 2>/dev/null; then
-      magick "$img" \
-        -resize 6% -resize 1700% \
-        -fill '#1e1e2e' -colorize 35 \
-        -font "$FONT" \
-        -gravity north -fill '#f5f0ee' \
-        -pointsize "$(( h / 6 ))" -annotate "+0+$(( h / 6 ))" "$(date +%H:%M)" \
-        -pointsize "$(( h / 24 ))" -annotate "+0+$(( h / 6 + h / 5 ))" "$(date '+%A, %d %B')" \
-        "$img" 2>/dev/null && IMAGES+=(-i "$name:$img")
-    fi
-  done < <(swaymsg -t get_outputs 2>/dev/null | \
-           jq -r '.[] | select(.active) | "\(.name) \(.current_mode.width) \(.current_mode.height)"')
-  if [ "${#IMAGES[@]}" -gt 0 ]; then
-    swaylock -C "$LOCKCFG" "${IMAGES[@]}" &
-    LOCK_PID=$!
-    wait "$LOCK_PID"
-  else
-    # no grim/magick or screenshot failed: the flat-color lock still works
-    swaylock -C "$LOCKCFG" &
-    LOCK_PID=$!
-    wait "$LOCK_PID"
-  fi
+  # Plain swaylock: this IS the catppuccin/swaylock preview look - a flat
+  # Mocha background (color=1e1e2e from the config) with the subtle
+  # indicator and its state colors. Nothing else; the screenshot on the
+  # project page is exactly this command.
+  swaylock -C "$LOCKCFG"
 else
   echo "lock.sh: swaylock is not installed" >&2
   exit 1
