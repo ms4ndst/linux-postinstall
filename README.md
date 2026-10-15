@@ -2816,6 +2816,8 @@ It is a single-purpose, idempotent-ish script meant to run once on a fresh Fedor
 
 **Run it as your own user, never with sudo** — it calls sudo itself where needed and installs into `$HOME`; under sudo every config would land in root's home.
 
+An **OpenMandriva port** exists alongside it: [`openmandriva-sway-setup.sh`](openmandriva-sway-setup.sh), generated from the Fedora script by [`sway-build/port_openmandriva.py`](sway-build/port_openmandriva.py). Everything distro-independent (all heredoc configs, the HANCORE theme pipeline, every helper script) carries over unchanged; the port handles OpenMandriva's repo tree (rock/rolling) plus extra/restricted/non-free enabling, verified package renames (`networkmanager-applet`, `imagemagick`, `pipewire-pulse`, `fonts-ttf-nerd-jetbrains-mono`, ...), and source-builds what OpenMandriva lacks or ships too old: **Wayland rofi** (OM's packaged rofi 1.7.8 is X11-only), current **dunst** (OM ships 2021's 1.6.1), **gammastep** on Rock, and **udiskie** via pipx.
+
 ---
 
 ### 📦 What Gets Installed (Sway)
