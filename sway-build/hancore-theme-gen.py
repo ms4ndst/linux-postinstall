@@ -253,7 +253,6 @@ DROP_MODULES = {
     "custom/omarchy",                       # omarchy logo font glyph + menu
     "custom/voxtype",                       # voice typing (no equivalent)
     "custom/idle-indicator",                # $OMARCHY_PATH indicator script
-    "custom/notification-silencing-indicator",
     "custom/screenrecording-indicator",
     "custom/updatespacman",                 # Arch-only pacman checker
     "custom/gpu-usage",                     # gpu-usage-waybar not on Fedora
@@ -422,6 +421,24 @@ def adapt_config(cfg, name):
     if isinstance(cfg.get("mpris"), dict):
         cfg["mpris"]["interval"] = 1
 
+    # 3e. custom/notification-silencing-indicator: keep upstream's DND
+    #     indicator module (previously dropped with the other omarchy
+    #     modules) so the bar shows a bell-slash while notifications are
+    #     muted via Mod+N / ~/.local/bin/dnd-toggle.sh, on every theme.
+    #     Backed by ~/.local/bin/dnd-indicator.sh reading dunst's pause
+    #     state; dnd-toggle.sh pings signal 10 so the widget flips
+    #     instantly, with a slow interval poll as a safety net in case
+    #     the state was changed any other way. Step 7 below guarantees
+    #     the module ends up in a layout on every theme.
+    cfg["custom/notification-silencing-indicator"] = {
+        "exec": "~/.local/bin/dnd-indicator.sh",
+        "return-type": "json",
+        "signal": 10,
+        "interval": 30,
+        "tooltip": True,
+        "on-click": "~/.local/bin/dnd-toggle.sh",
+    }
+
     # 4. Drop module blocks with no equivalent: the known set, plus any
     #    block that still references omarchy/$OMARCHY_PATH/hyprctl.
     module_keys = [k for k, v in cfg.items()
@@ -465,6 +482,23 @@ def adapt_config(cfg, name):
         if isinstance(arr, list):
             cfg[lk] = [m for m in arr
                        if not m.startswith(("custom/", "group/")) or m in present]
+
+    # 7. The DND indicator must end up in a layout on every theme. The
+    #    upstream module may have been dropped out of its layout as group
+    #    collateral (step 4 marks a whole group unresolvable while its
+    #    children still name dropped modules), so check AFTER all the
+    #    dropping and append to modules-center when nothing survived.
+    def _dnd_in(seq):
+        return (isinstance(seq, list)
+                and "custom/notification-silencing-indicator" in seq)
+    if not any(_dnd_in(cfg.get(lk)) for lk in LAYOUT_KEYS) and not any(
+            isinstance(b, dict) and _dnd_in(b.get("modules"))
+            for b in cfg.values()):
+        center = cfg.get("modules-center")
+        if not isinstance(center, list):
+            center = []
+            cfg["modules-center"] = center
+        center.append("custom/notification-silencing-indicator")
     return cfg, dropped
 
 
