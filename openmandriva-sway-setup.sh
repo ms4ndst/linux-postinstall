@@ -480,11 +480,11 @@ for_window [class="copyq"] floating enable, resize set 450 500, move position ce
 for_window [app_id="Cliamp"] floating enable, resize set 700 500, move position center
 for_window [app_id="Cliamp"] mark cliamp-scratch
 for_window [app_id="CliampSetup"] fullscreen enable
-# 1Password's idle-lock prompt: on X11/i3 this window floats small
-# (dialog window type); Wayland has no window type, so float it here.
-# 1Password closes its window when the vault locks, so the prompt only
-# ever appears as a fresh map - the rule fires reliably.
-for_window [app_id="com.onepassword.OnePassword" title="Lock Screen.*"] floating enable, resize set 780 580, move position center
+# Polkit authentication dialogs (lxqt-policykit-agent): on X11 these are
+# dialog-type windows that float small automatically (i3); Wayland has
+# no window type, so float them here - e.g. "Authenticate to unlock
+# 1Password" after the screensaver locks the vault.
+for_window [app_id="lxqt-policykit-agent"] floating enable, move position center
 for_window [app_id="AIVibe"] floating enable, resize set 900 650, move position center
 for_window [app_id="AIVibe"] mark ai-window-scratch
 for_window [app_id="AppMenuTask"] floating enable, resize set 600 400, move position center
