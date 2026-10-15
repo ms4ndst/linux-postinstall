@@ -104,7 +104,7 @@ sudo dnf install -y \
   copyq udiskie pcmanfm gammastep libnotify gnome-calendar \
   system-config-printer hplip \
   lxappearance papirus-icon-theme \
-  fastfetch git curl unzip jq ImageMagick \
+  fastfetch git curl unzip jq ImageMagick fortune-mod \
   brightnessctl playerctl dex-autostart \
   dnf-utils \
   solaar solaar-udev \
@@ -136,10 +136,10 @@ log "Adding $USER to the 'video' group (needed for brightnessctl)..."
 sudo usermod -aG video "$USER" 2>/dev/null \
   || warn "Could not add $USER to 'video' group - brightness keys may not work until you do this manually."
 
-# Lock screen: swaylock is installed above. swaylock-effects (blur/
-# vignette, used by lock.sh when present) is not in Fedora's repos -
-# install it from a COPR or source for the blurred lock; lock.sh falls
-# back to plain swaylock automatically otherwise.
+# Lock screen: swaylock is installed above. swaylock-effects (the live
+# clock and screenshot effects, used by lock.sh when present) is built
+# from source in section 11 - no usable Fedora package or COPR exists;
+# lock.sh falls back to plain swaylock automatically if that build fails.
 
 # ----------------------------------------------------------------------------
 # 2. Nerd Font (JetBrainsMono) — official Fedora repos don't ship patched fonts
@@ -3056,17 +3056,32 @@ EOF
 # ----------------------------------------------------------------------------
 # 11. lock script (swaylock)
 # ----------------------------------------------------------------------------
-# swaylock-effects (the fork with --screenshots/--effect-* effects and a live
-# --clock) is not in Fedora's repos - install it from COPR, best-effort: plain
-# swaylock works, lock.sh just falls back to the flat look without effects.
+# swaylock-effects (the fork with the live --clock and screenshot effects)
+# has no usable Fedora package: the only COPR carries an fc35-era build that
+# RPM refuses over the current swaylock. Instead, build the maintained fork
+# (jirutka/swaylock-effects) from source into /usr/local, which shadows the
+# Fedora binary without touching its package. Best-effort: plain swaylock
+# works, lock.sh just falls back to the flat look without the clock.
 if command -v dnf >/dev/null 2>&1; then
   if ! swaylock --help 2>&1 | grep -q -- "--effect-blur"; then
-    log "Installing swaylock-effects from COPR (eddsalkield/swaylock-effects)..."
-    if sudo dnf copr enable -y eddsalkield/swaylock-effects >/dev/null 2>&1 &&
-       sudo dnf install -y swaylock-effects >/dev/null 2>&1; then
-      log "swaylock-effects installed - the lock screen gets effects and a live clock."
+    log "Building swaylock-effects from source (jirutka fork, into /usr/local)..."
+    if sudo dnf install -y meson ninja-build wayland-devel wayland-protocols-devel \
+         libxkbcommon-devel cairo-devel gdk-pixbuf2-devel pam-devel scdoc \
+         >/dev/null 2>&1; then
+      SLE_TMP="$(mktemp -d)"
+      if git clone --depth 1 https://github.com/jirutka/swaylock-effects.git \
+           "$SLE_TMP/src" >/dev/null 2>&1 \
+         && meson setup "$SLE_TMP/build" "$SLE_TMP/src" --buildtype release \
+             --prefix /usr/local >/dev/null 2>&1 \
+         && ninja -C "$SLE_TMP/build" >/dev/null 2>&1 \
+         && sudo ninja -C "$SLE_TMP/build" install >/dev/null 2>&1; then
+        log "swaylock-effects built and installed - the lock gets its live clock."
+      else
+        warn "swaylock-effects source build failed - the lock stays plain (no clock/effects)."
+      fi
+      rm -rf "$SLE_TMP"
     else
-      warn "swaylock-effects not installable - the lock screen stays plain (blur/effects need the COPR package)."
+      warn "swaylock-effects build deps not installable - the lock stays plain (no clock/effects)."
     fi
   fi
 fi
