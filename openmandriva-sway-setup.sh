@@ -5217,11 +5217,13 @@ fi
 # tarball (built on Arch, but there is nothing Arch-specific in it: one
 # static-ish binary + desktop metadata). glibc >= 2.39 and GTK >= 4.12
 # are required - both satisfied by Fedora 44 and OpenMandriva Rolling.
-# The D-Bus FileManager1 service and the inode/directory default handler
-# are deliberately NOT touched: nautilus already answers
-# org.freedesktop.FileManager1 here, and pcmanfm stays the default folder
-# handler - Strata is an addition, launchable from the app menu.
-# Strata's own in-app updater (Settings -> Updates) can upgrade it later.
+# Strata is made the DEFAULT file manager: the inode/directory handler
+# (per-user mimeapps.list via xdg-mime) and the org.freedesktop.FileManager1
+# D-Bus service that backs "Open file location" - the per-user services
+# dir shadows the system one (nautilus's here), and the service file is
+# renamed to the bus name because D-Bus activation looks up <bus-name>.
+# .service. Verified live: xdg-open launches Strata. Strata's own in-app
+# updater (Settings -> Updates) can upgrade the binary later.
 if command -v strata >/dev/null 2>&1; then
   log "Strata already installed, skipping."
 else
@@ -5268,6 +5270,23 @@ else
     rm -rf "$__strata_dir"
   fi
   [ -n "$__strata_ok" ] || warn "Strata install failed (network issue or checksum mismatch) - install manually from https://github.com/lgse/strata/releases if you want it."
+fi
+
+# Make Strata the default file manager. Idempotent and run even when the
+# binary was already present (covers installs from an earlier run of this
+# section that predate the default switch). The service file is written
+# directly rather than copied from the tarball (which is already cleaned
+# up here): D-Bus activation requires it named after the bus name.
+if command -v strata >/dev/null 2>&1; then
+  xdg-mime default io.github.lgse.Strata.desktop inode/directory
+  xdg-mime default io.github.lgse.Strata.desktop inode/mount-point
+  mkdir -p "$HOME/.local/share/dbus-1/services"
+  cat > "$HOME/.local/share/dbus-1/services/org.freedesktop.FileManager1.service" <<STRATA_DBUS_EOF
+[D-BUS Service]
+Name=org.freedesktop.FileManager1
+Exec=$HOME/.local/bin/strata --gapplication-service
+STRATA_DBUS_EOF
+  log "Strata is now the default file manager (inode/directory + org.freedesktop.FileManager1)."
 fi
 
 # ----------------------------------------------------------------------------
