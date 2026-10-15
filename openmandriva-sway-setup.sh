@@ -291,14 +291,21 @@ om_fetch_tarball() {  # <url> <dest dir> - downloads and unpacks, prints the top
 # launchers/menus would all fail on sway. Build upstream rofi (which has
 # Wayland support compiled into the same binary since 1.7.5) into
 # /usr/local - it shadows the packaged X11-only build via PATH order.
-if [ ! -x /usr/local/bin/rofi ]; then
-  log "Building rofi-wayland from source (OpenMandriva's packaged rofi is X11-only)..."
-  # NOT upstream davatorium/rofi - upstream 1.7.x is X11-only (its meson has
-  # no wayland option at all). Wayland rofi is the lbonn/rofi fork that
-  # Fedora packages as "rofi-wayland". Build it Wayland-ONLY (-Dxcb=disabled
-  # skips the entire xcb stack: xcb-cursor, cairo-xcb, startup-notification
-  # etc. that OpenMandriva doesn't all carry). Deps are OM's real package
-  # names (verified against the repo metadata), not pkgconfig() virtuals.
+# Gate: OpenMandriva's packaged rofi 1.7.x (Rock) is X11-only, but rofi 2.0
+# (Rolling/ROME) merged the Wayland support upstream (libwayland-client is in
+# its requires, verified against the rolling repo metadata) - so the source
+# build is ONLY needed when the packaged rofi is missing or older than 2.0.
+om_rofi_ver() { rofi -v 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)+' | head -1; }
+if [ ! -x /usr/local/bin/rofi ] \
+    && { ! command -v rofi >/dev/null 2>&1 \
+         || [ "$(printf '%s\n2.0\n' "$(om_rofi_ver)" | sort -V | head -1)" != "2.0" ]; }; then
+  log "Building rofi-wayland from source (the packaged rofi is X11-only)..."
+  # NOT upstream davatorium/rofi 1.7.x - that is X11-only (its meson has no
+  # wayland option at all). Wayland rofi is the lbonn/rofi fork that Fedora
+  # packages as "rofi-wayland". Build it Wayland-ONLY (-Dxcb=disabled skips
+  # the entire xcb stack: xcb-cursor, cairo-xcb, startup-notification etc.
+  # that Rock doesn't all carry). Deps are OM's real package names (verified
+  # against the rock repo metadata; on Rolling this block never runs).
   om_build_deps meson ninja gcc glibc-devel pkgconf \
     lib64glib2.0-devel lib64cairo-devel lib64pango1.0-devel lib64pangocairo1.0-devel \
     libxkbcommon-devel lib64gdk_pixbuf2.0-devel lib64wayland-devel wayland-protocols-devel
