@@ -423,7 +423,8 @@ def adapt_config(cfg, name):
 
     # 3e. custom/notification-silencing-indicator: keep upstream's DND
     #     indicator module (previously dropped with the other omarchy
-    #     modules) so the bar shows a bell-slash while notifications are
+    #     modules) so the bar always shows a small bell - normal text
+    #     color while notifications flow, the theme accent while muted -
     #     muted via Mod+N / ~/.local/bin/dnd-toggle.sh, on every theme.
     #     Backed by ~/.local/bin/dnd-indicator.sh reading dunst's pause
     #     state; dnd-toggle.sh pings signal 10 so the widget flips
@@ -997,6 +998,14 @@ window#waybar #custom-caffeine {
   padding: 0 4px;
 }
 window#waybar #custom-caffeine.activated {
+  color: @ACCENT@;
+}
+/* DND widget (custom/notification-silencing-indicator): a small bell,
+   always shown - the theme's normal text color while notifications
+   flow, the theme accent while they're muted (Mod+N). This overrides
+   the themes' own muted-grey .active rule (specificity: window#waybar
+   #id beats #id, and this block sits last in the sheet anyway). */
+window#waybar #custom-notification-silencing-indicator.active {
   color: @ACCENT@;
 }
 """
