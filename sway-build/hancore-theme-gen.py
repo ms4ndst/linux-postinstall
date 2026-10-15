@@ -441,11 +441,19 @@ def adapt_config(cfg, name):
 
     # 4. Drop module blocks with no equivalent: the known set, plus any
     #    block that still references omarchy/$OMARCHY_PATH/hyprctl.
+    #    Groups (blocks with a "modules" list) are deliberately NOT
+    #    evaluated here: their children still name the modules being
+    #    dropped, so the group's JSON would look unresolvable and the
+    #    whole group - surviving children like clock and weather
+    #    included - went away with it. Groups are handled by step 5,
+    #    after their children are pruned.
     module_keys = [k for k, v in cfg.items()
                    if isinstance(v, dict) and k not in LAYOUT_KEYS]
     drop = set()
     for key in module_keys:
         block = cfg[key]
+        if isinstance(block.get("modules"), list):
+            continue
         if key in DROP_MODULES or unresolvable(json.dumps(block)):
             drop.add(key)
             dropped.append(key)
@@ -454,25 +462,31 @@ def adapt_config(cfg, name):
 
     # 5. Drop them from the layouts, and drop groups whose children all
     #    went away (an empty group renders nothing but may still draw a
-    #    background pill in some styles).
+    #    background pill in some styles), or that still reference
+    #    omarchy/$OMARCHY_PATH/hyprctl in their OWN settings after the
+    #    children were pruned. Iterate to a fixpoint so nested groups
+    #    are handled whatever order they appear in.
     def prune(arr):
         return [m for m in arr if m not in drop]
 
     for lk in LAYOUT_KEYS:
         if isinstance(cfg.get(lk), list):
             cfg[lk] = prune(cfg[lk])
-    for key in list(cfg):
-        block = cfg[key]
-        if isinstance(block, dict) and isinstance(block.get("modules"), list):
+    changed = True
+    while changed:
+        changed = False
+        for key in list(cfg):
+            block = cfg.get(key)
+            if not (isinstance(block, dict)
+                    and isinstance(block.get("modules"), list)):
+                continue
             block["modules"] = prune(block["modules"])
-            if not block["modules"] and not (key in DROP_MODULES or
-                                             unresolvable(json.dumps(block))):
-                # a group with every child dropped still names nothing -
-                # drop it too
+            if (not block["modules"] or key in DROP_MODULES
+                    or unresolvable(json.dumps(block))):
                 cfg.pop(key, None)
+                drop.add(key)
                 dropped.append(key)
-            elif not block["modules"]:
-                cfg.pop(key, None)
+                changed = True
 
     # 6. Sweep the layout lists for any name whose block is gone (e.g.
     #    drawer children removed via DROP_MODULES in step 4's parent).
