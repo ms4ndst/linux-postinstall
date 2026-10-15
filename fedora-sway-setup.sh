@@ -4856,7 +4856,7 @@ fi
 # snixembed/the Nerd Font above - a failed install just logs a warning.
 if ! command -v cliamp >/dev/null 2>&1; then
   log "Installing CLIamp (terminal music player)..."
-  if curl -fsSL https://raw.githubusercontent.com/bjarneo/cliamp/HEAD/install.sh | sh >/dev/null 2>&1 \
+  if curl -fsSL https://raw.githubusercontent.com/bjarneo/cliamp/main/site/install.sh | sh >/dev/null 2>&1 \
       && command -v cliamp >/dev/null 2>&1; then
     log "CLIamp installed ($(command -v cliamp)) - launch with Mod+m."
   else
