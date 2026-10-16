@@ -211,6 +211,7 @@ There are also standalone i3+Catppuccin rice scripts — the predecessors of the
   - [⌨️ Sway Keybinds](#️-sway-keybinds)
   - [🔧 Maintaining the Script (sway-build)](#-maintaining-the-script-sway-build)
   - [⚠️ Sway Script Known Limitations](#️-sway-script-known-limitations)
+  - [🟠 OpenMandriva Port: `openmandriva-sway-setup.sh`](#-openmandriva-port-openmandriva-sway-setupsh)
 - [🎨 i3 + Catppuccin Rice Script (Fedora & openSUSE)](#-i3--catppuccin-rice-script-fedora--opensuse)
   - [🚀 i3 Script Overview](#-i3-script-overview)
   - [📦 What Gets Installed](#-what-gets-installed)
@@ -2940,6 +2941,44 @@ Edit `sway-build/bin/*.sh` (the `~/.local/bin` helpers), `hancore-theme-gen.py` 
 - **libadwaita apps** (gnome-calendar and every GNOME 47+ app) deliberately block theme CSS. The rice maps the active theme's accent hue to GNOME's closest preset accent color plus `prefer-dark` — as far as GNOME permits.
 - **GTK3 vs GTK4 rounding:** the generated GTK4 themes drop `@keyframes`-style rules that abort GTK3 sheets, so a few animated accents are GTK4-only.
 - **Screenshots are Wayland-native:** the `Print` key uses slurp + grim (+ swappy for annotation). Flameshot is X11-oriented and does not capture on sway, so it is not installed or bound at all.
+
+---
+
+### 🟠 OpenMandriva Port: `openmandriva-sway-setup.sh`
+
+**[⬆ back to top](#-linux-post-install-scripts)**
+
+The same Sway + HANCORE rice for **OpenMandriva** — generated from the Fedora script by [`sway-build/port_openmandriva.py`](sway-build/port_openmandriva.py), a deterministic anchored-text transform. Everything distro-independent carries over **unchanged**: all heredoc configs, the HANCORE theme pipeline, every helper script, the keybinds, the lock screen, Strata/CLIamp/the app-theming sync. The port only rewrites what OpenMandriva does differently. **ROME (rolling) is the primary target**; the Rock/rolling differences below are verified against the actual repo metadata and the deployed `distro-release-repos` layout, not guessed.
+
+**What the port actually changes:**
+
+| Area | OpenMandriva handling |
+|---|---|
+| Repos | Detects the tree (rolling/ROME, rock, cooker, release) from the enabled repo IDs in `/etc/yum.repos.d` and enables `extra` (copyq, solaar, blueman, lxappearance, …), `restricted` and `non-free` — falling back from `dnf config-manager` to a direct `.repo` rewrite if the plugin is missing |
+| Package renames | `networkmanager-applet`, `imagemagick`, `pipewire-pulse`, `fonts-ttf-nerd-jetbrains-mono`, `python-pipx` (Rolling), `solaar` (ships its own udev rules), plus `--setopt=strict=0` so names one tree lacks skip cleanly |
+| rofi | **ROME ships rofi 2.0 with native Wayland** — used as-is. Rock's 1.7.8 is X11-only, so there the Wayland fork ([lbonn/rofi](https://github.com/lbonn/rofi) `1.7.9+wayland1`) is built from source |
+| dunst | OM ships 2021's 1.6.1 — built from source with `WAYLAND=1` on both trees |
+| gammastep / swappy | Packaged on Rolling (the source-build/fallback paths skip themselves); Rock still falls back |
+| udiskie | Not packaged anywhere in OM — installed via `pipx --system-site-packages` |
+| power-profiles-daemon | OM has no `tuned-ppd`, so the Fedora conflict doesn't exist — a clean install, the bar widget just works |
+| Strata deps | Same upstream tarball install with OM package names (`gtk4.0`, `lib64poppler-glib`, `gstreamer1.0-plugins-*`, `gstreamer1.0-libav`, `ffmpegthumbs`, `lib64raw`) |
+| Autostart | OM doesn't ship `dex-autostart` — systemd's `xdg-autostart-generator` takes over in the sway config |
+
+**Installation & usage:** identical to the Fedora script — run as your own user (never sudo; it calls sudo itself where needed), it takes a snapper snapshot first, asks whether to wipe existing desktop themes, then installs, adapts the HANCORE collection and writes every config into `$HOME`:
+
+```bash
+chmod +x openmandriva-sway-setup.sh
+./openmandriva-sway-setup.sh   # as your own user, NOT sudo
+```
+
+**Maintaining the port:** edit `fedora-sway-setup.sh` (or the `sway-build/` sources and re-embed with `build_fedora_sway.py`) as usual, then regenerate:
+
+```bash
+python3 -I sway-build/port_openmandriva.py   # rewrites openmandriva-sway-setup.sh
+bash -n openmandriva-sway-setup.sh          # smoke test
+```
+
+The transform anchors on exact source text and prints a `WARN` if an anchor goes stale — if you see one, the source drifted and the replacement needs re-anchoring.
 
 ---
 
