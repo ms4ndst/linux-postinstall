@@ -428,7 +428,7 @@ def adapt_config(cfg, name):
     #     temperature.
     wx = cfg.get("custom/weather")
     if isinstance(wx, dict):
-        wx["on-click"] = "kitty --class WeatherFloat -e ~/.local/bin/weather-float.sh"
+        wx["on-click"] = "~/.local/bin/weather-float.sh"
 
     # 3e. custom/notification-silencing-indicator: keep upstream's DND
     #     indicator module (previously dropped with the other omarchy
