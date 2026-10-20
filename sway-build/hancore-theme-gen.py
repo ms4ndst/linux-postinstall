@@ -421,6 +421,15 @@ def adapt_config(cfg, name):
     if isinstance(cfg.get("mpris"), dict):
         cfg["mpris"]["interval"] = 1
 
+    # 3f. custom/weather: clicking the bar's weather widget opens the full
+    #     wttr.in 3-day forecast in a floating, theme-colored kitty (the sway
+    #     config has the WeatherFloat floating rule). Same wttr.in source the
+    #     wttrbar widget already uses, just the whole report instead of today's
+    #     temperature.
+    wx = cfg.get("custom/weather")
+    if isinstance(wx, dict):
+        wx["on-click"] = "kitty --class WeatherFloat -e ~/.local/bin/weather-float.sh"
+
     # 3e. custom/notification-silencing-indicator: keep upstream's DND
     #     indicator module (previously dropped with the other omarchy
     #     modules) so the bar always shows a small bell - normal text

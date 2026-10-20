@@ -36,6 +36,7 @@ BIN_SCRIPTS = (
     "wallpaper-picker.sh",
     "waybar-launch.sh",
     "waybar-theme.sh",
+    "weather-float.sh",
 )
 SHIMS = ("wttrbar", "hancore-battery-status", "hancore-update-check",
          "vscode-theme-sync")

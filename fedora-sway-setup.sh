@@ -248,6 +248,7 @@ for_window [app_id="AIVibe"] mark ai-window-scratch
 for_window [app_id="AppMenuTask"] floating enable, resize set 600 400, move position center
 for_window [app_id="KeybindingsHelp"] floating enable, resize set 950 850, move position center
 for_window [app_id="UpdatesTask"] floating enable, resize set 1000 550, move position center
+for_window [app_id="WeatherFloat"] floating enable, resize set 1040 700, move position center
 
 # A window opened via an xdg-activation token (clicking a link that opens
 # a new tab/window on ANOTHER workspace, chat notifications, etc.) flags
@@ -905,6 +906,15 @@ def adapt_config(cfg, name):
     #     still arrive instantly via events.
     if isinstance(cfg.get("mpris"), dict):
         cfg["mpris"]["interval"] = 1
+
+    # 3f. custom/weather: clicking the bar's weather widget opens the full
+    #     wttr.in 3-day forecast in a floating, theme-colored kitty (the sway
+    #     config has the WeatherFloat floating rule). Same wttr.in source the
+    #     wttrbar widget already uses, just the whole report instead of today's
+    #     temperature.
+    wx = cfg.get("custom/weather")
+    if isinstance(wx, dict):
+        wx["on-click"] = "kitty --class WeatherFloat -e ~/.local/bin/weather-float.sh"
 
     # 3e. custom/notification-silencing-indicator: keep upstream's DND
     #     indicator module (previously dropped with the other omarchy
@@ -2085,6 +2095,36 @@ exec swayidle -w \
   before-sleep "$HOME/.local/bin/lock.sh"
 RICE_EOF
 chmod +x "$BIN/swayidle-launch.sh"
+cat > "$BIN/weather-float.sh" <<'EOF'
+#!/usr/bin/env bash
+# Full wttr.in weather report (current conditions + 3-day forecast) in a
+# scrollable pager - the floating companion to the waybar weather widget,
+# which only shows today's temperature. Same wttr.in source the wttrbar
+# widget uses, just the whole report, theme-colored by kitty's current theme.
+# Launched from the weather widget's on-click in a floating kitty
+# (--class WeatherFloat; floated + centered by the sway config). Press q to
+# close.
+#
+# Location is wttr.in's own IP geolocation (no config needed). To pin a city,
+# export WEATHER_LOCATION (e.g. "Stockholm" or "Gothenburg").
+set -u
+loc="${WEATHER_LOCATION:-}"
+# ?F drops the "Follow @igor_chubin" footer line; m = metric units.
+url="https://wttr.in/${loc}?Fm"
+
+if out="$(curl -fsS --max-time 12 "$url" 2>/dev/null)" && [ -n "$out" ]; then
+  # -R renders the ANSI colors, -X leaves the report on screen after quit is
+  # not wanted here (kitty closes anyway), so plain -R with quit-on-q.
+  printf '%s\n' "$out" | less -R
+else
+  printf '\n  Weather unavailable - offline, or wttr.in is unreachable.\n'
+  printf '  (Set WEATHER_LOCATION to a city name if geo-IP guessed wrong.)\n\n'
+  printf '  Press any key to close.\n'
+  read -rn1 _
+fi
+EOF
+chmod +x "$BIN/weather-float.sh"
+
 cat > "$BIN/screenshot.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
 # Region screenshot for the Sway rice. flameshot is X11-oriented and does NOT
