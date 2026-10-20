@@ -496,6 +496,7 @@ for_window [app_id="AIVibe"] mark ai-window-scratch
 for_window [app_id="AppMenuTask"] floating enable, resize set 600 400, move position center
 for_window [app_id="KeybindingsHelp"] floating enable, resize set 950 850, move position center
 for_window [app_id="UpdatesTask"] floating enable, resize set 1000 550, move position center
+for_window [app_id="WeatherFloat"] floating enable, resize set 765 600, move position center
 
 # A window opened via an xdg-activation token (clicking a link that opens
 # a new tab/window on ANOTHER workspace, chat notifications, etc.) flags
@@ -1156,6 +1157,24 @@ def adapt_config(cfg, name):
     #     still arrive instantly via events.
     if isinstance(cfg.get("mpris"), dict):
         cfg["mpris"]["interval"] = 1
+
+    # 3f. custom/weather: clicking the bar's weather widget opens the full
+    #     wttr.in 3-day forecast in a floating, theme-colored kitty (the sway
+    #     config has the WeatherFloat floating rule). Same wttr.in source the
+    #     wttrbar widget already uses, just the whole report instead of today's
+    #     temperature.
+    wx = cfg.get("custom/weather")
+    if isinstance(wx, dict):
+        wx["on-click"] = "~/.local/bin/weather-float.sh"
+
+    # 3f2. cpu/memory: raise the "warning" (orange background) threshold from the
+    #      upstream 50% to 70%, so the widget only warms up under real sustained
+    #      load instead of on routine half-usage. "critical" (red) stays at 80.
+    for mk in ("cpu", "memory"):
+        blk = cfg.get(mk)
+        if isinstance(blk, dict) and isinstance(blk.get("states"), dict) \
+                and "warning" in blk["states"]:
+            blk["states"]["warning"] = 70
 
     # 3e. custom/notification-silencing-indicator: keep upstream's DND
     #     indicator module (previously dropped with the other omarchy
@@ -2336,6 +2355,51 @@ exec swayidle -w \
   before-sleep "$HOME/.local/bin/lock.sh"
 RICE_EOF
 chmod +x "$BIN/swayidle-launch.sh"
+cat > "$BIN/weather-float.sh" <<'EOF'
+#!/usr/bin/env bash
+# Toggle a floating weather window from the waybar weather widget. First click
+# opens the full wttr.in report (current conditions + 3-day forecast) in a
+# floating, OPAQUE, theme-colored kitty; clicking the widget again closes it
+# (q inside the window closes it too). The same wttr.in source the wttrbar
+# widget uses, just the whole report instead of today's temperature.
+#
+# Opaque (background_opacity=1.0) because the rice's kitty is translucent and
+# the wallpaper/other windows bleeding through made the report unreadable; a
+# smaller font_size so the 4-column forecast table fits the window width.
+#
+# Location is wttr.in's own IP geolocation (no config). To pin a city, export
+# WEATHER_LOCATION (e.g. "Stockholm" or "Gothenburg").
+set -u
+
+# --show is the renderer, run inside the kitty window.
+if [ "${1:-}" = "--show" ]; then
+  loc="${WEATHER_LOCATION:-}"
+  url="https://wttr.in/${loc}?Fm"        # F = no footer, m = metric
+  if out="$(curl -fsS --max-time 12 "$url" 2>/dev/null)" && [ -n "$out" ]; then
+    printf '%s\n' "$out" | less -R       # -R keeps colors; scroll if it overflows
+  else
+    printf '\n  Weather unavailable - offline, or wttr.in is unreachable.\n'
+    printf '  (Set WEATHER_LOCATION to a city name if geo-IP guessed wrong.)\n\n'
+    printf '  Press any key to close.\n'
+    read -rn1 _
+  fi
+  exit 0
+fi
+
+# Toggle: if a WeatherFloat window is open, close it; otherwise open one.
+if swaymsg -t get_tree 2>/dev/null | grep -q '"WeatherFloat"'; then
+  swaymsg '[app_id="WeatherFloat"] kill' >/dev/null 2>&1
+else
+  kitty --class WeatherFloat \
+        -o background_opacity=1.0 \
+        -o window_padding_width=0 \
+        -o font_size=8 \
+        -e "$0" --show >/dev/null 2>&1 &
+  disown 2>/dev/null || true
+fi
+EOF
+chmod +x "$BIN/weather-float.sh"
+
 cat > "$BIN/screenshot.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
 # Region screenshot for the Sway rice. flameshot is X11-oriented and does NOT
