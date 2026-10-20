@@ -248,7 +248,7 @@ for_window [app_id="AIVibe"] mark ai-window-scratch
 for_window [app_id="AppMenuTask"] floating enable, resize set 600 400, move position center
 for_window [app_id="KeybindingsHelp"] floating enable, resize set 950 850, move position center
 for_window [app_id="UpdatesTask"] floating enable, resize set 1000 550, move position center
-for_window [app_id="WeatherFloat"] floating enable, resize set 1040 820, move position center
+for_window [app_id="WeatherFloat"] floating enable, resize set 1200 820, move position center
 
 # A window opened via an xdg-activation token (clicking a link that opens
 # a new tab/window on ANOTHER workspace, chat notifications, etc.) flags
