@@ -1960,6 +1960,11 @@ def main():
         t = CONF / "waybar" / "themes" / name
         shutil.copy2(t / "config.jsonc", CONF / "waybar" / "config.jsonc")
         shutil.copy2(t / "style.css", CONF / "waybar" / "style.css")
+        # copy any sibling .css the style.css @imports by relative path (e.g.
+        # rose-pine.css / colors.css) so the import resolves from ~/.config/waybar/
+        for extra in t.glob("*.css"):
+            if extra.name != "style.css":
+                shutil.copy2(extra, CONF / "waybar" / extra.name)
         om = CONF / "omarchy" / "current" / "theme"
         om.mkdir(parents=True, exist_ok=True)
         shutil.copy2(t / "palette.css", om / "waybar.css")
@@ -4411,6 +4416,16 @@ if [ -f "$WAYBAR_DIR/palette.css" ]; then
   mkdir -p "$HOME/.config/omarchy/current/theme"
   cp "$WAYBAR_DIR/palette.css" "$HOME/.config/omarchy/current/theme/waybar.css"
 fi
+# Some themes @import a sibling palette by RELATIVE path (e.g. v2.1's
+# `@import "./rose-pine.css"`, or a `colors.css`). style.css is copied to
+# ~/.config/waybar/, so a relative `./` import resolves against that dir, not
+# the theme dir - copy every sibling .css there too, or the import fails and
+# waybar drops the ENTIRE stylesheet (the bar renders unstyled/blank).
+for __css in "$WAYBAR_DIR"/*.css; do
+  [ -f "$__css" ] || continue
+  [ "$(basename "$__css")" = "style.css" ] && continue
+  cp "$__css" "$HOME/.config/waybar/"
+done
 ~/.local/bin/waybar-launch.sh
 
 if [ -f "$ROFI_FILE" ]; then

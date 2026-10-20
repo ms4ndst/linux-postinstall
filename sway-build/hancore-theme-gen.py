@@ -1223,6 +1223,11 @@ def main():
         t = CONF / "waybar" / "themes" / name
         shutil.copy2(t / "config.jsonc", CONF / "waybar" / "config.jsonc")
         shutil.copy2(t / "style.css", CONF / "waybar" / "style.css")
+        # copy any sibling .css the style.css @imports by relative path (e.g.
+        # rose-pine.css / colors.css) so the import resolves from ~/.config/waybar/
+        for extra in t.glob("*.css"):
+            if extra.name != "style.css":
+                shutil.copy2(extra, CONF / "waybar" / extra.name)
         om = CONF / "omarchy" / "current" / "theme"
         om.mkdir(parents=True, exist_ok=True)
         shutil.copy2(t / "palette.css", om / "waybar.css")
