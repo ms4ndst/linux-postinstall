@@ -925,6 +925,15 @@ def adapt_config(cfg, name):
                 and "warning" in blk["states"]:
             blk["states"]["warning"] = 70
 
+    # 3f3. Vertical bars (position left/right): most widgets are icons or
+    #      \n-stacked, but the mpris now-playing text ("<icon> artist - title")
+    #      is horizontal and blows out the narrow bar's width / clips. Rotate it
+    #      90 so it reads along the bar, and cap its length so a long title
+    #      can't make the whole bar wide.
+    if cfg.get("position") in ("left", "right") and isinstance(cfg.get("mpris"), dict):
+        cfg["mpris"]["rotate"] = 90
+        cfg["mpris"].setdefault("max-length", 25)
+
     # 3e. custom/notification-silencing-indicator: keep upstream's DND
     #     indicator module (previously dropped with the other omarchy
     #     modules) so the bar always shows a small bell - normal text
