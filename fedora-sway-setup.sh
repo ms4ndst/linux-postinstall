@@ -2123,7 +2123,7 @@ set -u
 # --show is the renderer, run inside the kitty window.
 if [ "${1:-}" = "--show" ]; then
   loc="${WEATHER_LOCATION:-}"
-  url="https://wttr.in/${loc}?Fm"        # F = no footer, m = metric
+  url="https://wttr.in/${loc}?FmM"       # F = no footer, m = metric, M = wind in m/s
   if out="$(curl -fsS --max-time 12 "$url" 2>/dev/null)" && [ -n "$out" ]; then
     printf '%s\n' "$out" | less -R       # -R keeps colors; scroll if it overflows
   else
