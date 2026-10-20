@@ -34,7 +34,7 @@ if swaymsg -t get_tree 2>/dev/null | grep -q '"WeatherFloat"'; then
 else
   kitty --class WeatherFloat \
         -o background_opacity=1.0 \
-        -o font_size=11 \
+        -o font_size=9 \
         -e "$0" --show >/dev/null 2>&1 &
   disown 2>/dev/null || true
 fi

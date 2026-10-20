@@ -248,7 +248,7 @@ for_window [app_id="AIVibe"] mark ai-window-scratch
 for_window [app_id="AppMenuTask"] floating enable, resize set 600 400, move position center
 for_window [app_id="KeybindingsHelp"] floating enable, resize set 950 850, move position center
 for_window [app_id="UpdatesTask"] floating enable, resize set 1000 550, move position center
-for_window [app_id="WeatherFloat"] floating enable, resize set 1200 820, move position center
+for_window [app_id="WeatherFloat"] floating enable, resize set 950 690, move position center
 
 # A window opened via an xdg-activation token (clicking a link that opens
 # a new tab/window on ANOTHER workspace, chat notifications, etc.) flags
@@ -2132,7 +2132,7 @@ if swaymsg -t get_tree 2>/dev/null | grep -q '"WeatherFloat"'; then
 else
   kitty --class WeatherFloat \
         -o background_opacity=1.0 \
-        -o font_size=11 \
+        -o font_size=9 \
         -e "$0" --show >/dev/null 2>&1 &
   disown 2>/dev/null || true
 fi
