@@ -916,6 +916,15 @@ def adapt_config(cfg, name):
     if isinstance(wx, dict):
         wx["on-click"] = "~/.local/bin/weather-float.sh"
 
+    # 3f2. cpu/memory: raise the "warning" (orange background) threshold from the
+    #      upstream 50% to 70%, so the widget only warms up under real sustained
+    #      load instead of on routine half-usage. "critical" (red) stays at 80.
+    for mk in ("cpu", "memory"):
+        blk = cfg.get(mk)
+        if isinstance(blk, dict) and isinstance(blk.get("states"), dict) \
+                and "warning" in blk["states"]:
+            blk["states"]["warning"] = 70
+
     # 3e. custom/notification-silencing-indicator: keep upstream's DND
     #     indicator module (previously dropped with the other omarchy
     #     modules) so the bar always shows a small bell - normal text
