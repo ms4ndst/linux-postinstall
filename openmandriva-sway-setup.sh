@@ -1861,6 +1861,21 @@ def process_theme(src_dir, name):
     css_text = (src_dir / "style.css").read_text(errors="replace")
     css_text = strip_gtk4_at_rules(css_text)
 
+    # Fix a malformed comment in HANCORE's v2.9e style.css: a "/* remove comment
+    # for cava color transmissions" block (meant to keep the #mpris cava rule
+    # disabled by default) is never closed AND nests a /*optional*/ inline
+    # comment inside it, so GTK rejects the whole stylesheet and the bar renders
+    # unstyled. De-nest the inline note and close the block after the #mpris
+    # rule, keeping it disabled as the author intended. Harmless no-op on every
+    # other theme (the anchor strings don't occur).
+    if "/* remove comment for cava color transmissions" in css_text:
+        css_text = css_text.replace(
+            "background-color: @red; /*optional use @red for omarchy logo "
+            "consistencie or @fg to match other themes colors*/",
+            "background-color: @red;")
+        css_text = css_text.replace(
+            "}\n\n\n#network.disconnected,", "}\n*/\n\n\n#network.disconnected,", 1)
+
     # locally-imported css files (./rose-pine.css)
     imported = []
     for m in re.findall(r'@import\s+"([^"]+)"', css_text):
