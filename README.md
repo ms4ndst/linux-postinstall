@@ -2825,7 +2825,7 @@ An **OpenMandriva port** exists alongside it: [`openmandriva-sway-setup.sh`](ope
 
 ### 📦 What Gets Installed (Sway)
 
-**Core stack:** `sway`, `swaybg` (wallpaper, restored on every login/reload), `swayidle` + `swaylock` (idle lock at 20min, displays off at 50min) - with **swaylock-effects** built from source into `/usr/local` (no usable Fedora package or COPR exists), the lock gets a live clock, a blurred screenshot background, and the [Catppuccin Mocha indicator scheme](https://github.com/catppuccin/swaylock) from `~/.config/swaylock/config`, `waybar`, `kanshi` (monitor profiles), `rofi` (Wayland app launcher, run dialog and menus), `dunst`, `kitty`, `grim`/`slurp` (screenshots and the pixel colorpicker), `wl-clipboard`, and the xdg-desktop-portal stack (`wlr` + `gtk`) so Flatpaks and browsers get native file dialogs.
+**Core stack:** `sway`, `swaybg` (wallpaper, restored on every login/reload), `swayidle` + `swaylock` (idle lock at 20min, displays off at 50min) - with **swaylock-effects** built from source into `/usr/local` (no usable Fedora package or COPR exists), the lock gets a live clock, a blurred screenshot background, and the [Catppuccin Mocha indicator scheme](https://github.com/catppuccin/swaylock) from `~/.config/swaylock/config`, `waybar`, `kanshi` (monitor profiles), **`wdisplays`** (the Wayland/wlroots display GUI — the ARandR replacement for arranging/toggling monitors; ARandR itself is X11-only and fails on Sway) plus `wlr-randr` (CLI), `rofi` (Wayland app launcher, run dialog and menus), `dunst`, `kitty`, `grim`/`slurp` (screenshots and the pixel colorpicker), `wl-clipboard`, and the xdg-desktop-portal stack (`wlr` + `gtk`) so Flatpaks and browsers get native file dialogs.
 
 **Session helpers:** NetworkManager/PipeWire/Bluetooth managed through waybar's own widgets (the tray applets are deliberately suppressed), `copyq` clipboard history, `udiskie` USB automount, `gammastep` night light, `pcmanfm` file manager, `gnome-calendar` (themed per active theme), the CUPS/HP printer stack, `fastfetch`, JetBrainsMono Nerd Font, and a Qogir cursor-theme set (all 6 real variants, extracted cursor-only).
 
@@ -2915,6 +2915,7 @@ Keybinds are the i3 rice's set with sway realities applied — see [Sway Keybind
 | `Mod+v` | Split vertical (for next window) |
 | `Mod+shift+v` | Clipboard history (copyq) |
 | `Mod+shift+w` | Wallpaper picker |
+| `Mod+Shift+o` | Arrange active displays left-to-right (extend, not mirror) — run after toggling a monitor; also in the app menu, and the GUI is **Display Settings** (`wdisplays`) |
 | `Mod+shift+XF86Assistant` / `Mod+Shift+F23` | Toggle Claude Desktop (F23 = the Copilot key) |
 | `XF86Audio Play/Next/Prev` | Media control (playerctl) |
 | `XF86Audio Raise/Lower/Mute Volume` | Volume, with a dunst level popup |

@@ -282,6 +282,7 @@ bindsym $mod+e exec ~/.local/bin/fresh-env ~/.local/bin/strata
 # Wayland wallpaper picker (azote is nitrogen's Wayland-native equivalent;
 # falls back to the rice's own rofi picker if azote isn't installed).
 bindsym $mod+shift+w exec ~/.local/bin/fresh-env ~/.local/bin/wallpaper-picker.sh
+bindsym $mod+Shift+o exec ~/.local/bin/arrange-displays.sh
 bindsym $mod+p exec ~/.local/bin/fresh-env system-config-printer
 bindsym $mod+c exec ~/.local/bin/caffeine-toggle.sh
 bindsym $mod+n exec ~/.local/bin/dnd-toggle.sh
@@ -2178,6 +2179,39 @@ else
 fi
 EOF
 chmod +x "$BIN/weather-float.sh"
+
+cat > "$BIN/arrange-displays.sh" <<'EOF'
+#!/usr/bin/env bash
+# Lay out every ACTIVE output left-to-right at its best mode, so multiple
+# monitors EXTEND instead of mirroring. When a monitor is toggled (wdisplays,
+# swaymsg, hotplug) sway drops it back to position (0,0), overlapping the others
+# = a mirror, sometimes in a junk fallback mode - this fixes both. Bound to
+# Mod+Shift+o and the app menu's "Arrange Displays"; run it after enabling or
+# disabling a monitor. Disabled outputs are left off (this only arranges the
+# ones that are on).
+set -u
+if ! command -v jq >/dev/null 2>&1; then
+  command -v notify-send >/dev/null && notify-send "Displays" "jq is required for arrange-displays"
+  exit 1
+fi
+
+x=0
+# name  bestWidth  bestHeight  bestRefreshHz  for each active output, widest first
+while read -r name w h r; do
+  # try the best mode + position; fall back to position-only if the mode string
+  # is rejected (keeps the current mode but still de-mirrors)
+  swaymsg output "$name" mode "${w}x${h}@${r}Hz" position "$x" 0 >/dev/null 2>&1 \
+    || swaymsg output "$name" position "$x" 0 >/dev/null 2>&1
+  x=$((x + w))
+done < <(swaymsg -t get_outputs | jq -r '
+  .[] | select(.active)
+  | (.modes | max_by([.width * .height, .refresh])) as $m
+  | "\(.name) \($m.width) \($m.height) \(($m.refresh / 1000))"')
+
+n="$(swaymsg -t get_outputs | jq '[.[] | select(.active)] | length')"
+command -v notify-send >/dev/null && notify-send "Displays" "Arranged $n active output(s) left-to-right"
+EOF
+chmod +x "$BIN/arrange-displays.sh"
 
 cat > "$BIN/screenshot.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
@@ -4661,6 +4695,7 @@ read -r -n 1 -s
 EOF
 chmod +x "$BIN/keybindings-help.sh"
   "wdisplays"
+  "~/.local/bin/arrange-displays.sh"
 
 # ----------------------------------------------------------------------------
 # 11e. App menu (Mod+alt+space) - Omarchy-style floating rofi menu for reaching
@@ -4695,6 +4730,7 @@ LABELS=(
   $'  Restart Waybar'
   $'  Keybinding Help'
   $'\uf108  Display Settings'
+  $'\uf07e  Arrange Displays'
 )
 COMMANDS=(
   "~/.local/bin/waybar-theme.sh"

@@ -25,6 +25,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 DST = HERE.parent / "fedora-sway-setup.sh"
 
 BIN_SCRIPTS = (
+    "arrange-displays.sh",
     "caffeine-state.sh",
     "colorpicker.sh",
     "cursor-theme.sh",
