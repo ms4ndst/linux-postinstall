@@ -3594,6 +3594,39 @@ install_android_tools() {
     # first) - neither is a NoDisplay decoy, so both are legitimately
     # supposed to get icons, same situation as Emacs (Client)/(Terminal).
     batch_install "Android Tools" adb fastboot scrcpy
+    install_fdroidcl
+}
+
+install_fdroidcl() {
+    # fdroidcl - F-Droid command-line client: search the F-Droid catalog and
+    # install/update F-Droid apps onto a connected Android device over adb
+    # (github.com/Hoverth/fdroidcl). Not in any distro repo, but the fork ships
+    # prebuilt static Linux binaries - fetch the one matching this arch into
+    # /usr/local/bin, so no Go toolchain is needed.
+    if command -v fdroidcl &>/dev/null; then
+        SKIPPED_PACKAGES+=("fdroidcl"); ((TOTAL_SKIPPED++)); log INFO "Already installed: fdroidcl"; return 0
+    fi
+    local arch tag url tmpd
+    case "$(uname -m)" in
+        x86_64|amd64)  arch=amd64 ;;
+        aarch64|arm64) arch=arm64 ;;
+        *) SKIPPED_PACKAGES+=("fdroidcl"); ((TOTAL_SKIPPED++)); log WARNING "fdroidcl: no prebuilt binary for $(uname -m), skipping"; return 0 ;;
+    esac
+    log INFO "Installing fdroidcl (F-Droid CLI)..."
+    tag=$(curl -fsSL https://api.github.com/repos/Hoverth/fdroidcl/releases/latest 2>/dev/null | grep -oP '"tag_name":\s*"\K[^"]+' | head -1)
+    url="https://github.com/Hoverth/fdroidcl/releases/download/${tag}/fdroidcl_${tag}_linux_${arch}.gz"
+    tmpd=$(mktemp -d)
+    if [ -n "$tag" ] \
+        && curl -fsSL -o "$tmpd/fdroidcl.gz" "$url" \
+        && gunzip -f "$tmpd/fdroidcl.gz" \
+        && install -m 0755 "$tmpd/fdroidcl" /usr/local/bin/fdroidcl \
+        && [ -x /usr/local/bin/fdroidcl ]; then
+        INSTALLED_PACKAGES+=("fdroidcl ${tag}"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: fdroidcl ${tag}"
+        rm -rf "$tmpd"; return 0
+    else
+        FAILED_PACKAGES+=("fdroidcl"); ((TOTAL_FAILED++)); log ERROR "Failed: fdroidcl (network or GitHub release unavailable)"
+        rm -rf "$tmpd"; return 1
+    fi
 }
 
 # ========== SECURITY TOOLS ==========
