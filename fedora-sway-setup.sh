@@ -102,7 +102,7 @@ fi
 # ----------------------------------------------------------------------------
 log "Installing Wayland stack + Sway + rice toolkit via dnf..."
 sudo dnf install -y \
-  sway swaybg swayidle swaylock waybar kanshi \
+  sway swaybg swayidle swaylock waybar kanshi wdisplays wlr-randr \
   cava btop \
   grim slurp swappy wl-clipboard \
   rofi-wayland dunst kitty \
@@ -224,6 +224,7 @@ for_window [class=".*"] border pixel 2
 # report app_id; XWayland clients (Electron/Chromium app-mode) report class, so
 # the AI/web-app windows are matched on both to be safe.
 for_window [app_id="nm-connection-editor"] floating enable, resize set 550 450, move position center
+for_window [app_id="wdisplays"] floating enable, resize set 900 600, move position center
 for_window [app_id="blueman-manager"] floating enable, resize set 500 400, move position center
 for_window [app_id="(com.github.hluk.copyq|copyq)"] floating enable, resize set 450 500, move position center
 for_window [class="copyq"] floating enable, resize set 450 500, move position center
@@ -4659,6 +4660,7 @@ echo "${SUBTEXT}Press any key to close...${RESET}"
 read -r -n 1 -s
 EOF
 chmod +x "$BIN/keybindings-help.sh"
+  "wdisplays"
 
 # ----------------------------------------------------------------------------
 # 11e. App menu (Mod+alt+space) - Omarchy-style floating rofi menu for reaching
@@ -4692,6 +4694,7 @@ LABELS=(
   $'  Reload Sway'
   $'  Restart Waybar'
   $'  Keybinding Help'
+  $'\uf108  Display Settings'
 )
 COMMANDS=(
   "~/.local/bin/waybar-theme.sh"

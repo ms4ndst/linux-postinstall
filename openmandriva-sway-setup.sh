@@ -206,38 +206,25 @@ fi
 # ----------------------------------------------------------------------------
 # 1. Packages
 # ----------------------------------------------------------------------------
-log "Installing Wayland stack + Sway + rice toolkit via dnf (--setopt=strict=0: names OpenMandriva doesn't carry are skipped, then built or substituted below)..."
-# Package-name deltas verified against OpenMandriva's repository metadata:
-#   rofi-wayland dropped (OM's rofi is X11-only; Wayland rofi is built from
-#     source in section 1a), dex-autostart dropped (systemd's
-#     xdg-autostart-generator takes over in the sway config), pasystray
-#     dropped (never autostarted anyway), solaar-udev dropped (solaar ships
-#     its own udev rules), network-manager-applet -> networkmanager-applet,
-#     ImageMagick -> imagemagick, pipewire-pulseaudio -> pipewire-pulse,
-#     jetbrains-mono-fonts -> fonts-ttf-nerd-jetbrains-mono (the Nerd-patched
-#     font itself), pipx -> python-pipx (Rolling; Rock gets pipx from the
-#     upstream pipx.pyz in section 1a). swappy/gammastep/udiskie aren't on
-#     Rock - strict=0 skips them there and section 1a / screenshot.sh's
-#     fallback cover them.
-sudo dnf install -y --setopt=strict=0 \
-  sway swaybg swayidle swaylock waybar kanshi \
+log "Installing Wayland stack + Sway + rice toolkit via dnf..."
+sudo dnf install -y \
+  sway swaybg swayidle swaylock waybar kanshi wdisplays wlr-randr \
   cava btop \
   grim slurp swappy wl-clipboard \
-  dunst kitty \
+  rofi-wayland dunst kitty \
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \
-  networkmanager-applet blueman lxqt-policykit pipewire-pulse \
+  network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
   copyq udiskie pcmanfm gammastep libnotify gnome-calendar \
   azote \
   system-config-printer hplip \
   lxappearance papirus-icon-theme \
-  fastfetch git curl unzip jq imagemagick fortune-mod \
-  brightnessctl playerctl \
+  fastfetch git curl unzip jq ImageMagick fortune-mod \
+  brightnessctl playerctl dex-autostart \
   dnf-utils \
-  solaar \
-  python-pipx \
-  fonts-ttf-nerd-jetbrains-mono \
-  plymouth-plugin-script \
-  || warn "The base package install reported errors - check the dnf output above."
+  solaar solaar-udev \
+  pipx \
+  jetbrains-mono-fonts \
+  plymouth-plugin-script
 
 # power-profiles-daemon backs the waybar power-profiles-daemon module in
 # the HANCORE themes. OpenMandriva carries it in its own repos (and has no
@@ -472,6 +459,7 @@ for_window [class=".*"] border pixel 2
 # report app_id; XWayland clients (Electron/Chromium app-mode) report class, so
 # the AI/web-app windows are matched on both to be safe.
 for_window [app_id="nm-connection-editor"] floating enable, resize set 550 450, move position center
+for_window [app_id="wdisplays"] floating enable, resize set 900 600, move position center
 for_window [app_id="blueman-manager"] floating enable, resize set 500 400, move position center
 for_window [app_id="(com.github.hluk.copyq|copyq)"] floating enable, resize set 450 500, move position center
 for_window [class="copyq"] floating enable, resize set 450 500, move position center
@@ -4914,6 +4902,7 @@ echo "${SUBTEXT}Press any key to close...${RESET}"
 read -r -n 1 -s
 EOF
 chmod +x "$BIN/keybindings-help.sh"
+  "wdisplays"
 
 # ----------------------------------------------------------------------------
 # 11e. App menu (Mod+alt+space) - Omarchy-style floating rofi menu for reaching
@@ -4947,6 +4936,7 @@ LABELS=(
   $'  Reload Sway'
   $'  Restart Waybar'
   $'  Keybinding Help'
+  $'\uf108  Display Settings'
 )
 COMMANDS=(
   "~/.local/bin/waybar-theme.sh"
