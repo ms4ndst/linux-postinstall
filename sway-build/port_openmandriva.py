@@ -278,6 +278,29 @@ if ! command -v udiskie >/dev/null 2>&1 && [ ! -x /usr/local/bin/udiskie ]; then
   fi
 fi
 
+# wdisplays (the Wayland/wlroots display GUI, the ARandR replacement wired to
+# the app menu's "Display Settings") - OpenMandriva may not package it, so
+# build it from source (meson/ninja, GTK3 + libepoxy) when it's missing.
+# wlr-randr (CLI) and ~/.local/bin/arrange-displays.sh (Mod+Shift+o) manage
+# monitors without it, so this is best-effort like the rest of section 1a.
+if ! command -v wdisplays >/dev/null 2>&1 && [ ! -x /usr/local/bin/wdisplays ]; then
+  log "Building wdisplays from source (not packaged for this OpenMandriva release)..."
+  om_build_deps meson ninja gcc glibc-devel pkgconf \
+    'pkgconfig(gtk+-3.0)' 'pkgconfig(epoxy)' 'pkgconfig(wayland-client)' \
+    'pkgconfig(wayland-cursor)' 'pkgconfig(wayland-protocols)' 'pkgconfig(wayland-scanner)'
+  OMT="$(mktemp -d)"
+  if d="$(om_fetch_tarball https://github.com/artizirk/wdisplays/archive/refs/heads/master.tar.gz "$OMT")" \
+      && meson setup "$OMT/build" "$d" --buildtype release --prefix /usr/local >/dev/null 2>&1 \
+      && ninja -C "$OMT/build" >/dev/null 2>&1 \
+      && sudo ninja -C "$OMT/build" install >/dev/null 2>&1 \
+      && [ -x /usr/local/bin/wdisplays ]; then
+    log "wdisplays installed to /usr/local/bin."
+  else
+    warn "wdisplays build failed - use wlr-randr (CLI) or Mod+Shift+o (arrange-displays) for monitor management."
+  fi
+  rm -rf "$OMT"
+fi
+
 '''
 
 DEX_REPLACEMENT = r'''# OpenMandriva doesn't ship dex-autostart, so use systemd's built-in
