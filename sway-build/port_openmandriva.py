@@ -360,7 +360,7 @@ def main():
     # ---- the main dnf install block -------------------------------------
     sub('''log "Installing Wayland stack + Sway + rice toolkit via dnf..."
 sudo dnf install -y \\
-  sway swaybg swayidle swaylock waybar kanshi \\
+  sway swaybg swayidle swaylock waybar kanshi wdisplays wlr-randr \\
   cava btop \\
   grim slurp swappy wl-clipboard \\
   rofi-wayland dunst kitty \\
@@ -391,7 +391,7 @@ sudo dnf install -y \\
 #     Rock - strict=0 skips them there and section 1a / screenshot.sh's
 #     fallback cover them.
 sudo dnf install -y --setopt=strict=0 \\
-  sway swaybg swayidle swaylock waybar kanshi \\
+  sway swaybg swayidle swaylock waybar kanshi wdisplays wlr-randr \\
   cava btop \\
   grim slurp swappy wl-clipboard \\
   dunst kitty \\

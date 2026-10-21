@@ -206,25 +206,38 @@ fi
 # ----------------------------------------------------------------------------
 # 1. Packages
 # ----------------------------------------------------------------------------
-log "Installing Wayland stack + Sway + rice toolkit via dnf..."
-sudo dnf install -y \
+log "Installing Wayland stack + Sway + rice toolkit via dnf (--setopt=strict=0: names OpenMandriva doesn't carry are skipped, then built or substituted below)..."
+# Package-name deltas verified against OpenMandriva's repository metadata:
+#   rofi-wayland dropped (OM's rofi is X11-only; Wayland rofi is built from
+#     source in section 1a), dex-autostart dropped (systemd's
+#     xdg-autostart-generator takes over in the sway config), pasystray
+#     dropped (never autostarted anyway), solaar-udev dropped (solaar ships
+#     its own udev rules), network-manager-applet -> networkmanager-applet,
+#     ImageMagick -> imagemagick, pipewire-pulseaudio -> pipewire-pulse,
+#     jetbrains-mono-fonts -> fonts-ttf-nerd-jetbrains-mono (the Nerd-patched
+#     font itself), pipx -> python-pipx (Rolling; Rock gets pipx from the
+#     upstream pipx.pyz in section 1a). swappy/gammastep/udiskie aren't on
+#     Rock - strict=0 skips them there and section 1a / screenshot.sh's
+#     fallback cover them.
+sudo dnf install -y --setopt=strict=0 \
   sway swaybg swayidle swaylock waybar kanshi wdisplays wlr-randr \
   cava btop \
   grim slurp swappy wl-clipboard \
-  rofi-wayland dunst kitty \
+  dunst kitty \
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \
-  network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
+  networkmanager-applet blueman lxqt-policykit pipewire-pulse \
   copyq udiskie pcmanfm gammastep libnotify gnome-calendar \
   azote \
   system-config-printer hplip \
   lxappearance papirus-icon-theme \
-  fastfetch git curl unzip jq ImageMagick fortune-mod \
-  brightnessctl playerctl dex-autostart \
+  fastfetch git curl unzip jq imagemagick fortune-mod \
+  brightnessctl playerctl \
   dnf-utils \
-  solaar solaar-udev \
-  pipx \
-  jetbrains-mono-fonts \
-  plymouth-plugin-script
+  solaar \
+  python-pipx \
+  fonts-ttf-nerd-jetbrains-mono \
+  plymouth-plugin-script \
+  || warn "The base package install reported errors - check the dnf output above."
 
 # power-profiles-daemon backs the waybar power-profiles-daemon module in
 # the HANCORE themes. OpenMandriva carries it in its own repos (and has no
