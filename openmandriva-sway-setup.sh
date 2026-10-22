@@ -4988,8 +4988,6 @@ echo "${SUBTEXT}Press any key to close...${RESET}"
 read -r -n 1 -s
 EOF
 chmod +x "$BIN/keybindings-help.sh"
-  "wdisplays"
-  "~/.local/bin/arrange-displays.sh"
 
 # ----------------------------------------------------------------------------
 # 11e. App menu (Mod+alt+space) - Omarchy-style floating rofi menu for reaching
@@ -5044,6 +5042,8 @@ COMMANDS=(
   "swaymsg reload"
   "~/.local/bin/waybar-launch.sh"
   "kitty --class KeybindingsHelp -e ~/.local/bin/keybindings-help.sh"
+  "wdisplays"
+  "~/.local/bin/arrange-displays.sh"
 )
 
 CHOSEN="$(printf '%s\n' "${LABELS[@]}" | rofi -dmenu -i -p "Menu" -theme ~/.config/rofi/current.rasi)"
