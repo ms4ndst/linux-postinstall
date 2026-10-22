@@ -837,6 +837,19 @@ def adapt_config(cfg, name):
         if isinstance(block, dict) and isinstance(block.get("modules"), list):
             block["modules"] = fixlist(block["modules"])
 
+    # 1b. sway/window has no {class} format argument - that is a
+    #     hyprland/window token. Left in place, waybar logs
+    #     "sway/window: argument not found" and the module renders EMPTY,
+    #     so the focused-window title silently vanishes on every window
+    #     (31 of the upstream themes hit this). Sway's equivalent is
+    #     {app_id}, which also yields the reverse-DNS values the rewrite
+    #     rules already match (com.mitchellh.ghostty, org.gnome.Nautilus,
+    #     com.obsproject.Studio, ...), so the per-app icon rewrites keep
+    #     working for native Wayland apps.
+    win = cfg.get("sway/window")
+    if isinstance(win, dict) and isinstance(win.get("format"), str):
+        win["format"] = win["format"].replace("{class}", "{app_id}")
+
     # 2. Rewrite every command string in every module block.
     for key in list(cfg):
         block = cfg[key]
@@ -1666,8 +1679,17 @@ def process_theme(src_dir, name):
     palette_inline = re.sub(r"^/\*.*?\*/\s*", "",
                             PALETTE_CSS_TEMPLATE.format(name=name, **palette),
                             flags=re.S).rstrip("\n")
-    css_text = re.sub(r'^@import\s+"[^"]*omarchy[^"]*"\s*;?\s*$',
-                      palette_inline, css_text, count=1, flags=re.M)
+    css_text, n_palette = re.subn(r'^@import\s+"[^"]*omarchy[^"]*"\s*;?\s*$',
+                                  palette_inline, css_text, count=1, flags=re.M)
+    if n_palette == 0:
+        # No omarchy @import to swap the palette into: these themes @import
+        # a sibling palette (e.g. rose-pine.css) that only defines colors,
+        # so the base text-color rule never landed and unstyled widget text
+        # (the focused-window title, the idle DND bell) fell back to GTK's
+        # near-black default - invisible on the dark bar. Append the palette
+        # at the very end (last rule wins only for inherited defaults, so it
+        # never shadows the theme's explicit per-widget colors).
+        css_text = css_text.rstrip("\n") + "\n\n" + palette_inline
     ws_css = (WORKSPACE_STATES_CSS
               .replace("@ACCENT@", palette["accent"])
               .replace("@BASE@", palette["base"]))
