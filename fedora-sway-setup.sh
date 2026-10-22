@@ -1687,6 +1687,22 @@ def process_theme(src_dir, name):
             if f.name.endswith((".py", ".sh")):
                 (tdir / f.name).chmod(0o755)
 
+    # Some themes (e.g. v1.9b, v1.9c) reference window_pill.py in their
+    # config's exec but upstream never bundles the script in the theme dir,
+    # so rewrite_cmd points exec at a path that doesn't exist and the module
+    # stays dead. Synthesize the pill from the template whenever the config
+    # asks for it but the bundled-extras copy above didn't produce it.
+    if "window_pill.py" in out_cfg and not (tdir / "window_pill.py").exists():
+        write_text(tdir / "window_pill.py",
+                   WINDOW_PILL_TEMPLATE.replace("@ACCENT@", palette["accent"]).replace("@TEXT@", palette["text"]))
+        (tdir / "window_pill.py").chmod(0o755)
+    # cava.sh / scrolling-mpris.py have no template - if a config ever
+    # references one without bundling it, surface the stale ref loudly.
+    for _s in ("cava.sh", "scrolling-mpris.py"):
+        if _s in out_cfg and not (tdir / _s).exists():
+            print("WARNING theme %s references %s but it was not bundled"
+                  % (name, _s), file=sys.stderr)
+
     p = palette
     write_text(CONF / "rofi" / "themes" / (name + ".rasi"),
                ROFI_TEMPLATE.format(**p))
