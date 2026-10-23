@@ -1,0 +1,16 @@
+{
+  "name": "rice-theme",
+  "displayName": "Rice Theme",
+  "description": "Keep a TTT theme in sync with the active desktop rice palette.",
+  "version": "0.1.0",
+  "author": "linux-postinstall",
+  "entry": "init.lua",
+  "api": 1,
+  "permissions": {
+    "fs.read": ["~/.config/ttt"],
+    "fs.write": ["{config}/themes"],
+    "settings": true,
+    "settings_keys": ["theme"],
+    "commands": true
+  }
+}

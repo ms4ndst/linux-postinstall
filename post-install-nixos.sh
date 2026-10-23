@@ -112,6 +112,7 @@ selected() {  # selected <token>
 declare -A PKGS NOTES SVCS
 
 PKGS[code-editors]="vim neovim emacs nano geany gnome-text-editor gedit kdePackages.kate"
+NOTES[code-editors]="ttt (terminal IDE, github.com/eugenioenko/ttt) is not in nixpkgs - try it with 'nix run github:eugenioenko/ttt', or add that flake as an input and include ttt.packages.\${system}.default in your systemPackages"
 PKGS[python]="python3 python3Packages.pip python3Packages.virtualenv python3Packages.ipython pipx"
 PKGS[web-dev]="nginx apacheHttpd php phpPackages.composer"
 PKGS[nodejs]="nodejs"          # npm ships with nodejs

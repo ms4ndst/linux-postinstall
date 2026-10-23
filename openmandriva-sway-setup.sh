@@ -4717,6 +4717,128 @@ TOML
   set_toml_key "$HOME/.config/strata/settings.toml" theme rice
 fi
 
+if command -v ttt >/dev/null 2>&1; then
+  # ttt (terminal IDE, run as `ttt` in any kitty window) is themed by a
+  # rice-branded theme plugin: a rebranded, re-pointed copy of ttt's own
+  # bundled "omarchy-theme" plugin - the same proven, contrast-safe
+  # palette->theme converter - reading the rice palette written below and
+  # emitting ~/.config/ttt/themes/rice.json. The stock omarchy-theme plugin is
+  # disabled so no Omarchy naming reaches ttt's UI.
+  tcfg="$HOME/.config/ttt"
+  mkdir -p "$tcfg/themes" "$tcfg/plugins"
+  # The rice palette as TOML for the plugin. background is a deepened copy of
+  # kitty's: a ttt cell background exactly equal to kitty's own (translucent)
+  # default background inherits kitty's background_opacity and shows the
+  # wallpaper through the editor - the Strata problem - so deepen it ~18% to
+  # render opaque while still reading as the theme's dark base.
+  ttt_darken() { printf '#%02x%02x%02x' $(( 16#${1:1:2}*82/100 )) $(( 16#${1:3:2}*82/100 )) $(( 16#${1:5:2}*82/100 )); }
+  {
+    printf 'background = "%s"\n' "$(ttt_darken "$(hex "$(kc background)" '#1e1e2e')")"
+    printf 'foreground = "%s"\n' "$fg"
+    printf 'accent = "%s"\n' "$accent"
+    for __i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+      printf 'color%s = "%s"\n' "$__i" "$(hex "$(kc color$__i)" '#585b70')"
+    done
+  } > "$tcfg/rice-palette.toml"
+  # Derive the rice-theme plugin once from ttt's installed omarchy-theme plugin
+  # (ttt fetches that on first launch). Same converter, re-pointed + rebranded.
+  if [ -f "$tcfg/plugins/omarchy-theme/init.lua" ] && [ ! -f "$tcfg/plugins/rice-theme/init.lua" ]; then
+    mkdir -p "$tcfg/plugins/rice-theme"
+    sed -e 's#~/.local/state/omarchy/current/theme/colors.toml#~/.config/ttt/rice-palette.toml#' \
+        -e 's#~/.local/state/omarchy/current/theme/vscode-theme.json#~/.config/ttt/rice-tokens.json#' \
+        -e 's#{config}/themes/omarchy.json#{config}/themes/rice.json#g' \
+        -e 's/~= "omarchy"/~= "rice"/' \
+        -e 's/Omarchy theme: /Rice theme: /g' \
+        -e 's/Omarchy palette requires/Rice palette requires/' \
+        "$tcfg/plugins/omarchy-theme/init.lua" > "$tcfg/plugins/rice-theme/init.lua"
+    cat > "$tcfg/plugins/rice-theme/plugin.ttt.json" <<'PJSON'
+{
+  "name": "rice-theme",
+  "displayName": "Rice Theme",
+  "description": "Keep a TTT theme in sync with the active desktop rice palette.",
+  "version": "0.1.0",
+  "author": "linux-postinstall",
+  "entry": "init.lua",
+  "api": 1,
+  "permissions": {
+    "fs.read": ["~/.config/ttt"],
+    "fs.write": ["{config}/themes"],
+    "settings": true,
+    "settings_keys": ["theme"],
+    "commands": true
+  }
+}
+PJSON
+  fi
+  # Disable the Omarchy plugin and register rice-theme (only once ttt has
+  # created its plugin registry on first launch).
+  if [ -f "$tcfg/plugins.ttt.json" ]; then
+    python3 - "$tcfg/plugins.ttt.json" "$tcfg/plugins/rice-theme/init.lua" <<'PY' 2>/dev/null || true
+import json, os, sys
+reg_path, rice_init = sys.argv[1], sys.argv[2]
+try:
+    reg = json.load(open(reg_path))
+    if not isinstance(reg, list):
+        raise ValueError
+except Exception:
+    sys.exit(0)
+for r in reg:
+    if isinstance(r, dict) and r.get("name") == "omarchy-theme":
+        r["enabled"] = False
+if os.path.exists(rice_init) and not any(
+        isinstance(r, dict) and r.get("name") == "rice-theme" for r in reg):
+    reg.append({
+        "name": "rice-theme", "displayName": "Rice Theme", "repo": "local",
+        "path": "rice-theme", "version": "0.1.0", "enabled": True,
+        "permissions": {"commands": True, "fs.read": ["~/.config/ttt"],
+                        "fs.write": ["{config}/themes"], "network.http": False,
+                        "settings": True, "settings_keys": ["theme"]},
+        "grantsVersion": 2})
+json.dump(reg, open(reg_path, "w"), indent=2)
+open(reg_path, "a").write("\n")
+PY
+  fi
+  # A hand-written fallback theme so ttt is themed even before the plugin runs
+  # (or if its omarchy-theme source was never fetched); the plugin overwrites
+  # themes/rice.json with a richer, contrast-safe version once active.
+  if [ ! -f "$tcfg/themes/rice.json" ]; then
+    ttt_bg="$(ttt_darken "$(hex "$(kc background)" '#1e1e2e')")"
+    ttt_mut="$(hex "$(kc color8)" '#585b70')"
+    cat > "$tcfg/themes/rice.json" <<JSON
+{
+  "default":   { "fg": "$fg", "bg": "$ttt_bg" },
+  "muted":     { "fg": "$ttt_mut" },
+  "statusBar": { "fg": "$accent" },
+  "tabs":      { "active": { "fg": "$accent", "bold": true } },
+  "editor":    { "lineNumber": { "fg": "$ttt_mut" } },
+  "syntax": {
+    "comment":  { "fg": "$ttt_mut" },
+    "string":   { "fg": "$(hex "$(kc color2)" '#a6e3a1')" },
+    "keyword":  { "fg": "$(hex "$(kc color5)" '#cba6f7')", "bold": true },
+    "number":   { "fg": "$(hex "$(kc color1)" '#f38ba8')" },
+    "function": { "fg": "$(hex "$(kc color4)" '#89b4fa')" }
+  }
+}
+JSON
+  fi
+  # Select the rice theme (ttt merges a partial settings.json over its defaults).
+  ttt_settings="$tcfg/settings.json"
+  python3 - "$ttt_settings" <<'PY' 2>/dev/null || { [ -f "$ttt_settings" ] || printf '{\n  "theme": "rice"\n}\n' > "$ttt_settings"; }
+import json, os, sys
+p = sys.argv[1]
+try:
+    d = json.load(open(p))
+    if not isinstance(d, dict):
+        d = {}
+except Exception:
+    d = {}
+d["theme"] = "rice"
+os.makedirs(os.path.dirname(p), exist_ok=True)
+json.dump(d, open(p, "w"), indent=2)
+open(p, "a").write("\n")
+PY
+fi
+
 if command -v vibe >/dev/null 2>&1 || [ -d "$HOME/.vibe" ]; then
   bg="$(hex "$(kc background)" '#1e1e2e')"
   r=$((16#${bg:1:2})); g=$((16#${bg:3:2})); b=$((16#${bg:5:2}))

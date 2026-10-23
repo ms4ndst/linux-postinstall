@@ -1140,7 +1140,44 @@ install_code_editors() {
     install_vscode; install_sublime_text
     install_zed
     install_gram
+    install_ttt
     configure_lazyvim
+}
+
+# ttt - "Terminal Text Tool", a terminal IDE (syntax highlighting, LSP, git,
+# integrated search, Lua plugins) written in Go (github.com/eugenioenko/ttt).
+# Not in any distro repo; the project ships prebuilt static Linux binaries -
+# fetch the one matching this arch into /usr/local/bin, checksum-verified.
+# ripgrep (installed in the system-utils category) powers its workspace
+# search; git its source-control view. Under the sway/i3 rice,
+# app-theme-sync.sh writes a ttt theme matching the active desktop theme;
+# standalone it uses its bundled opaque dark theme.
+install_ttt() {
+    if command -v ttt &>/dev/null; then
+        SKIPPED_PACKAGES+=("ttt"); ((TOTAL_SKIPPED++)); log INFO "Already installed: ttt"; return 0
+    fi
+    local arch tag base tmpd
+    case "$(uname -m)" in
+        x86_64|amd64)  arch=amd64 ;;
+        aarch64|arm64) arch=arm64 ;;
+        *) SKIPPED_PACKAGES+=("ttt"); ((TOTAL_SKIPPED++)); log WARNING "ttt: no prebuilt binary for $(uname -m), skipping"; return 0 ;;
+    esac
+    log INFO "Installing ttt (terminal IDE)..."
+    tag=$(curl -fsSL https://api.github.com/repos/eugenioenko/ttt/releases/latest 2>/dev/null | grep -oP '"tag_name":\s*"\K[^"]+' | head -1)
+    base="https://github.com/eugenioenko/ttt/releases/download/${tag}"
+    tmpd=$(mktemp -d)
+    if [ -n "$tag" ] \
+        && curl -fsSL -o "$tmpd/ttt-linux-${arch}" "${base}/ttt-linux-${arch}" \
+        && curl -fsSL -o "$tmpd/checksums.txt" "${base}/checksums.txt" \
+        && ( cd "$tmpd" && grep -E "ttt-linux-${arch}\$" checksums.txt | sha256sum --check --status - ) \
+        && install -m 0755 "$tmpd/ttt-linux-${arch}" /usr/local/bin/ttt \
+        && [ -x /usr/local/bin/ttt ]; then
+        INSTALLED_PACKAGES+=("ttt ${tag}"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: ttt ${tag}"
+        rm -rf "$tmpd"; return 0
+    else
+        FAILED_PACKAGES+=("ttt"); ((TOTAL_FAILED++)); log ERROR "Failed: ttt (network or GitHub release unavailable)"
+        rm -rf "$tmpd"; return 1
+    fi
 }
 
 configure_lazyvim() {
