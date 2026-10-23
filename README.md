@@ -4,7 +4,7 @@
 
 ![screenshot](screenshot.png)
 
-This repo ships **independent, distro-specific scripts** — pick the one that matches your machine:
+This repo ships **independent, distro-specific scripts** — pick the one that matches your machine and your cup of tea:
 
 - **[`post-install-ubuntu.sh`](post-install-ubuntu.sh)** — for **Ubuntu 26.04 LTS / 26.10**, built on apt/Nala.
 - **[`post-install-fedora.sh`](post-install-fedora.sh)** — for **Fedora Workstation**, built on `dnf5`/RPM Fusion.
