@@ -3631,7 +3631,10 @@ cat > "$CONF/fastfetch/config.jsonc" <<'EOF'
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
   "display": { "separator": "  " },
   "modules": [
-    "title", "separator", "os", "host", "kernel", "uptime", "packages",
+    "title", "separator", "os", "host",
+    // kernel release followed by the kernel name, e.g. "7.2.11-200.fc44.x86_64 Linux"
+    { "type": "kernel", "format": "{release} {sysname}" },
+    "uptime", "packages",
     "shell", "wm", "de", "terminal", "cpu", "gpu", "memory", "disk", "colors"
   ]
 }
