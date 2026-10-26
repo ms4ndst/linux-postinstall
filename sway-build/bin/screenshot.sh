@@ -8,6 +8,10 @@
 # satty is missing, the shot is saved to ~/Pictures/Screenshots and copied to
 # the clipboard directly. Pass `full` to capture the whole output.
 set -u
+# sway's exec PATH is bare (/usr/local/bin:/usr/bin) and omits ~/.local/bin,
+# so a satty installed there (rather than system-wide) would be invisible and
+# screenshot.sh would silently fall back to a plain save. Search both.
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
 DIR="$HOME/Pictures/Screenshots"
 mkdir -p "$DIR"
 
