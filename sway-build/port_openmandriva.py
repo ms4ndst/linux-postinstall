@@ -27,9 +27,10 @@ same methodology as this repo's i3 OpenMandriva port:
       solaar-udev      -> (dropped; solaar ships its own udev rules)
       pipx             -> python-pipx (Rolling only on OM; Rock gets pipx
                           from the upstream pipx.pyz for the source builds)
-      gammastep / udiskie / swappy: not on Rock (gammastep/udiskie are
-                          built or pipx-installed here; swappy is skipped -
-                          screenshot.sh already falls back to save+clipboard)
+      gammastep / udiskie: not on Rock (built or pipx-installed here).
+      satty            -> not packaged on OM; installed from its GitHub
+                          release binary (same block as Fedora), with
+                          screenshot.sh falling back to save+clipboard
       swaylock-effects build deps: wayland-devel -> lib64wayland-devel,
                           cairo-devel -> lib64cairo-devel,
                           pam-devel -> lib64pam-devel,
@@ -330,8 +331,9 @@ HEADER = '''#!/usr/bin/env bash
 # source on both distros (as in the Fedora script).
 #
 # Installs: sway, swaybg, swayidle, swaylock(-effects, source), waybar,
-#           kanshi, rofi (Wayland, source), dunst (source), kitty, swappy
-#           (when packaged; screenshot.sh falls back to save+clipboard),
+#           kanshi, rofi (Wayland, source), dunst (source), kitty, satty
+#           (screenshot editor, GitHub release binary; screenshot.sh falls
+#           back to save+clipboard if absent),
 #           imagemagick, brightnessctl, playerctl, fastfetch, Nerd Font
 #           (fonts-ttf-nerd-jetbrains-mono), tray helpers, GTK/icon/cursor
 #           themes, rofi power menu, copyq clipboard history, udiskie USB
@@ -385,7 +387,7 @@ def main():
 sudo dnf install -y \\
   sway swaybg swayidle swaylock waybar kanshi wdisplays wlr-randr \\
   cava btop \\
-  grim slurp swappy wl-clipboard \\
+  grim slurp wl-clipboard \\
   rofi-wayland dunst kitty \\
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \\
   network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \\
@@ -410,13 +412,15 @@ sudo dnf install -y \\
 #     ImageMagick -> imagemagick, pipewire-pulseaudio -> pipewire-pulse,
 #     jetbrains-mono-fonts -> fonts-ttf-nerd-jetbrains-mono (the Nerd-patched
 #     font itself), pipx -> python-pipx (Rolling; Rock gets pipx from the
-#     upstream pipx.pyz in section 1a). swappy/gammastep/udiskie aren't on
-#     Rock - strict=0 skips them there and section 1a / screenshot.sh's
-#     fallback cover them.
+#     upstream pipx.pyz in section 1a). gammastep/udiskie aren't on Rock -
+#     strict=0 skips them there and section 1a covers them. satty is not
+#     packaged on either edition; it is installed from its GitHub release
+#     binary further down (same as on Fedora), and screenshot.sh falls back
+#     to a plain grim save if that fetch fails.
 sudo dnf install -y --setopt=strict=0 \\
   sway swaybg swayidle swaylock waybar kanshi wdisplays wlr-randr \\
   cava btop \\
-  grim slurp swappy wl-clipboard \\
+  grim slurp wl-clipboard \\
   dunst kitty \\
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \\
   networkmanager-applet blueman lxqt-policykit pipewire-pulse \\

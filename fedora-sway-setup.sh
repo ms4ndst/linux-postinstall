@@ -9,7 +9,7 @@
 #           VS Code together - the same mechanism the old embedded
 #           Catppuccin collection used.
 # Installs: sway, swaybg, swayidle, swaylock, waybar, kanshi, rofi, dunst,
-#           kitty, swappy, ImageMagick, brightnessctl, playerctl,
+#           kitty, satty, ImageMagick, brightnessctl, playerctl,
 #           fastfetch, Nerd Font, tray helpers, GTK/icon/cursor themes,
 #           rofi power menu, copyq clipboard history, udiskie USB
 #           automount, pcmanfm file manager, gammastep night light,
@@ -104,7 +104,7 @@ log "Installing Wayland stack + Sway + rice toolkit via dnf..."
 sudo dnf install -y \
   sway swaybg swayidle swaylock waybar kanshi wdisplays wlr-randr \
   cava btop \
-  grim slurp swappy wl-clipboard \
+  grim slurp wl-clipboard \
   rofi-wayland dunst kitty \
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \
   network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \
@@ -225,6 +225,7 @@ for_window [class=".*"] border pixel 2
 # the AI/web-app windows are matched on both to be safe.
 for_window [app_id="nm-connection-editor"] floating enable, resize set 550 450, move position center
 for_window [app_id="wdisplays"] floating enable, resize set 900 600, move position center
+for_window [app_id="com.gabm.satty"] floating enable, resize set 1000 700, move position center
 for_window [app_id="blueman-manager"] floating enable, resize set 500 400, move position center
 for_window [app_id="(com.github.hluk.copyq|copyq)"] floating enable, resize set 450 500, move position center
 for_window [class="copyq"] floating enable, resize set 450 500, move position center
@@ -2255,14 +2256,15 @@ cat > "$BIN/screenshot.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
 # Region screenshot for the Sway rice. flameshot is X11-oriented and does NOT
 # capture on sway/wlroots (its portal path hangs), so this uses the Wayland
-# tools: slurp selects a region, grim captures it. If swappy (a flameshot-style
-# annotation editor) is installed, the shot is piped to it for arrows/text/blur
-# + save/copy; otherwise it's saved to ~/Pictures/Screenshots and copied to the
-# clipboard directly. Pass `full` to capture the whole output instead of a region.
+# tools: slurp selects a region, grim captures it. If satty (a flameshot-style
+# annotation editor, github.com/gabm/Satty) is installed, the shot is piped to
+# it for arrows/text/blur + save/copy; satty's config.toml sets the save dir
+# (~/Pictures/Screenshots), wl-copy as the copy command, and Enter = copy. If
+# satty is missing, the shot is saved to ~/Pictures/Screenshots and copied to
+# the clipboard directly. Pass `full` to capture the whole output.
 set -u
 DIR="$HOME/Pictures/Screenshots"
 mkdir -p "$DIR"
-OUT="$DIR/shot-$(date +%Y%m%d-%H%M%S).png"
 
 if [ "${1:-region}" = "full" ]; then
   GEO=""
@@ -2271,16 +2273,13 @@ else
   [ -n "$GEO" ] || exit 0
 fi
 
-if command -v swappy >/dev/null 2>&1; then
-  # flameshot-style editor (save/copy from inside swappy's UI). Swappy's
-  # Save button (or Ctrl+S) writes silently to its save_path - NO dialog
-  # - which defaults to ~/Pictures/Screenshots. Detect the new file and
-  # announce where it went, so the silent save is not a mystery.
-  __before="$(ls -1 "$DIR" 2>/dev/null | sort)"
-  if [ -n "$GEO" ]; then grim -g "$GEO" - | swappy -f -; else grim - | swappy -f -; fi
-  __new="$(comm -13 <(printf '%s\n' "$__before") <(ls -1 "$DIR" 2>/dev/null | sort) | head -1)"
-  [ -n "$__new" ] && notify-send "Screenshot" "Saved to $DIR/$__new"
+if command -v satty >/dev/null 2>&1; then
+  # satty reads its save path (output-filename), copy command (wl-copy) and
+  # key actions from ~/.config/satty/config.toml, so just pipe the capture in.
+  # grim's ppm output is lossless and fast over the pipe (satty's own docs).
+  if [ -n "$GEO" ]; then grim -g "$GEO" -t ppm - | satty --filename -; else grim -t ppm - | satty --filename -; fi
 else
+  OUT="$DIR/shot-$(date +%Y%m%d-%H%M%S).png"
   if [ -n "$GEO" ]; then grim -g "$GEO" "$OUT" || exit 1; else grim "$OUT" || exit 1; fi
   wl-copy --type image/png < "$OUT" 2>/dev/null || true
   command -v notify-send >/dev/null && notify-send "Screenshot" "Saved to $OUT and copied to clipboard"
@@ -3333,18 +3332,58 @@ RICE_EOF
 chmod +x "$BIN/colorpicker.sh"
 
 # ----------------------------------------------------------------------------
-# 9d. swappy (screenshot editor) config
+# 9d. satty (screenshot editor) install + config
 # ----------------------------------------------------------------------------
-# Without a config, swappy defaults save_dir to $XDG_DESKTOP_DIR/$HOME/Desktop
-# and every Save (button or Ctrl+S) drops a swappy-*.png on the Desktop
-# silently - reads like "nothing happens". Point it at the same directory
-# screenshot.sh uses, with the date format the old rice's swappy files carry.
-log "Writing swappy config..."
-mkdir -p "$CONF/swappy"
-cat > "$CONF/swappy/config" <<'EOF'
-[Default]
-save_dir=$HOME/Pictures/Screenshots
-save_filename_format=%Y-%m-%d_%H-%M.png
+# satty (screenshot annotation editor, github.com/gabm/Satty) - the Wayland,
+# flameshot-style editor screenshot.sh pipes grim captures into. Not packaged
+# for Fedora, so fetch the prebuilt release binary for this arch into
+# /usr/local/bin. It is a GTK4/libadwaita app; those runtime libs are already
+# pulled in by the rice. If this fails, screenshot.sh falls back to saving the
+# raw grim capture (no annotation).
+if ! command -v satty >/dev/null 2>&1; then
+  case "$(uname -m)" in
+    x86_64|amd64)  __sa_tgt=x86_64-unknown-linux-gnu ;;
+    aarch64|arm64) __sa_tgt=aarch64-unknown-linux-gnu ;;
+    *) __sa_tgt="" ;;
+  esac
+  if [ -n "$__sa_tgt" ]; then
+    log "Installing satty (screenshot annotator)..."
+    __sa_tag="$(curl -fsSL https://api.github.com/repos/gabm/Satty/releases/latest 2>/dev/null | grep -oP '"tag_name":\s*"\K[^"]+' | head -1)"
+    __sa_tmp="$(mktemp -d)"
+    if [ -n "$__sa_tag" ] \
+       && curl -fsSL -o "$__sa_tmp/satty.tar.gz" "https://github.com/gabm/Satty/releases/download/${__sa_tag}/satty-${__sa_tgt}.tar.gz" \
+       && tar -xzf "$__sa_tmp/satty.tar.gz" -C "$__sa_tmp" \
+       && sudo install -m 0755 "$__sa_tmp/satty" /usr/local/bin/satty; then
+      [ -f "$__sa_tmp/satty.desktop" ] && { mkdir -p "$HOME/.local/share/applications"; cp "$__sa_tmp/satty.desktop" "$HOME/.local/share/applications/" 2>/dev/null; }
+      [ -f "$__sa_tmp/assets/satty.svg" ] && { mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps"; cp "$__sa_tmp/assets/satty.svg" "$HOME/.local/share/icons/hicolor/scalable/apps/com.gabm.satty.svg" 2>/dev/null; }
+      log "satty ${__sa_tag} installed."
+    else
+      warn "satty install failed (network?) - screenshot.sh falls back to a plain grim save."
+    fi
+    rm -rf "$__sa_tmp"
+  else
+    warn "satty: no prebuilt binary for $(uname -m) - screenshot.sh falls back to a plain grim save."
+  fi
+fi
+
+log "Writing satty config..."
+mkdir -p "$CONF/satty"
+cat > "$CONF/satty/config.toml" <<'EOF'
+# Satty screenshot annotator - github.com/gabm/Satty
+[general]
+# Windowed (sway floats it via the for_window rule); not a fullscreen overlay.
+fullscreen = false
+# Rounded rectangle corners, start on the brush tool.
+corner-roundness = 12
+initial-tool = "brush"
+# Copy with wl-copy; the Save button / Enter write here (strftime, ~ = $HOME).
+copy-command = "wl-copy"
+output-filename = "~/Pictures/Screenshots/satty-%Y-%m-%d_%H-%M-%S.png"
+# Leave the editor as soon as a save/copy action runs.
+early-exit = true
+# Enter: copy to clipboard (then exit). Escape: just exit.
+actions-on-enter = ["save-to-clipboard"]
+actions-on-escape = ["exit"]
 EOF
 
 # ----------------------------------------------------------------------------
@@ -4816,7 +4855,7 @@ ROWS=(
   "Mod+n|Toggle Do Not Disturb"
   "Mod+p|Printer setup"
   "Mod+shift+p|Power menu"
-  "Print|Screenshot (slurp region select, swappy annotation if installed)"
+  "Print|Screenshot (slurp region select, satty annotation editor)"
   "Mod+r|Resize mode (h/j/k/l, Return/Escape to exit)"
   "Mod+shift+r|Reload Sway"
   "Mod+Return|Open kitty"
@@ -5574,7 +5613,7 @@ cat <<'EOF'
    Mod+l             lock screen
    Mod+shift+p       power menu (lock/suspend/logout/reboot/shutdown)
    Mod+shift+v       clipboard history (copyq)
-   Print             screenshot (slurp region select + grim, swappy annotate)
+   Print             screenshot (slurp region select + grim, satty annotate)
    Mod+shift+g       colorpicker (click a pixel, hex copied to clipboard)
    Mod+shift+q       close focused window
    Mod+f             fullscreen toggle
