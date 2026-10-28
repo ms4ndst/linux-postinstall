@@ -32,6 +32,7 @@ BIN_SCRIPTS = (
     "icon-theme.sh",
     "lock.sh",
     "screenshot.sh",
+    "screenshot-tool.sh",
     "swaybg-restore.sh",
     "swayidle-launch.sh",
     "wallpaper-picker.sh",

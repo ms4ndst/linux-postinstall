@@ -12,6 +12,23 @@ set -u
 # so a satty installed there (rather than system-wide) would be invisible and
 # screenshot.sh would silently fall back to a plain save. Search both.
 export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+
+# The App Menu's "Screenshot Tool" item (screenshot-tool.sh) stores the chosen
+# default in ~/.config/sway/screenshot-tool. "greenshot" hands the Print key
+# to the full Wayland Greenshot (github.com/ms4ndst/greenshot_for_linux - its
+# own region picker with magnifier, its own annotation editor, tray and
+# save/copy/destination handling; `greenshot capture ...` starts the single
+# instance on demand). Any other value (or no file yet) keeps this script's
+# built-in grim+slurp pipeline below.
+if grep -qx greenshot "$HOME/.config/sway/screenshot-tool" 2>/dev/null \
+  && command -v greenshot >/dev/null 2>&1; then
+  if [ "${1:-region}" = "full" ]; then
+    exec greenshot capture fullscreen
+  else
+    exec greenshot capture region
+  fi
+fi
+
 DIR="$HOME/Pictures/Screenshots"
 mkdir -p "$DIR"
 

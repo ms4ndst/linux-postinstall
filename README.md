@@ -429,6 +429,8 @@ Official Ubuntu Studio meta-packages (note: **no hyphen** between "ubuntu" and "
 
 **Pinta** — apt's `pinta` was dropped from Ubuntu's repos along with Mono; installed from Flathub (`com.github.PintaProject.Pinta`) instead when the apt package isn't available, same fallback pattern as Telegram.
 
+**Greenshot for Linux** ([ms4ndst/greenshot_for_linux](https://github.com/ms4ndst/greenshot_for_linux), the Wayland port of the Windows classic — region/window/full-screen capture, its own annotation editor, tray, save/copy/OCR/print/upload destinations) — not packaged anywhere and no binaries are published, so it's cloned and built from source with the .NET 10 SDK (`dotnet-sdk-10.0` from the repos, Microsoft's `dotnet-install.sh` into `~/.dotnet` as fallback) and installed per-user by its own `packaging/install.sh` (`~/.local/lib/greenshot` + `~/.local/bin/greenshot`). Same on every distro script below.
+
 **Command-line utilities:** `imagemagick`, `graphicsmagick`, `optipng`, `jpegoptim`, `pngquant`, `webp-tools`
 
 ---
@@ -1202,7 +1204,7 @@ The Ubuntu-Studio-metapackage replacement. Option `1` opens a 6-item sub-menu:
 | # | Item | Installs |
 |---|------|----------|
 | 1 | **Full** | Everything below (Graphics + Video + Audio + Photography + Publishing) |
-| 2 | **Graphics & Design** | `dnf group install design-suite` (GIMP, Inkscape, Krita, Blender, Darktable, Scribus, digiKam, Synfig, Pitivi) + `nomacs`, `flameshot`, `imagemagick`, `GraphicsMagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp-tools`; also binds Print Screen to Flameshot |
+| 2 | **Graphics & Design** | `dnf group install design-suite` (GIMP, Inkscape, Krita, Blender, Darktable, Scribus, digiKam, Synfig, Pitivi) + `nomacs`, `flameshot`, `imagemagick`, `GraphicsMagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp-tools`; also binds Print Screen to Flameshot, and builds **greenshot for Linux** from source (see the Ubuntu Graphics section above — needs `dotnet-sdk-10.0`) |
 | 3 | **Video Editing** | `kdenlive`, `shotcut`, `obs-studio`, `mkvtoolnix`, `mkvtoolnix-gui`, `mpv`, `vlc`, `yt-dlp`, plus the full multimedia codec batch below |
 | 4 | **Audio Production** | `dnf group install audio` (Fedora Jam: Ardour9, Audacity, Carla, Hydrogen, Guitarix, LV2/LADSPA plugin stack) + `qjackctl`, `pulseaudio-utils`, `soundconverter`, `easytag`, `pavucontrol`, [`cliamp`](https://www.cliamp.stream/) (terminal Winamp-style music player/streamer — not packaged for Fedora, installed via its own release-binary `curl \| sh` installer into `~/.local/bin`) |
 | 5 | **Photography** | `darktable`, `rawtherapee`, `digikam`, `hugin`, `gthumb` |
@@ -1763,7 +1765,7 @@ Option `1` opens a 6-item sub-menu, same shape as Fedora's:
 | # | Item | Installs |
 |---|------|----------|
 | 1 | **Full** | Everything below (Graphics + Video + Audio + Photography + Publishing) |
-| 2 | **Graphics & Design** | `gimp`, `inkscape`, `krita`, `blender`, `darktable`, `pitivi`, `scribus` + `flameshot`, `ImageMagick`, `GraphicsMagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp-tools`; also binds Print Screen to Flameshot |
+| 2 | **Graphics & Design** | `gimp`, `inkscape`, `krita`, `blender`, `darktable`, `pitivi`, `scribus` + `flameshot`, `ImageMagick`, `GraphicsMagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp-tools`; also binds Print Screen to Flameshot, and builds **greenshot for Linux** from source (needs the .NET 10 SDK — Microsoft's `dotnet-install.sh` into `~/.dotnet`, same method as the .NET category) |
 | 3 | **Video Editing** | `kdenlive`, `shotcut`, `obs-studio`, `mkvtoolnix`, `mkvtoolnix-gui`, `mpv`, `vlc`, `yt-dlp`, plus the Packman multimedia-codec swap below |
 | 4 | **Audio Production** | `ardour`, `audacity`, `carla`, `hydrogen`, `guitarix`, `qjackctl`, `lsp-plugins`, `calf`, `pavucontrol`, `easytag`, `soundconverter`, [`cliamp`](https://www.cliamp.stream/) (terminal Winamp-style music player/streamer — not packaged for openSUSE, installed via its own release-binary `curl \| sh` installer into `~/.local/bin`) |
 | 5 | **Photography** | `darktable`, `rawtherapee`, `digikam`, `hugin`, `gthumb` |
@@ -2543,7 +2545,7 @@ Nearly every browser here needed a hand-rolled vendor-repo dance on Fedora; on A
 
 Fedora uses `dnf` comps groups ("Fedora Jam", "Design Suite") for this; Arch has **no equivalent metapackage/group at all**, so every sub-category here is hand-curated.
 
-- **Graphics & Design:** `gimp`, `inkscape`, `krita`, `blender`, `darktable`, `pitivi`, `qimgv` (swapped in for `nomacs` — its AUR package depends on a nonexistent `quazip-qt6`, confirmed via a live AUR query; `qimgv` fills the same role from the same maintainer), `flameshot`, `imagemagick`, `graphicsmagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp`. Also binds Print Screen to `flameshot gui` via gsettings on GNOME (explicit no-op on Omarchy, which has its own `omarchy-capture-*` screenshot tooling).
+- **Graphics & Design:** `gimp`, `inkscape`, `krita`, `blender`, `darktable`, `pitivi`, `qimgv` (swapped in for `nomacs` — its AUR package depends on a nonexistent `quazip-qt6`, confirmed via a live AUR query; `qimgv` fills the same role from the same maintainer), `flameshot`, `imagemagick`, `graphicsmagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp`. Also binds Print Screen to `flameshot gui` via gsettings on GNOME (explicit no-op on Omarchy, which has its own `omarchy-capture-*` screenshot tooling), and builds **greenshot for Linux** from source (needs the rolling `dotnet-sdk` package).
 - **Video Editing:** `kdenlive`, `shotcut`, `obs-studio`, `mkvtoolnix-cli`, `mkvtoolnix-gui`, `mpv`, `vlc`, `yt-dlp`, plus multimedia codecs (`ffmpeg` — already the full/unencumbered build on Arch, no swap needed like Fedora's `ffmpeg-free`→`ffmpeg`; `gst-plugins-good/bad/ugly`, `gst-libav`).
 - **Audio Production:** `ardour`, `audacity`, `carla`, `hydrogen`, `guitarix`, `qjackctl`, `lsp-plugins-lv2`, `calf`, `libpulse`, `soundconverter`, `easytag`, `pavucontrol`, [`cliamp`](https://www.cliamp.stream/) (terminal Winamp-style music player/streamer — AUR-only, picked up automatically by the same official-repo-then-AUR fallback every other package here uses, no special-casing needed).
 - **Photography:** `darktable`, `rawtherapee`, `digikam`, `hugin`, `gthumb`.
@@ -2900,7 +2902,7 @@ Keybinds are the i3 rice's set with sway realities applied — see [Sway Keybind
 | `Mod+n` | Toggle Do Not Disturb (pauses dunst) |
 | `Mod+p` | Printer setup (`system-config-printer`) |
 | `Mod+shift+p` | Power menu (rofi) |
-| `Print` | Screenshot — slurp region select, grim capture, swappy annotation if installed (else saved to `~/Pictures/Screenshots` and copied to the clipboard) |
+| `Print` | Screenshot — the tool picked in the App Menu's **Screenshot Tool** item (rofi): **Greenshot for Linux** (`greenshot capture region`/`fullscreen`) when it's installed and chosen, else the built-in slurp region select + grim capture + satty annotation (falls back to a plain save + clipboard copy when satty is absent) |
 | `Mod+r` | Resize mode (h/j/k/l, Return/Escape to exit) |
 | `Mod+shift+r` | Reload Sway (sway has no i3-style `restart`) |
 | `Mod+Return` | Open kitty |
@@ -2942,7 +2944,7 @@ Edit `sway-build/bin/*.sh` (the `~/.local/bin` helpers), `hancore-theme-gen.py` 
 - **tuned-ppd conflict:** Fedora's `tuned-ppd` conflicts with `power-profiles-daemon` (the bar's power-profile widget backend). The install is best-effort: with tuned-ppd in place the widget stays inert; swap the packages manually to enable it.
 - **libadwaita apps** (gnome-calendar and every GNOME 47+ app) deliberately block theme CSS. The rice maps the active theme's accent hue to GNOME's closest preset accent color plus `prefer-dark` — as far as GNOME permits.
 - **GTK3 vs GTK4 rounding:** the generated GTK4 themes drop `@keyframes`-style rules that abort GTK3 sheets, so a few animated accents are GTK4-only.
-- **Screenshots are Wayland-native:** the `Print` key uses slurp + grim (+ swappy for annotation). Flameshot is X11-oriented and does not capture on sway, so it is not installed or bound at all.
+- **Screenshots are Wayland-native:** by default the `Print` key uses slurp + grim (+ satty for annotation). Flameshot is X11-oriented and does not capture on sway, so it is not installed or bound at all. The App Menu's **Screenshot Tool** item switches the `Print` key to **Greenshot for Linux** instead — offered only when greenshot is installed (the post-install scripts build it from source) and remembered in `~/.config/sway/screenshot-tool`.
 
 ---
 
@@ -3513,7 +3515,7 @@ This is the menu-driven one that installs apps, dev tools, browsers, etc. — th
 
 > **Flake users:** the script can't safely edit an arbitrary `flake.nix`, so after the first run it prints a line like `modules = [ ./configuration.nix ./postinstall.nix ];`. Open your `flake.nix`, add `./postinstall.nix` to your host's `modules = [ ... ];` list, save, then pick a category again (or just run `sudo nixos-rebuild switch --flake /etc/nixos#yourhostname`). You only do this once.
 
-> **A few apps aren't in NixOS's package set** (for example `chkrootkit`, `rkhunter`, the Zen browser, and a couple of AI CLIs). The script **tells you** when a category contains one of those instead of silently skipping it — everything else in that category still installs.
+> **A few apps aren't in NixOS's package set** (for example `chkrootkit`, `rkhunter`, the Zen browser, and a couple of AI CLIs). Greenshot for Linux is another one — not in nixpkgs, and a per-user `~/.local` install doesn't fit the declarative model — so the Graphics category reports how to build it (`nix-shell -p dotnetCorePackages.sdk_10_0 git`, clone [ms4ndst/greenshot_for_linux](https://github.com/ms4ndst/greenshot_for_linux), `bash packaging/install.sh`). The script **tells you** when a category contains one of those instead of silently dropping it — everything else in that category still installs.
 
 ### ❄️ Step-by-step: the i3 rice
 

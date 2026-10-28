@@ -501,6 +501,7 @@ install_creative_graphics() {
     fi
     batch_install "Graphics (extra)" nomacs flameshot ImageMagick GraphicsMagick optipng jpegoptim pngquant libwebp-tools
     set_flameshot_hotkey
+    install_greenshot
 }
 
 install_creative_video() {
@@ -570,6 +571,56 @@ set_flameshot_hotkey() {
         return 0
     fi
     log WARNING "Could not set Flameshot keybinding on Print"
+    return 1
+}
+
+# greenshot for Linux (github.com/ms4ndst/greenshot_for_linux) - the Wayland
+# port of the classic Windows Greenshot: region/window/full-screen capture
+# with its own on-screen picker (frozen screen, magnifier, window pick), the
+# full Greenshot annotation editor, a tray menu, and save/copy/OCR/print/
+# upload destinations. Not packaged by any distro and no binaries are
+# published - the repo's packaging/install.sh builds it from source with the
+# .NET 10 SDK (global.json pins 10.0; Fedora's dotnet-sdk-10.0 provides it)
+# and installs per-user: the app to ~/.local/lib/greenshot, `greenshot` to
+# ~/.local/bin, the menu entry and the icon. Per-user means the build runs as
+# the desktop user, not root. grim + wl-clipboard are its capture/clipboard
+# runtime deps. On the sway rice, App Menu > Screenshot Tool switches the
+# Print key between this and the built-in grim+slurp pipeline.
+install_greenshot() {
+    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+    local uh; uh="$(eval echo ~"${u:-root}" 2>/dev/null)"
+    if [ -n "$u" ] && [ -x "$uh/.local/bin/greenshot" ]; then
+        SKIPPED_PACKAGES+=("greenshot"); ((TOTAL_SKIPPED++)); log INFO "Already installed: greenshot"; return 0
+    fi
+    if [ -z "$u" ]; then
+        FAILED_PACKAGES+=("greenshot"); ((TOTAL_FAILED++))
+        log WARNING "No target user (run via sudo from a user session) - skipping greenshot (it installs per-user, into ~/.local)"
+        return 1
+    fi
+    if ! command -v dotnet &>/dev/null || ! dotnet --list-sdks 2>/dev/null | grep -q '^10\.'; then
+        safe_install dotnet-sdk-10.0
+    fi
+    if ! dotnet --list-sdks 2>/dev/null | grep -q '^10\.'; then
+        FAILED_PACKAGES+=("greenshot"); ((TOTAL_FAILED++))
+        log WARNING "No .NET 10 SDK available (dotnet-sdk-10.0 is on Fedora 44+) - skipping greenshot"
+        return 1
+    fi
+    batch_install "Greenshot capture deps" grim wl-clipboard
+    log INFO "Installing greenshot for Linux (clone + dotnet build - can take several minutes)..."
+    if su - "$u" -c '
+        set -e
+        d="$(mktemp -d)"
+        git clone -q --depth 1 https://github.com/ms4ndst/greenshot_for_linux "$d/greenshot"
+        cd "$d/greenshot"
+        bash packaging/install.sh
+        rm -rf "$d"
+    ' >/dev/null 2>&1 && [ -x "$uh/.local/bin/greenshot" ]; then
+        INSTALLED_PACKAGES+=("greenshot (built from source)"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: greenshot for Linux (~/.local/bin/greenshot)"
+        return 0
+    fi
+    FAILED_PACKAGES+=("greenshot"); ((TOTAL_FAILED++))
+    log WARNING "greenshot build failed - try: git clone https://github.com/ms4ndst/greenshot_for_linux && cd greenshot_for_linux && bash packaging/install.sh (as your user)"
     return 1
 }
 
