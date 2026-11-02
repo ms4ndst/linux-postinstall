@@ -1,0 +1,364 @@
+// Niri rice config - Fedora. Written by fedora-niri-setup.sh.
+// Niri is a scrolling-tiling Wayland compositor configured in KDL; this is the
+// equivalent of the Sway rice's config, mapped onto niri's model (columns scroll
+// horizontally, windows stack vertically within a column). Validate edits with
+// `niri validate`. Niri live-reloads this file (and every include) on save.
+//
+// Docs: https://yalter.github.io/niri/
+
+// --- input -------------------------------------------------------------------
+input {
+    keyboard {
+        numlock
+        xkb {
+            // @@XKB_LAYOUT@@ is filled from the system layout (localectl) at
+            // install time. Set your own layout(s) here, e.g. layout "us,se".
+            layout "@@XKB_LAYOUT@@"
+        }
+    }
+    touchpad {
+        tap
+        natural-scroll
+        dwt            // disable-while-typing
+    }
+    mouse {
+        // accel-profile "flat"
+    }
+    // Focus the window under the pointer as it moves. Comment out for
+    // click-to-focus only.
+    focus-follows-mouse max-scroll-amount="0%"
+    // Warp the mouse to the focused window on keyboard focus changes.
+    // warp-mouse-to-focus
+}
+
+// --- outputs -----------------------------------------------------------------
+// One block per monitor; niri applies the matching one. List names/modes with
+// `niri msg outputs`. Left disabled by default (the `/-` prefix) so niri
+// auto-arranges; uncomment and edit to pin resolution/scale/position.
+/-output "eDP-1" {
+    mode "1920x1080@60.000"
+    scale 1.0
+    position x=0 y=0
+    transform "normal"
+}
+
+// --- layout ------------------------------------------------------------------
+layout {
+    gaps 8
+    center-focused-column "never"
+
+    // Column width presets cycled by Mod+R. Matches the Sway rice's tiling feel.
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+    default-column-width { proportion 0.5; }
+
+    // Accent ring around the focused column - niri's idiomatic equivalent of
+    // Sway's focused border color. The colors below are the Catppuccin Mocha
+    // defaults; the active desktop theme's palette is applied live by
+    // waybar-theme.sh, which writes themes/current.kdl (included at the bottom
+    // of this file and merged over these values).
+    focus-ring {
+        width 2
+        active-color "#cba6f7"
+        inactive-color "#45475a"
+    }
+    // A thin border on every window (CSD apps self-decorate; this keeps a
+    // consistent 1px edge). Off would drop it entirely.
+    border {
+        off
+    }
+
+    struts {
+        // waybar reserves its own space via layer-shell exclusive zones, so no
+        // manual struts are needed here.
+    }
+}
+
+// --- misc --------------------------------------------------------------------
+prefer-no-csd
+// Ask apps to omit their own titlebars where they honor it. Pair with the
+// focus-ring above for a clean tiled look.
+
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+hotkey-overlay {
+    // Show the built-in keybind cheat-sheet at startup until you learn them;
+    // comment `skip-at-startup` back in to suppress it.
+    skip-at-startup
+}
+
+environment {
+    // Hint toolkits/Qt toward Wayland; niri exports XDG_CURRENT_DESKTOP=niri
+    // and feeds the systemd/D-Bus activation environment itself.
+    QT_QPA_PLATFORM "wayland"
+    MOZ_ENABLE_WAYLAND "1"
+    ELECTRON_OZONE_PLATFORM_HINT "auto"
+}
+
+cursor {
+    xcursor-theme "@@CURSOR_THEME@@"
+    xcursor-size 24
+}
+
+// --- startup -----------------------------------------------------------------
+// Bar, wallpaper, notifications, tray helpers, idle/lock. The wrapper scripts
+// live in ~/.local/bin; spawn-sh-at-startup runs a shell so the pgrep guards
+// and PATH work. Niri does NOT re-run these on config reload (unlike Sway's
+// exec_always), so each guards against a double-launch itself.
+spawn-sh-at-startup "~/.local/bin/waybar-launch.sh"
+spawn-sh-at-startup "~/.local/bin/swaybg-restore.sh"
+spawn-sh-at-startup "pgrep -x dunst >/dev/null || dunst"
+spawn-sh-at-startup "pgrep -x playerctld >/dev/null || playerctld daemon"
+spawn-sh-at-startup "pgrep -x copyq >/dev/null || copyq"
+spawn-sh-at-startup "pgrep -x udiskie >/dev/null || udiskie --tray"
+spawn-sh-at-startup "pgrep -x gammastep >/dev/null || gammastep"
+spawn-at-startup "/usr/libexec/lxqt-policykit-agent"
+spawn-sh-at-startup "~/.local/bin/calendar-reminder-daemon-launch.sh"
+spawn-sh-at-startup "~/.local/bin/battwatch.sh"
+// Autostart desktop entries (XDG ~/.config/autostart), niri-tagged.
+spawn-sh-at-startup "command -v dex-autostart >/dev/null && dex-autostart -a -e niri"
+// Idle + lock: swayidle works on niri (wayland idle protocol). Screensaver +
+// lock after idle; display off later; lock before sleep. Guarded against
+// stacking inside the launcher.
+spawn-sh-at-startup "~/.local/bin/swayidle-launch.sh"
+
+// --- scratchpad ---------------------------------------------------------------
+// Niri has no scratchpad, and a *named* stash workspace would be pinned to the
+// front (stealing desktop 1), so niri-scratch.sh "hides" summoned utilities
+// (cliamp, Claude, Mistral Vibe, the AI window) by parking them on the trailing
+// empty workspace niri keeps at the end - past the real desktops. No named
+// workspace is declared, so desktop 1 stays a normal desktop.
+
+// --- window rules ------------------------------------------------------------
+// Float + center + size the usual settings-style dialogs and app-mode windows.
+// Niri matches on app-id / title (regex in r#"..."#). Multipart `window-rule`
+// blocks are independent (not merged), one concern each.
+
+// Settings / connection / dialog utilities -> small floating + centered.
+window-rule {
+    match app-id=r#"^(nm-connection-editor|blueman-manager|org.pulseaudio.pavucontrol|pavucontrol|system-config-printer)$"#
+    open-floating true
+}
+window-rule {
+    match app-id=r#"^(com.github.hluk.copyq|copyq)$"#
+    open-floating true
+    default-column-width { fixed 450; }
+}
+// Screenshot annotator (satty).
+window-rule {
+    match app-id=r#"^com.gabm.satty$"#
+    open-floating true
+}
+// Greenshot editor - float it (region capture uses screencopy, not a window,
+// so this only affects the editor/settings windows). StartupWMClass=greenshot.
+window-rule {
+    match app-id=r#"^greenshot$"#
+    open-floating true
+}
+// Mistral Vibe web app: pin the floating size so it matches Claude's window
+// (the browser profile otherwise remembers an over-tall window that doesn't fit).
+window-rule {
+    match app-id=r#"^MistralVibe$"#
+    open-floating true
+    default-column-width { fixed 1200; }
+    default-window-height { fixed 850; }
+}
+// Polkit auth dialog (e.g. unlocking 1Password after the vault locks).
+window-rule {
+    match app-id=r#"^lxqt-policykit-agent$"#
+    open-floating true
+}
+// NiriMod settings editor - float it, give it room.
+window-rule {
+    match app-id=r#"^(io.github.srinivasr.NiriMod|nirimod|NiriMod)$"#
+    open-floating true
+    default-column-width { proportion 0.6; }
+}
+// Scratchpad utilities (summoned/stashed by niri-scratch.sh): open floating and
+// centered so a summon lands as an overlay.
+window-rule {
+    match app-id=r#"^(Cliamp|com.anthropic.Claude|claude|MistralVibe|AIVibe)$"#
+    open-floating true
+}
+// Size the terminal-based ones (kitty would otherwise open near-fullscreen).
+window-rule {
+    match app-id=r#"^AIVibe$"#
+    default-column-width { fixed 1000; }
+    default-window-height { fixed 700; }
+}
+window-rule {
+    match app-id=r#"^Cliamp$"#
+    default-column-width { fixed 760; }
+    default-window-height { fixed 520; }
+}
+// cliamp's setup wizard and the rice's own rofi/kitty utility windows.
+window-rule {
+    match app-id=r#"^(CliampSetup|AppMenuTask|KeybindingsHelp|UpdatesTask|WeatherFloat)$"#
+    open-floating true
+}
+// Block-art screensaver (Mod+Escape / idle) - fullscreen.
+window-rule {
+    match app-id=r#"^Screensaver$"#
+    open-fullscreen true
+}
+// GNOME Calendar / print dialog floats.
+window-rule {
+    match app-id=r#"^(org.gnome.Calendar|system-config-printer)$"#
+    open-floating true
+}
+// Rounded corners + a hair of shadow on floating windows, for polish.
+window-rule {
+    geometry-corner-radius 8
+    clip-to-geometry true
+}
+
+// --- animations --------------------------------------------------------------
+animations {
+    slowdown 1.0
+}
+
+// --- key bindings ------------------------------------------------------------
+// Mod = Super. Mirrors the Sway rice where niri has an equivalent action;
+// niri-native actions (column/overview/consume) have no Sway analog.
+binds {
+    // Help overlay (niri's built-in binding cheat-sheet).
+    Mod+Shift+Slash { show-hotkey-overlay; }
+
+    // --- launch ---
+    Mod+Return hotkey-overlay-title="Open a terminal: kitty" { spawn "kitty"; }
+    Mod+Space hotkey-overlay-title="Run an application" { spawn-sh "~/.local/bin/fresh-env rofi -show drun -theme ~/.config/rofi/current.rasi"; }
+    Mod+Shift+Space { spawn-sh "~/.local/bin/fresh-env rofi -show run -theme ~/.config/rofi/current.rasi"; }
+    Mod+E { spawn-sh "~/.local/bin/fresh-env ~/.local/bin/strata"; }
+    Mod+Shift+W { spawn-sh "~/.local/bin/fresh-env ~/.local/bin/wallpaper-picker.sh"; }
+    Mod+P { spawn "system-config-printer"; }
+    // NiriMod - GUI settings management for this config.
+    Mod+Shift+S hotkey-overlay-title="Niri settings (NiriMod)" { spawn-sh "~/.local/bin/niri-mod.sh"; }
+    // App menu - rofi menu reaching the rice's own utility scripts.
+    Mod+Alt+Space hotkey-overlay-title="App menu" { spawn-sh "~/.local/bin/app-menu.sh"; }
+    // Keybinding cheat-sheet (this rice's, in a floating kitty).
+    Mod+I { spawn-sh "kitty --class KeybindingsHelp -e ~/.local/bin/keybindings-help.sh"; }
+    // Block-art screensaver.
+    Mod+Escape { spawn-sh "kitty --class Screensaver -e ~/.local/bin/screensaver.sh"; }
+
+    // --- rice toggles ---
+    // repeat=false on these toggles: niri repeats a held bind by default, which
+    // fires the toggle several times and cancels it (show-then-hide) - so a held
+    // or slow key press "won't hide". One action per physical press now.
+    Mod+Shift+C repeat=false hotkey-overlay-title="Caffeine (inhibit idle)" { spawn-sh "~/.local/bin/caffeine-toggle.sh"; }
+    Mod+N repeat=false hotkey-overlay-title="Do Not Disturb toggle" { spawn-sh "~/.local/bin/dnd-toggle.sh"; }
+    // Scratchpad apps (summon/stash via niri-scratch.sh).
+    Mod+M       repeat=false hotkey-overlay-title="Music player (cliamp)" { spawn-sh "~/.local/bin/cliamp-toggle.sh"; }
+    Mod+Shift+M repeat=false { spawn-sh "~/.local/bin/cliamp-setup.sh"; }
+    Mod+A       repeat=false hotkey-overlay-title="AI window (Mistral Vibe CLI)" { spawn-sh "~/.local/bin/ai-window-toggle.sh"; }
+    Mod+Shift+A repeat=false { spawn-sh "~/.local/bin/mistral-vibe-toggle.sh"; }
+    // Copilot/AI key (Super+Shift+F23 on recent laptops) -> Claude Desktop.
+    Mod+Shift+F23 repeat=false { spawn-sh "~/.local/bin/claude-desktop-toggle.sh"; }
+
+    // --- window management ---
+    Mod+Shift+Q repeat=false { close-window; }
+    Mod+F { maximize-column; }
+    Mod+Shift+F { fullscreen-window; }
+    Mod+Shift+Backslash { toggle-window-floating; }
+    Mod+Ctrl+Space { switch-focus-between-floating-and-tiling; }
+    Mod+C { center-column; }
+
+    // --- focus (columns = left/right, windows in a column = up/down) ---
+    Mod+H     { focus-column-left; }
+    Mod+L     { focus-column-right; }
+    Mod+J     { focus-window-down; }
+    Mod+K     { focus-window-up; }
+    Mod+Left  { focus-column-left; }
+    Mod+Right { focus-column-right; }
+    Mod+Down  { focus-window-down; }
+    Mod+Up    { focus-window-up; }
+
+    // --- move ---
+    Mod+Shift+H     { move-column-left; }
+    Mod+Shift+L     { move-column-right; }
+    Mod+Shift+J     { move-window-down; }
+    Mod+Shift+K     { move-window-up; }
+    Mod+Shift+Left  { move-column-left; }
+    Mod+Shift+Right { move-column-right; }
+
+    // --- consume / expel windows into and out of the current column ---
+    Mod+Comma  { consume-window-into-column; }
+    Mod+Period { expel-window-from-column; }
+    Mod+BracketLeft  { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+
+    // --- column sizing ---
+    Mod+R      { switch-preset-column-width; }
+    Mod+Minus  { set-column-width "-10%"; }
+    Mod+Equal  { set-column-width "+10%"; }
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
+
+    // --- multi-monitor ---
+    Mod+Ctrl+H { focus-monitor-left; }
+    Mod+Ctrl+L { focus-monitor-right; }
+    Mod+Ctrl+Shift+H { move-column-to-monitor-left; }
+    Mod+Ctrl+Shift+L { move-column-to-monitor-right; }
+
+    // --- workspaces (niri workspaces are a dynamic vertical strip per monitor) ---
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+    Mod+Shift+1 { move-column-to-workspace 1; }
+    Mod+Shift+2 { move-column-to-workspace 2; }
+    Mod+Shift+3 { move-column-to-workspace 3; }
+    Mod+Shift+4 { move-column-to-workspace 4; }
+    Mod+Shift+5 { move-column-to-workspace 5; }
+    Mod+Shift+6 { move-column-to-workspace 6; }
+    Mod+Shift+7 { move-column-to-workspace 7; }
+    Mod+Shift+8 { move-column-to-workspace 8; }
+    Mod+Shift+9 { move-column-to-workspace 9; }
+    Mod+Page_Down { focus-workspace-down; }
+    Mod+Page_Up   { focus-workspace-up; }
+    Mod+Shift+Page_Down { move-column-to-workspace-down; }
+    Mod+Shift+Page_Up   { move-column-to-workspace-up; }
+
+    // --- overview (niri's bird's-eye view of all workspaces) ---
+    Mod+Tab { toggle-overview; }
+
+    // --- lock / screenshot / power ---
+    Mod+Alt+L hotkey-overlay-title="Lock the screen" { spawn-sh "~/.local/bin/lock.sh --with-screensaver"; }
+    // grim + slurp + satty (the rice's editor). niri's own `screenshot` action
+    // is still available on Ctrl/Alt+Print below.
+    Print { spawn-sh "~/.local/bin/fresh-env ~/.local/bin/screenshot.sh"; }
+    Ctrl+Print  { screenshot-screen; }
+    Alt+Print   { screenshot-window; }
+    Mod+Shift+P { spawn-sh "~/.local/bin/fresh-env ~/.local/bin/powermenu.sh"; }
+
+    // --- colorpicker / clipboard ---
+    Mod+Shift+G { spawn-sh "~/.local/bin/colorpicker.sh"; }
+    Mod+Shift+V { spawn "copyq" "toggle"; }
+
+    // --- volume / brightness / media ---
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "~/.local/bin/osd-volume.sh up"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "~/.local/bin/osd-volume.sh down"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "~/.local/bin/osd-volume.sh mute"; }
+    XF86MonBrightnessUp   { spawn-sh "~/.local/bin/osd-brightness.sh up"; }
+    XF86MonBrightnessDown { spawn-sh "~/.local/bin/osd-brightness.sh down"; }
+    XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }
+    XF86AudioNext allow-when-locked=true { spawn "playerctl" "next"; }
+    XF86AudioPrev allow-when-locked=true { spawn "playerctl" "previous"; }
+
+    // --- session ---
+    // Niri live-reloads on save, so there is no manual reload bind.
+    Mod+Shift+E { quit; }
+}
+
+// --- active theme (applied live by waybar-theme.sh) --------------------------
+// Positional include: merged OVER everything above, so the current theme's
+// focus-ring palette wins. The installer always seeds this file, so the include
+// never dangles.
+include "themes/current.kdl"

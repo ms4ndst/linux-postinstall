@@ -500,6 +500,11 @@ for_window [class=".*"] border pixel 2
 for_window [app_id="nm-connection-editor"] floating enable, resize set 550 450, move position center
 for_window [app_id="wdisplays"] floating enable, resize set 900 600, move position center
 for_window [app_id="com.gabm.satty"] floating enable, resize set 1000 700, move position center
+# Greenshot editor - float it (region capture uses screencopy, not a window, so
+# this only affects the editor/settings windows). StartupWMClass=greenshot;
+# app_id covers native Wayland, class covers XWayland.
+for_window [app_id="greenshot"] floating enable, resize set 1100 750, move position center
+for_window [class="greenshot"] floating enable, resize set 1100 750, move position center
 for_window [app_id="blueman-manager"] floating enable, resize set 500 400, move position center
 for_window [app_id="(com.github.hluk.copyq|copyq)"] floating enable, resize set 450 500, move position center
 for_window [class="copyq"] floating enable, resize set 450 500, move position center
