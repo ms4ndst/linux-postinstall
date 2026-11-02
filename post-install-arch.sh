@@ -2286,6 +2286,56 @@ install_security_tools() {
     fi
 }
 
+# Turn the ClamAV packages into a working resident scanner: pull the signature
+# database, un-disable any shipped-disabled config (upstream and openSUSE ship
+# an "Example" guard line; Debian does not), open a local socket, and enable
+# the freshclam updater + the scan daemon. Config paths and unit names vary by
+# distro, so both are discovered rather than hard-coded. The daemon keeps
+# ~1 GB of signatures resident, so this only runs in the opt-in Defensive set.
+configure_clamav() {
+    command -v freshclam &>/dev/null || { log INFO "ClamAV not installed - skipping daemon setup"; return 0; }
+    log INFO "Configuring ClamAV (daemon + freshclam updater; the first signature download can take a minute)..."
+
+    local f clamd_conf="" freshclam_conf=""
+    for f in /etc/clamav/clamd.conf /etc/clamd.conf /etc/clamd.d/scan.conf; do
+        [ -f "$f" ] && { clamd_conf="$f"; break; }
+    done
+    for f in /etc/clamav/freshclam.conf /etc/freshclam.conf; do
+        [ -f "$f" ] && { freshclam_conf="$f"; break; }
+    done
+    [ -n "$freshclam_conf" ] && sed -i 's/^Example/#Example/' "$freshclam_conf"
+    if [ -n "$clamd_conf" ]; then
+        sed -i 's/^Example/#Example/' "$clamd_conf"
+        grep -qiE '^[[:space:]]*LocalSocket[[:space:]]' "$clamd_conf" || sed -i 's/^#[[:space:]]*LocalSocket /LocalSocket /' "$clamd_conf"
+    fi
+
+    # SELinux (rpm distros): let clamd read the whole filesystem. No-op where
+    # setsebool is absent (Debian/Arch/openSUSE use AppArmor or nothing).
+    command -v setsebool &>/dev/null && setsebool -P antivirus_can_scan_system 1 2>/dev/null || true
+
+    local svc updater="" daemon=""
+    for svc in clamav-freshclam freshclam freshclamd; do
+        systemctl cat "$svc.service" &>/dev/null && { updater="$svc"; break; }
+    done
+    [ -n "$updater" ] && systemctl stop "$updater" &>/dev/null || true
+    if freshclam &>/dev/null; then
+        log SUCCESS "ClamAV signature database downloaded"
+    else
+        log WARNING "freshclam could not update now (offline?) - the updater timer will retry; the daemon starts once a database exists"
+    fi
+    [ -n "$updater" ] && systemctl enable --now "$updater" &>/dev/null || true
+
+    local svc2
+    for svc2 in clamav-daemon clamd@scan clamd; do
+        systemctl cat "$svc2.service" &>/dev/null && { daemon="$svc2"; break; }
+    done
+    if [ -n "$daemon" ] && systemctl enable --now "$daemon" &>/dev/null; then
+        log SUCCESS "$daemon running - on-demand scan: clamdscan --fdpass --multiscan <path>"
+    else
+        log WARNING "ClamAV daemon unit not found/started - check: systemctl list-unit-files | grep -i clam"
+    fi
+}
+
 install_security_defensive() {
     # audit (auditd/auditctl) lives in Arch's [core] repo, not AUR - often
     # already pulled in as a base dependency.
@@ -2293,6 +2343,7 @@ install_security_defensive() {
         lynis chkrootkit rkhunter aide audit
     batch_install "Defensive - Anti-Malware" \
         clamav
+    configure_clamav
     # fail2ban is official [extra]. suricata has no official-repo package on
     # Arch - it's AUR-only, currently actively maintained there.
     batch_install "Defensive - IDS/IPS" \

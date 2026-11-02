@@ -2892,14 +2892,61 @@ install_security_defensive() {
     batch_install "Defensive - Hardening & Integrity" \
         lynis chkrootkit rkhunter aide audit
 
+    # clamd is the resident scan daemon (Fedora's name; the Debian/Ubuntu
+    # package is clamav-daemon). clamav-freshclam provides the freshclam
+    # signature updater (the old clamav-update name is obsoleted into it).
     batch_install "Defensive - Anti-Malware" \
-        clamav clamav-freshclam
+        clamav clamd clamav-freshclam
+    configure_clamav
 
     batch_install "Defensive - IDS/IPS" \
         fail2ban suricata
 
     batch_install "Defensive - Firewall, VPN & Credentials" \
         firewalld firewall-config openvpn wireguard-tools keepassxc
+}
+
+# Turn the ClamAV packages into a working resident scanner: pull signatures,
+# un-disable Fedora's shipped-disabled updater + daemon configs (each carries
+# an "Example" line that makes freshclam/clamd refuse to start), open the local
+# socket, let SELinux scan the filesystem, and enable clamd@scan (a templated
+# unit) plus the freshclam updater. The daemon keeps ~1 GB of signatures
+# resident, so this only runs inside the opt-in Defensive category.
+configure_clamav() {
+    command -v freshclam &>/dev/null || { log INFO "ClamAV not installed - skipping daemon setup"; return 0; }
+    log INFO "Configuring ClamAV (clamd@scan daemon + freshclam updater)..."
+
+    # 1. Updater config: drop the Example guard so freshclam.conf is usable.
+    [ -f /etc/freshclam.conf ] && sed -i 's/^Example/#Example/' /etc/freshclam.conf
+
+    # 2. Fetch the signature database now - clamd@scan refuses to start without
+    #    one. Stop the updater service first so this manual run can take the DB
+    #    lock; freshclam drops to the DatabaseOwner user, so ownership stays
+    #    correct for the service afterwards.
+    systemctl stop clamav-freshclam &>/dev/null || true
+    if freshclam &>/dev/null; then
+        log SUCCESS "ClamAV signature database downloaded"
+    else
+        log WARNING "freshclam could not update now (offline?) - the clamav-freshclam timer will retry; clamd@scan starts once a database exists"
+    fi
+    systemctl enable --now clamav-freshclam &>/dev/null || true
+
+    # 3. Daemon config: drop the Example guard and open the local socket.
+    local scan=/etc/clamd.d/scan.conf
+    if [ -f "$scan" ]; then
+        sed -i 's/^Example/#Example/' "$scan"
+        sed -i 's|^#*[[:space:]]*LocalSocket[[:space:]]\+/run/clamd.scan/clamd.sock|LocalSocket /run/clamd.scan/clamd.sock|' "$scan"
+    fi
+
+    # 4. SELinux: let clamd read the whole filesystem (no-op if SELinux is off).
+    command -v setsebool &>/dev/null && setsebool -P antivirus_can_scan_system 1 2>/dev/null || true
+
+    # 5. Start the templated daemon unit.
+    if systemctl enable --now clamd@scan &>/dev/null; then
+        log SUCCESS "clamd@scan running - on-demand scan: clamdscan --fdpass --multiscan <path>"
+    else
+        log WARNING "clamd@scan not started yet (likely no signature DB) - after 'sudo freshclam' run: sudo systemctl start clamd@scan"
+    fi
 }
 
 # ========== DEVOPS & CLOUD ==========
