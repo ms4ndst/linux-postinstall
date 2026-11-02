@@ -139,6 +139,14 @@ PKGS[security]="nmap masscan nikto sqlmap gobuster whatweb wfuzz john hashcat th
 NOTES[security]="chkrootkit and rkhunter are not in nixpkgs"
 PKGS[security-defensive]="lynis aide suricata fail2ban clamav keepassxc wireguard-tools openvpn"
 SVCS[security-defensive]="clamav fail2ban"
+# The clamav token enables the resident daemon + freshclam updater declaratively
+# (see emit_services). Real-time on-access scanning (clamonacc) is deliberately
+# left off: nixpkgs only gained a services.clamav.clamonacc option on newer
+# channels, so emitting it could break evaluation on an older nixpkgs. Enable it
+# yourself on a channel that has it - detect-only, ~2.5 GB RAM total:
+#   services.clamav.clamonacc.enable = true;
+#   services.clamav.daemon.settings = { OnAccessIncludePath = [ "/home" ]; OnAccessPrevention = false; OnAccessExtraScanning = true; };
+NOTES[security-defensive]="the ClamAV daemon + updater are enabled declaratively, but real-time on-access scanning (clamonacc) is left off because the services.clamav.clamonacc option only exists on newer nixpkgs. On a channel that has it, add: services.clamav.clamonacc.enable = true; and set OnAccessIncludePath=[\"/home\"], OnAccessPrevention=false in services.clamav.daemon.settings (detect-only, ~2.5 GB RAM)"
 PKGS[windows]="wine winetricks zenity"
 PKGS[creative-graphics]="nomacs flameshot imagemagick graphicsmagick optipng jpegoptim pngquant libwebp"
 NOTES[creative-graphics]="greenshot for Linux (github.com/ms4ndst/greenshot_for_linux, the Wayland Greenshot port) is not in nixpkgs and publishes no binaries - build it from source with the .NET 10 SDK (e.g. nix-shell -p dotnetCorePackages.sdk_10_0 git, then: git clone https://github.com/ms4ndst/greenshot_for_linux && cd greenshot_for_linux && bash packaging/install.sh, which installs to ~/.local)"

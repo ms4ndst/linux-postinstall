@@ -3821,6 +3821,83 @@ configure_clamav() {
     fi
 }
 
+# Turn on real-time (on-access) scanning: clamonacc watches /home through
+# fanotify and hands each opened file to clamd. It needs --fdpass, or clamd
+# (running as an unprivileged user) can't read 700-mode homes and every access
+# fails with "Permission denied"; a systemd drop-in rebuilds ExecStart with the
+# flag. The watcher unit's name and the clamd config path vary by distro, so
+# both are discovered; where no clamonacc unit ships, real-time scanning is
+# skipped (on-demand scanning still works). Kept detect-only (OnAccessPrevention
+# no) so a clamd stall can't hang file access. Roughly doubles ClamAV's
+# footprint to ~2.5 GB RAM, so it only belongs in the opt-in Defensive set.
+configure_clamav_onaccess() {
+    local onacc="" svc
+    for svc in clamav-clamonacc clamonacc; do
+        systemctl cat "$svc.service" &>/dev/null && { onacc="$svc"; break; }
+    done
+    [ -n "$onacc" ] || { log INFO "No clamonacc unit found - skipping on-access scanning (on-demand scanning still works)"; return 0; }
+
+    local f clamd_conf=""
+    for f in /etc/clamav/clamd.conf /etc/clamd.conf /etc/clamd.d/scan.conf; do
+        [ -f "$f" ] && { clamd_conf="$f"; break; }
+    done
+    [ -n "$clamd_conf" ] || { log INFO "clamd config not found - skipping on-access scanning"; return 0; }
+    log INFO "Configuring ClamAV on-access scanning ($onacc watches /home; ~2.5 GB RAM total)..."
+
+    # On-access settings, appended to the daemon config clamonacc shares.
+    # Idempotent. Watch /home, never / (which can cause scan loops); exclude
+    # clamd's own reader user so its reads don't re-trigger scans, and every
+    # user's cache dir to cut CPU and log noise.
+    if ! grep -q '^OnAccessIncludePath' "$clamd_conf"; then
+        local clam_user
+        clam_user="$(grep -m1 '^User ' "$clamd_conf" | awk '{print $2}')"
+        [ -n "$clam_user" ] || clam_user=clamav
+        {
+            echo ''
+            echo '# --- On-access scanning (added by post-install) ---'
+            echo 'OnAccessIncludePath /home'
+            echo "OnAccessExcludeUname $clam_user"
+            echo 'OnAccessExtraScanning yes'
+            echo 'OnAccessPrevention no'
+            local d
+            for d in /home/*/.cache; do
+                [ -d "$d" ] && echo "OnAccessExcludePath $d"
+            done
+        } >> "$clamd_conf"
+    fi
+
+    # Raise the inotify watch limit - the default is too low for a big /home.
+    echo 'fs.inotify.max_user_watches=524288' > /etc/sysctl.d/90-clamonacc.conf
+    sysctl -p /etc/sysctl.d/90-clamonacc.conf &>/dev/null || true
+
+    # Add --fdpass to the watcher's ExecStart via a drop-in (the empty
+    # ExecStart= clears the stock line first), rebuilt from the shipped command
+    # so the --config-file path is preserved.
+    local orig
+    orig="$(systemctl cat "$onacc.service" 2>/dev/null | grep -m1 '^ExecStart=' | sed 's/^ExecStart=//' || true)"
+    if [ -n "$orig" ] && [[ "$orig" != *--fdpass* ]]; then
+        local fixed="${orig/ / --fdpass }"
+        mkdir -p "/etc/systemd/system/$onacc.service.d"
+        printf '[Service]\nExecStart=\nExecStart=%s\n' "$fixed" \
+            > "/etc/systemd/system/$onacc.service.d/override.conf"
+        systemctl daemon-reload
+    fi
+
+    # Restart the daemon so it re-reads the new OnAccess* directives, then start
+    # the watcher.
+    local svc2 daemon=""
+    for svc2 in clamav-daemon clamd@scan clamd; do
+        systemctl cat "$svc2.service" &>/dev/null && { daemon="$svc2"; break; }
+    done
+    [ -n "$daemon" ] && systemctl restart "$daemon" &>/dev/null || true
+
+    if systemctl enable --now "$onacc" &>/dev/null && systemctl restart "$onacc" &>/dev/null; then
+        log SUCCESS "$onacc watching /home (detect-only, ~2.5 GB RAM) - test with the EICAR file; logs: journalctl -u $onacc"
+    else
+        log WARNING "$onacc did not start - check: systemctl status $onacc; journalctl -u $onacc"
+    fi
+}
+
 install_security_defensive() {
     # System hardening, auditing, and file integrity
     batch_install "Defensive - Hardening & Integrity" \
@@ -3831,6 +3908,7 @@ install_security_defensive() {
     batch_install "Defensive - Anti-Malware" \
         clamav clamav-daemon clamav-freshclam
     configure_clamav
+    configure_clamav_onaccess
 
     # Intrusion detection / prevention
     batch_install "Defensive - IDS/IPS" \

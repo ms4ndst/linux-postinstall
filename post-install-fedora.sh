@@ -2898,6 +2898,7 @@ install_security_defensive() {
     batch_install "Defensive - Anti-Malware" \
         clamav clamd clamav-freshclam
     configure_clamav
+    configure_clamav_onaccess
 
     batch_install "Defensive - IDS/IPS" \
         fail2ban suricata
@@ -2946,6 +2947,76 @@ configure_clamav() {
         log SUCCESS "clamd@scan running - on-demand scan: clamdscan --fdpass --multiscan <path>"
     else
         log WARNING "clamd@scan not started yet (likely no signature DB) - after 'sudo freshclam' run: sudo systemctl start clamd@scan"
+    fi
+}
+
+# Turn on real-time (on-access) scanning. clamonacc is a separate root process
+# that watches /home through fanotify and hands each opened file to clamd.
+# Fedora's stock clamav-clamonacc unit omits --fdpass, so clamd (running as the
+# unprivileged clamscan user) then can't read 700-mode homes and every access
+# fails with "Permission denied"; a systemd drop-in adds the flag so clamonacc
+# passes an already-open descriptor instead. Kept detect-only
+# (OnAccessPrevention no) so a clamd stall can never hang file access. This
+# roughly doubles ClamAV's footprint to ~2.5 GB RAM, so it's the heaviest piece
+# of the Defensive set and only runs once clamd@scan is actually up.
+configure_clamav_onaccess() {
+    systemctl is-active clamd@scan &>/dev/null || {
+        log INFO "clamd@scan not running - skipping on-access scanning setup"
+        return 0
+    }
+    systemctl cat clamav-clamonacc.service &>/dev/null || {
+        log INFO "clamav-clamonacc unit not present - skipping on-access scanning"
+        return 0
+    }
+    log INFO "Configuring ClamAV on-access scanning (clamonacc watches /home; ~2.5 GB RAM total)..."
+
+    local scan=/etc/clamd.d/scan.conf
+    # 1. On-access settings, appended to the daemon config clamonacc shares.
+    #    Idempotent (only if not already present). Watch /home, never / (which
+    #    can cause scan loops); exclude clamd's own reader user so its reads
+    #    don't re-trigger scans, and every user's cache dir to cut CPU/log noise.
+    if [ -f "$scan" ] && ! grep -q '^OnAccessIncludePath' "$scan"; then
+        local clam_user
+        clam_user="$(grep -m1 '^User ' "$scan" | awk '{print $2}')"
+        [ -n "$clam_user" ] || clam_user=clamscan
+        {
+            echo ''
+            echo '# --- On-access scanning (added by post-install) ---'
+            echo 'OnAccessIncludePath /home'
+            echo "OnAccessExcludeUname $clam_user"
+            echo 'OnAccessExtraScanning yes'
+            echo 'OnAccessPrevention no'
+            local d
+            for d in /home/*/.cache; do
+                [ -d "$d" ] && echo "OnAccessExcludePath $d"
+            done
+        } >> "$scan"
+    fi
+
+    # 2. Raise the inotify watch limit - the default is too low for a big /home.
+    echo 'fs.inotify.max_user_watches=524288' > /etc/sysctl.d/90-clamonacc.conf
+    sysctl -p /etc/sysctl.d/90-clamonacc.conf &>/dev/null || true
+
+    # 3. Add --fdpass to the unit's ExecStart via a drop-in (the empty
+    #    ExecStart= clears the stock line first). Rebuilt from the shipped
+    #    command so the --config-file path stays whatever the unit ships with.
+    local orig
+    orig="$(systemctl cat clamav-clamonacc.service 2>/dev/null | grep -m1 '^ExecStart=' | sed 's/^ExecStart=//' || true)"
+    if [ -n "$orig" ] && [[ "$orig" != *--fdpass* ]]; then
+        local fixed="${orig/ / --fdpass }"
+        mkdir -p /etc/systemd/system/clamav-clamonacc.service.d
+        printf '[Service]\nExecStart=\nExecStart=%s\n' "$fixed" \
+            > /etc/systemd/system/clamav-clamonacc.service.d/override.conf
+        systemctl daemon-reload
+    fi
+
+    # 4. clamd must re-read scan.conf to pick up the new OnAccess* directives,
+    #    then start the watcher.
+    systemctl restart clamd@scan &>/dev/null || true
+    if systemctl enable --now clamav-clamonacc &>/dev/null && systemctl restart clamav-clamonacc &>/dev/null; then
+        log SUCCESS "clamonacc watching /home (detect-only, ~2.5 GB RAM) - test: curl -s https://secure.eicar.org/eicar.com.txt -o ~/eicar.txt && sleep 2 && journalctl -u clamav-clamonacc --since -1min"
+    else
+        log WARNING "clamav-clamonacc did not start - check: systemctl status clamav-clamonacc; journalctl -u clamav-clamonacc"
     fi
 }
 
