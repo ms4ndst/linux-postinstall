@@ -937,6 +937,17 @@ def adapt_config(cfg, name):
     if isinstance(wx, dict):
         wx["on-click"] = "~/.local/bin/weather-float.sh"
 
+    # 3f1. network: the upstream themes leave the network widget click-less, so
+    #      clicking it did nothing. Wire it to this rice's own tools (present on
+    #      both the Sway and niri rices): left opens the rofi Wi-Fi picker,
+    #      right opens nm-connection-editor (full settings), middle toggles the
+    #      Wi-Fi radio.
+    nx = cfg.get("network")
+    if isinstance(nx, dict):
+        nx.setdefault("on-click", "~/.local/bin/wifi-menu.sh")
+        nx.setdefault("on-click-right", "nm-connection-editor")
+        nx.setdefault("on-click-middle", "~/.local/bin/wifi-toggle.sh")
+
     # 3f2. cpu/memory: raise the "warning" (orange background) threshold from the
     #      upstream 50% to 70%, so the widget only warms up under real sustained
     #      load instead of on routine half-usage. "critical" (red) stays at 80.
@@ -1826,20 +1837,27 @@ cat > "$BIN/wttrbar" <<'HANCORESHIM_EOF'
 #!/usr/bin/env python3
 """wttrbar shim for the HANCORE waybar themes.
 
-The real wttrbar (github.com/bcazaux/wttrbar) is a Go binary not packaged
-for Fedora. This implements the subset of its CLI the HANCORE configs use
-(--nerd, --location <name>, --custom-indicator <json>, --fahrenheit) and
-its JSON output shape, so the themes' custom/weather modules work as-is.
-
-fetches wttr.in's ?format=j1 (like the real tool), maps the current
-condition to a Nerd Font glyph, and prints one JSON line:
+The real wttrbar (github.com/bjesus/wttrbar) is a Go binary not packaged for
+Fedora. This implements the subset of its CLI the HANCORE configs use
+(--nerd, --location <name>, --custom-indicator <json>, --fahrenheit) and its
+JSON output shape, so the themes' custom/weather modules work as-is:
   {"text": "15°", "alt": "Sunny", "tooltip": "Sunny: 15°C (feels 14°)"}
 
-Called by waybar every 60s; a fetch failure prints the last good value
-when cached, else an empty placeholder so the module just hides.
+Data source: open-meteo.com (free, no API key). The original wttr.in backend is
+a single host that is frequently down or blocked on corporate networks (a
+connection-refused there is what makes the widget show nothing); open-meteo is
+reliable and reachable. Location is a city name resolved via open-meteo's
+geocoding API (cached), or a literal "lat,lon"; pick it with --location, the
+WEATHER_LOCATION env var, or ~/.config/weather/location (default: Stockholm).
+
+Called by waybar every 60s; a fetch failure prints the last good value when
+cached, else an empty placeholder so the module just hides.
 """
 import json
+import os
+import re
 import sys
+import urllib.parse
 import urllib.request
 
 NERD_ICONS = [
@@ -1852,10 +1870,33 @@ NERD_ICONS = [
 ]
 FALLBACK_ICON = "󰖒"
 
+# WMO weather code -> (description, icon keyword matched against NERD_ICONS).
+WMO = {
+    0: ("Clear", "clear"), 1: ("Mainly clear", "clear"),
+    2: ("Partly cloudy", "cloudy"), 3: ("Overcast", "overcast"),
+    45: ("Fog", "fog"), 48: ("Rime fog", "fog"),
+    51: ("Light drizzle", "drizzle"), 53: ("Drizzle", "drizzle"),
+    55: ("Heavy drizzle", "drizzle"),
+    56: ("Freezing drizzle", "sleet"), 57: ("Freezing drizzle", "sleet"),
+    61: ("Light rain", "rain"), 63: ("Rain", "rain"), 65: ("Heavy rain", "rain"),
+    66: ("Freezing rain", "sleet"), 67: ("Freezing rain", "sleet"),
+    71: ("Light snow", "snow"), 73: ("Snow", "snow"), 75: ("Heavy snow", "snow"),
+    77: ("Snow grains", "snow"),
+    80: ("Rain showers", "shower"), 81: ("Rain showers", "shower"),
+    82: ("Violent showers", "pouring"),
+    85: ("Snow showers", "snow"), 86: ("Snow showers", "snow"),
+    95: ("Thunderstorm", "thunder"),
+    96: ("Thunderstorm, hail", "thunder"), 99: ("Thunderstorm, hail", "thunder"),
+}
+
+CACHE_DIR = os.path.expanduser("~/.cache")
+GEO_CACHE = os.path.join(CACHE_DIR, "weather-geocode.json")
+LAST_CACHE = os.path.join(CACHE_DIR, "wttrbar-last.json")
+
 
 def parse_args(argv):
     opts = {"location": None, "nerd": False, "fahrenheit": False,
-            "custom_indicator": None, "main-indicator": "weatherDesc"}
+            "custom_indicator": None, "main_indicator": "weatherDesc"}
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -1864,8 +1905,7 @@ def parse_args(argv):
         elif a == "--fahrenheit":
             opts["fahrenheit"] = True
         elif a in ("--location", "--loc") and i + 1 < len(argv):
-            opts["location"] = argv[i + 1]
-            i += 1
+            opts["location"] = argv[i + 1]; i += 1
         elif a.startswith("--location="):
             opts["location"] = a.split("=", 1)[1]
         elif a in ("--custom-indicator", "--custom-indicator-text") and i + 1 < len(argv):
@@ -1875,50 +1915,113 @@ def parse_args(argv):
                 pass
             i += 1
         elif a == "--main-indicator" and i + 1 < len(argv):
-            opts["main_indicator"] = argv[i + 1]
-            i += 1
+            opts["main_indicator"] = argv[i + 1]; i += 1
         i += 1
     return opts
 
 
-def icon_for(desc):
-    d = desc.lower()
+def icon_for(keyword):
+    k = keyword.lower()
     for key, glyph in NERD_ICONS:
-        if key in d:
+        if key in k:
             return glyph
     return FALLBACK_ICON
 
 
+def _get_json(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "wttrbar-shim"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return json.load(r)
+
+
+def _read_cache(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _write_cache(path, obj):
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(obj, f)
+    except Exception:
+        pass
+
+
+def resolve_location(opts):
+    """Return (lat, lon, label). Accepts 'lat,lon' or a city name (geocoded)."""
+    loc = opts["location"] or os.environ.get("WEATHER_LOCATION")
+    if not loc:
+        try:
+            with open(os.path.expanduser("~/.config/weather/location"),
+                      encoding="utf-8") as f:
+                loc = f.read().strip()
+        except Exception:
+            loc = ""
+    loc = loc or "Stockholm"
+
+    m = re.match(r"^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$", loc)
+    if m:
+        return float(m.group(1)), float(m.group(2)), loc
+
+    cache = _read_cache(GEO_CACHE)
+    if loc in cache:
+        c = cache[loc]
+        return c[0], c[1], c[2]
+
+    url = ("https://geocoding-api.open-meteo.com/v1/search?name="
+           + urllib.parse.quote(loc) + "&count=1&language=en&format=json")
+    res = _get_json(url)
+    hit = (res.get("results") or [None])[0]
+    if not hit:
+        raise ValueError("no geocoding result for %r" % loc)
+    label = hit.get("name", loc)
+    if hit.get("country_code"):
+        label = "%s, %s" % (label, hit["country_code"])
+    lat, lon = hit["latitude"], hit["longitude"]
+    cache[loc] = [lat, lon, label]
+    _write_cache(GEO_CACHE, cache)
+    return lat, lon, label
+
+
 def main():
     opts = parse_args(sys.argv[1:])
-    url = "https://wttr.in/" + (opts["location"] or "")
-    url += "?format=j1"
+    unit = "°F" if opts["fahrenheit"] else "°C"
+    tunit = "fahrenheit" if opts["fahrenheit"] else "celsius"
     try:
-        with urllib.request.urlopen(url, timeout=10) as r:
-            data = json.load(r)
+        lat, lon, label = resolve_location(opts)
+        url = ("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
+               "&current=temperature_2m,apparent_temperature,weather_code"
+               "&temperature_unit=%s&timezone=auto" % (lat, lon, tunit))
+        cur = _get_json(url).get("current", {})
+        code = int(cur.get("weather_code", -1))
+        temp = round(cur.get("temperature_2m"))
+        feels = round(cur.get("apparent_temperature"))
     except Exception:
-        print(json.dumps({"text": "", "alt": "", "tooltip": "weather unavailable"}))
+        last = _read_cache(LAST_CACHE)
+        if last.get("text"):
+            print(json.dumps(last))
+        else:
+            print(json.dumps({"text": "", "alt": "", "tooltip": "weather unavailable"}))
         return
 
-    cur = data.get("current_condition", [{}])[0]
-    desc = (cur.get(opts["main-indicator"]) or cur.get("weatherDesc") or [{}])[0].get("value", "")
-    temp_key = "temp_F" if opts["fahrenheit"] else "temp_C"
-    feels_key = "FeelsLikeF" if opts["fahrenheit"] else "FeelsLikeC"
-    unit = "°F" if opts["fahrenheit"] else "°C"
-    temp = cur.get(temp_key, "?")
-
-    glyph = icon_for(desc)
+    desc, icon_key = WMO.get(code, ("Unknown", "cloudy"))
+    glyph = icon_for(icon_key)
     if opts["custom_indicator"]:
         glyph = opts["custom_indicator"].get(desc, glyph)
     if not opts["nerd"]:
         glyph = ""  # non-nerd fonts would show a tofu box for the glyphs
 
-    print(json.dumps({
+    out = {
         "text": "%s %s%s" % (glyph, temp, unit),
         "alt": desc,
-        "tooltip": "%s: %s%s (feels %s%s)" % (
-            desc, temp, unit, cur.get(feels_key, "?"), unit),
-    }))
+        "tooltip": "%s: %s%s (feels %s%s) — %s" % (desc, temp, unit, feels, unit, label),
+    }
+    print(json.dumps(out))
+    _write_cache(LAST_CACHE, out)
 
 
 if __name__ == "__main__":

@@ -125,12 +125,10 @@ spawn-sh-at-startup "command -v dex-autostart >/dev/null && dex-autostart -a -e 
 // stacking inside the launcher.
 spawn-sh-at-startup "~/.local/bin/swayidle-launch.sh"
 
-// --- scratchpad ---------------------------------------------------------------
-// Niri has no scratchpad, and a *named* stash workspace would be pinned to the
-// front (stealing desktop 1), so niri-scratch.sh "hides" summoned utilities
-// (cliamp, Claude, Mistral Vibe, the AI window) by parking them on the trailing
-// empty workspace niri keeps at the end - past the real desktops. No named
-// workspace is declared, so desktop 1 stays a normal desktop.
+// --- workspaces ---------------------------------------------------------------
+// Dynamic workspaces (no named/fixed ones): niri's default, and the waybar
+// theme shows a fixed set of slots. niri-scratch.sh stashes summoned utilities
+// on the trailing empty workspace (niri has no truly-hidden workspace).
 
 // --- window rules ------------------------------------------------------------
 // Float + center + size the usual settings-style dialogs and app-mode windows.
@@ -157,6 +155,12 @@ window-rule {
 window-rule {
     match app-id=r#"^greenshot$"#
     open-floating true
+    // Fix the size so the editor opens centered and doesn't grow off to the
+    // right as Greenshot resizes itself to a large screenshot (niri anchors a
+    // floating window's top-left on resize). 90% of the screen; proportion
+    // keeps it right on any resolution.
+    default-column-width { proportion 0.9; }
+    default-window-height { proportion 0.9; }
 }
 // Mistral Vibe web app: pin the floating size so it matches Claude's window
 // (the browser profile otherwise remembers an over-tall window that doesn't fit).
@@ -198,6 +202,27 @@ window-rule {
 window-rule {
     match app-id=r#"^(CliampSetup|AppMenuTask|KeybindingsHelp|UpdatesTask|WeatherFloat)$"#
     open-floating true
+}
+// Size them (kitty/rofi windows would otherwise open near-fullscreen).
+window-rule {
+    match app-id=r#"^WeatherFloat$"#
+    default-column-width { fixed 765; }
+    default-window-height { fixed 600; }
+}
+window-rule {
+    match app-id=r#"^KeybindingsHelp$"#
+    default-column-width { fixed 950; }
+    default-window-height { fixed 820; }
+}
+window-rule {
+    match app-id=r#"^UpdatesTask$"#
+    default-column-width { fixed 1000; }
+    default-window-height { fixed 560; }
+}
+window-rule {
+    match app-id=r#"^AppMenuTask$"#
+    default-column-width { fixed 640; }
+    default-window-height { fixed 420; }
 }
 // Block-art screensaver (Mod+Escape / idle) - fullscreen.
 window-rule {

@@ -285,12 +285,10 @@ spawn-sh-at-startup "command -v dex-autostart >/dev/null && dex-autostart -a -e 
 // stacking inside the launcher.
 spawn-sh-at-startup "~/.local/bin/swayidle-launch.sh"
 
-// --- scratchpad ---------------------------------------------------------------
-// Niri has no scratchpad, and a *named* stash workspace would be pinned to the
-// front (stealing desktop 1), so niri-scratch.sh "hides" summoned utilities
-// (cliamp, Claude, Mistral Vibe, the AI window) by parking them on the trailing
-// empty workspace niri keeps at the end - past the real desktops. No named
-// workspace is declared, so desktop 1 stays a normal desktop.
+// --- workspaces ---------------------------------------------------------------
+// Dynamic workspaces (no named/fixed ones): niri's default, and the waybar
+// theme shows a fixed set of slots. niri-scratch.sh stashes summoned utilities
+// on the trailing empty workspace (niri has no truly-hidden workspace).
 
 // --- window rules ------------------------------------------------------------
 // Float + center + size the usual settings-style dialogs and app-mode windows.
@@ -317,6 +315,12 @@ window-rule {
 window-rule {
     match app-id=r#"^greenshot$"#
     open-floating true
+    // Fix the size so the editor opens centered and doesn't grow off to the
+    // right as Greenshot resizes itself to a large screenshot (niri anchors a
+    // floating window's top-left on resize). 90% of the screen; proportion
+    // keeps it right on any resolution.
+    default-column-width { proportion 0.9; }
+    default-window-height { proportion 0.9; }
 }
 // Mistral Vibe web app: pin the floating size so it matches Claude's window
 // (the browser profile otherwise remembers an over-tall window that doesn't fit).
@@ -358,6 +362,27 @@ window-rule {
 window-rule {
     match app-id=r#"^(CliampSetup|AppMenuTask|KeybindingsHelp|UpdatesTask|WeatherFloat)$"#
     open-floating true
+}
+// Size them (kitty/rofi windows would otherwise open near-fullscreen).
+window-rule {
+    match app-id=r#"^WeatherFloat$"#
+    default-column-width { fixed 765; }
+    default-window-height { fixed 600; }
+}
+window-rule {
+    match app-id=r#"^KeybindingsHelp$"#
+    default-column-width { fixed 950; }
+    default-window-height { fixed 820; }
+}
+window-rule {
+    match app-id=r#"^UpdatesTask$"#
+    default-column-width { fixed 1000; }
+    default-window-height { fixed 560; }
+}
+window-rule {
+    match app-id=r#"^AppMenuTask$"#
+    default-column-width { fixed 640; }
+    default-window-height { fixed 420; }
 }
 // Block-art screensaver (Mod+Escape / idle) - fullscreen.
 window-rule {
@@ -542,6 +567,27 @@ layout {
 }
 CURKDL_EOF
 fi
+
+# ----------------------------------------------------------------------------
+# 3b. xdg-desktop-portal: disable the GlobalShortcuts portal
+# ----------------------------------------------------------------------------
+# Claude Desktop (and some other apps) request a global shortcut via the
+# GlobalShortcuts portal. Only xdg-desktop-portal-gnome implements it, and its
+# backend pops an "Add Keyboard Shortcuts" confirmation dialog on every launch.
+# This rice summons those apps via niri keybinds, not their own global
+# shortcuts, so route GlobalShortcuts to `none` (xdg-desktop-portal >= 1.18).
+# A user override replaces the whole file, so the other routings from niri's
+# shipped niri-portals.conf are repeated here; screencast/file-chooser stay on
+# gnome/gtk.
+mkdir -p "$CONF/xdg-desktop-portal"
+cat > "$CONF/xdg-desktop-portal/niri-portals.conf" <<'EOF'
+[preferred]
+default=gnome;gtk;
+org.freedesktop.impl.portal.Access=gtk;
+org.freedesktop.impl.portal.Notification=gtk;
+org.freedesktop.impl.portal.Secret=gnome-keyring;
+org.freedesktop.impl.portal.GlobalShortcuts=none;
+EOF
 
 # ----------------------------------------------------------------------------
 # 4. Terminal / lock / screenshot app configs
@@ -1621,11 +1667,11 @@ read -r cur_id cur_idx < <(niri msg --json workspaces 2>/dev/null \
   | jq -r '.[] | select(.is_focused) | "\(.id) \(.idx)"')
 
 if [ -n "${cur_id:-}" ] && [ "${wws:-}" = "$cur_id" ]; then
-  # On the current workspace (visible here) -> hide it. Niri has no scratchpad
-  # and a named stash workspace would steal desktop 1 (config workspaces are
-  # pinned to the front), so park the window on the trailing empty workspace
-  # that niri always keeps at the end of the focused output - past the user's
-  # real desktops. Niri then appends a fresh empty, so each hide stacks there.
+  # On the current workspace (visible here) -> stash it on the trailing empty
+  # workspace niri keeps at the end of the focused output (past the user's
+  # desktops), keeping focus where it is. niri has no truly-hidden workspace,
+  # and a named stash would be pinned to the front (desktop 1) and clutter the
+  # bar, so the trailing workspace is the least-intrusive dynamic option.
   __out="$(niri msg --json workspaces 2>/dev/null | jq -r '.[] | select(.is_focused) | .output')"
   __last="$(niri msg --json workspaces 2>/dev/null \
     | jq -r --arg o "$__out" '[ .[] | select(.output==$o) | .idx ] | max')"
@@ -2065,31 +2111,131 @@ RICE_EOF
 cat > "$BIN/weather-float.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
 # Toggle a floating weather window from the waybar weather widget. First click
-# opens the full wttr.in report (current conditions + 3-day forecast) in a
-# floating, OPAQUE, theme-colored kitty; clicking the widget again closes it
-# (q inside the window closes it too). The same wttr.in source the wttrbar
-# widget uses, just the whole report instead of today's temperature.
+# opens a wttr.in-style report - the same ASCII-art condition pictures wttr.in
+# draws - but rendered locally from open-meteo.com data (free, no API key),
+# because wttr.in itself is frequently down or blocked on corporate networks.
+# Clicking the widget again closes it (any key closes it too).
 #
-# Opaque (background_opacity=1.0) because the rice's kitty is translucent and
-# the wallpaper/other windows bleeding through made the report unreadable; a
-# smaller font_size so the 4-column forecast table fits the window width.
-#
-# Location is wttr.in's own IP geolocation (no config). To pin a city, export
-# WEATHER_LOCATION (e.g. "Stockholm" or "Gothenburg").
+# The art is the wego icon set (plain ANSI colours + box chars, no Nerd-Font
+# glyphs), so it renders in any font. Location: a city name resolved via
+# open-meteo geocoding, or a literal "lat,lon"; set WEATHER_LOCATION or
+# ~/.config/weather/location (default: Stockholm).
 set -u
 
-# --show is the renderer, run inside the kitty window.
 if [ "${1:-}" = "--show" ]; then
-  loc="${WEATHER_LOCATION:-}"
-  url="https://wttr.in/${loc}?FmM"       # F = no footer, m = metric, M = wind in m/s
-  if out="$(curl -fsS --max-time 12 "$url" 2>/dev/null)" && [ -n "$out" ]; then
-    printf '%s\n' "$out" | less -R       # -R keeps colors; scroll if it overflows
-  else
-    printf '\n  Weather unavailable - offline, or wttr.in is unreachable.\n'
-    printf '  (Set WEATHER_LOCATION to a city name if geo-IP guessed wrong.)\n\n'
-    printf '  Press any key to close.\n'
-    read -rn1 _
-  fi
+  python3 -I - <<'PYEOF'
+import json, os, re, urllib.parse, urllib.request
+from datetime import datetime
+
+R = "\033[0m"
+def paint(code, lines):
+    return ["\033[%sm%s%s" % (code, ln, R) for ln in lines]
+
+# wego / wttr.in ASCII art, 5 lines x 13 cols each.
+ART = {
+ "sunny": paint("38;5;226", ["    \\   /    ","     .-.     ","  ― (   ) ―  ","     `-'     ","    /   \\    "]),
+ "partly": paint("38;5;250", ["   \\  /      "," _ /\"\".-.    ","   \\_(   ).  ","   /(___(__) ","             "]),
+ "cloudy": paint("38;5;250", ["             ","     .--.    ","  .-(    ).  "," (___.__)__) ","             "]),
+ "overcast": paint("38;5;240;1", ["             ","     .--.    ","  .-(    ).  "," (___.__)__) ","             "]),
+ "fog": paint("38;5;251", ["             "," _ - _ - _ - ","  _ - _ - _  "," _ - _ - _ - ","             "]),
+ "rain": paint("38;5;111", ["     .-.     ","    (   ).   ","   (___(__)  ","    ‘ ‘ ‘ ‘  ","   ‘ ‘ ‘ ‘   "]),
+ "heavyrain": paint("38;5;21;1", ["     .-.     ","    (   ).   ","   (___(__)  ","  ‚‘‚‘‚‘‚‘   ","  ‚’‚’‚’‚’   "]),
+ "snow": paint("38;5;255", ["     .-.     ","    (   ).   ","   (___(__)  ","    *  *  *  ","   *  *  *   "]),
+ "sleet": paint("38;5;255", ["     .-.     ","    (   ).   ","   (___(__)  ","    ‘ * ‘ *  ","   * ‘ * ‘   "]),
+ "thunder": paint("38;5;228", ["     .-.     ","    (   ).   ","   (___(__)  ","  ⚡‘‘⚡‘‘   ","  ‘⚡‘‘⚡‘   "]),
+ "unknown": ["    .-.      ","     __)     ","    (        ","     `-'     ","      •      "],
+}
+# WMO weather code -> (text description, art key).
+WMO = {
+ 0:("Clear","sunny"),1:("Mainly clear","sunny"),2:("Partly cloudy","partly"),
+ 3:("Overcast","overcast"),45:("Fog","fog"),48:("Rime fog","fog"),
+ 51:("Light drizzle","rain"),53:("Drizzle","rain"),55:("Heavy drizzle","rain"),
+ 56:("Freezing drizzle","sleet"),57:("Freezing drizzle","sleet"),
+ 61:("Light rain","rain"),63:("Rain","rain"),65:("Heavy rain","heavyrain"),
+ 66:("Freezing rain","sleet"),67:("Freezing rain","sleet"),
+ 71:("Light snow","snow"),73:("Snow","snow"),75:("Heavy snow","snow"),
+ 77:("Snow grains","snow"),80:("Rain showers","rain"),81:("Rain showers","rain"),
+ 82:("Violent showers","heavyrain"),85:("Snow showers","snow"),86:("Snow showers","snow"),
+ 95:("Thunderstorm","thunder"),96:("Thunderstorm, hail","thunder"),99:("Thunderstorm, hail","thunder"),
+}
+ARROWS = ["↓","↙","←","↖","↑","↗","→","↘"]
+
+def getj(u):
+    req = urllib.request.Request(u, headers={"User-Agent": "wttrbar-shim"})
+    with urllib.request.urlopen(req, timeout=12) as r:
+        return json.load(r)
+
+def resolve():
+    loc = os.environ.get("WEATHER_LOCATION")
+    if not loc:
+        try:
+            loc = open(os.path.expanduser("~/.config/weather/location")).read().strip()
+        except Exception:
+            loc = ""
+    loc = loc or "Stockholm"
+    m = re.match(r"^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$", loc)
+    if m:
+        return float(m.group(1)), float(m.group(2)), loc
+    r = getj("https://geocoding-api.open-meteo.com/v1/search?name="
+             + urllib.parse.quote(loc) + "&count=1&language=en&format=json")
+    hit = (r.get("results") or [None])[0]
+    if not hit:
+        raise ValueError("unknown location: %r" % loc)
+    label = hit["name"] + ((", " + hit["country_code"]) if hit.get("country_code") else "")
+    return hit["latitude"], hit["longitude"], label
+
+def center(s, w):
+    s = s[:w]
+    pad = w - len(s)
+    return " " * (pad // 2) + s + " " * (pad - pad // 2)
+
+try:
+    lat, lon, label = resolve()
+    d = getj("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
+             "&current=temperature_2m,apparent_temperature,weather_code,"
+             "wind_speed_10m,wind_direction_10m,precipitation,relative_humidity_2m"
+             "&daily=weather_code,temperature_2m_max,temperature_2m_min"
+             "&forecast_days=4&wind_speed_unit=kmh&timezone=auto"
+             % (lat, lon))
+    cur = d["current"]
+    desc, key = WMO.get(int(cur["weather_code"]), ("Unknown", "unknown"))
+    art = ART.get(key, ART["unknown"])
+    arrow = ARROWS[int((cur.get("wind_direction_10m", 0) % 360) / 45 + 0.5) % 8]
+    info = [
+        desc,
+        "%d °C  (feels %d °C)" % (round(cur["temperature_2m"]), round(cur["apparent_temperature"])),
+        "%s %d km/h" % (arrow, round(cur.get("wind_speed_10m", 0))),
+        "%.1f mm  •  %d%% hum" % (cur.get("precipitation", 0.0), round(cur.get("relative_humidity_2m", 0))),
+        "",
+    ]
+    print()
+    print("  Weather report: " + label)
+    print()
+    for i in range(5):
+        print("  %s   %s" % (art[i], info[i]))
+    print()
+
+    dy = d["daily"]
+    cols = []
+    for i, day in enumerate(dy["time"]):
+        ddesc, dkey = WMO.get(int(dy["weather_code"][i]), ("Unknown", "unknown"))
+        da = ART.get(dkey, ART["unknown"])
+        name = datetime.strptime(day, "%Y-%m-%d").strftime("%A")
+        lo = round(dy["temperature_2m_min"][i]); hi = round(dy["temperature_2m_max"][i])
+        col = [center(name, 13)] + da + [center("%d / %d °C" % (hi, lo), 13)]
+        cols.append(col)
+    for r in range(len(cols[0])):
+        print("  " + "  ".join(col[r] for col in cols))
+    print()
+    print("  (press any key to close)")
+except Exception as e:
+    print()
+    print("  Weather unavailable — %s" % e)
+    print("  Set a city with WEATHER_LOCATION or ~/.config/weather/location.")
+    print()
+    print("  (press any key to close)")
+PYEOF
+  read -rsn1 _ 2>/dev/null || true
   exit 0
 fi
 
@@ -2101,8 +2247,8 @@ if [ -n "${__wid:-}" ]; then
 else
   kitty --class WeatherFloat \
         -o background_opacity=1.0 \
-        -o window_padding_width=0 \
-        -o font_size=8 \
+        -o window_padding_width=14 \
+        -o font_size=12 \
         -e "$0" --show >/dev/null 2>&1 &
   disown 2>/dev/null || true
 fi
@@ -3394,6 +3540,17 @@ def adapt_config(cfg, name):
     if isinstance(wx, dict):
         wx["on-click"] = "~/.local/bin/weather-float.sh"
 
+    # 3f1. network: the upstream themes leave the network widget click-less, so
+    #      clicking it did nothing. Wire it to this rice's own tools (present on
+    #      both the Sway and niri rices): left opens the rofi Wi-Fi picker,
+    #      right opens nm-connection-editor (full settings), middle toggles the
+    #      Wi-Fi radio.
+    nx = cfg.get("network")
+    if isinstance(nx, dict):
+        nx.setdefault("on-click", "~/.local/bin/wifi-menu.sh")
+        nx.setdefault("on-click-right", "nm-connection-editor")
+        nx.setdefault("on-click-middle", "~/.local/bin/wifi-toggle.sh")
+
     # 3f2. cpu/memory: raise the "warning" (orange background) threshold from the
     #      upstream 50% to 70%, so the widget only warms up under real sustained
     #      load instead of on routine half-usage. "critical" (red) stays at 80.
@@ -4334,20 +4491,27 @@ cat > "$BIN/wttrbar" <<'HANCORESHIM_EOF'
 #!/usr/bin/env python3
 """wttrbar shim for the HANCORE waybar themes.
 
-The real wttrbar (github.com/bcazaux/wttrbar) is a Go binary not packaged
-for Fedora. This implements the subset of its CLI the HANCORE configs use
-(--nerd, --location <name>, --custom-indicator <json>, --fahrenheit) and
-its JSON output shape, so the themes' custom/weather modules work as-is.
-
-fetches wttr.in's ?format=j1 (like the real tool), maps the current
-condition to a Nerd Font glyph, and prints one JSON line:
+The real wttrbar (github.com/bjesus/wttrbar) is a Go binary not packaged for
+Fedora. This implements the subset of its CLI the HANCORE configs use
+(--nerd, --location <name>, --custom-indicator <json>, --fahrenheit) and its
+JSON output shape, so the themes' custom/weather modules work as-is:
   {"text": "15°", "alt": "Sunny", "tooltip": "Sunny: 15°C (feels 14°)"}
 
-Called by waybar every 60s; a fetch failure prints the last good value
-when cached, else an empty placeholder so the module just hides.
+Data source: open-meteo.com (free, no API key). The original wttr.in backend is
+a single host that is frequently down or blocked on corporate networks (a
+connection-refused there is what makes the widget show nothing); open-meteo is
+reliable and reachable. Location is a city name resolved via open-meteo's
+geocoding API (cached), or a literal "lat,lon"; pick it with --location, the
+WEATHER_LOCATION env var, or ~/.config/weather/location (default: Stockholm).
+
+Called by waybar every 60s; a fetch failure prints the last good value when
+cached, else an empty placeholder so the module just hides.
 """
 import json
+import os
+import re
 import sys
+import urllib.parse
 import urllib.request
 
 NERD_ICONS = [
@@ -4360,10 +4524,33 @@ NERD_ICONS = [
 ]
 FALLBACK_ICON = "󰖒"
 
+# WMO weather code -> (description, icon keyword matched against NERD_ICONS).
+WMO = {
+    0: ("Clear", "clear"), 1: ("Mainly clear", "clear"),
+    2: ("Partly cloudy", "cloudy"), 3: ("Overcast", "overcast"),
+    45: ("Fog", "fog"), 48: ("Rime fog", "fog"),
+    51: ("Light drizzle", "drizzle"), 53: ("Drizzle", "drizzle"),
+    55: ("Heavy drizzle", "drizzle"),
+    56: ("Freezing drizzle", "sleet"), 57: ("Freezing drizzle", "sleet"),
+    61: ("Light rain", "rain"), 63: ("Rain", "rain"), 65: ("Heavy rain", "rain"),
+    66: ("Freezing rain", "sleet"), 67: ("Freezing rain", "sleet"),
+    71: ("Light snow", "snow"), 73: ("Snow", "snow"), 75: ("Heavy snow", "snow"),
+    77: ("Snow grains", "snow"),
+    80: ("Rain showers", "shower"), 81: ("Rain showers", "shower"),
+    82: ("Violent showers", "pouring"),
+    85: ("Snow showers", "snow"), 86: ("Snow showers", "snow"),
+    95: ("Thunderstorm", "thunder"),
+    96: ("Thunderstorm, hail", "thunder"), 99: ("Thunderstorm, hail", "thunder"),
+}
+
+CACHE_DIR = os.path.expanduser("~/.cache")
+GEO_CACHE = os.path.join(CACHE_DIR, "weather-geocode.json")
+LAST_CACHE = os.path.join(CACHE_DIR, "wttrbar-last.json")
+
 
 def parse_args(argv):
     opts = {"location": None, "nerd": False, "fahrenheit": False,
-            "custom_indicator": None, "main-indicator": "weatherDesc"}
+            "custom_indicator": None, "main_indicator": "weatherDesc"}
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -4372,8 +4559,7 @@ def parse_args(argv):
         elif a == "--fahrenheit":
             opts["fahrenheit"] = True
         elif a in ("--location", "--loc") and i + 1 < len(argv):
-            opts["location"] = argv[i + 1]
-            i += 1
+            opts["location"] = argv[i + 1]; i += 1
         elif a.startswith("--location="):
             opts["location"] = a.split("=", 1)[1]
         elif a in ("--custom-indicator", "--custom-indicator-text") and i + 1 < len(argv):
@@ -4383,50 +4569,113 @@ def parse_args(argv):
                 pass
             i += 1
         elif a == "--main-indicator" and i + 1 < len(argv):
-            opts["main_indicator"] = argv[i + 1]
-            i += 1
+            opts["main_indicator"] = argv[i + 1]; i += 1
         i += 1
     return opts
 
 
-def icon_for(desc):
-    d = desc.lower()
+def icon_for(keyword):
+    k = keyword.lower()
     for key, glyph in NERD_ICONS:
-        if key in d:
+        if key in k:
             return glyph
     return FALLBACK_ICON
 
 
+def _get_json(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "wttrbar-shim"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return json.load(r)
+
+
+def _read_cache(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _write_cache(path, obj):
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(obj, f)
+    except Exception:
+        pass
+
+
+def resolve_location(opts):
+    """Return (lat, lon, label). Accepts 'lat,lon' or a city name (geocoded)."""
+    loc = opts["location"] or os.environ.get("WEATHER_LOCATION")
+    if not loc:
+        try:
+            with open(os.path.expanduser("~/.config/weather/location"),
+                      encoding="utf-8") as f:
+                loc = f.read().strip()
+        except Exception:
+            loc = ""
+    loc = loc or "Stockholm"
+
+    m = re.match(r"^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$", loc)
+    if m:
+        return float(m.group(1)), float(m.group(2)), loc
+
+    cache = _read_cache(GEO_CACHE)
+    if loc in cache:
+        c = cache[loc]
+        return c[0], c[1], c[2]
+
+    url = ("https://geocoding-api.open-meteo.com/v1/search?name="
+           + urllib.parse.quote(loc) + "&count=1&language=en&format=json")
+    res = _get_json(url)
+    hit = (res.get("results") or [None])[0]
+    if not hit:
+        raise ValueError("no geocoding result for %r" % loc)
+    label = hit.get("name", loc)
+    if hit.get("country_code"):
+        label = "%s, %s" % (label, hit["country_code"])
+    lat, lon = hit["latitude"], hit["longitude"]
+    cache[loc] = [lat, lon, label]
+    _write_cache(GEO_CACHE, cache)
+    return lat, lon, label
+
+
 def main():
     opts = parse_args(sys.argv[1:])
-    url = "https://wttr.in/" + (opts["location"] or "")
-    url += "?format=j1"
+    unit = "°F" if opts["fahrenheit"] else "°C"
+    tunit = "fahrenheit" if opts["fahrenheit"] else "celsius"
     try:
-        with urllib.request.urlopen(url, timeout=10) as r:
-            data = json.load(r)
+        lat, lon, label = resolve_location(opts)
+        url = ("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
+               "&current=temperature_2m,apparent_temperature,weather_code"
+               "&temperature_unit=%s&timezone=auto" % (lat, lon, tunit))
+        cur = _get_json(url).get("current", {})
+        code = int(cur.get("weather_code", -1))
+        temp = round(cur.get("temperature_2m"))
+        feels = round(cur.get("apparent_temperature"))
     except Exception:
-        print(json.dumps({"text": "", "alt": "", "tooltip": "weather unavailable"}))
+        last = _read_cache(LAST_CACHE)
+        if last.get("text"):
+            print(json.dumps(last))
+        else:
+            print(json.dumps({"text": "", "alt": "", "tooltip": "weather unavailable"}))
         return
 
-    cur = data.get("current_condition", [{}])[0]
-    desc = (cur.get(opts["main-indicator"]) or cur.get("weatherDesc") or [{}])[0].get("value", "")
-    temp_key = "temp_F" if opts["fahrenheit"] else "temp_C"
-    feels_key = "FeelsLikeF" if opts["fahrenheit"] else "FeelsLikeC"
-    unit = "°F" if opts["fahrenheit"] else "°C"
-    temp = cur.get(temp_key, "?")
-
-    glyph = icon_for(desc)
+    desc, icon_key = WMO.get(code, ("Unknown", "cloudy"))
+    glyph = icon_for(icon_key)
     if opts["custom_indicator"]:
         glyph = opts["custom_indicator"].get(desc, glyph)
     if not opts["nerd"]:
         glyph = ""  # non-nerd fonts would show a tofu box for the glyphs
 
-    print(json.dumps({
+    out = {
         "text": "%s %s%s" % (glyph, temp, unit),
         "alt": desc,
-        "tooltip": "%s: %s%s (feels %s%s)" % (
-            desc, temp, unit, cur.get(feels_key, "?"), unit),
-    }))
+        "tooltip": "%s: %s%s (feels %s%s) — %s" % (desc, temp, unit, feels, unit, label),
+    }
+    print(json.dumps(out))
+    _write_cache(LAST_CACHE, out)
 
 
 if __name__ == "__main__":

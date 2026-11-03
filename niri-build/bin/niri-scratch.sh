@@ -61,11 +61,11 @@ read -r cur_id cur_idx < <(niri msg --json workspaces 2>/dev/null \
   | jq -r '.[] | select(.is_focused) | "\(.id) \(.idx)"')
 
 if [ -n "${cur_id:-}" ] && [ "${wws:-}" = "$cur_id" ]; then
-  # On the current workspace (visible here) -> hide it. Niri has no scratchpad
-  # and a named stash workspace would steal desktop 1 (config workspaces are
-  # pinned to the front), so park the window on the trailing empty workspace
-  # that niri always keeps at the end of the focused output - past the user's
-  # real desktops. Niri then appends a fresh empty, so each hide stacks there.
+  # On the current workspace (visible here) -> stash it on the trailing empty
+  # workspace niri keeps at the end of the focused output (past the user's
+  # desktops), keeping focus where it is. niri has no truly-hidden workspace,
+  # and a named stash would be pinned to the front (desktop 1) and clutter the
+  # bar, so the trailing workspace is the least-intrusive dynamic option.
   __out="$(niri msg --json workspaces 2>/dev/null | jq -r '.[] | select(.is_focused) | .output')"
   __last="$(niri msg --json workspaces 2>/dev/null \
     | jq -r --arg o "$__out" '[ .[] | select(.output==$o) | .idx ] | max')"

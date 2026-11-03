@@ -443,6 +443,17 @@ def adapt_config(cfg, name):
     if isinstance(wx, dict):
         wx["on-click"] = "~/.local/bin/weather-float.sh"
 
+    # 3f1. network: the upstream themes leave the network widget click-less, so
+    #      clicking it did nothing. Wire it to this rice's own tools (present on
+    #      both the Sway and niri rices): left opens the rofi Wi-Fi picker,
+    #      right opens nm-connection-editor (full settings), middle toggles the
+    #      Wi-Fi radio.
+    nx = cfg.get("network")
+    if isinstance(nx, dict):
+        nx.setdefault("on-click", "~/.local/bin/wifi-menu.sh")
+        nx.setdefault("on-click-right", "nm-connection-editor")
+        nx.setdefault("on-click-middle", "~/.local/bin/wifi-toggle.sh")
+
     # 3f2. cpu/memory: raise the "warning" (orange background) threshold from the
     #      upstream 50% to 70%, so the widget only warms up under real sustained
     #      load instead of on routine half-usage. "critical" (red) stays at 80.
