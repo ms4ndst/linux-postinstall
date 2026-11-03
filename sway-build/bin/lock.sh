@@ -49,7 +49,7 @@ while read -r name w h; do
   fi
   if [ -n "$FORTUNE" ]; then
     magick "$img" \
-      \( -clone 0 -resize 6% -resize 1700% -fill '#1e1e2e' -colorize 35 \) \
+      \( -clone 0 -resize 6% -resize 1700% -fill '#1e1e2e' -colorize 60 \) \
       -delete 0 \
       \( -size "$((w * 7 / 12))x" -background none -font "$FONT" \
          -pointsize "$((h / 32))" -fill '#a6adc8' caption:"$FORTUNE" \) \
@@ -57,7 +57,7 @@ while read -r name w h; do
       "$img" 2>/dev/null && IMAGES+=(-i "$name:$img")
   else
     magick "$img" -resize 6% -resize 1700% \
-      -fill '#1e1e2e' -colorize 35 "$img" 2>/dev/null \
+      -fill '#1e1e2e' -colorize 60 "$img" 2>/dev/null \
       && IMAGES+=(-i "$name:$img")
   fi
 done < <(swaymsg -t get_outputs 2>/dev/null | \
