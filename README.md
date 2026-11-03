@@ -19,6 +19,8 @@ The RPM/apt/pacman scripts share the same Catppuccin-themed menu-driven UX, the 
 
 The repo's flagship rice today is the Wayland setup: **[`fedora-sway-setup.sh`](fedora-sway-setup.sh)** — a complete **Sway desktop for Fedora 44**, themed by the 89-theme [HANCORE-linux/waybar-themes](https://github.com/HANCORE-linux/waybar-themes) collection (fetched and adapted at install time), where **one theme pick retints waybar, rofi, kitty, dunst, starship, the sway window borders, GTK 2/3/4, Neovim and VS Code together**. It supersedes the i3 rices below on Fedora. See [Sway + HANCORE Rice Script](#-sway--hancore-rice-script-fedora) below.
 
+A **scrolling-tiling sibling** exists for the [niri](https://github.com/YaLTeR/niri) compositor: **[`fedora-niri-setup.sh`](fedora-niri-setup.sh)** builds the same rice on niri (from the upstream `yalter/niri` COPR), **reusing the identical HANCORE theme engine** — one pick retints the whole desktop including niri's focus-ring accent — and adds **[NiriMod](https://github.com/srinivasr/NiriMod)** (a GTK4 settings editor) for `config.kdl`. See [Niri + HANCORE Rice Script](#-niri--hancore-rice-script-fedora) below.
+
 There are also standalone i3+Catppuccin rice scripts — the predecessors of the Sway rice — that aren't part of that set: **[`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh)** (Fedora), **[`opensuse-setup-i3-cattpuccin.sh`](opensuse-setup-i3-cattpuccin.sh)** (openSUSE), **[`openmandriva-setup-i3-cattpuccin.sh`](openmandriva-setup-i3-cattpuccin.sh)** (OpenMandriva) and **[`nixos-setup-i3-cattpuccin.sh`](nixos-setup-i3-cattpuccin.sh)** (NixOS) each build a full Catppuccin Mocha–themed **i3 tiling window manager** desktop on top of their respective distro — single-purpose rice scripts, not menu-driven package browsers. Run one after (or independently of) its matching post-install script. See [i3 + Catppuccin Rice Script](#-i3--catppuccin-rice-script-fedora--opensuse) below. The NixOS rice installs its toolkit through a generated `/etc/nixos/rice.nix` (i3lock-color and snixembed are packaged there, so none of the other rices' build-from-source fallbacks run), then writes the exact same dotfiles into `$HOME` so the live theme switcher works identically.
 
 ---
@@ -212,6 +214,14 @@ There are also standalone i3+Catppuccin rice scripts — the predecessors of the
   - [🔧 Maintaining the Script (sway-build)](#-maintaining-the-script-sway-build)
   - [⚠️ Sway Script Known Limitations](#️-sway-script-known-limitations)
   - [🟠 OpenMandriva Port: `openmandriva-sway-setup.sh`](#-openmandriva-port-openmandriva-sway-setupsh)
+- [🌊 Niri + HANCORE Rice Script (Fedora)](#-niri--hancore-rice-script-fedora)
+  - [🚀 Niri Script Overview](#-niri-script-overview)
+  - [📦 What Gets Installed (Niri)](#-what-gets-installed-niri)
+  - [⚙️ NiriMod & Settings](#️-nirimod--settings)
+  - [📥 Niri Script Installation & Usage](#-niri-script-installation--usage)
+  - [⌨️ Niri Keybinds](#️-niri-keybinds)
+  - [🔧 Maintaining the Script (niri-build)](#-maintaining-the-script-niri-build)
+  - [⚠️ Niri Script Known Limitations](#️-niri-script-known-limitations)
 - [🎨 i3 + Catppuccin Rice Script (Fedora & openSUSE)](#-i3--catppuccin-rice-script-fedora--opensuse)
   - [🚀 i3 Script Overview](#-i3-script-overview)
   - [📦 What Gets Installed](#-what-gets-installed)
@@ -2845,7 +2855,7 @@ All 89 HANCORE themes are adapted at install time by [`sway-build/hancore-theme-
 - each theme's CSS palette is classified against the 26 canonical Catppuccin Mocha roles in HLS space (the same algorithm as `generate-gtk-themes.py`), and matching **rofi** (launcher + power menu), **kitty**, **dunst**, **starship** and **sway client-border** themes are generated alongside the waybar config, in `~/.config/{waybar,rofi,kitty,dunst,starship,sway}/themes/`
 - a `[colors]` ini per theme feeds `generate-{gtk,nvim,vscode}-themes.py`: a `Rice-<name>` GTK theme (GTK 2/3/4), `rice-<name>` Neovim colors, and a VS Code color theme via the generated `linux-postinstall-rice-themes` extension (installed into VS Code and any installed fork - Cursor, Antigravity)
 - the bar's **workspace numbers** are accent-colored on the focused desktop and flagged with a bold accent pill on any workspace holding a window that wants attention (a link opening a tab on another desktop, chat pings); the **clock** left-click cycles time formats and right-click opens a per-theme-GTK `gnome-calendar`; the **caffeine widget** lights up while screen-blanking is inhibited
-- the **weather widget** (wttr.in, IP-geolocated or pinned via `$WEATHER_LOCATION`) click-opens the full current-conditions + 3-day forecast in a floating, opaque kitty (`~/.local/bin/weather-float.sh`; click the widget again — or `q` — to close); the **cpu** and **memory** widgets only turn their accent background on at **70%** load (critical red at 80%), so routine usage leaves them calm
+- the **weather widget** ([open-meteo](https://open-meteo.com), free/no-key; city via `$WEATHER_LOCATION` or `~/.config/weather/location`, default Stockholm) click-opens the current conditions + forecast — the familiar wttr.in-style ASCII art, drawn locally — in a floating, opaque kitty (`~/.local/bin/weather-float.sh`; press any key to close). (wttr.in itself is frequently down or firewall-blocked, so the data comes from open-meteo instead.) The **cpu** and **memory** widgets only turn their accent background on at **70%** load (critical red at 80%), so routine usage leaves them calm
 - **Cursor Theme** and **Icon Theme** app-menu entries switch the Qogir cursor variants and the installed icon themes live — no logout
 - Chromium-portal apps (e.g. Microsoft Edge) follow the theme through the xdg-desktop-portal GTK backend, which the switcher restarts on every pick; libadwaita apps get GNOME's closest preset accent color (see Known Limitations)
 
@@ -2983,6 +2993,92 @@ bash -n openmandriva-sway-setup.sh          # smoke test
 ```
 
 The transform anchors on exact source text and prints a `WARN` if an anchor goes stale — if you see one, the source drifted and the replacement needs re-anchoring.
+
+---
+
+# 🌊 Niri + HANCORE Rice Script (Fedora)
+
+### 🚀 Niri Script Overview
+
+[`fedora-niri-setup.sh`](fedora-niri-setup.sh) is the **scrolling-tiling** sibling of the Sway rice: a complete **[niri](https://github.com/YaLTeR/niri) (Wayland) desktop for Fedora 44**, themed by the **same** 89-theme [HANCORE-linux/waybar-themes](https://github.com/HANCORE-linux/waybar-themes) collection. A single pick in the Desktop Theme menu retints **waybar, rofi, kitty, dunst, starship, the niri focus-ring, GTK 2/3/4, Neovim and VS Code together** — the identical engine the Sway rice uses, so the two rices stay visually in sync.
+
+niri isn't in Fedora's repositories, so the script enables the upstream author's **`yalter/niri` COPR** (`sudo dnf copr enable yalter/niri`) and installs from there. Like the Sway rice it is single-purpose and idempotent-ish: it takes a **snapper snapshot of `/` first**, installs via `dnf`, reuses the shared HANCORE pipeline, and writes all configs into `$HOME` (`~/.config/niri/config.kdl`, `waybar`, `rofi`, `kitty`, `dunst`, `starship`, `nvim`, a `Rice-*` GTK theme per HANCORE theme in `~/.themes`, and helper scripts in `~/.local/bin`). niri's config is **KDL**; edits can be checked with `niri validate`, and niri **live-reloads** `config.kdl` on save.
+
+### 📦 What Gets Installed (Niri)
+
+**Core stack:** `niri` (from the `yalter/niri` COPR), `waybar` (using niri's native `niri/workspaces` / `niri/window` / `niri/language` modules), `swaybg` (wallpaper, restored on login), `swayidle` + `swaylock` (idle lock; swaylock works under niri), `rofi-wayland`, `dunst`, `kitty`, `grim`/`slurp`/`satty` (region screenshots + annotation), `wl-clipboard`, and the xdg-desktop-portal stack (`gnome` for screencast + `gtk` for file dialogs; niri ships its own portals.conf).
+
+**Rice toolkit:** `cava`, `btop`, `brightnessctl`, `playerctl`, `copyq`, `udiskie`, `gammastep`, `azote` (wallpaper GUI), `fastfetch`, `ImageMagick`, `fortune-mod`, Qogir cursors, Papirus icons, JetBrainsMono Nerd Font, plus the volume/brightness OSD, power menu, Wi-Fi picker, caffeine/DND toggles, notification centre, calendar reminder daemon and battery watcher — the full Sway-rice helper set, ported to niri (`niri msg` instead of `swaymsg`).
+
+**Apps:** **CLIamp** terminal music player (`Mod+M`), **Strata** GTK4 file manager (`Mod+E`), and summon/stash windows for **Claude Desktop** (the Copilot/AI key) and **Mistral Vibe** — both the CLI (`Mod+A`) and the web GUI (`Mod+Shift+A`).
+
+### ⚙️ NiriMod & Settings
+
+The script installs **[NiriMod](https://github.com/srinivasr/NiriMod)** — a GTK4/libadwaita graphical editor for niri's `config.kdl` (outputs, layout, keybinds, animations) that validates every change through `niri validate` and preserves your comments/formatting. It's installed via NiriMod's own `install.sh` (with GTK4/libadwaita/PyGObject deps from `dnf` and `uv` for its venv) and bound to **`Mod+Shift+S`**.
+
+### 🎨 Desktop-wide Theming (reused from Sway)
+
+The theme engine is **shared** with the Sway rice. The niri installer runs the same [`sway-build/hancore-theme-gen.py`](sway-build/hancore-theme-gen.py), then does two niri-specific passes: (a) rewrites the generated waybar module names `sway/workspaces|window|language → niri/*` (and `swaymsg → niri msg`), and (b) converts each per-theme Sway client-border fragment into a niri **`focus-ring`** KDL fragment that the config `include`s. So `~/.local/bin/waybar-theme.sh` retints the whole desktop per pick exactly as on Sway, with the focus-ring taking the accent colour.
+
+### 📥 Niri Script Installation & Usage
+
+```bash
+chmod +x fedora-niri-setup.sh
+./fedora-niri-setup.sh     # as your own user, NOT sudo
+```
+
+Log in through the **niri** session at your display manager (or run `niri-session` from a TTY). The keyboard layout is detected from `localectl` at install time (defaults to `us`) — edit the `input { keyboard { xkb { layout … } } }` block in `~/.config/niri/config.kdl` to change it. Re-running the script is safe but overwrites the configs it manages.
+
+### ⌨️ Niri Keybinds
+
+`Mod` is the Super key. Press **`Mod+Shift+/`** any time for niri's built-in overlay, or **`Mod+I`** for this rice's cheat sheet.
+
+| Keybind | Action |
+| --- | --- |
+| `Mod+Return` | Terminal (kitty) |
+| `Mod+Space` / `Mod+Shift+Space` | App launcher (drun) / run dialog |
+| `Mod+Alt+Space` | App menu (rice utilities) |
+| `Mod+E` | File manager (Strata) |
+| `Mod+Shift+W` | Wallpaper picker |
+| `Mod+Shift+Q` | Close window |
+| `Mod+H` / `Mod+L` | Focus column left / right (also `Mod+←/→`) |
+| `Mod+J` / `Mod+K` | Focus window down / up in the column |
+| `Mod+Shift+H/L/J/K` | Move column / window |
+| `Mod+,` / `Mod+.` | Consume / expel window into the column |
+| `Mod+R` | Cycle preset column widths |
+| `Mod+F` / `Mod+Shift+F` | Maximize column / fullscreen |
+| `Mod+Shift+\` | Toggle floating |
+| `Mod+1…9` / `Mod+Shift+1…9` | Focus / move column to workspace |
+| `Mod+Tab` | Overview (all workspaces) |
+| `Mod+Ctrl+H/L` | Focus monitor left / right |
+| `Print` | Screenshot (slurp+grim+satty); `Ctrl/Alt+Print` = niri screen/window shot |
+| `Mod+Alt+L` | Lock screen |
+| `Mod+Shift+P` | Power menu |
+| `Mod+Shift+G` | Colorpicker · `Mod+Shift+V` clipboard (copyq) |
+| `Mod+M` / `Mod+Shift+M` | CLIamp music / CLIamp setup |
+| `Mod+A` / `Mod+Shift+A` | Vibe CLI / Mistral Vibe web app |
+| `Mod+Shift+S` | NiriMod (settings) |
+| `Mod+Shift+E` | Exit niri |
+
+### 🔧 Maintaining the Script (niri-build)
+
+The niri rice's sources live in [`niri-build/`](niri-build/) and are embedded into `fedora-niri-setup.sh` as heredocs, re-synced in place by `niri-build/build_fedora_niri.py`:
+
+```bash
+python3 -I niri-build/build_fedora_niri.py   # re-embed niri-build/* into fedora-niri-setup.sh
+bash -n fedora-niri-setup.sh                 # smoke test
+niri validate --config niri-build/config/niri.kdl   # on a machine with niri
+```
+
+Edit `niri-build/config/niri.kdl` (the compositor config) or `niri-build/bin/*.sh` (the `~/.local/bin` helpers), then re-run the build. The HANCORE **theme generator and its shims are shared** with the Sway rice — the builder embeds them straight from [`sway-build/`](sway-build/), so there is only one copy to maintain. Everything else (package list, the small app configs, NiriMod install, prose) is edited directly in `fedora-niri-setup.sh`.
+
+### ⚠️ Niri Script Known Limitations
+
+- **No true scratchpad:** niri has no hidden/minimized state — every window lives on some workspace. The summon/stash apps (cliamp, Claude, Mistral Vibe, the vibe CLI) therefore "hide" onto the **trailing workspace** past your desktops; they stay off the bar but can be reached by scrolling right. (A named stash workspace would be pinned to the front/desktop 1 and clutter the bar, so trailing is the least-intrusive option.)
+- **Weather is local, not wttr.in:** the bar weather widget and the click-to-open window source **[open-meteo](https://open-meteo.com)** (free, no key) instead of wttr.in, which is frequently down or blocked on corporate networks. The report window draws the familiar wttr.in-style ASCII art locally. Set a city with `WEATHER_LOCATION` or `~/.config/weather/location` (default: Stockholm).
+- **GlobalShortcuts portal disabled:** a user portal override (`~/.config/xdg-desktop-portal/niri-portals.conf`) routes `GlobalShortcuts=none`, so apps like Claude Desktop don't trigger GNOME's "Add Keyboard Shortcuts" confirmation dialog on every launch (you summon them via niri keybinds instead). Screencast/file-chooser stay on the gnome/gtk backends.
+- **Floating windows anchor top-left on resize:** apps that open small and then resize to their content (e.g. the Greenshot editor) are given a fixed proportional size so they open centred instead of growing off to one side.
+- The long tail that is X11/i3-only (the `polybar-*` widget backends, `snixembed`) is dropped — waybar has a native tray; `arrange-displays.sh` opens `nwg-displays`/NiriMod since niri has no runtime output-move IPC.
 
 ---
 
