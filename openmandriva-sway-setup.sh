@@ -1043,7 +1043,7 @@ CMD_REWRITES = [
     (re.compile(r"^omarchy-launch-floating-terminal-with-presentation .*$"), "true"),
     (re.compile(r"^omarchy-launch-wifi$"), "~/.local/bin/wifi-menu.sh"),
     (re.compile(r"^omarchy-launch-bluetooth$"), "blueman-manager"),
-    (re.compile(r"^omarchy-launch-audio$"), "~/.local/bin/osd-volume.sh"),
+    (re.compile(r"^omarchy-launch-audio$"), "pavucontrol"),
     (re.compile(r"^omarchy-toggle-idle$"), "~/.local/bin/caffeine-toggle.sh"),
     (re.compile(r"^omarchy-toggle-notification-silencing$"), "~/.local/bin/dnd-toggle.sh"),
     (re.compile(r"^omarchy-update-available$"), "~/.local/bin/hancore-update-check"),
@@ -1059,8 +1059,15 @@ CMD_REWRITES = [
     (re.compile(r"^hyprctl dispatch workspace e-1$"), "swaymsg workspace prev_on_output"),
     (re.compile(r"^hyprpicker$"), "~/.local/bin/colorpicker.sh"),
     (re.compile(r"^alacritty --class=Impala -e impala$"), "~/.local/bin/wifi-menu.sh"),
-    (re.compile(r"^alacritty --class=Wiremix -e wiremix$"), "~/.local/bin/osd-volume.sh"),
-    (re.compile(r"^wiremix$"), "~/.local/bin/osd-volume.sh"),
+    (re.compile(r"^alacritty --class=Wiremix -e wiremix$"), "pavucontrol"),
+    (re.compile(r"^wiremix$"), "pavucontrol"),
+    # pamixer isn't installed on Fedora/OM; route the volume module's right-click
+    # (mute) and scroll (up/down) through osd-volume.sh, which uses wpctl and
+    # also shows the dunst OSD. Left-click opens pavucontrol (floated by a WM
+    # window-rule); without this the clicks silently did nothing.
+    (re.compile(r"^pamixer -t$"), "~/.local/bin/osd-volume.sh mute"),
+    (re.compile(r"^pamixer -i 5$"), "~/.local/bin/osd-volume.sh up"),
+    (re.compile(r"^pamixer -d 5$"), "~/.local/bin/osd-volume.sh down"),
     (re.compile(r"^xdg-terminal-exec$"), "kitty"),
     (re.compile(r"^ghostty -e nvtop$"), "kitty -e btop"),
 ]
@@ -2125,7 +2132,10 @@ a single host that is frequently down or blocked on corporate networks (a
 connection-refused there is what makes the widget show nothing); open-meteo is
 reliable and reachable. Location is a city name resolved via open-meteo's
 geocoding API (cached), or a literal "lat,lon"; pick it with --location, the
-WEATHER_LOCATION env var, or ~/.config/weather/location (default: Stockholm).
+WEATHER_LOCATION env var, or ~/.config/weather/location. With none of those set
+the location FOLLOWS THE PUBLIC IP (office egress -> Stockholm, home -> wherever
+you are), cached 30 min so moving networks updates within the hour without
+hitting the geo service every refresh; Stockholm is the last-ditch fallback.
 
 Called by waybar every 60s; a fetch failure prints the last good value when
 cached, else an empty placeholder so the module just hides.
@@ -2169,6 +2179,8 @@ WMO = {
 CACHE_DIR = os.path.expanduser("~/.cache")
 GEO_CACHE = os.path.join(CACHE_DIR, "weather-geocode.json")
 LAST_CACHE = os.path.join(CACHE_DIR, "wttrbar-last.json")
+IPGEO_CACHE = os.path.join(CACHE_DIR, "weather-ipgeo.json")
+IPGEO_TTL = 1800  # 30 min: refresh as you move, but don't hit the geo service every 60s refresh
 
 
 def parse_args(argv):
@@ -2228,8 +2240,50 @@ def _write_cache(path, obj):
         pass
 
 
+def _label_from(city, country):
+    label = (city or "").strip()
+    if country:
+        label = (label + ", " + country).strip(", ")
+    return label or "Current location"
+
+
+def ip_geolocate():
+    """Best-effort locate by public IP -> (lat, lon, label), or None.
+
+    Cached for IPGEO_TTL. Both providers are key-free; ipinfo.io is tried first
+    (more accurate city), ip-api.com (plain http) is the corporate-net fallback.
+    On a network failure we fall back to the last cached IP location if any."""
+    import time
+    cache = _read_cache(IPGEO_CACHE)
+    now = time.time()
+    if (cache.get("ts") and now - cache["ts"] < IPGEO_TTL
+            and cache.get("lat") is not None):
+        return cache["lat"], cache["lon"], cache["label"]
+    try:
+        j = _get_json("https://ipinfo.io/json")
+        if j.get("loc"):
+            lat, lon = (float(x) for x in j["loc"].split(",", 1))
+            label = _label_from(j.get("city"), j.get("country"))
+            _write_cache(IPGEO_CACHE, {"lat": lat, "lon": lon, "label": label, "ts": now})
+            return lat, lon, label
+    except Exception:
+        pass
+    try:
+        j = _get_json("http://ip-api.com/json/?fields=status,city,country,lat,lon")
+        if j.get("status") == "success" and j.get("lat") is not None:
+            label = _label_from(j.get("city"), j.get("country"))
+            _write_cache(IPGEO_CACHE, {"lat": j["lat"], "lon": j["lon"], "label": label, "ts": now})
+            return j["lat"], j["lon"], label
+    except Exception:
+        pass
+    if cache.get("lat") is not None:  # network down: reuse the last known IP location
+        return cache["lat"], cache["lon"], cache["label"]
+    return None
+
+
 def resolve_location(opts):
-    """Return (lat, lon, label). Accepts 'lat,lon' or a city name (geocoded)."""
+    """Return (lat, lon, label). Accepts 'lat,lon' or a city name (geocoded);
+    with nothing explicitly set, follows the public IP (see ip_geolocate)."""
     loc = opts["location"] or os.environ.get("WEATHER_LOCATION")
     if not loc:
         try:
@@ -2238,7 +2292,11 @@ def resolve_location(opts):
                 loc = f.read().strip()
         except Exception:
             loc = ""
-    loc = loc or "Stockholm"
+    if not loc:
+        ip = ip_geolocate()
+        if ip:
+            return ip
+        loc = "Stockholm"
 
     m = re.match(r"^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$", loc)
     if m:

@@ -272,7 +272,7 @@ CMD_REWRITES = [
     (re.compile(r"^omarchy-launch-floating-terminal-with-presentation .*$"), "true"),
     (re.compile(r"^omarchy-launch-wifi$"), "~/.local/bin/wifi-menu.sh"),
     (re.compile(r"^omarchy-launch-bluetooth$"), "blueman-manager"),
-    (re.compile(r"^omarchy-launch-audio$"), "~/.local/bin/osd-volume.sh"),
+    (re.compile(r"^omarchy-launch-audio$"), "pavucontrol"),
     (re.compile(r"^omarchy-toggle-idle$"), "~/.local/bin/caffeine-toggle.sh"),
     (re.compile(r"^omarchy-toggle-notification-silencing$"), "~/.local/bin/dnd-toggle.sh"),
     (re.compile(r"^omarchy-update-available$"), "~/.local/bin/hancore-update-check"),
@@ -288,8 +288,15 @@ CMD_REWRITES = [
     (re.compile(r"^hyprctl dispatch workspace e-1$"), "swaymsg workspace prev_on_output"),
     (re.compile(r"^hyprpicker$"), "~/.local/bin/colorpicker.sh"),
     (re.compile(r"^alacritty --class=Impala -e impala$"), "~/.local/bin/wifi-menu.sh"),
-    (re.compile(r"^alacritty --class=Wiremix -e wiremix$"), "~/.local/bin/osd-volume.sh"),
-    (re.compile(r"^wiremix$"), "~/.local/bin/osd-volume.sh"),
+    (re.compile(r"^alacritty --class=Wiremix -e wiremix$"), "pavucontrol"),
+    (re.compile(r"^wiremix$"), "pavucontrol"),
+    # pamixer isn't installed on Fedora/OM; route the volume module's right-click
+    # (mute) and scroll (up/down) through osd-volume.sh, which uses wpctl and
+    # also shows the dunst OSD. Left-click opens pavucontrol (floated by a WM
+    # window-rule); without this the clicks silently did nothing.
+    (re.compile(r"^pamixer -t$"), "~/.local/bin/osd-volume.sh mute"),
+    (re.compile(r"^pamixer -i 5$"), "~/.local/bin/osd-volume.sh up"),
+    (re.compile(r"^pamixer -d 5$"), "~/.local/bin/osd-volume.sh down"),
     (re.compile(r"^xdg-terminal-exec$"), "kitty"),
     (re.compile(r"^ghostty -e nvtop$"), "kitty -e btop"),
 ]

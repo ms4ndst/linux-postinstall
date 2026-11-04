@@ -8,7 +8,9 @@
 # The art is the wego icon set (plain ANSI colours + box chars, no Nerd-Font
 # glyphs), so it renders in any font. Location: a city name resolved via
 # open-meteo geocoding, or a literal "lat,lon"; set WEATHER_LOCATION or
-# ~/.config/weather/location (default: Stockholm).
+# ~/.config/weather/location. With neither set the location FOLLOWS THE PUBLIC
+# IP (office egress -> Stockholm, home -> wherever you are), cached 30 min;
+# Stockholm is the last-ditch fallback.
 set -u
 
 if [ "${1:-}" = "--show" ]; then
@@ -49,10 +51,51 @@ WMO = {
 }
 ARROWS = ["↓","↙","←","↖","↑","↗","→","↘"]
 
+IPGEO_CACHE = os.path.expanduser("~/.cache/weather-ipgeo.json")
+IPGEO_TTL = 1800  # 30 min
+
 def getj(u):
     req = urllib.request.Request(u, headers={"User-Agent": "wttrbar-shim"})
     with urllib.request.urlopen(req, timeout=12) as r:
         return json.load(r)
+
+def _label(city, country):
+    lbl = (city or "").strip()
+    if country:
+        lbl = (lbl + ", " + country).strip(", ")
+    return lbl or "Current location"
+
+def ip_geolocate():
+    """Locate by public IP (cached IPGEO_TTL); None if unreachable."""
+    import time
+    try:
+        cache = json.load(open(IPGEO_CACHE))
+    except Exception:
+        cache = {}
+    now = time.time()
+    if cache.get("ts") and now - cache["ts"] < IPGEO_TTL and cache.get("lat") is not None:
+        return cache["lat"], cache["lon"], cache["label"]
+    for url, kind in (("https://ipinfo.io/json", "ipinfo"),
+                      ("http://ip-api.com/json/?fields=status,city,country,lat,lon", "ipapi")):
+        try:
+            j = getj(url)
+            if kind == "ipinfo" and j.get("loc"):
+                lat, lon = (float(x) for x in j["loc"].split(",", 1))
+                label = _label(j.get("city"), j.get("country"))
+            elif kind == "ipapi" and j.get("status") == "success" and j.get("lat") is not None:
+                lat, lon, label = j["lat"], j["lon"], _label(j.get("city"), j.get("country"))
+            else:
+                continue
+            try:
+                json.dump({"lat": lat, "lon": lon, "label": label, "ts": now}, open(IPGEO_CACHE, "w"))
+            except Exception:
+                pass
+            return lat, lon, label
+        except Exception:
+            continue
+    if cache.get("lat") is not None:
+        return cache["lat"], cache["lon"], cache["label"]
+    return None
 
 def resolve():
     loc = os.environ.get("WEATHER_LOCATION")
@@ -61,7 +104,11 @@ def resolve():
             loc = open(os.path.expanduser("~/.config/weather/location")).read().strip()
         except Exception:
             loc = ""
-    loc = loc or "Stockholm"
+    if not loc:
+        ip = ip_geolocate()
+        if ip:
+            return ip
+        loc = "Stockholm"
     m = re.match(r"^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$", loc)
     if m:
         return float(m.group(1)), float(m.group(2)), loc
