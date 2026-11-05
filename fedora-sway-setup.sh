@@ -824,6 +824,31 @@ def rewrite_value(v, name):
     return v
 
 
+_AMPM_RE = re.compile(r"\s*%[pP]")  # \s also eats Unicode spaces (e.g. U+2004) some themes put before %p
+
+
+def to_24h(s):
+    """Rewrite a strftime/date string to 24-hour time: 12-hour hour tokens
+    (%I, %l) -> %H, the full 12-hour clock %r -> %H:%M:%S, and drop the AM/PM
+    designator (%p/%P) with any spaces right before it (so no stray space is
+    left where it stood). These tokens are time-only, so applying this
+    config-wide is safe."""
+    s = s.replace("%I", "%H").replace("%l", "%H").replace("%r", "%H:%M:%S")
+    return _AMPM_RE.sub("", s)
+
+
+def force_24h(obj):
+    """Walk a parsed config in place, normalizing every string to 24-hour time.
+    Covers clock "format"/tooltips and custom clocks that shell out to `date`."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            obj[k] = to_24h(v) if isinstance(v, str) else (force_24h(v) or v)
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            obj[i] = to_24h(v) if isinstance(v, str) else (force_24h(v) or v)
+    return obj
+
+
 def unresolvable(block):
     """A module block that still references Omarchy/Hyprland machinery
     after rewriting has no equivalent here - drop the module."""
@@ -885,6 +910,12 @@ def adapt_config(cfg, name):
                 cal.pop("on-click", None)
                 cal.pop("on-click-right", None)
             block["on-click-right"] = "GTK_THEME=Rice-%s gnome-calendar" % name
+
+    # 3b-ii. 24-hour clocks everywhere. Upstream themes variously use 12-hour
+    #     formats (%I ... %p), append a redundant %p to an already-24h %H clock,
+    #     or shell a custom clock out to `date +'...%p'`. Normalize the whole
+    #     config to 24-hour time so every theme's clock matches.
+    force_24h(cfg)
 
     # 3b. custom/update: restore the old rice's update widget exactly -
     #     a visible pending-update COUNT (polybar-updates.sh style, incl.
