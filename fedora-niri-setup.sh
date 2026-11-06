@@ -1267,9 +1267,14 @@ cat > "$BIN/swayidle-launch.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
 # Idle management for the Niri rice via swayidle (it speaks the wayland idle
 # protocol niri implements). Timings:
-#   - 20min (1200s): show the screensaver and lock (lock.sh --with-screensaver)
-#   - 50min (3000s): power the displays off; power back on when activity resumes
+#   - screensaver+lock after SS_MIN minutes idle (lock.sh --with-screensaver)
+#   - power the displays off 30min after that; power back on when activity resumes
 #   - before sleep: lock first so resume lands on the lock screen
+# SS_MIN is read from ~/.config/rice/screensaver-timeout (a single integer, in
+# minutes; 0 = never auto-lock). Default 20 when the file is missing/empty.
+# Change it from the App Menu ("Set Screensaver Timeout") or
+# ~/.local/bin/set-screensaver-timeout.sh, which rewrites that file and re-runs
+# this script to apply the new timeout immediately.
 # niri does not re-run startup spawns on reload, but this is also callable
 # directly, so single-instance it first.
 # The idle context inherits niri's login-time PATH, which may not include
@@ -1277,14 +1282,32 @@ cat > "$BIN/swayidle-launch.sh" <<'RICE_EOF'
 # re-add it before exec.
 export PATH="$HOME/.local/bin:$PATH"
 set -u
+
+# --- read the configurable screensaver timeout (minutes) ---
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}/rice/screensaver-timeout"
+SS_MIN=20
+if [ -r "$CONF" ]; then
+  v=$(tr -dc '0-9' < "$CONF" | head -c 4)
+  [ -n "$v" ] && SS_MIN=$((10#$v))
+fi
+
 pkill -x swayidle 2>/dev/null
 for _ in 1 2 3 4 5; do pgrep -x swayidle >/dev/null 2>&1 || break; sleep 0.1; done
 
-exec swayidle -w \
-  timeout 1200 "$HOME/.local/bin/lock.sh --with-screensaver" \
-  timeout 3000 'niri msg action power-off-monitors' \
-    resume     'niri msg action power-on-monitors' \
-  before-sleep "$HOME/.local/bin/lock.sh"
+# Build the argument list so a timeout of 0 cleanly disables the screensaver/
+# lock while still keeping display power-off and lock-before-sleep.
+args=( -w )
+if [ "$SS_MIN" -gt 0 ]; then
+  args+=( timeout "$((SS_MIN * 60))" "$HOME/.local/bin/lock.sh --with-screensaver" )
+  off=$(( (SS_MIN + 30) * 60 ))
+else
+  off=3000
+fi
+args+=( timeout "$off" 'niri msg action power-off-monitors' \
+          resume 'niri msg action power-on-monitors' )
+args+=( before-sleep "$HOME/.local/bin/lock.sh" )
+
+exec swayidle "${args[@]}"
 RICE_EOF
 cat > "$BIN/waybar-theme.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
@@ -2530,6 +2553,364 @@ cat "$LOGO"
 echo
 echo "Saved to $LOGO — screensaver.sh will pick it up on next run."
 RICE_EOF
+cat > "$BIN/set-screensaver-timeout.sh" <<'RICE_EOF'
+#!/usr/bin/env bash
+# Set the idle screensaver/lock timeout. Writes the chosen number of minutes to
+# ~/.config/rice/screensaver-timeout (0 = never) and re-runs swayidle-launch.sh
+# so the new timeout applies immediately - no re-login needed. Reachable from
+# the App Menu ("Set Screensaver Timeout") and bindable directly.
+#   set-screensaver-timeout.sh            # rofi picker
+#   set-screensaver-timeout.sh <minutes>  # set directly, no prompt (0 = never)
+set -u
+export PATH="$HOME/.local/bin:$PATH"
+
+CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rice"
+CONF="$CONF_DIR/screensaver-timeout"
+ROFI_THEME="$HOME/.config/rofi/current.rasi"
+
+# Current value (default 20) for the prompt hint.
+cur=20
+if [ -r "$CONF" ]; then
+  v=$(tr -dc '0-9' < "$CONF" | head -c 4)
+  [ -n "$v" ] && cur=$((10#$v))
+fi
+
+sanitize() { printf '%s' "$1" | tr -dc '0-9' | head -c 4; }
+
+if [ "$#" -ge 1 ]; then
+  # Non-interactive: minutes given as an argument.
+  mins=$(sanitize "$1")
+  [ -z "$mins" ] && { echo "usage: $(basename "$0") <minutes>  (0 = never)" >&2; exit 1; }
+  mins=$((10#$mins))
+else
+  OPTS=$'  1 minute\n  2 minutes\n  5 minutes\n  10 minutes\n  15 minutes\n  20 minutes\n  30 minutes\n  45 minutes\n  1 hour\n  Never (disable)\n  Custom…'
+  CHOSEN=$(printf '%b' "$OPTS" | rofi -dmenu -i -p "Screensaver after" \
+            -mesg "Idle time before the screensaver locks. Currently: ${cur} min (0 = never)." \
+            -theme "$ROFI_THEME")
+  [ -z "$CHOSEN" ] && exit 0
+  case "$CHOSEN" in
+    *"Never"*)  mins=0 ;;
+    *"1 hour"*) mins=60 ;;
+    *"Custom"*)
+      raw=$(printf '' | rofi -dmenu -p "Minutes (0 = never)" -theme "$ROFI_THEME")
+      raw=$(sanitize "$raw")
+      [ -z "$raw" ] && exit 0
+      mins=$((10#$raw))
+      ;;
+    *) raw=$(sanitize "$CHOSEN"); mins=$((10#$raw)) ;;
+  esac
+fi
+
+mkdir -p "$CONF_DIR"
+printf '%s\n' "$mins" > "$CONF"
+
+# Re-arm swayidle so the new timeout takes effect now (it re-reads the file).
+if [ -x "$HOME/.local/bin/swayidle-launch.sh" ]; then
+  "$HOME/.local/bin/swayidle-launch.sh" >/dev/null 2>&1 &
+  disown 2>/dev/null || true
+fi
+
+if [ "$mins" -gt 0 ]; then
+  notify-send -h string:x-dunst-stack-tag:screensaver \
+    "Screensaver" "Locks after ${mins} min idle" 2>/dev/null || true
+else
+  notify-send -h string:x-dunst-stack-tag:screensaver \
+    "Screensaver" "Idle auto-lock disabled" 2>/dev/null || true
+fi
+RICE_EOF
+cat > "$BIN/gdm-theme-sync.sh" <<'RICE_EOF'
+#!/usr/bin/env bash
+# Theme the GDM login screen to match the active rice theme.
+#
+# GDM is GNOME Shell, whose theme is a single compiled resource bundle at
+# /usr/share/gnome-shell/gnome-shell-theme.gresource. There is no drop-in GDM
+# "theme folder"; the only way to set a login background / colors / font is to
+# rebuild that bundle. This script does it SAFELY:
+#   - it extracts a PRISTINE copy of the stock bundle (snapshotted once as
+#     *.rice-orig, and kept), so re-runs never stack overrides;
+#   - it only APPENDS a small override block to the theme CSS - no upstream file
+#     is removed or rewritten, so the login screen stays complete;
+#   - it backs the current bundle up to *.bak before installing;
+#   - it NEVER restarts gdm (that would log you out) - changes show on the next
+#     login / reboot.
+#
+# By default the login background is the theme's solid dark color (the same
+# `base` the waybar/rofi theme uses), the text color is the theme `text`, the
+# buttons/entry focus use the theme `accent`, and the font is the rice Nerd Font.
+# Colors come from the active rofi theme (~/.config/rofi/current.rasi, which the
+# waybar/rofi theme switcher rewrites on every theme change).
+#
+# Usage:
+#   gdm-theme-sync.sh                 # solid theme background + colors + font
+#   gdm-theme-sync.sh --wallpaper     # use the current wallpaper as background
+#   gdm-theme-sync.sh --stage-only    # build + validate the bundle, don't install
+#   gdm-theme-sync.sh --revert        # restore the stock GDM theme
+#   gdm-theme-sync.sh --refresh-base  # re-snapshot the stock bundle as pristine
+#                                     # (run this AFTER a gnome-shell update, which
+#                                     # reverts the bundle to stock, then re-run)
+#
+# Needs root only for the final install step (and --revert/--refresh-base); it
+# calls sudo for just that and prompts once. Everything else runs as you.
+set -u
+
+GRESOURCE="${GDM_THEME_GRESOURCE:-/usr/share/gnome-shell/gnome-shell-theme.gresource}"
+PRISTINE="$GRESOURCE.rice-orig"
+BACKUP="$GRESOURCE.bak"
+PREFIX="/org/gnome/shell/theme"
+BG_NAME="rice-gdm-bg.jpg"
+RASI="${RICE_RASI:-$HOME/.config/rofi/current.rasi}"
+FONT="${RICE_GDM_FONT:-JetBrainsMono Nerd Font}"
+FONT_SIZE="${RICE_GDM_FONT_SIZE:-11}"
+MARKER="rice-gdm-theme"
+# GDM font + accent are RUNTIME dconf settings that override theme CSS, so the
+# only reliable way to change them is a dconf override for the gdm user. We own
+# a single file here; GDM Settings owns 95-gdm-settings - a higher number wins,
+# so these keys override whatever GDM Settings set, and --revert removes it.
+DCONF_FILE="/etc/dconf/db/gdm.d/96-rice-gdm-theme"
+
+die() { echo "gdm-theme-sync: $*" >&2; exit 1; }
+need() { command -v "$1" >/dev/null 2>&1 || die "missing required tool: $1"; }
+need glib-compile-resources
+need gresource
+
+MODE="sync"; USE_WALL=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --stage-only)   MODE="stage" ;;
+    --wallpaper)    USE_WALL=1 ;;
+    --revert)       MODE="revert" ;;
+    --refresh-base) MODE="refresh" ;;
+    -h|--help)      sed -n '2,/^set -u/p' "$0" | sed 's/^# \{0,1\}//; /^set -u/d'; exit 0 ;;
+    *) die "unknown option: $1 (try --help)";;
+  esac; shift
+done
+
+[ -f "$GRESOURCE" ] || die "GDM theme bundle not found: $GRESOURCE"
+
+# ---------------------------------------------------------------- revert
+if [ "$MODE" = "revert" ]; then
+  src=""
+  [ -f "$PRISTINE" ] && src="$PRISTINE"
+  [ -z "$src" ] && [ -f "$BACKUP" ] && src="$BACKUP"
+  [ -n "$src" ] || die "no pristine/backup found to revert to"
+  sudo sh -c '
+    set -e
+    install -m644 "$1" "$2"          # restore stock gresource
+    rm -f "$3"                        # drop our dconf override
+    command -v dconf >/dev/null 2>&1 && dconf update || true
+  ' _ "$src" "$GRESOURCE" "$DCONF_FILE" || die "revert failed"
+  echo "Reverted GDM (gresource + dconf override removed). Shows on next login."
+  echo "Note: GDM Settings' own override (95-gdm-settings) is left untouched."
+  exit 0
+fi
+
+# ---------------------------------------------------------------- refresh-base
+if [ "$MODE" = "refresh" ]; then
+  sudo install -m644 "$GRESOURCE" "$PRISTINE" || die "could not snapshot pristine"
+  echo "Snapshotted the current GDM bundle as pristine ($PRISTINE)."
+  echo "Now run 'gdm-theme-sync.sh' to re-apply the rice theme on top."
+  exit 0
+fi
+
+# ---------------------------------------------------------------- palette
+getcol() {
+  local hex
+  hex=$(grep -oE "(^|[^a-zA-Z-])$1:[[:space:]]*#[0-9a-fA-F]{6,8}" "$RASI" 2>/dev/null \
+          | grep -oE '#[0-9a-fA-F]{6,8}' | head -1)
+  [ -n "$hex" ] && printf '#%s' "$(printf '%s' "${hex#\#}" | cut -c1-6)"
+}
+BASE=""; TEXT=""; ACCENT=""
+if [ -f "$RASI" ]; then
+  BASE=$(getcol base); TEXT=$(getcol text); ACCENT=$(getcol accent)
+fi
+: "${BASE:=#1e1e2e}"; : "${TEXT:=#cdd6f4}"; : "${ACCENT:=#89b4fa}"
+
+# GNOME's accent-color is a fixed enum (GNOME 47+), not arbitrary hex - map the
+# theme accent to the nearest named accent so GDM's native accent follows it.
+nearest_accent() {
+  local hex=${1#\#} r g b name ph pr pg pb d best bd
+  r=$((16#${hex:0:2})); g=$((16#${hex:2:2})); b=$((16#${hex:4:2}))
+  best="blue"; bd=1000000000
+  for pair in blue:3584e4 teal:2190a4 green:3a944a yellow:c88800 \
+              orange:ed5b00 red:e62d42 pink:d56199 purple:9141ac slate:6f8396; do
+    name=${pair%%:*}; ph=${pair#*:}
+    pr=$((16#${ph:0:2})); pg=$((16#${ph:2:2})); pb=$((16#${ph:4:2}))
+    d=$(( (r-pr)*(r-pr) + (g-pg)*(g-pg) + (b-pb)*(b-pb) ))
+    [ "$d" -lt "$bd" ] && { bd=$d; best=$name; }
+  done
+  printf '%s' "$best"
+}
+ACCENT_NAME=$(nearest_accent "$ACCENT")
+# Login text color. Default is the theme accent (the "red") per preference;
+# override with RICE_GDM_TEXT_COLOR=#rrggbb (e.g. the near-white $TEXT) if wanted.
+FG="${RICE_GDM_TEXT_COLOR:-$ACCENT}"
+echo "Palette: base=$BASE text/fg=$FG accent=$ACCENT (~$ACCENT_NAME)   font='$FONT $FONT_SIZE'   (from $RASI)"
+
+# ---------------------------------------------------------------- wallpaper (opt-in)
+# Mirrors swaybg-restore.sh, including its "a newer azote pick overrides an
+# older saved pick" rule - so --wallpaper tracks what you actually set in Azote.
+resolve_wallpaper() {
+  local cfg="$HOME/.config/niri" saved azote img
+  saved="$cfg/wallpaper-saved"
+  azote="$HOME/.local/share/azote/swaybg.json"
+  img=""
+  [ -f "$saved" ] && img=$(cat "$saved" 2>/dev/null)
+  if [ -n "$img" ] && [ -f "$img" ]; then
+    [ -f "$azote" ] && [ "$azote" -nt "$saved" ] && img=""   # newer azote wins
+  else
+    img=""
+  fi
+  if [ -z "$img" ] && [ -f "$azote" ] && command -v jq >/dev/null 2>&1; then
+    img=$(jq -r 'first(.[] | select(.path) | .path) // empty' "$azote" 2>/dev/null)
+    [ -n "$img" ] && [ -f "$img" ] || img=""
+  fi
+  [ -z "$img" ] && [ -f "$cfg/wallpaper.png" ] && img="$cfg/wallpaper.png"
+  printf '%s' "$img"
+}
+WALL=""
+if [ "$USE_WALL" = 1 ]; then
+  command -v magick >/dev/null 2>&1 || command -v convert >/dev/null 2>&1 \
+    || die "--wallpaper needs ImageMagick (magick/convert)"
+  WALL=$(resolve_wallpaper)
+  [ -n "$WALL" ] && echo "Wallpaper: $WALL" \
+    || { echo "Wallpaper: none found - falling back to solid $BASE"; }
+else
+  echo "Background: solid $BASE (theme background; use --wallpaper for a photo)"
+fi
+
+# ---------------------------------------------------------------- stage
+TMP=$(mktemp -d "${TMPDIR:-/tmp}/gdm-theme.XXXXXX") || die "mktemp failed"
+trap 'rm -rf "$TMP"' EXIT
+EXTRACT="$TMP/theme"; mkdir -p "$EXTRACT"
+
+SRC="$GRESOURCE"
+[ -f "$PRISTINE" ] && SRC="$PRISTINE"
+while IFS= read -r res; do
+  rel="${res#$PREFIX/}"
+  out="$EXTRACT/$rel"
+  mkdir -p "$(dirname "$out")"
+  gresource extract "$SRC" "$res" > "$out" || die "extract failed: $res"
+done < <(gresource list "$SRC")
+
+# Background block: solid theme color, or the wallpaper if --wallpaper resolved one.
+if [ "$USE_WALL" = 1 ] && [ -n "$WALL" ]; then
+  if command -v magick >/dev/null 2>&1; then MG=magick; else MG=convert; fi
+  "$MG" "$WALL" -auto-orient -resize 2560x1600^ -gravity center \
+    -extent 2560x1600 -quality 85 "$EXTRACT/$BG_NAME" 2>/dev/null \
+    || cp "$WALL" "$EXTRACT/$BG_NAME"
+  BG_BLOCK=$(printf "  background-color: %s;\n  background-image: url('resource://%s/%s');\n  background-size: cover;\n  background-position: center;\n  background-repeat: no-repeat;" \
+    "$BASE" "$PREFIX" "$BG_NAME")
+else
+  BG_BLOCK=$(printf '  background-color: %s;\n  background-image: none;\n  background-gradient-direction: none;' "$BASE")
+fi
+
+# Override CSS. Appended last so it wins. Unknown selectors are no-ops in the
+# shell's CSS engine, so the broad coverage is safe across GNOME versions.
+OVERRIDE=$(cat <<CSS
+
+/* --- $MARKER: appended by gdm-theme-sync.sh (keyed to the active rice theme) --- */
+stage {
+  font-family: "$FONT", "JetBrains Mono", monospace;
+  color: $FG;
+}
+#lockDialogGroup {
+$BG_BLOCK
+}
+.login-dialog, .unlock-dialog { color: $FG; }
+.login-dialog StLabel, .unlock-dialog StLabel,
+.login-dialog-prompt-label, .login-dialog-username,
+.login-dialog-not-listed-label,
+.screen-shield-clock, .screen-shield-clock-time, .screen-shield-clock-date,
+.unlock-dialog-clock, .unlock-dialog-clock-time, .unlock-dialog-clock-date {
+  color: $FG;
+}
+.login-dialog StEntry, .unlock-dialog StEntry {
+  color: $FG;
+  caret-color: $ACCENT;
+}
+.login-dialog StEntry:focus, .unlock-dialog StEntry:focus { border-color: $ACCENT; }
+.login-dialog .button:default,
+.unlock-dialog .button:default,
+.modal-dialog .button:default {
+  background-color: $ACCENT;
+  color: $BASE;
+  border-color: $ACCENT;
+}
+.login-dialog-user-list:expanded .login-dialog-user-list-item:selected,
+.login-dialog .login-dialog-user-list-item:selected { background-color: $ACCENT; color: $BASE; }
+/* --- end $MARKER --- */
+CSS
+)
+
+appended=0
+for css in gnome-shell.css gnome-shell-dark.css gnome-shell-light.css gdm.css gdm3.css; do
+  if [ -f "$EXTRACT/$css" ]; then
+    printf '%s\n' "$OVERRIDE" >> "$EXTRACT/$css"
+    appended=$((appended+1))
+  fi
+done
+[ "$appended" -gt 0 ] || die "no theme CSS found in the bundle to append to"
+
+# Manifest listing EVERY extracted file (nothing dropped).
+XML="$TMP/gnome-shell-theme.gresource.xml"
+{
+  printf '<?xml version="1.0" encoding="UTF-8"?>\n<gresources>\n'
+  printf '  <gresource prefix="%s">\n' "$PREFIX"
+  ( cd "$EXTRACT" && find . -type f | sed 's|^\./||' | LC_ALL=C sort ) \
+    | while IFS= read -r f; do printf '    <file>%s</file>\n' "$f"; done
+  printf '  </gresource>\n</gresources>\n'
+} > "$XML"
+
+STAGED="$TMP/gnome-shell-theme.gresource"
+glib-compile-resources --target="$STAGED" --sourcedir="$EXTRACT" "$XML" \
+  || die "glib-compile-resources failed"
+gresource list "$STAGED" >/dev/null || die "staged bundle is unreadable"
+if [ "$USE_WALL" = 1 ] && [ -n "$WALL" ]; then
+  gresource list "$STAGED" | grep -q "$BG_NAME" || die "staged bundle missing the background image"
+fi
+echo "Built + validated staged bundle."
+
+# dconf override for the gdm user: font + accent + dark scheme (runtime settings
+# that CSS cannot override). Only these theme-related keys; GDM Settings' other
+# keys in 95-gdm-settings are left alone.
+DCONF_CONTENT=$(cat <<DCONF
+# Managed by gdm-theme-sync.sh - keyed to the active rice theme.
+# Remove with 'gdm-theme-sync.sh --revert'. Do not hand-edit.
+[org/gnome/desktop/interface]
+font-name='$FONT $FONT_SIZE'
+color-scheme='prefer-dark'
+accent-color='$ACCENT_NAME'
+DCONF
+)
+
+if [ "$MODE" = "stage" ] || [ -n "${GDM_THEME_NO_INSTALL:-}" ]; then
+  OUTDIR="${XDG_CACHE_HOME:-$HOME/.cache}/rice"; mkdir -p "$OUTDIR"
+  cp "$STAGED" "$OUTDIR/gnome-shell-theme.gresource"
+  echo "Staged (not installed): $OUTDIR/gnome-shell-theme.gresource"
+  echo "Would write dconf override $DCONF_FILE:"
+  printf '%s\n' "$DCONF_CONTENT" | sed 's/^/    /'
+  exit 0
+fi
+
+# ---------------------------------------------------------------- install
+echo "Installing (needs root for $GRESOURCE + dconf)..."
+sudo sh -c '
+  set -e
+  GRES="$1"; PRIS="$2"; BAK="$3"; NEW="$4"; DCF="$5"; DCC="$6"
+  [ -f "$PRIS" ] || cp "$GRES" "$PRIS"          # pristine snapshot, first run only
+  cp "$GRES" "$BAK"                              # rolling backup
+  install -m644 "$NEW" "$GRES"                   # install themed gresource
+  mkdir -p "$(dirname "$DCF")"
+  printf "%s\n" "$DCC" > "$DCF"                  # font/accent/scheme for gdm user
+  command -v dconf >/dev/null 2>&1 && dconf update || true
+' _ "$GRESOURCE" "$PRISTINE" "$BACKUP" "$STAGED" "$DCONF_FILE" "$DCONF_CONTENT" \
+  || die "install failed"
+
+echo "Done. GDM now matches your rice theme - it shows on your NEXT login."
+echo "  accent '$ACCENT_NAME' + font '$FONT $FONT_SIZE' set via dconf; background/text via theme."
+echo "  revert:  gdm-theme-sync.sh --revert"
+echo "  note:    don't 'systemctl restart gdm' while logged in (it logs you out)."
+RICE_EOF
 cat > "$BIN/set-ai-window-folder.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
 # Sets the folder Mistral Vibe CLI starts in the next time Mod+a launches a
@@ -2727,33 +3108,40 @@ cat > "$BIN/app-menu.sh" <<'RICE_EOF'
 # inspired by Omarchy's Super-key menu, scoped to actions that exist here.
 # Actions needing interactive input open in their own floating kitty window
 # (see the AppMenuTask window-rule in config.kdl); everything else runs directly.
+# Each label carries a leading Nerd Font glyph (Font Awesome PUA, rendered by
+# the rofi theme's Nerd Font) + two spaces, so every first-level entry shows an
+# icon. LABELS and COMMANDS are index-aligned - keep them in the same order.
 LABELS=(
-  $'  Desktop Theme'
-  $'  Cursor Theme'
-  $'  Icon Theme'
-  $'  Set Screensaver Text/Image'
-  $'  Preview Screensaver'
-  $'  Set AI Window Folder'
-  $'  AI API Keys'
-  $'  Toggle Caffeine'
-  $'  Toggle Do Not Disturb'
-  $'  Music Player'
-  $'  Clipboard History'
-  $'  Colorpicker'
+  $'  Desktop Theme'
+  $'  Cursor Theme'
+  $'  Icon Theme'
+  $'  Match GDM Login to Theme'
+  $'  Set Screensaver Text/Image'
+  $'  Preview Screensaver'
+  $'  Set Screensaver Timeout'
+  $'  Set AI Window Folder'
+  $'  AI API Keys'
+  $'  Toggle Caffeine'
+  $'  Toggle Do Not Disturb'
+  $'  Music Player'
+  $'  Clipboard History'
+  $'  Colorpicker'
   $'  Screenshot Tool'
-  $'  Lock Screen'
-  $'  Power Menu'
-  $'  Niri Settings (NiriMod)'
-  $'  Restart Waybar'
-  $'  Keybinding Help'
+  $'  Lock Screen'
+  $'  Power Menu'
+  $'  Niri Settings (NiriMod)'
+  $'  Restart Waybar'
+  $'  Keybinding Help'
   $'  Arrange Displays'
 )
 COMMANDS=(
   "~/.local/bin/waybar-theme.sh"
   "~/.local/bin/cursor-theme.sh"
   "~/.local/bin/icon-theme.sh"
+  "kitty --class AppMenuTask -e ~/.local/bin/gdm-theme-sync.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/set-screensaver-text.sh"
   "kitty --class Screensaver -e ~/.local/bin/screensaver.sh"
+  "~/.local/bin/set-screensaver-timeout.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/set-ai-window-folder.sh"
   "if [ -x ~/.local/bin/ai-key-manager ]; then ~/.local/bin/ai-key-manager; else ai-key-manager; fi"
   "~/.local/bin/caffeine-toggle.sh"
@@ -3450,6 +3838,11 @@ BUNDLED_SCRIPTS = ("window_pill.py", "cava.sh", "scrolling-mpris.py")
 
 LAYOUT_KEYS = ("modules-left", "modules-center", "modules-right")
 
+# One shared height for every horizontal bar, so the bar looks the same across
+# all themes (~ the v1.9 look). Must be >= the tallest theme's content height;
+# the few themes whose pills need more are slimmed (THEME_CSS_SUBS) to fit.
+BAR_HEIGHT = 34
+
 
 def rewrite_cmd(cmd, name):
     """One command string, adapted. Order: bundled-script paths first
@@ -3499,6 +3892,39 @@ def force_24h(obj):
     return obj
 
 
+JP_NUM = {"1": "一", "2": "二", "3": "三", "4": "四", "5": "五",
+          "6": "六", "7": "七", "8": "八", "9": "九", "10": "十"}
+
+
+def japanify_workspaces(cfg):
+    """Make number-style workspace widgets use Japanese numerals (一二三 …),
+    consistently and completely (desktops 1-10). Only themes whose workspace
+    format-icons map digit keys to PLAIN digits (or are already Japanese) are
+    touched - themes using boxed-number Nerd glyphs, Roman numerals or dots
+    keep their own style. Also fills gaps (e.g. a theme that only defined 1-6
+    would otherwise fall back to the raw western number for 7+)."""
+    for wk in ("niri/workspaces", "sway/workspaces"):
+        ws = cfg.get(wk)
+        if not isinstance(ws, dict):
+            continue
+        icons = ws.get("format-icons")
+        if not isinstance(icons, dict):
+            continue
+        digit_vals = [v for k, v in icons.items()
+                      if k.isdigit() and isinstance(v, str)]
+        if not digit_vals:
+            continue
+
+        def numlike(v):
+            return (v.isdigit()
+                    or all(ch in "一二三四五六七八九十" for ch in v)
+                    or v in ("9+", "+"))
+        if not all(numlike(v) for v in digit_vals):
+            continue  # boxed glyphs / roman / dots: leave the theme's own style
+        for n, jp in JP_NUM.items():
+            icons[n] = jp
+
+
 def unresolvable(block):
     """A module block that still references Omarchy/Hyprland machinery
     after rewriting has no equivalent here - drop the module."""
@@ -3534,9 +3960,33 @@ def adapt_config(cfg, name):
     #     rules already match (com.mitchellh.ghostty, org.gnome.Nautilus,
     #     com.obsproject.Studio, ...), so the per-app icon rewrites keep
     #     working for native Wayland apps.
+    #     The same applies to Hyprland's {initialTitle}/{initialClass} tokens
+    #     (e.g. v6.ab uses {initialTitle}): neither sway/window nor niri/window
+    #     knows them, so the module renders empty. Map title-like tokens to
+    #     {title} and class-like tokens to {app_id}.
     win = cfg.get("sway/window")
     if isinstance(win, dict) and isinstance(win.get("format"), str):
-        win["format"] = win["format"].replace("{class}", "{app_id}")
+        win["format"] = (win["format"]
+                         .replace("{initialTitle}", "{title}")
+                         .replace("{initialClass}", "{app_id}")
+                         .replace("{class}", "{app_id}"))
+
+    # 1c. Vertical bars (position left/right) with an explicit "width": 0 don't
+    #     auto-size - waybar falls back to its ~32px internal minimum, which is
+    #     a couple of px short of what the icon modules need, so the glyphs get
+    #     clipped at the edges ("icons don't fit", e.g. v6.aa). Give such a bar
+    #     a sane fixed width. Bars that leave width unset (true auto-size) are
+    #     left alone.
+    if cfg.get("position") in ("left", "right") and cfg.get("width") == 0:
+        cfg["width"] = 44
+
+    # 1d. Horizontal bars (top/bottom) all share ONE height so the bar looks
+    #     the same across every theme (BAR_HEIGHT, ~ the v1.9 look the user
+    #     picked). It must be >= the tallest theme's content or waybar clips
+    #     ("missing elements"); the two themes whose pills need more than this
+    #     are slimmed (THEME_CSS_SUBS) so nothing clips at this height.
+    if cfg.get("position", "top") in ("top", "bottom"):
+        cfg["height"] = BAR_HEIGHT
 
     # 2. Rewrite every command string in every module block.
     for key in list(cfg):
@@ -3566,6 +4016,10 @@ def adapt_config(cfg, name):
     #     or shell a custom clock out to `date +'...%p'`. Normalize the whole
     #     config to 24-hour time so every theme's clock matches.
     force_24h(cfg)
+
+    # 3b-iii. Japanese numerals for number-style desktop widgets, consistent
+    #     and complete (see japanify_workspaces).
+    japanify_workspaces(cfg)
 
     # 3b. custom/update: restore the old rice's update widget exactly -
     #     a visible pending-update COUNT (polybar-updates.sh style, incl.
@@ -3624,6 +4078,15 @@ def adapt_config(cfg, name):
     wx = cfg.get("custom/weather")
     if isinstance(wx, dict):
         wx["on-click"] = "~/.local/bin/weather-float.sh"
+        # Upstream themes hardcode the author's own city into the exec
+        # (e.g. `wttrbar --nerd --location Changchun`), which pins the bar's
+        # temperature to that city while the click-through report follows the
+        # user's IP - so the two disagree. Strip any `--location <city>` so the
+        # widget falls back to IP geolocation (or ~/.config/weather/location),
+        # matching weather-float.sh.
+        ex = wx.get("exec")
+        if isinstance(ex, str) and "wttrbar" in ex:
+            wx["exec"] = re.sub(r"\s*--location(?:=\S+|\s+\S+)", "", ex)
 
     # 3f1. network: the upstream themes leave the network widget click-less, so
     #      clicking it did nothing. Wire it to this rice's own tools (present on
@@ -4197,20 +4660,14 @@ window#waybar {{
 # end of the sheet gives these rules the win at equal specificity, so a
 # theme's own (hyprland-named) rules stay harmless where they overlap.
 WORKSPACE_STATES_CSS = """/* --- appended by this rice's installer: universal workspace states ---
-   The upstream styles target Hyprland's class names; sway/workspaces
-   uses .focused/.urgent, so the active desktop and any workspace with an
-   attention-needing window (xdg-activation, urgency hints) get explicit
-   colors here, derived from this theme's own palette. Note: this
-   system's waybar marks the current workspace with .visible (verified
-   by probe: the class moves with focus; .focused/.active are never
-   emitted by sway/workspaces here) - all three are styled so the block
-   also works on waybar builds that do use .focused/.active. Urgent is
-   the theme accent as a filled pill (bold, base text) so it reads as
-   attention while staying in the theme's own color language - and
-   stays distinct from the focused workspace, which is accent TEXT on
-   no background. */
-window#waybar #workspaces button.focused,
-window#waybar #workspaces button.active,
+   The current workspace: niri marks it with BOTH .active and .focused, and the
+   theme's own rules already style those (a filled pill, a coloured dot, etc.) -
+   so we must NOT touch them, or we clobber the theme (accent text on an accent
+   fill = invisible number; a forced background = an ugly box around a dot).
+   sway instead marks the current workspace with .visible, which the upstream
+   (Hyprland-named) themes never style - so that one, and only that one, gets an
+   explicit accent highlight here. Urgent (any class) is a filled accent pill so
+   an attention-needing workspace still reads regardless of compositor. */
 window#waybar #workspaces button.visible {
   color: @ACCENT@;
 }
@@ -4242,6 +4699,109 @@ window#waybar #custom-notification-silencing-indicator.active {
   color: @ACCENT@;
 }
 """
+
+
+# Per-theme CSS fixes, appended last (so they win on specificity ties). A few
+# upstream themes have a cosmetic CSS quirk that only affects that one theme, so
+# a universal rule in WORKSPACE_STATES_CSS would wrongly reshape the others.
+# Keyed by theme name; the value is appended verbatim after the workspace block.
+THEME_CSS_PATCHES = {
+    # v4.2 draws desktops as large (18px) numbered-box glyphs with zero
+    # horizontal padding and a 1px margin, so adjacent desktop numbers touch
+    # ("cramped"). Give the workspace buttons side padding (high-specificity so
+    # it beats the theme's own `padding: 0` on button and button.active).
+    # v3.2/v3.3/v4.2 all draw desktops as large numbered-box glyphs with zero
+    # padding, no min-width and no margin, so adjacent numbers touch. Same fix.
+    "v3.2": (
+        "/* --- appended by this rice's installer: desktop-number spacing --- */\n"
+        "window#waybar #workspaces button { padding-left: 5px; padding-right: 5px; }\n"
+    ),
+    "v3.3": (
+        "/* --- appended by this rice's installer: desktop-number spacing --- */\n"
+        "window#waybar #workspaces button { padding-left: 5px; padding-right: 5px; }\n"
+    ),
+    "v4.2": (
+        "/* --- appended by this rice's installer: v4.2 desktop-number spacing --- */\n"
+        "window#waybar #workspaces button {\n"
+        "  padding-left: 5px;\n"
+        "  padding-right: 5px;\n"
+        "}\n"
+    ),
+    # v2.1 puts niri/window alone in a transparent modules-center and never
+    # gives #window its own background, so the centered window title floats with
+    # no pill while every other module gets one from its group container. Give
+    # it the same @base pill. (The .empty rule keeps it hidden with no window:
+    # it has more classes, so it still wins when window#waybar is .empty.)
+    "v2.1": (
+        "/* --- appended by this rice's installer: pill for the centered window title --- */\n"
+        "window#waybar #window {\n"
+        "  background-color: @base;\n"
+        "  border-radius: 8px;\n"
+        "  border: 1px solid alpha(@text, 0.15);\n"
+        "}\n"
+    ),
+}
+
+
+# Per-theme CSS text substitutions, applied to the upstream stylesheet in place
+# (before palette/workspace blocks are added). Used to retune a theme's own
+# geometry when a value in the source css is the problem (an appended override
+# can't lower a value a later, more-specific rule re-raises).
+_V7_SLIM = [
+    # v7/v7.1/v7.1a use a "floating pills" layout that stacks big vertical
+    # margins + padding at 14px text, so the bar renders ~2x taller than the
+    # v7.2+ themes. Slim the pills and drop the text to 12px so they keep the
+    # same silhouette as v7.2.
+    ("margin: 10px 5px", "margin: 2px 5px"),
+    ("padding: 5px 12px", "padding: 2px 12px"),
+    ("margin: 5px 2px", "margin: 2px 2px"),
+    ("margin: 5px 0px", "margin: 2px 0px"),
+    ("margin: 5px 0 5px 0px", "margin: 2px 0 2px 0px"),
+    ("margin: 5px 6px", "margin: 2px 6px"),
+    ("font-size: 14px", "font-size: 12px"),
+]
+# Height slims: these themes' content is taller than the shared BAR_HEIGHT (34),
+# so without trimming waybar would clip them. Each cut targets that theme's
+# tallest element (a container min-height, an oversized pill margin/padding, or
+# - where the height is intrinsic Nerd-Font icon line-height - a 1-2px smaller
+# font). Measured per theme by sweeping at the target height. Order matters
+# where one find-string is a prefix of another (longest first).
+THEME_CSS_SUBS = {
+    "v7": _V7_SLIM,
+    "v7.1": _V7_SLIM,
+    "v7.1a": _V7_SLIM + [
+        ("min-height: 30px", "min-height: 20px"),
+        ("padding: 5px 10px", "padding: 2px 10px"),
+        ("margin: 5px 0", "margin: 2px 0"),
+        ("margin: 5px;", "margin: 2px;"),
+    ],
+    "v1.9d": [("min-height: 30px", "min-height: 18px"),
+              ("margin: 1px 4px 2px 4px", "margin: 0px 4px 1px 4px")],
+    "v2.1-1": [("margin: 4px 10px", "margin: 2px 10px")],
+    "v2.9a": [("font-size: 14px", "font-size: 11px"),
+              ("font-size: 12px", "font-size: 11px"),
+              ("padding-top: 2px", "padding-top: 0px")],
+    "v2.9c": [("margin: 4px 2px", "margin: 2px 2px")],
+    "v2.9e": [("margin: 2px 17px 5px 8px", "margin: 1px 17px 1px 8px")],
+    "v3.1a": [("min-height: 32px", "min-height: 22px"),
+              ("margin: 2px 10px 5px 10px", "margin: 1px 10px 2px 10px")],
+    "v3.1b": [("margin: 2px 5px 2px 5px", "margin: 1px 5px 1px 5px")],
+    "v3.1c": [("margin: 5px 5px 2px 5px", "margin: 2px 5px 2px 5px")],
+    "v3.1d": [("margin: 5px 5px 2px 5px", "margin: 2px 5px 2px 5px")],
+    "v4": [("margin: 4px 4px 4px 4px", "margin: 2px 4px 2px 4px"),
+           ("margin: 4px 4px", "margin: 2px 4px"),
+           ("margin: 4px 0px", "margin: 2px 0px")],
+    "v6.ab": [("min-height: 26px", "min-height: 20px"),
+              ("margin: 2px 10px 5px 10px", "margin: 1px 10px 2px 10px")],
+    "v6.b": [("padding: 10px 6px", "padding: 4px 6px")],
+    "v6.cb": [("min-height: 30px", "min-height: 24px"),
+              ("padding-top: 8px", "padding-top: 2px"),
+              ("font-size: 12px", "font-size: 10px")],
+    "v7.2a": [("min-height: 32px", "min-height: 27px")],
+    "v7.2b": [("min-height: 32px", "min-height: 27px"),
+              ("margin: 5px;", "margin: 2px;"),
+              ("margin: 5px 4px", "margin: 2px 4px")],
+}
 
 
 # Sway port of the themes' bundled window_pill.py (drops the hyprctl /
@@ -4354,6 +4914,10 @@ def process_theme(src_dir, name):
         css_text = css_text.replace(
             "}\n\n\n#network.disconnected,", "}\n*/\n\n\n#network.disconnected,", 1)
 
+    # per-theme geometry retunes (e.g. slim the v7.x pill bars to the v7.2 look)
+    for find, repl in THEME_CSS_SUBS.get(name, []):
+        css_text = css_text.replace(find, repl)
+
     # locally-imported css files (./rose-pine.css)
     imported = []
     for m in re.findall(r'@import\s+"([^"]+)"', css_text):
@@ -4371,6 +4935,14 @@ def process_theme(src_dir, name):
     tdir.mkdir(parents=True, exist_ok=True)
 
     out_cfg = json.dumps(cfg, indent=2, ensure_ascii=False) + "\n"
+    # A few themes dim a module (e.g. mpris when paused) with a Pango
+    # color='black' span. On these dark bars that text is all but invisible.
+    # Repaint any hardcoded black Pango color with the theme's own foreground
+    # so the dimmed text stays legible. (CSS color:#000/black is left alone -
+    # there it sits on a light pill, e.g. #network.disconnected, and is correct.)
+    for blk in ("color='black'", 'color="black"', "color='#000000'",
+                "color='#000'", "color='#000000ff'"):
+        out_cfg = out_cfg.replace(blk, "color='%s'" % palette["text"])
     write_text(tdir / "config.jsonc", out_cfg)
     # Replace the upstream "@import ../omarchy/current/theme/waybar.css"
     # with the palette INLINED: waybar's own css-import preprocessing pass
@@ -4398,7 +4970,11 @@ def process_theme(src_dir, name):
     ws_css = (WORKSPACE_STATES_CSS
               .replace("@ACCENT@", palette["accent"])
               .replace("@BASE@", palette["base"]))
-    write_text(tdir / "style.css", css_text.rstrip("\n") + "\n" + ws_css)
+    css_out = css_text.rstrip("\n") + "\n" + ws_css
+    patch = THEME_CSS_PATCHES.get(name)
+    if patch:
+        css_out = css_out.rstrip("\n") + "\n" + patch
+    write_text(tdir / "style.css", css_out)
     write_text(tdir / "palette.css", PALETTE_CSS_TEMPLATE.format(name=name, **palette))
 
     # bundled extras (scripts + imported css), screenshots excluded

@@ -293,6 +293,8 @@ bindsym $mod+p exec ~/.local/bin/fresh-env system-config-printer
 bindsym $mod+c exec ~/.local/bin/caffeine-toggle.sh
 bindsym $mod+n exec ~/.local/bin/dnd-toggle.sh
 bindsym $mod+Escape exec kitty --class Screensaver -e ~/.local/bin/screensaver.sh
+# Set the idle screensaver/lock timeout (rofi picker; 0 = never).
+bindsym $mod+shift+Escape exec ~/.local/bin/set-screensaver-timeout.sh
 bindsym $mod+shift+q kill
 bindsym $mod+shift+c reload
 bindsym $mod+shift+r reload
@@ -800,6 +802,11 @@ BUNDLED_SCRIPTS = ("window_pill.py", "cava.sh", "scrolling-mpris.py")
 
 LAYOUT_KEYS = ("modules-left", "modules-center", "modules-right")
 
+# One shared height for every horizontal bar, so the bar looks the same across
+# all themes (~ the v1.9 look). Must be >= the tallest theme's content height;
+# the few themes whose pills need more are slimmed (THEME_CSS_SUBS) to fit.
+BAR_HEIGHT = 34
+
 
 def rewrite_cmd(cmd, name):
     """One command string, adapted. Order: bundled-script paths first
@@ -849,6 +856,39 @@ def force_24h(obj):
     return obj
 
 
+JP_NUM = {"1": "一", "2": "二", "3": "三", "4": "四", "5": "五",
+          "6": "六", "7": "七", "8": "八", "9": "九", "10": "十"}
+
+
+def japanify_workspaces(cfg):
+    """Make number-style workspace widgets use Japanese numerals (一二三 …),
+    consistently and completely (desktops 1-10). Only themes whose workspace
+    format-icons map digit keys to PLAIN digits (or are already Japanese) are
+    touched - themes using boxed-number Nerd glyphs, Roman numerals or dots
+    keep their own style. Also fills gaps (e.g. a theme that only defined 1-6
+    would otherwise fall back to the raw western number for 7+)."""
+    for wk in ("niri/workspaces", "sway/workspaces"):
+        ws = cfg.get(wk)
+        if not isinstance(ws, dict):
+            continue
+        icons = ws.get("format-icons")
+        if not isinstance(icons, dict):
+            continue
+        digit_vals = [v for k, v in icons.items()
+                      if k.isdigit() and isinstance(v, str)]
+        if not digit_vals:
+            continue
+
+        def numlike(v):
+            return (v.isdigit()
+                    or all(ch in "一二三四五六七八九十" for ch in v)
+                    or v in ("9+", "+"))
+        if not all(numlike(v) for v in digit_vals):
+            continue  # boxed glyphs / roman / dots: leave the theme's own style
+        for n, jp in JP_NUM.items():
+            icons[n] = jp
+
+
 def unresolvable(block):
     """A module block that still references Omarchy/Hyprland machinery
     after rewriting has no equivalent here - drop the module."""
@@ -884,9 +924,33 @@ def adapt_config(cfg, name):
     #     rules already match (com.mitchellh.ghostty, org.gnome.Nautilus,
     #     com.obsproject.Studio, ...), so the per-app icon rewrites keep
     #     working for native Wayland apps.
+    #     The same applies to Hyprland's {initialTitle}/{initialClass} tokens
+    #     (e.g. v6.ab uses {initialTitle}): neither sway/window nor niri/window
+    #     knows them, so the module renders empty. Map title-like tokens to
+    #     {title} and class-like tokens to {app_id}.
     win = cfg.get("sway/window")
     if isinstance(win, dict) and isinstance(win.get("format"), str):
-        win["format"] = win["format"].replace("{class}", "{app_id}")
+        win["format"] = (win["format"]
+                         .replace("{initialTitle}", "{title}")
+                         .replace("{initialClass}", "{app_id}")
+                         .replace("{class}", "{app_id}"))
+
+    # 1c. Vertical bars (position left/right) with an explicit "width": 0 don't
+    #     auto-size - waybar falls back to its ~32px internal minimum, which is
+    #     a couple of px short of what the icon modules need, so the glyphs get
+    #     clipped at the edges ("icons don't fit", e.g. v6.aa). Give such a bar
+    #     a sane fixed width. Bars that leave width unset (true auto-size) are
+    #     left alone.
+    if cfg.get("position") in ("left", "right") and cfg.get("width") == 0:
+        cfg["width"] = 44
+
+    # 1d. Horizontal bars (top/bottom) all share ONE height so the bar looks
+    #     the same across every theme (BAR_HEIGHT, ~ the v1.9 look the user
+    #     picked). It must be >= the tallest theme's content or waybar clips
+    #     ("missing elements"); the two themes whose pills need more than this
+    #     are slimmed (THEME_CSS_SUBS) so nothing clips at this height.
+    if cfg.get("position", "top") in ("top", "bottom"):
+        cfg["height"] = BAR_HEIGHT
 
     # 2. Rewrite every command string in every module block.
     for key in list(cfg):
@@ -916,6 +980,10 @@ def adapt_config(cfg, name):
     #     or shell a custom clock out to `date +'...%p'`. Normalize the whole
     #     config to 24-hour time so every theme's clock matches.
     force_24h(cfg)
+
+    # 3b-iii. Japanese numerals for number-style desktop widgets, consistent
+    #     and complete (see japanify_workspaces).
+    japanify_workspaces(cfg)
 
     # 3b. custom/update: restore the old rice's update widget exactly -
     #     a visible pending-update COUNT (polybar-updates.sh style, incl.
@@ -974,6 +1042,15 @@ def adapt_config(cfg, name):
     wx = cfg.get("custom/weather")
     if isinstance(wx, dict):
         wx["on-click"] = "~/.local/bin/weather-float.sh"
+        # Upstream themes hardcode the author's own city into the exec
+        # (e.g. `wttrbar --nerd --location Changchun`), which pins the bar's
+        # temperature to that city while the click-through report follows the
+        # user's IP - so the two disagree. Strip any `--location <city>` so the
+        # widget falls back to IP geolocation (or ~/.config/weather/location),
+        # matching weather-float.sh.
+        ex = wx.get("exec")
+        if isinstance(ex, str) and "wttrbar" in ex:
+            wx["exec"] = re.sub(r"\s*--location(?:=\S+|\s+\S+)", "", ex)
 
     # 3f1. network: the upstream themes leave the network widget click-less, so
     #      clicking it did nothing. Wire it to this rice's own tools (present on
@@ -1547,20 +1624,14 @@ window#waybar {{
 # end of the sheet gives these rules the win at equal specificity, so a
 # theme's own (hyprland-named) rules stay harmless where they overlap.
 WORKSPACE_STATES_CSS = """/* --- appended by this rice's installer: universal workspace states ---
-   The upstream styles target Hyprland's class names; sway/workspaces
-   uses .focused/.urgent, so the active desktop and any workspace with an
-   attention-needing window (xdg-activation, urgency hints) get explicit
-   colors here, derived from this theme's own palette. Note: this
-   system's waybar marks the current workspace with .visible (verified
-   by probe: the class moves with focus; .focused/.active are never
-   emitted by sway/workspaces here) - all three are styled so the block
-   also works on waybar builds that do use .focused/.active. Urgent is
-   the theme accent as a filled pill (bold, base text) so it reads as
-   attention while staying in the theme's own color language - and
-   stays distinct from the focused workspace, which is accent TEXT on
-   no background. */
-window#waybar #workspaces button.focused,
-window#waybar #workspaces button.active,
+   The current workspace: niri marks it with BOTH .active and .focused, and the
+   theme's own rules already style those (a filled pill, a coloured dot, etc.) -
+   so we must NOT touch them, or we clobber the theme (accent text on an accent
+   fill = invisible number; a forced background = an ugly box around a dot).
+   sway instead marks the current workspace with .visible, which the upstream
+   (Hyprland-named) themes never style - so that one, and only that one, gets an
+   explicit accent highlight here. Urgent (any class) is a filled accent pill so
+   an attention-needing workspace still reads regardless of compositor. */
 window#waybar #workspaces button.visible {
   color: @ACCENT@;
 }
@@ -1592,6 +1663,109 @@ window#waybar #custom-notification-silencing-indicator.active {
   color: @ACCENT@;
 }
 """
+
+
+# Per-theme CSS fixes, appended last (so they win on specificity ties). A few
+# upstream themes have a cosmetic CSS quirk that only affects that one theme, so
+# a universal rule in WORKSPACE_STATES_CSS would wrongly reshape the others.
+# Keyed by theme name; the value is appended verbatim after the workspace block.
+THEME_CSS_PATCHES = {
+    # v4.2 draws desktops as large (18px) numbered-box glyphs with zero
+    # horizontal padding and a 1px margin, so adjacent desktop numbers touch
+    # ("cramped"). Give the workspace buttons side padding (high-specificity so
+    # it beats the theme's own `padding: 0` on button and button.active).
+    # v3.2/v3.3/v4.2 all draw desktops as large numbered-box glyphs with zero
+    # padding, no min-width and no margin, so adjacent numbers touch. Same fix.
+    "v3.2": (
+        "/* --- appended by this rice's installer: desktop-number spacing --- */\n"
+        "window#waybar #workspaces button { padding-left: 5px; padding-right: 5px; }\n"
+    ),
+    "v3.3": (
+        "/* --- appended by this rice's installer: desktop-number spacing --- */\n"
+        "window#waybar #workspaces button { padding-left: 5px; padding-right: 5px; }\n"
+    ),
+    "v4.2": (
+        "/* --- appended by this rice's installer: v4.2 desktop-number spacing --- */\n"
+        "window#waybar #workspaces button {\n"
+        "  padding-left: 5px;\n"
+        "  padding-right: 5px;\n"
+        "}\n"
+    ),
+    # v2.1 puts niri/window alone in a transparent modules-center and never
+    # gives #window its own background, so the centered window title floats with
+    # no pill while every other module gets one from its group container. Give
+    # it the same @base pill. (The .empty rule keeps it hidden with no window:
+    # it has more classes, so it still wins when window#waybar is .empty.)
+    "v2.1": (
+        "/* --- appended by this rice's installer: pill for the centered window title --- */\n"
+        "window#waybar #window {\n"
+        "  background-color: @base;\n"
+        "  border-radius: 8px;\n"
+        "  border: 1px solid alpha(@text, 0.15);\n"
+        "}\n"
+    ),
+}
+
+
+# Per-theme CSS text substitutions, applied to the upstream stylesheet in place
+# (before palette/workspace blocks are added). Used to retune a theme's own
+# geometry when a value in the source css is the problem (an appended override
+# can't lower a value a later, more-specific rule re-raises).
+_V7_SLIM = [
+    # v7/v7.1/v7.1a use a "floating pills" layout that stacks big vertical
+    # margins + padding at 14px text, so the bar renders ~2x taller than the
+    # v7.2+ themes. Slim the pills and drop the text to 12px so they keep the
+    # same silhouette as v7.2.
+    ("margin: 10px 5px", "margin: 2px 5px"),
+    ("padding: 5px 12px", "padding: 2px 12px"),
+    ("margin: 5px 2px", "margin: 2px 2px"),
+    ("margin: 5px 0px", "margin: 2px 0px"),
+    ("margin: 5px 0 5px 0px", "margin: 2px 0 2px 0px"),
+    ("margin: 5px 6px", "margin: 2px 6px"),
+    ("font-size: 14px", "font-size: 12px"),
+]
+# Height slims: these themes' content is taller than the shared BAR_HEIGHT (34),
+# so without trimming waybar would clip them. Each cut targets that theme's
+# tallest element (a container min-height, an oversized pill margin/padding, or
+# - where the height is intrinsic Nerd-Font icon line-height - a 1-2px smaller
+# font). Measured per theme by sweeping at the target height. Order matters
+# where one find-string is a prefix of another (longest first).
+THEME_CSS_SUBS = {
+    "v7": _V7_SLIM,
+    "v7.1": _V7_SLIM,
+    "v7.1a": _V7_SLIM + [
+        ("min-height: 30px", "min-height: 20px"),
+        ("padding: 5px 10px", "padding: 2px 10px"),
+        ("margin: 5px 0", "margin: 2px 0"),
+        ("margin: 5px;", "margin: 2px;"),
+    ],
+    "v1.9d": [("min-height: 30px", "min-height: 18px"),
+              ("margin: 1px 4px 2px 4px", "margin: 0px 4px 1px 4px")],
+    "v2.1-1": [("margin: 4px 10px", "margin: 2px 10px")],
+    "v2.9a": [("font-size: 14px", "font-size: 11px"),
+              ("font-size: 12px", "font-size: 11px"),
+              ("padding-top: 2px", "padding-top: 0px")],
+    "v2.9c": [("margin: 4px 2px", "margin: 2px 2px")],
+    "v2.9e": [("margin: 2px 17px 5px 8px", "margin: 1px 17px 1px 8px")],
+    "v3.1a": [("min-height: 32px", "min-height: 22px"),
+              ("margin: 2px 10px 5px 10px", "margin: 1px 10px 2px 10px")],
+    "v3.1b": [("margin: 2px 5px 2px 5px", "margin: 1px 5px 1px 5px")],
+    "v3.1c": [("margin: 5px 5px 2px 5px", "margin: 2px 5px 2px 5px")],
+    "v3.1d": [("margin: 5px 5px 2px 5px", "margin: 2px 5px 2px 5px")],
+    "v4": [("margin: 4px 4px 4px 4px", "margin: 2px 4px 2px 4px"),
+           ("margin: 4px 4px", "margin: 2px 4px"),
+           ("margin: 4px 0px", "margin: 2px 0px")],
+    "v6.ab": [("min-height: 26px", "min-height: 20px"),
+              ("margin: 2px 10px 5px 10px", "margin: 1px 10px 2px 10px")],
+    "v6.b": [("padding: 10px 6px", "padding: 4px 6px")],
+    "v6.cb": [("min-height: 30px", "min-height: 24px"),
+              ("padding-top: 8px", "padding-top: 2px"),
+              ("font-size: 12px", "font-size: 10px")],
+    "v7.2a": [("min-height: 32px", "min-height: 27px")],
+    "v7.2b": [("min-height: 32px", "min-height: 27px"),
+              ("margin: 5px;", "margin: 2px;"),
+              ("margin: 5px 4px", "margin: 2px 4px")],
+}
 
 
 # Sway port of the themes' bundled window_pill.py (drops the hyprctl /
@@ -1704,6 +1878,10 @@ def process_theme(src_dir, name):
         css_text = css_text.replace(
             "}\n\n\n#network.disconnected,", "}\n*/\n\n\n#network.disconnected,", 1)
 
+    # per-theme geometry retunes (e.g. slim the v7.x pill bars to the v7.2 look)
+    for find, repl in THEME_CSS_SUBS.get(name, []):
+        css_text = css_text.replace(find, repl)
+
     # locally-imported css files (./rose-pine.css)
     imported = []
     for m in re.findall(r'@import\s+"([^"]+)"', css_text):
@@ -1721,6 +1899,14 @@ def process_theme(src_dir, name):
     tdir.mkdir(parents=True, exist_ok=True)
 
     out_cfg = json.dumps(cfg, indent=2, ensure_ascii=False) + "\n"
+    # A few themes dim a module (e.g. mpris when paused) with a Pango
+    # color='black' span. On these dark bars that text is all but invisible.
+    # Repaint any hardcoded black Pango color with the theme's own foreground
+    # so the dimmed text stays legible. (CSS color:#000/black is left alone -
+    # there it sits on a light pill, e.g. #network.disconnected, and is correct.)
+    for blk in ("color='black'", 'color="black"', "color='#000000'",
+                "color='#000'", "color='#000000ff'"):
+        out_cfg = out_cfg.replace(blk, "color='%s'" % palette["text"])
     write_text(tdir / "config.jsonc", out_cfg)
     # Replace the upstream "@import ../omarchy/current/theme/waybar.css"
     # with the palette INLINED: waybar's own css-import preprocessing pass
@@ -1748,7 +1934,11 @@ def process_theme(src_dir, name):
     ws_css = (WORKSPACE_STATES_CSS
               .replace("@ACCENT@", palette["accent"])
               .replace("@BASE@", palette["base"]))
-    write_text(tdir / "style.css", css_text.rstrip("\n") + "\n" + ws_css)
+    css_out = css_text.rstrip("\n") + "\n" + ws_css
+    patch = THEME_CSS_PATCHES.get(name)
+    if patch:
+        css_out = css_out.rstrip("\n") + "\n" + patch
+    write_text(tdir / "style.css", css_out)
     write_text(tdir / "palette.css", PALETTE_CSS_TEMPLATE.format(name=name, **palette))
 
     # bundled extras (scripts + imported css), screenshots excluded
@@ -2349,26 +2539,47 @@ chmod +x "$BIN/swaybg-restore.sh"
 cat > "$BIN/swayidle-launch.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
 # Idle management for the Sway rice via swayidle. Timings:
-#   - 20min (1200s): show the screensaver and lock (lock.sh --with-screensaver,
+#   - screensaver+lock after SS_MIN minutes idle (lock.sh --with-screensaver,
 #     which blanks immediately on lock via its own logic)
-#   - 50min (3000s): power the displays off; power back on when activity resumes
+#   - power the displays off 30min after that; power back on when activity resumes
 #   - before sleep: lock first so resume lands on the lock screen
-# Kept later than the screensaver mark on purpose (DPMS/display-power is a
-# separate subsystem from the idle screensaver).
+# SS_MIN is read from ~/.config/rice/screensaver-timeout (a single integer, in
+# minutes; 0 = never auto-lock). Default 20 when the file is missing/empty.
+# Change it with ~/.local/bin/set-screensaver-timeout.sh ($mod+Shift+Escape),
+# which rewrites that file and re-runs this script to apply it immediately.
+# Display-power stays a separate subsystem from the idle screensaver.
 # exec_always re-runs this on reload, so single-instance it first.
 # The idle context inherits sway's login-time PATH, which does NOT include
 # ~/.local/bin - the pipx tools the lock/screensaver chain needs (tte) live
 # there, so re-add it before exec.
 export PATH="$HOME/.local/bin:$PATH"
 set -u
+
+# --- read the configurable screensaver timeout (minutes) ---
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}/rice/screensaver-timeout"
+SS_MIN=20
+if [ -r "$CONF" ]; then
+  v=$(tr -dc '0-9' < "$CONF" | head -c 4)
+  [ -n "$v" ] && SS_MIN=$((10#$v))
+fi
+
 pkill -x swayidle 2>/dev/null
 for _ in 1 2 3 4 5; do pgrep -x swayidle >/dev/null 2>&1 || break; sleep 0.1; done
 
-exec swayidle -w \
-  timeout 1200 "$HOME/.local/bin/lock.sh --with-screensaver" \
-  timeout 3000 'swaymsg "output * power off"' \
-    resume     'swaymsg "output * power on"' \
-  before-sleep "$HOME/.local/bin/lock.sh"
+# Build the argument list so a timeout of 0 cleanly disables the screensaver/
+# lock while still keeping display power-off and lock-before-sleep.
+args=( -w )
+if [ "$SS_MIN" -gt 0 ]; then
+  args+=( timeout "$((SS_MIN * 60))" "$HOME/.local/bin/lock.sh --with-screensaver" )
+  off=$(( (SS_MIN + 30) * 60 ))
+else
+  off=3000
+fi
+args+=( timeout "$off" 'swaymsg "output * power off"' \
+          resume 'swaymsg "output * power on"' )
+args+=( before-sleep "$HOME/.local/bin/lock.sh" )
+
+exec swayidle "${args[@]}"
 RICE_EOF
 chmod +x "$BIN/swayidle-launch.sh"
 cat > "$BIN/weather-float.sh" <<'EOF'
@@ -2554,6 +2765,72 @@ for i in "${!LABELS[@]}"; do
 done
 RICE_EOF
 chmod +x "$BIN/screenshot-tool.sh"
+cat > "$BIN/set-screensaver-timeout.sh" <<'RICE_EOF'
+#!/usr/bin/env bash
+# Set the idle screensaver/lock timeout. Writes the chosen number of minutes to
+# ~/.config/rice/screensaver-timeout (0 = never) and re-runs swayidle-launch.sh
+# so the new timeout applies immediately - no re-login needed. Reachable from
+# the App Menu ("Set Screensaver Timeout") and bindable directly.
+#   set-screensaver-timeout.sh            # rofi picker
+#   set-screensaver-timeout.sh <minutes>  # set directly, no prompt (0 = never)
+set -u
+export PATH="$HOME/.local/bin:$PATH"
+
+CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rice"
+CONF="$CONF_DIR/screensaver-timeout"
+ROFI_THEME="$HOME/.config/rofi/current.rasi"
+
+# Current value (default 20) for the prompt hint.
+cur=20
+if [ -r "$CONF" ]; then
+  v=$(tr -dc '0-9' < "$CONF" | head -c 4)
+  [ -n "$v" ] && cur=$((10#$v))
+fi
+
+sanitize() { printf '%s' "$1" | tr -dc '0-9' | head -c 4; }
+
+if [ "$#" -ge 1 ]; then
+  # Non-interactive: minutes given as an argument.
+  mins=$(sanitize "$1")
+  [ -z "$mins" ] && { echo "usage: $(basename "$0") <minutes>  (0 = never)" >&2; exit 1; }
+  mins=$((10#$mins))
+else
+  OPTS=$'  1 minute\n  2 minutes\n  5 minutes\n  10 minutes\n  15 minutes\n  20 minutes\n  30 minutes\n  45 minutes\n  1 hour\n  Never (disable)\n  Custom…'
+  CHOSEN=$(printf '%b' "$OPTS" | rofi -dmenu -i -p "Screensaver after" \
+            -mesg "Idle time before the screensaver locks. Currently: ${cur} min (0 = never)." \
+            -theme "$ROFI_THEME")
+  [ -z "$CHOSEN" ] && exit 0
+  case "$CHOSEN" in
+    *"Never"*)  mins=0 ;;
+    *"1 hour"*) mins=60 ;;
+    *"Custom"*)
+      raw=$(printf '' | rofi -dmenu -p "Minutes (0 = never)" -theme "$ROFI_THEME")
+      raw=$(sanitize "$raw")
+      [ -z "$raw" ] && exit 0
+      mins=$((10#$raw))
+      ;;
+    *) raw=$(sanitize "$CHOSEN"); mins=$((10#$raw)) ;;
+  esac
+fi
+
+mkdir -p "$CONF_DIR"
+printf '%s\n' "$mins" > "$CONF"
+
+# Re-arm swayidle so the new timeout takes effect now (it re-reads the file).
+if [ -x "$HOME/.local/bin/swayidle-launch.sh" ]; then
+  "$HOME/.local/bin/swayidle-launch.sh" >/dev/null 2>&1 &
+  disown 2>/dev/null || true
+fi
+
+if [ "$mins" -gt 0 ]; then
+  notify-send -h string:x-dunst-stack-tag:screensaver \
+    "Screensaver" "Locks after ${mins} min idle" 2>/dev/null || true
+else
+  notify-send -h string:x-dunst-stack-tag:screensaver \
+    "Screensaver" "Idle auto-lock disabled" 2>/dev/null || true
+fi
+RICE_EOF
+chmod +x "$BIN/set-screensaver-timeout.sh"
 cat > "$BIN/wallpaper-picker.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
 # Rofi-based wallpaper picker. Lists images from
