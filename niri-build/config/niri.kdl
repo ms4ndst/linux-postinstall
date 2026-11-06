@@ -235,9 +235,25 @@ window-rule {
     open-floating true
 }
 // Rounded corners + a hair of shadow on floating windows, for polish.
+// opacity: make every window a touch transparent. Niri applies this to the
+// whole window surface (content included) and ON TOP OF the window's own
+// opacity, so kitty/terminals - which already set background_opacity in the
+// HANCORE theme - end up a hair more transparent than the rest. Keep it high
+// (0.95-0.98) so text stays crisp; niri has no blur, so lower = raw wallpaper
+// shows through. Live-tune via NiriMod's Raw Config, then update this value.
 window-rule {
     geometry-corner-radius 8
     clip-to-geometry true
+    opacity 0.95
+}
+// Chromium/Electron apps (VSCode, Vivaldi, ...) render a FULLY OPAQUE buffer, so
+// the opacity above can't make them see-through - it only blends ~5% of whatever
+// niri draws behind the window (the accent-colored focus ring), giving an ugly
+// flat pink/accent wash. Force them back to fully opaque. If another app shows
+// the same tint, add its app-id (from `niri msg windows`) to this match.
+window-rule {
+    match app-id=r#"^(com\.microsoft\.VSCode|vivaldi.*)$"#
+    opacity 1.0
 }
 
 // --- animations --------------------------------------------------------------

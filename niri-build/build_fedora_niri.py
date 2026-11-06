@@ -46,7 +46,7 @@ BIN_SCRIPTS = (
     "blueman-applet-guard.sh", "fix-mx-scroll.sh", "battwatch.sh", "weather-float.sh",
     # screensaver / power / theme switchers / menus
     "screensaver.sh", "set-screensaver-text.sh", "set-screensaver-timeout.sh",
-    "set-ai-window-folder.sh",
+    "set-window-opacity.sh", "set-ai-window-folder.sh",
     "icon-theme.sh", "cursor-theme.sh", "powermenu.sh", "app-menu.sh",
     "gdm-theme-sync.sh",
     "keybindings-help.sh", "arrange-displays.sh",

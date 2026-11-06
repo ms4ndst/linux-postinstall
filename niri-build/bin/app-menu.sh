@@ -14,6 +14,7 @@ LABELS=(
   $'  Set Screensaver Text/Image'
   $'  Preview Screensaver'
   $'  Set Screensaver Timeout'
+  $'  Set Window Transparency'
   $'  Set AI Window Folder'
   $'  AI API Keys'
   $'  Toggle Caffeine'
@@ -37,6 +38,7 @@ COMMANDS=(
   "kitty --class AppMenuTask -e ~/.local/bin/set-screensaver-text.sh"
   "kitty --class Screensaver -e ~/.local/bin/screensaver.sh"
   "~/.local/bin/set-screensaver-timeout.sh"
+  "~/.local/bin/set-window-opacity.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/set-ai-window-folder.sh"
   "if [ -x ~/.local/bin/ai-key-manager ]; then ~/.local/bin/ai-key-manager; else ai-key-manager; fi"
   "~/.local/bin/caffeine-toggle.sh"

@@ -34,6 +34,7 @@ BIN_SCRIPTS = (
     "screenshot.sh",
     "screenshot-tool.sh",
     "set-screensaver-timeout.sh",
+    "set-window-opacity.sh",
     "swaybg-restore.sh",
     "swayidle-launch.sh",
     "wallpaper-picker.sh",
