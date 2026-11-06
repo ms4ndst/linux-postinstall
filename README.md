@@ -221,6 +221,7 @@ There are also standalone i3+Catppuccin rice scripts — the predecessors of the
   - [📥 Niri Script Installation & Usage](#-niri-script-installation--usage)
   - [⌨️ Niri Keybinds](#️-niri-keybinds)
   - [🔧 Maintaining the Script (niri-build)](#-maintaining-the-script-niri-build)
+  - [🟠 OpenMandriva Port: `openmandriva-niri-setup.sh`](#-openmandriva-port-openmandriva-niri-setupsh)
   - [⚠️ Niri Script Known Limitations](#️-niri-script-known-limitations)
 - [🎨 i3 + Catppuccin Rice Script (Fedora & openSUSE)](#-i3--catppuccin-rice-script-fedora--opensuse)
   - [🚀 i3 Script Overview](#-i3-script-overview)
@@ -3071,6 +3072,21 @@ niri validate --config niri-build/config/niri.kdl   # on a machine with niri
 ```
 
 Edit `niri-build/config/niri.kdl` (the compositor config) or `niri-build/bin/*.sh` (the `~/.local/bin` helpers), then re-run the build. The HANCORE **theme generator and its shims are shared** with the Sway rice — the builder embeds them straight from [`sway-build/`](sway-build/), so there is only one copy to maintain. Everything else (package list, the small app configs, NiriMod install, prose) is edited directly in `fedora-niri-setup.sh`.
+
+### 🟠 OpenMandriva Port: `openmandriva-niri-setup.sh`
+
+An **OpenMandriva port** exists alongside the Fedora script: [`openmandriva-niri-setup.sh`](openmandriva-niri-setup.sh), generated from `fedora-niri-setup.sh` by [`niri-build/port_openmandriva_niri.py`](niri-build/port_openmandriva_niri.py). Everything distro-independent (the niri config, all heredoc configs, the HANCORE theme pipeline, every helper script) carries over unchanged. To keep one source of truth, the port **imports** the OpenMandriva repo preamble and source-build blocks from [`sway-build/port_openmandriva.py`](sway-build/port_openmandriva.py) (the Sway port), then layers on the niri-specific deltas:
+
+- **niri is packaged on OpenMandriva Rolling (ROME) and Cooker** — no COPR is needed (unlike Fedora's `yalter/niri`). The port drops the COPR block entirely; `dnf install niri` comes from OM's own repos. An older edition (Rock) without the package is caught by the mandatory-niri check, which bails with a clear "switch to ROME/Cooker" message.
+- Autostart: the niri config's `spawn-sh-at-startup … dex-autostart` becomes a **systemd `xdg-desktop-autostart.target` spawn** (OM ships no `dex-autostart`).
+- **satty** is installed from its upstream **GitHub release binary** (not packaged on OM), and **nwg-displays** via **pipx**; `screenshot.sh` / `arrange-displays.sh` degrade gracefully if either fails.
+- Shared with the Sway port: `--setopt=strict=0` installs, the repo-tree detection, source-builds for **Wayland rofi** / current **dunst** / **gammastep** (Rock) / **udiskie**, and the verified renames (`networkmanager-applet`, `imagemagick`, `pipewire-pulse`, `python-pipx`, `python-gobject3`, `gtk4.0`, `fonts-ttf-nerd-jetbrains-mono`, …). The Sway-only `wdisplays` build is dropped (niri uses nwg-displays).
+
+```bash
+python3 -I niri-build/build_fedora_niri.py       # 1. refresh the Fedora script from sources
+python3 -I niri-build/port_openmandriva_niri.py  # 2. re-port it to OpenMandriva
+bash -n openmandriva-niri-setup.sh               # smoke test
+```
 
 ### ⚠️ Niri Script Known Limitations
 

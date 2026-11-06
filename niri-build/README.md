@@ -45,6 +45,26 @@ Sway rice's `include current-borders.conf`.
 GTK4/libadwaita editor for `config.kdl` that validates through `niri validate`
 and preserves comments. It is bound to `Mod+Shift+S` via `bin/niri-mod.sh`.
 
+## OpenMandriva port
+
+`port_openmandriva_niri.py` regenerates **`../openmandriva-niri-setup.sh`** from
+`../fedora-niri-setup.sh` by anchored string substitution — the niri analog of
+`../sway-build/port_openmandriva.py`. Run it **after** the Fedora build:
+
+```
+python3 -I build_fedora_niri.py          # 1. refresh the Fedora script
+python3 -I port_openmandriva_niri.py     # 2. re-port to OpenMandriva
+```
+
+Everything distro-independent carries over byte-for-byte. The port **imports**
+the OpenMandriva repo preamble + source-build blocks from the Sway port (one
+source of truth), then applies the niri-specific deltas: **niri comes from OM's
+own repos** (Rolling/ROME + Cooker — no COPR), `dex-autostart` → systemd's
+`xdg-desktop-autostart.target`, **satty** from its GitHub release binary and
+**nwg-displays** via pipx (dropping the Sway-only `wdisplays` build), plus the
+shared `--setopt=strict=0` installs and verified package renames. Stale anchors
+print a WARN. Smoke-test with `bash -n ../openmandriva-niri-setup.sh`.
+
 ## Gotchas (learned from the Sway rice)
 
 - All anchors are unique heredoc-opener strings — never line numbers; the build
