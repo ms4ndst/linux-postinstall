@@ -2323,6 +2323,24 @@ cat > "$BIN/software-update.sh" <<'RICE_EOF'
 # only reports pending package counts, not reboot-required state, so
 # without this the only other way to notice is by chance days later.
 set -uo pipefail
+
+# dnf5 only: a background updater (GNOME Software via dnf5daemon) may have
+# downloaded updates and staged them as an offline "install on reboot"
+# transaction. That conflicts with the online upgrade below - dnf warns it
+# would be "invalidated" - and with two mechanisms fighting, the updates can
+# stay perpetually un-applied, so the bar's update count never clears. Clear
+# any stored offline transaction first so this online upgrade is the single
+# source of truth. `dnf offline clean` is a safe no-op when nothing is staged.
+if command -v dnf >/dev/null 2>&1 && dnf offline --help >/dev/null 2>&1; then
+  st="$(sudo dnf offline status 2>/dev/null || true)"
+  if [ -n "$st" ] && ! grep -qi 'no offline transaction' <<<"$st"; then
+    echo "A background updater had staged updates for offline (reboot) install;"
+    echo "clearing that so these updates apply online now..."
+    sudo dnf offline clean >/dev/null 2>&1 || true
+    echo
+  fi
+fi
+
 sudo dnf upgrade
 
 # Nudge the bar's update-count widget to re-check now, so the count drops
