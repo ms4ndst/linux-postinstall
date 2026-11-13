@@ -11,6 +11,12 @@
 set -uo pipefail
 sudo dnf upgrade
 
+# Nudge the bar's update-count widget to re-check now, so the count drops
+# to 0 the moment the upgrade finishes instead of staying stale until the
+# widget's next 15-min poll. waybar's custom/update module listens on
+# SIGRTMIN+9; harmless if waybar isn't running or nothing was installed.
+pkill -RTMIN+9 waybar 2>/dev/null || true
+
 echo
 if needs-restarting -r >/dev/null 2>&1; then
   echo "No reboot required."

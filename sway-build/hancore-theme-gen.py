@@ -288,8 +288,14 @@ CMD_REWRITES = [
     (re.compile(r"^hyprctl dispatch workspace e-1$"), "swaymsg workspace prev_on_output"),
     (re.compile(r"^hyprpicker$"), "~/.local/bin/colorpicker.sh"),
     (re.compile(r"^alacritty --class=Impala -e impala$"), "~/.local/bin/wifi-menu.sh"),
-    (re.compile(r"^alacritty --class=Wiremix -e wiremix$"), "pavucontrol"),
-    (re.compile(r"^wiremix$"), "pavucontrol"),
+    # wiremix is a TUI mixer the rice doesn't install; point the volume
+    # widget's left-click at pavucontrol (installed, floated by a WM
+    # window-rule) instead. The HANCORE themes wrap it differently - bare
+    # `wiremix`, `alacritty --class=Wiremix -e wiremix`, or `kitty -e
+    # wiremix` - so catch any terminal wrapper, not just the alacritty one
+    # (the kitty form slipped through before and left a broken click).
+    (re.compile(r"^(?:(?:alacritty|kitty)(?: --class[= ]\S+)? -e )?wiremix$"),
+     "pavucontrol"),
     # pamixer isn't installed on Fedora/OM; route the volume module's right-click
     # (mute) and scroll (up/down) through osd-volume.sh, which uses wpctl and
     # also shows the dunst OSD. Left-click opens pavucontrol (floated by a WM
@@ -499,6 +505,15 @@ def adapt_config(cfg, name):
         cfg["custom/update"] = {
             "exec": "~/.local/bin/hancore-update-check",
             "format": "{}",
+            # hancore-update-check is one-shot (prints the count and
+            # exits), so the module itself drives re-runs: poll every 15
+            # min, AND re-run instantly on SIGRTMIN+9 - software-update.sh
+            # fires that signal when an upgrade finishes so the count
+            # resets to 0 right away instead of lingering a whole cycle.
+            # The interval is mandatory here: without it waybar would
+            # re-exec the instantly-exiting command in a tight loop.
+            "interval": 900,
+            "signal": 9,
             "tooltip": False,
             "on-click": "kitty --class UpdatesTask -e ~/.local/bin/software-update.sh",
         }

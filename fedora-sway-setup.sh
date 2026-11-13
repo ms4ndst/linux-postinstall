@@ -797,8 +797,14 @@ CMD_REWRITES = [
     (re.compile(r"^hyprctl dispatch workspace e-1$"), "swaymsg workspace prev_on_output"),
     (re.compile(r"^hyprpicker$"), "~/.local/bin/colorpicker.sh"),
     (re.compile(r"^alacritty --class=Impala -e impala$"), "~/.local/bin/wifi-menu.sh"),
-    (re.compile(r"^alacritty --class=Wiremix -e wiremix$"), "pavucontrol"),
-    (re.compile(r"^wiremix$"), "pavucontrol"),
+    # wiremix is a TUI mixer the rice doesn't install; point the volume
+    # widget's left-click at pavucontrol (installed, floated by a WM
+    # window-rule) instead. The HANCORE themes wrap it differently - bare
+    # `wiremix`, `alacritty --class=Wiremix -e wiremix`, or `kitty -e
+    # wiremix` - so catch any terminal wrapper, not just the alacritty one
+    # (the kitty form slipped through before and left a broken click).
+    (re.compile(r"^(?:(?:alacritty|kitty)(?: --class[= ]\S+)? -e )?wiremix$"),
+     "pavucontrol"),
     # pamixer isn't installed on Fedora/OM; route the volume module's right-click
     # (mute) and scroll (up/down) through osd-volume.sh, which uses wpctl and
     # also shows the dunst OSD. Left-click opens pavucontrol (floated by a WM
@@ -1008,6 +1014,15 @@ def adapt_config(cfg, name):
         cfg["custom/update"] = {
             "exec": "~/.local/bin/hancore-update-check",
             "format": "{}",
+            # hancore-update-check is one-shot (prints the count and
+            # exits), so the module itself drives re-runs: poll every 15
+            # min, AND re-run instantly on SIGRTMIN+9 - software-update.sh
+            # fires that signal when an upgrade finishes so the count
+            # resets to 0 right away instead of lingering a whole cycle.
+            # The interval is mandatory here: without it waybar would
+            # re-exec the instantly-exiting command in a tight loop.
+            "interval": 900,
+            "signal": 9,
             "tooltip": False,
             "on-click": "kitty --class UpdatesTask -e ~/.local/bin/software-update.sh",
         }
@@ -2340,20 +2355,22 @@ cat > "$BIN/hancore-update-check" <<'HANCORESHIM_EOF'
 #!/usr/bin/env bash
 # hancore-update-check shim: the HANCORE waybar themes' custom/update
 # module execs this (was: omarchy-update-available, which checks for
-# Omarchy's own updates). Mirrors the rice's own polybar-updates.sh
-# exactly: prints a pending-dnf-update count on every line, including
-# "0" when there are none, and loops internally on a 15-minute sleep
-# (same tail-script pattern as polybar-updates.sh - waybar just shows the
-# most recent line, so the count is visible immediately at bar startup).
+# Omarchy's own updates). Prints the pending-dnf-update COUNT once and
+# exits (including "0" when there are none). The waybar module is the
+# one that schedules it: an `interval` poll keeps the count roughly
+# fresh, and a `signal` (SIGRTMIN+9) lets it be re-run on demand -
+# software-update.sh fires that signal the instant an upgrade finishes,
+# so the count drops to 0 immediately instead of lingering for a whole
+# poll cycle (the old version looped internally on a 15-min sleep, so
+# the indicator stayed stale for up to 15 min after installing updates).
+# NOTE: this is one-shot on purpose - the module MUST set an interval,
+# or waybar re-execs an instantly-exiting command in a tight loop.
 #
 # The module's on-click opens software-update.sh in a floating kitty
 # (UpdatesTask window rule in the sway config).
 set -u
-while true; do
-  count="$(timeout 10 dnf check-update -q 2>/dev/null | grep -cE '^\S+\.(x86_64|noarch|i686|aarch64|s390x|ppc64le)[[:space:]]')"
-  printf '󰂪 %s\n' "${count:-0}"
-  sleep 900
-done
+count="$(timeout 10 dnf check-update -q 2>/dev/null | grep -cE '^\S+\.(x86_64|noarch|i686|aarch64|s390x|ppc64le)[[:space:]]')"
+printf '󰂪 %s\n' "${count:-0}"
 HANCORESHIM_EOF
 cat > "$BIN/vscode-theme-sync" <<'HANCORESHIM_EOF'
 #!/usr/bin/env bash
@@ -3247,6 +3264,12 @@ cat > "$BIN/software-update.sh" <<'EOF'
 # without this the only other way to notice is by chance days later.
 set -uo pipefail
 sudo dnf upgrade
+
+# Nudge the bar's update-count widget to re-check now, so the count drops
+# to 0 the moment the upgrade finishes instead of staying stale until the
+# widget's next 15-min poll. waybar's custom/update module listens on
+# SIGRTMIN+9; harmless if waybar isn't running or nothing was installed.
+pkill -RTMIN+9 waybar 2>/dev/null || true
 
 echo
 if needs-restarting -r >/dev/null 2>&1; then
