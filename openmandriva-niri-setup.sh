@@ -112,7 +112,7 @@ if [ "${REMOVE_GNOME_APPS:-0}" = "1" ]; then
   GNOME_APPS=(
     gnome-software gnome-tour gnome-maps gnome-weather gnome-contacts
     gnome-clocks gnome-characters gnome-logs gnome-font-viewer gnome-calculator
-    gnome-connections gnome-calendar gnome-text-editor gnome-tweaks
+    gnome-connections gnome-text-editor gnome-tweaks
     gnome-extensions-app gnome-user-docs gnome-initial-setup
     gnome-browser-connector gnome-classic-session gnome-remote-desktop
     gnome-screenshot gnome-epub-thumbnailer gnome-color-manager gnome-user-share
@@ -253,7 +253,7 @@ sudo dnf install -y --setopt=strict=0 \
   dunst kitty \
   xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome \
   networkmanager-applet blueman lxqt-policykit pipewire-pulse wireplumber \
-  copyq udiskie gammastep libnotify gnome-calendar \
+  copyq udiskie gammastep libnotify gnome-calendar qalculate-gtk \
   azote \
   system-config-printer \
   lxappearance papirus-icon-theme adwaita-cursor-theme \
@@ -628,7 +628,7 @@ spawn-sh-at-startup "~/.local/bin/swayidle-launch.sh"
 
 // Settings / connection / dialog utilities -> small floating + centered.
 window-rule {
-    match app-id=r#"^(nm-connection-editor|blueman-manager|org.pulseaudio.pavucontrol|pavucontrol|system-config-printer)$"#
+    match app-id=r#"^(nm-connection-editor|blueman-manager|org.pulseaudio.pavucontrol|pavucontrol|qalculate-gtk|system-config-printer)$"#
     open-floating true
 }
 window-rule {

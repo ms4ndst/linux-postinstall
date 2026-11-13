@@ -230,7 +230,7 @@ if [ "${REMOVE_GNOME_APPS:-0}" = "1" ]; then
   GNOME_APPS=(
     gnome-software gnome-tour gnome-maps gnome-weather gnome-contacts
     gnome-clocks gnome-characters gnome-logs gnome-font-viewer gnome-calculator
-    gnome-connections gnome-calendar gnome-text-editor gnome-tweaks
+    gnome-connections gnome-text-editor gnome-tweaks
     gnome-extensions-app gnome-user-docs gnome-initial-setup
     gnome-browser-connector gnome-classic-session gnome-remote-desktop
     gnome-screenshot gnome-epub-thumbnailer gnome-color-manager gnome-user-share
@@ -272,7 +272,7 @@ sudo dnf install -y --setopt=strict=0 \
   dunst kitty \
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \
   networkmanager-applet blueman lxqt-policykit pipewire-pulse \
-  copyq udiskie pcmanfm gammastep libnotify gnome-calendar \
+  copyq udiskie pcmanfm gammastep libnotify gnome-calendar qalculate-gtk \
   azote \
   system-config-printer hplip \
   lxappearance papirus-icon-theme \
@@ -598,6 +598,7 @@ for_window [app_id="org.gnome.Calendar"] floating enable, resize set 700 550, mo
 for_window [app_id="system-config-printer"] floating enable, resize set 750 550, move position center
 for_window [class="System-config-printer.py"] floating enable, resize set 750 550, move position center
 for_window [app_id="(org.pulseaudio.pavucontrol|pavucontrol)"] floating enable, resize set 1100 650, move position center
+for_window [app_id="qalculate-gtk"] floating enable, resize set 480 620, move position center
 # Claude Desktop (Electron) - app_id under native Wayland, class under XWayland.
 for_window [app_id="(com.anthropic.Claude|claude)"] floating enable, resize set 1200 850, move position center
 for_window [app_id="(com.anthropic.Claude|claude)"] mark claude-desktop-scratch

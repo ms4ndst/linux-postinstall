@@ -391,7 +391,7 @@ sudo dnf install -y \\
   rofi-wayland dunst kitty \\
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \\
   network-manager-applet pasystray blueman lxqt-policykit pipewire-pulseaudio \\
-  copyq udiskie pcmanfm gammastep libnotify gnome-calendar \\
+  copyq udiskie pcmanfm gammastep libnotify gnome-calendar qalculate-gtk \\
   azote \\
   system-config-printer hplip \\
   lxappearance papirus-icon-theme \\
@@ -424,7 +424,7 @@ sudo dnf install -y --setopt=strict=0 \\
   dunst kitty \\
   xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk \\
   networkmanager-applet blueman lxqt-policykit pipewire-pulse \\
-  copyq udiskie pcmanfm gammastep libnotify gnome-calendar \\
+  copyq udiskie pcmanfm gammastep libnotify gnome-calendar qalculate-gtk \\
   azote \\
   system-config-printer hplip \\
   lxappearance papirus-icon-theme \\

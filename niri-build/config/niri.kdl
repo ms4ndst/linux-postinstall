@@ -137,7 +137,7 @@ spawn-sh-at-startup "~/.local/bin/swayidle-launch.sh"
 
 // Settings / connection / dialog utilities -> small floating + centered.
 window-rule {
-    match app-id=r#"^(nm-connection-editor|blueman-manager|org.pulseaudio.pavucontrol|pavucontrol|system-config-printer)$"#
+    match app-id=r#"^(nm-connection-editor|blueman-manager|org.pulseaudio.pavucontrol|pavucontrol|qalculate-gtk|system-config-printer)$"#
     open-floating true
 }
 window-rule {
