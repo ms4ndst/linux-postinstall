@@ -69,6 +69,17 @@ case "$reply" in
   [yY]|[yY][eE][sS]) CLEAN_THEMES=1 ;;
 esac
 unset reply
+
+# Optional GNOME-app cleanup (executed in section 0b, inside the snapper
+# rollback point). The GNOME LOGIN stack (GDM + gnome-shell) is always kept.
+REMOVE_GNOME_APPS=0
+printf '\nThis is a Sway desktop - the GNOME login (GDM + gnome-shell) is kept, but\nthe base install also bundles GNOME *apps* (Software, Maps, Weather, Tour,\nCalendar, Tweaks, ...) that a Sway user rarely needs.\n'
+read -r -p 'Also remove those optional GNOME apps? (login stack left intact) [y/N] ' reply || true
+case "$reply" in
+  [yY]|[yY][eE][sS]) REMOVE_GNOME_APPS=1 ;;
+esac
+unset reply
+
 # Remove stale i3-only bar scripts from a previous i3-rice install so the
 # Wayland switcher/app-menu can never invoke polybar (which cannot use
 # layer-shell and floats as a broken window on sway), and stop any X11
@@ -95,6 +106,38 @@ if command -v snapper >/dev/null 2>&1 \
   fi
 else
   warn "snapper not found (or no 'root' config) — skipping pre-install snapshot. Set up Btrfs + snapper first if you want one."
+fi
+
+# ----------------------------------------------------------------------------
+# 0b. Optional: strip Fedora's bundled GNOME desktop apps (NOT the login stack)
+# ----------------------------------------------------------------------------
+# Removes only the safe, non-infrastructure GNOME apps. The login stack - GDM,
+# gnome-shell, gnome-session, mutter - plus gnome-keyring and the shared GNOME
+# libraries are deliberately KEPT, so the (GDM) graphical login and the secrets
+# keyring keep working. gnome-shell is in fact a dnf-protected package here
+# because GDM requires it. gnome-software is included on purpose: its background
+# auto-download stages offline update transactions that fight this rice's own
+# `dnf upgrade` updater (software-update.sh). Only packages actually installed
+# are passed to dnf, so this is a safe no-op on a spin that never had them.
+if [ "${REMOVE_GNOME_APPS:-0}" = "1" ]; then
+  GNOME_APPS=(
+    gnome-software gnome-tour gnome-maps gnome-weather gnome-contacts
+    gnome-clocks gnome-characters gnome-logs gnome-font-viewer gnome-calculator
+    gnome-connections gnome-calendar gnome-text-editor gnome-tweaks
+    gnome-extensions-app gnome-user-docs gnome-initial-setup
+    gnome-browser-connector gnome-classic-session gnome-remote-desktop
+    gnome-screenshot gnome-epub-thumbnailer gnome-color-manager gnome-user-share
+  )
+  gnome_rm=()
+  for p in "${GNOME_APPS[@]}"; do
+    if rpm -q --quiet "$p"; then gnome_rm+=("$p"); fi
+  done
+  if [ "${#gnome_rm[@]}" -gt 0 ]; then
+    log "Removing ${#gnome_rm[@]} optional GNOME apps (keeping GDM/gnome-shell login)..."
+    sudo dnf remove -y "${gnome_rm[@]}" || warn "Some GNOME apps could not be removed - continuing."
+  else
+    log "No optional GNOME apps installed - nothing to remove."
+  fi
 fi
 
 # ----------------------------------------------------------------------------
