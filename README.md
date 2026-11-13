@@ -2846,6 +2846,13 @@ An **OpenMandriva port** exists alongside it: [`openmandriva-sway-setup.sh`](ope
 
 **Lock screen** (`Mod+l`, `~/.local/bin/lock.sh`): the screen is snapshotted with `grim`, blurred and darkened with ImageMagick, and a random short [fortune](https://en.wikipedia.org/wiki/Fortune_%28Unix%29) quote is baked in below the indicator - a fresh geek quote every lock (`fortune -s`, `fortune-mod`). On top of that background, swaylock-effects draws a **live clock** (`HH:MM:SS` + weekday/date, visible immediately via `--indicator-idle-visible`) and the Catppuccin Mocha ring states: green keypress dots, blue while verifying, maroon on a wrong password. The whole color scheme lives in `~/.config/swaylock/config` (32 keys, exactly how catppuccin/swaylock intends it to be used); if the swaylock-effects build is unavailable, lock.sh falls back to plain swaylock over the same backgrounds minus the live clock.
 
+> **⚠️ This rice depends on GNOME — don't remove GNOME wholesale.** Although Sway is a standalone Wayland compositor, the rice still leans on parts of GNOME:
+>
+> - **Login screen:** your display manager is **GDM**, which *requires* `gnome-shell` (a dnf-**protected** package — `dnf` refuses to remove it). Removing `gnome-shell`, `gnome-session` or `gdm` **breaks your graphical login** (black screen / TTY on boot).
+> - **Calendar reminders:** the rice's `calendar-reminder-daemon` reads your calendars (Google/Exchange/local) through **`evolution-data-server` + GNOME Online Accounts** and feeds reminders to dunst; `gnome-calendar` is the viewer. These are installed on purpose.
+>
+> So **don't** run `dnf remove gnome-*` or `dnf group remove`. To slim GNOME down safely, answer **yes** to the installer's optional *"remove optional GNOME apps"* prompt instead — it removes only the safe, unused apps (Software, Maps, Weather, Tour, Tweaks, …) and keeps the login stack, keyring and the calendar backend. A calculator is covered by **qalculate-gtk** (installed in its place).
+
 ---
 
 ### 🎨 Desktop-wide Theming (HANCORE)
@@ -3012,6 +3019,13 @@ niri isn't in Fedora's repositories, so the script enables the upstream author's
 **Rice toolkit:** `cava`, `btop`, `brightnessctl`, `playerctl`, `copyq`, `udiskie`, `gammastep`, `azote` (wallpaper GUI), `fastfetch`, `ImageMagick`, `fortune-mod`, Qogir cursors, Papirus icons, JetBrainsMono Nerd Font, plus the volume/brightness OSD, power menu, Wi-Fi picker, caffeine/DND toggles, notification centre, calendar reminder daemon and battery watcher — the full Sway-rice helper set, ported to niri (`niri msg` instead of `swaymsg`).
 
 **Apps:** **CLIamp** terminal music player (`Mod+M`), **Strata** GTK4 file manager (`Mod+E`), and summon/stash windows for **Claude Desktop** (the Copilot/AI key) and **Mistral Vibe** — both the CLI (`Mod+A`) and the web GUI (`Mod+Shift+A`).
+
+> **⚠️ This rice depends on GNOME — don't remove GNOME wholesale.** Although Niri is a standalone Wayland compositor, the rice still leans on parts of GNOME:
+>
+> - **Login screen:** your display manager is **GDM**, which *requires* `gnome-shell` (a dnf-**protected** package — `dnf` refuses to remove it). Removing `gnome-shell`, `gnome-session` or `gdm` **breaks your graphical login** (black screen / TTY on boot).
+> - **Calendar reminders:** the rice's `calendar-reminder-daemon` reads your calendars (Google/Exchange/local) through **`evolution-data-server` + GNOME Online Accounts** and feeds reminders to dunst; `gnome-calendar` is the viewer. These are installed on purpose.
+>
+> So **don't** run `dnf remove gnome-*` or `dnf group remove`. To slim GNOME down safely, answer **yes** to the installer's optional *"remove optional GNOME apps"* prompt instead — it removes only the safe, unused apps (Software, Maps, Weather, Tour, Tweaks, …) and keeps the login stack, keyring and the calendar backend. A calculator is covered by **qalculate-gtk** (installed in its place).
 
 ### ⚙️ NiriMod & Settings
 
