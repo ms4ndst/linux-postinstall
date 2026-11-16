@@ -150,17 +150,18 @@ window-rule {
     match app-id=r#"^com.gabm.satty$"#
     open-floating true
 }
-// Greenshot editor - float it (region capture uses screencopy, not a window,
-// so this only affects the editor/settings windows). StartupWMClass=greenshot.
+// Greenshot editor - native Avalonia app (app-id "greenshot"). Float it, fixed
+// size, centered. Region capture uses screencopy (not a window), so this only
+// affects the editor/settings windows.
 window-rule {
     match app-id=r#"^greenshot$"#
     open-floating true
-    // Fix the size so the editor opens centered and doesn't grow off to the
-    // right as Greenshot resizes itself to a large screenshot (niri anchors a
-    // floating window's top-left on resize). 90% of the screen; proportion
-    // keeps it right on any resolution.
-    default-column-width { proportion 0.9; }
-    default-window-height { proportion 0.9; }
+    // 70% of the work area; niri centers floating windows by default. Pair with
+    // greenshot.ini [Editor] MatchSizeToCapture=False so the editor keeps this
+    // fixed size and zooms the capture to fit, instead of resizing the window to
+    // the screenshot. proportion keeps it right on any resolution.
+    default-column-width { proportion 0.7; }
+    default-window-height { proportion 0.7; }
 }
 // Mistral Vibe web app: pin the floating size so it matches Claude's window
 // (the browser profile otherwise remembers an over-tall window that doesn't fit).

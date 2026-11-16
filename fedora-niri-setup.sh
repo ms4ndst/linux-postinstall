@@ -352,17 +352,18 @@ window-rule {
     match app-id=r#"^com.gabm.satty$"#
     open-floating true
 }
-// Greenshot editor - float it (region capture uses screencopy, not a window,
-// so this only affects the editor/settings windows). StartupWMClass=greenshot.
+// Greenshot editor - native Avalonia app (app-id "greenshot"). Float it, fixed
+// size, centered. Region capture uses screencopy (not a window), so this only
+// affects the editor/settings windows.
 window-rule {
     match app-id=r#"^greenshot$"#
     open-floating true
-    // Fix the size so the editor opens centered and doesn't grow off to the
-    // right as Greenshot resizes itself to a large screenshot (niri anchors a
-    // floating window's top-left on resize). 90% of the screen; proportion
-    // keeps it right on any resolution.
-    default-column-width { proportion 0.9; }
-    default-window-height { proportion 0.9; }
+    // 70% of the work area; niri centers floating windows by default. Pair with
+    // greenshot.ini [Editor] MatchSizeToCapture=False so the editor keeps this
+    // fixed size and zooms the capture to fit, instead of resizing the window to
+    // the screenshot. proportion keeps it right on any resolution.
+    default-column-width { proportion 0.7; }
+    default-window-height { proportion 0.7; }
 }
 // Mistral Vibe web app: pin the floating size so it matches Claude's window
 // (the browser profile otherwise remembers an over-tall window that doesn't fit).
@@ -611,6 +612,27 @@ NIRI_KDL_EOF
 __xkb="$(localectl status 2>/dev/null | sed -n 's/.*X11 Layout: *//p' | head -1)"
 sed -i "s/@@XKB_LAYOUT@@/${__xkb:-us}/" "$CONF/niri/config.kdl"
 sed -i "s/@@CURSOR_THEME@@/${CURSOR_THEME_NAME}/" "$CONF/niri/config.kdl"
+
+# Greenshot editor: keep a FIXED editor window and zoom the capture down to fit
+# it, instead of resizing the window to match the screenshot. This pairs with the
+# 70% floating window-rule above (match app-id "greenshot"); without it the
+# editor grows to the capture size and spills off-screen. Idempotent: set the
+# key, creating the file / [Editor] section if greenshot hasn't written its
+# config yet (greenshot preserves existing keys on first run).
+GS_INI="$CONF/greenshot/greenshot.ini"
+mkdir -p "$(dirname "$GS_INI")"
+if [ -f "$GS_INI" ]; then
+  if grep -q '^MatchSizeToCapture=' "$GS_INI"; then
+    sed -i 's/^MatchSizeToCapture=.*/MatchSizeToCapture=False/' "$GS_INI"
+  elif grep -q '^\[Editor\]' "$GS_INI"; then
+    sed -i '/^\[Editor\]/a MatchSizeToCapture=False' "$GS_INI"
+  else
+    printf '\n[Editor]\nMatchSizeToCapture=False\n' >> "$GS_INI"
+  fi
+else
+  printf '[Editor]\nMatchSizeToCapture=False\n' > "$GS_INI"
+fi
+log "Greenshot editor: fixed-size window + zoom-to-fit (MatchSizeToCapture=False)."
 # Seed an empty active-theme include so the `include "themes/current.kdl"` line
 # never dangles before the first theme is applied (section 6 overwrites it).
 if [ ! -f "$CONF/niri/themes/current.kdl" ]; then

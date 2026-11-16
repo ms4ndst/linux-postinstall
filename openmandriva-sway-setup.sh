@@ -556,11 +556,13 @@ for_window [class="^([Cc]ode|[Vv]ivaldi.*)$"] opacity 1.0
 for_window [app_id="nm-connection-editor"] floating enable, resize set 550 450, move position center
 for_window [app_id="wdisplays"] floating enable, resize set 900 600, move position center
 for_window [app_id="com.gabm.satty"] floating enable, resize set 1000 700, move position center
-# Greenshot editor - float it (region capture uses screencopy, not a window, so
-# this only affects the editor/settings windows). StartupWMClass=greenshot;
-# app_id covers native Wayland, class covers XWayland.
-for_window [app_id="greenshot"] floating enable, resize set 1100 750, move position center
-for_window [class="greenshot"] floating enable, resize set 1100 750, move position center
+# Greenshot editor - native Avalonia app (app_id/class "greenshot", X11 backend
+# so class covers XWayland). Float it, fixed 70% of the output, centered (region
+# capture uses screencopy, not a window, so this only affects editor/settings).
+# Pair with greenshot.ini [Editor] MatchSizeToCapture=False so the editor keeps
+# this size and zooms the capture to fit instead of matching the screenshot.
+for_window [app_id="greenshot"] floating enable, resize set 70 ppt 70 ppt, move position center
+for_window [class="greenshot"] floating enable, resize set 70 ppt 70 ppt, move position center
 for_window [app_id="blueman-manager"] floating enable, resize set 500 400, move position center
 for_window [app_id="(com.github.hluk.copyq|copyq)"] floating enable, resize set 450 500, move position center
 for_window [class="copyq"] floating enable, resize set 450 500, move position center
@@ -772,6 +774,27 @@ SWAY_EOF
 __xkb="$(localectl status 2>/dev/null | sed -n 's/.*X11 Layout: *//p' | head -1)"
 sed -i "s/@@XKB_LAYOUT@@/${__xkb:-us}/" "$CONF/sway/config"
 printf 'seat seat0 xcursor_theme %s 24\n' "$CURSOR_THEME_NAME" > "$CONF/sway/cursor-theme.conf"
+
+# Greenshot editor: keep a FIXED editor window and zoom the capture down to fit
+# it, instead of resizing the window to match the screenshot. This pairs with the
+# 70% floating for_window rule above; without it the editor grows to the capture
+# size and spills off-screen. Idempotent: set the key, creating the file /
+# [Editor] section if greenshot hasn't written its config yet (greenshot
+# preserves existing keys on first run).
+GS_INI="$CONF/greenshot/greenshot.ini"
+mkdir -p "$(dirname "$GS_INI")"
+if [ -f "$GS_INI" ]; then
+  if grep -q '^MatchSizeToCapture=' "$GS_INI"; then
+    sed -i 's/^MatchSizeToCapture=.*/MatchSizeToCapture=False/' "$GS_INI"
+  elif grep -q '^\[Editor\]' "$GS_INI"; then
+    sed -i '/^\[Editor\]/a MatchSizeToCapture=False' "$GS_INI"
+  else
+    printf '\n[Editor]\nMatchSizeToCapture=False\n' >> "$GS_INI"
+  fi
+else
+  printf '[Editor]\nMatchSizeToCapture=False\n' > "$GS_INI"
+fi
+log "Greenshot editor: fixed-size window + zoom-to-fit (MatchSizeToCapture=False)."
 
 # ----------------------------------------------------------------------------
 # 5. picom
