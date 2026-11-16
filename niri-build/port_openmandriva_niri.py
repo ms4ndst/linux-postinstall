@@ -82,13 +82,45 @@ fi
 
 '''
 
+# xwayland-satellite is niri-ONLY: niri has no built-in XWayland, whereas Sway
+# (wlroots) does - so this block is appended only to the niri source-builds, not
+# the shared OM_SOURCE_BUILDS.
+XWAYLAND_SATELLITE_BLOCK = r'''# xwayland-satellite - niri has NO built-in XWayland (unlike Sway/wlroots), so
+# X11 apps need it - notably the Greenshot editor, which is an Avalonia app on
+# the X11 backend. niri 26+ auto-spawns the binary when it is on PATH and points
+# DISPLAY at it (no niri config needed). OpenMandriva does not package it (only
+# an open request, OpenMandrivaAssociation/distribution#3534), so build the Rust
+# source and install to /usr/local/bin. The Xwayland server itself is the runtime
+# dependency (its package name differs across editions, so try both, strict=0).
+if ! command -v xwayland-satellite >/dev/null 2>&1 && [ ! -x /usr/local/bin/xwayland-satellite ]; then
+  log "Building xwayland-satellite from source (not packaged for OpenMandriva; niri needs it for X11 apps like Greenshot)..."
+  sudo dnf install -y --setopt=strict=0 xwayland x11-server-xwayland >/dev/null 2>&1 || true
+  om_build_deps cargo rust clang pkgconf lib64xcb-devel lib64xcb-cursor-devel
+  OMT="$(mktemp -d)"
+  if d="$(om_fetch_tarball https://github.com/Supreeeme/xwayland-satellite/archive/refs/tags/v0.8.3.tar.gz "$OMT")" \
+      && (cd "$d" && cargo build --release >/dev/null 2>&1) \
+      && sudo install -m755 "$d/target/release/xwayland-satellite" /usr/local/bin/ \
+      && [ -x /usr/local/bin/xwayland-satellite ]; then
+    log "xwayland-satellite installed to /usr/local/bin - log out and back in so niri auto-spawns it; X11 apps (Greenshot) then work."
+  else
+    warn "xwayland-satellite build failed - X11 apps (e.g. Greenshot) will not run under niri on this OpenMandriva release."
+  fi
+  rm -rf "$OMT"
+fi
+
+'''
+
 _sb = sp.OM_SOURCE_BUILDS
 _wd = "# wdisplays (the Wayland/wlroots display GUI"
 if _wd in _sb:
     _sb = _sb[:_sb.index(_wd)]
 else:
     print("WARN: wdisplays marker not found in the Sway source-builds - carrying it over as-is")
-OM_SOURCE_BUILDS_NIRI = _sb.rstrip("\n") + "\n\n" + NWG_DISPLAYS_BLOCK.rstrip("\n") + "\n\n"
+OM_SOURCE_BUILDS_NIRI = (
+    _sb.rstrip("\n") + "\n\n"
+    + NWG_DISPLAYS_BLOCK.rstrip("\n") + "\n\n"
+    + XWAYLAND_SATELLITE_BLOCK.rstrip("\n") + "\n\n"
+)
 
 # niri comes from OpenMandriva's own repos - the OM repo preamble replaces the
 # Fedora COPR enable, so the repos are live before the dnf install below.

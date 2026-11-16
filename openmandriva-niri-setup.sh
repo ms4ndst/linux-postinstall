@@ -463,6 +463,29 @@ if ! command -v nwg-displays >/dev/null 2>&1; then
   fi
 fi
 
+# xwayland-satellite - niri has NO built-in XWayland (unlike Sway/wlroots), so
+# X11 apps need it - notably the Greenshot editor, which is an Avalonia app on
+# the X11 backend. niri 26+ auto-spawns the binary when it is on PATH and points
+# DISPLAY at it (no niri config needed). OpenMandriva does not package it (only
+# an open request, OpenMandrivaAssociation/distribution#3534), so build the Rust
+# source and install to /usr/local/bin. The Xwayland server itself is the runtime
+# dependency (its package name differs across editions, so try both, strict=0).
+if ! command -v xwayland-satellite >/dev/null 2>&1 && [ ! -x /usr/local/bin/xwayland-satellite ]; then
+  log "Building xwayland-satellite from source (not packaged for OpenMandriva; niri needs it for X11 apps like Greenshot)..."
+  sudo dnf install -y --setopt=strict=0 xwayland x11-server-xwayland >/dev/null 2>&1 || true
+  om_build_deps cargo rust clang pkgconf lib64xcb-devel lib64xcb-cursor-devel
+  OMT="$(mktemp -d)"
+  if d="$(om_fetch_tarball https://github.com/Supreeeme/xwayland-satellite/archive/refs/tags/v0.8.3.tar.gz "$OMT")" \
+      && (cd "$d" && cargo build --release >/dev/null 2>&1) \
+      && sudo install -m755 "$d/target/release/xwayland-satellite" /usr/local/bin/ \
+      && [ -x /usr/local/bin/xwayland-satellite ]; then
+    log "xwayland-satellite installed to /usr/local/bin - log out and back in so niri auto-spawns it; X11 apps (Greenshot) then work."
+  else
+    warn "xwayland-satellite build failed - X11 apps (e.g. Greenshot) will not run under niri on this OpenMandriva release."
+  fi
+  rm -rf "$OMT"
+fi
+
 # ----------------------------------------------------------------------------
 # 2. Nerd Font (JetBrainsMono) — OpenMandriva ships the patched font
 #    (fonts-ttf-nerd-jetbrains-mono), so this section usually skips itself
