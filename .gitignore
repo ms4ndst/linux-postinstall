@@ -127,3 +127,4 @@ coverage/
 
 # ── Docker local overrides ─────────────────────────────────────────────────────
 docker-compose.override.yml
+graphify-out/

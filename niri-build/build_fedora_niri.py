@@ -80,6 +80,16 @@ def refresh_heredoc(lines, opener_prefix, body):
 
 
 def main():
+    # Guard: hancore-theme-gen.py and generate-gtk-themes.py each hold their own
+    # copy of the 26-role Mocha palette + classifier. This build embeds
+    # hancore-theme-gen.py into the installer, so refuse to build if the two copies
+    # have drifted - otherwise Waybar and GTK apps would theme the same color
+    # differently. See check-theme-parity.py at the repo root.
+    import subprocess
+    _parity = ROOT / "check-theme-parity.py"
+    if _parity.is_file() and subprocess.run([sys.executable, str(_parity)]).returncode != 0:
+        sys.exit("Aborting build: theme palette parity check failed (see above).")
+
     lines = readf(DST).split("\n")
 
     body = readf(HERE / "config" / "niri.kdl").split("\n")
