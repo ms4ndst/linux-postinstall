@@ -2116,12 +2116,11 @@ install_jan() { flatpak_install_flathub ai.jan.Jan "Jan"; }
 # Prefers the repo copy (ai-key-manager.sh next to this script) so edits live
 # in one place; falls back to the embedded copy when run standalone.
 install_ai_key_manager() {
-    # Mageia names: the real GTK zenity is zenity-gtk (it pulls in
-    # zenity-wrapper, which provides /usr/bin/zenity; a plain "zenity" only
-    # resolves to qarma, a Qt clone, on Rock), and secret-tool is in
-    # libsecret-tools ("libsecret" only resolves to the bare library,
-    # lib64secret1_0, without secret-tool).
-    batch_install "AI Key Manager deps" zenity-gtk libsecret-tools gnome-keyring curl
+    # Mageia ships a single GTK zenity package (just "zenity") that provides
+    # /usr/bin/zenity directly - no zenity/zenity-wrapper split like
+    # Mageia's. secret-tool is in libsecret-tools (the bare "libsecret"
+    # only resolves to the library, lib64secret1_0, without secret-tool).
+    batch_install "AI Key Manager deps" zenity libsecret-tools gnome-keyring curl
 
     local dir src
     dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -2435,7 +2434,7 @@ install_gemini_cli() {
     fi
     if ! command -v npm &>/dev/null; then
         log INFO "npm not found - installing it (required by Gemini CLI)..."
-        pm_install npm >/dev/null 2>&1 || true
+        pm_install nodejs npm >/dev/null 2>&1 || true
     fi
     if ! command -v npm &>/dev/null; then
         FAILED_PACKAGES+=("gemini"); ((TOTAL_FAILED++))
@@ -2514,7 +2513,7 @@ install_opencode() {
     fi
     if ! command -v npm &>/dev/null; then
         log INFO "npm not found - installing it (fallback for OpenCode)..."
-        pm_install npm >/dev/null 2>&1 || true
+        pm_install nodejs npm >/dev/null 2>&1 || true
     fi
     if command -v npm &>/dev/null && npm install -g opencode-ai 2>/dev/null && command -v opencode &>/dev/null; then
         INSTALLED_PACKAGES+=("opencode"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: opencode (npm)"; return 0
@@ -3728,7 +3727,7 @@ install_lazygit() {
 
 # ========== WINDOWS SOFTWARE SUPPORT (WINE) ==========
 install_windows_support() {
-    batch_install "Wine" wine winetricks zenity-gtk
+    batch_install "Wine" wine winetricks zenity
     # Winetricks ships no .desktop launcher on Fedora either - hand-write one
     # so it lands in the app grid, same as the Ubuntu script.
     if command -v winetricks &>/dev/null; then

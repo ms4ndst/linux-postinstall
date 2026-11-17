@@ -315,6 +315,29 @@ om_repo_enabled() {
                       "dnf install dkms-nvidia-current nvidia-current --refresh")
     out = out.replace("OPENMANDRIVA", "MAGEIA")
 
+    # ---- 9b. Mageia package-name fixes (OM names that don't exist here) -----
+    # zenity: OpenMandriva splits the GTK build into zenity-gtk (+ zenity-wrapper);
+    # Mageia ships a single "zenity" package that provides /usr/bin/zenity directly.
+    sub(
+        '    # OpenMandriva names: the real GTK zenity is zenity-gtk (it pulls in\n'
+        '    # zenity-wrapper, which provides /usr/bin/zenity; a plain "zenity" only\n'
+        '    # resolves to qarma, a Qt clone, on Rock), and secret-tool is in\n'
+        '    # libsecret-tools ("libsecret" only resolves to the bare library,\n'
+        '    # lib64secret1_0, without secret-tool).\n'
+        '    batch_install "AI Key Manager deps" zenity-gtk libsecret-tools gnome-keyring curl',
+        '    # Mageia ships a single GTK zenity package (just "zenity") that provides\n'
+        '    # /usr/bin/zenity directly - no zenity-gtk/zenity-wrapper split like\n'
+        '    # OpenMandriva\'s. secret-tool is in libsecret-tools (the bare "libsecret"\n'
+        '    # only resolves to the library, lib64secret1_0, without secret-tool).\n'
+        '    batch_install "AI Key Manager deps" zenity libsecret-tools gnome-keyring curl',
+        why="zenity-gtk comment+deps",
+    )
+    out = out.replace("zenity-gtk", "zenity")  # Wine deps line (and any stragglers)
+    # Gemini CLI needs npm; on Mageia the npm package does not pull nodejs on its
+    # own, so install both (harmless where npm already depends on nodejs).
+    out = out.replace("pm_install npm >/dev/null 2>&1",
+                      "pm_install nodejs npm >/dev/null 2>&1")
+
     # ---- 10. Global prose rename + edition labels --------------------------
     out = out.replace("OpenMandriva", "Mageia")
     out = out.replace("ROME rolling", "cauldron")
