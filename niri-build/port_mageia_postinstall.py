@@ -224,6 +224,22 @@ om_repo_enabled() {
         '        log SUCCESS "Mageia cauldron nonfree (proprietary) + tainted (codecs) repos enabled"',
         why="bootstrap success",
     )
+    # Installing mageia-repos-cauldron only drops in the cauldron repo
+    # DEFINITIONS; their metadata is not downloaded until a refresh. Without it,
+    # package_exists() (dnf info / repoquery) queries empty cauldron caches and
+    # reports almost every not-yet-installed package as "not in repos" (htop,
+    # tmux, zsh, fzf, ... all read as missing). Force a refresh after the switch.
+    sub(
+        "    om_repo_enabled non-free  || { enable_om_repo non-free  || ok=false; }\n"
+        "    if $ok; then",
+        "    om_repo_enabled non-free  || { enable_om_repo non-free  || ok=false; }\n"
+        "    # The cauldron repo set was just (re)defined; pull its metadata so the\n"
+        "    # package_exists() checks below see the catalog instead of an empty cache.\n"
+        '    log INFO "Refreshing dnf metadata for the cauldron repos..."\n'
+        "    dnf --refresh makecache 2>/dev/null || dnf makecache 2>/dev/null || true\n"
+        "    if $ok; then",
+        why="post-bootstrap metadata refresh",
+    )
 
     # ---- 8. NVIDIA: OM prebuilt kmods -> Mageia DKMS -----------------------
     sub(

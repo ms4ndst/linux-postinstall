@@ -378,6 +378,10 @@ bootstrap_repos() {
     om_repo_enabled extra || { enable_om_repo extra || ok=false; }
     om_repo_enabled restricted || { enable_om_repo restricted || ok=false; }
     om_repo_enabled non-free  || { enable_om_repo non-free  || ok=false; }
+    # The cauldron repo set was just (re)defined; pull its metadata so the
+    # package_exists() checks below see the catalog instead of an empty cache.
+    log INFO "Refreshing dnf metadata for the cauldron repos..."
+    dnf --refresh makecache 2>/dev/null || dnf makecache 2>/dev/null || true
     if $ok; then
         log SUCCESS "Mageia cauldron nonfree (proprietary) + tainted (codecs) repos enabled"
     else
