@@ -207,7 +207,7 @@ sudo dnf install -y --setopt=strict=0 \
   copyq udiskie gammastep libnotify gnome-calendar qalculate-gtk \
   azote \
   system-config-printer \
-  lxappearance papirus-icon-theme adwaita-cursor-theme \
+  lxappearance adwaita-cursor-theme \
   fastfetch git curl unzip jq imagemagick fortune-mod xdotool \
   brightnessctl playerctl python-pipx dnf-utils nwg-displays \
   solaar evolution-data-server \

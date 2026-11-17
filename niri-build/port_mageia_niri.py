@@ -216,6 +216,16 @@ fi'''
         why="install log line",
     )
 
+    # 4b. papirus-icon-theme is not packaged on Mageia (only OpenMandriva has
+    #     it). strict=0 would skip it, but it still prints a "no match" line and
+    #     drops Papirus entirely; post-install-mageia.sh installs Papirus from
+    #     upstream, so just drop it from this lean bootstrap's dnf list.
+    sub(
+        "  lxappearance papirus-icon-theme adwaita-cursor-theme \\\n",
+        "  lxappearance adwaita-cursor-theme \\\n",
+        why="drop unpackaged papirus-icon-theme",
+    )
+
     # 5. Global prose rename (after the structural swaps, which matched on the
     #    original OpenMandriva strings). Fixes the source-build fallback
     #    messages ("not packaged for OpenMandriva" -> "... Mageia"), the dnf

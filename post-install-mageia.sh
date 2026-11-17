@@ -2849,17 +2849,16 @@ install_gui_tools() {
 
 # ── Icon Sets ─────────────────────────────────────────────────────────────
 install_icon_sets() {
-    # Packaged on Mageia: papirus-icon-theme, adwaita-icon-theme and
-    # Breeze (named breeze-icons here, not breeze-icon-theme). Numix,
-    # Numix Circle and Obsidian aren't packaged on Rock or Rolling - they're
-    # plain icon folders, so install them from their upstream repos below.
-    # (This line used to end in a doubled backslash, which ended the command
-    # there - batch_install got no packages and every name below it ran as
-    # a command of its own, "command not found".)
+    # Packaged on Mageia: adwaita-icon-theme and Breeze (breeze-icons). Papirus
+    # is NOT packaged on Mageia (only Mageia ships it), and neither are
+    # Numix/Numix Circle/Obsidian - they're plain icon folders installed from
+    # their upstream repos below.
     batch_install "Icon Sets" \
-        papirus-icon-theme \
         breeze-icons \
         adwaita-icon-theme
+    # Papirus: unpackaged on Mageia, so pull the prebuilt theme folders from
+    # the upstream repo (large; shallow clone) like the sets below.
+    install_git_icon_theme "Papirus icons" https://github.com/PapirusDevelopmentTeam/papirus-icon-theme.git 'Papirus*'
     install_git_icon_theme "Numix icons" https://github.com/numixproject/numix-icon-theme.git Numix Numix-Light
     # Numix Circle inherits Numix, so it goes after it
     install_git_icon_theme "Numix Circle icons" https://github.com/numixproject/numix-icon-theme-circle.git Numix-Circle Numix-Circle-Light

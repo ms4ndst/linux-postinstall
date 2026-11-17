@@ -333,6 +333,34 @@ om_repo_enabled() {
         why="zenity-gtk comment+deps",
     )
     out = out.replace("zenity-gtk", "zenity")  # Wine deps line (and any stragglers)
+    # papirus-icon-theme: packaged on OpenMandriva but NOT on Mageia. adwaita and
+    # Breeze (breeze-icons) are packaged; Papirus is a plain icon folder, so drop
+    # it from the dnf batch and pull the prebuilt theme from upstream like the
+    # Numix/Obsidian sets right below it.
+    sub(
+        "    # Packaged on OpenMandriva: papirus-icon-theme, adwaita-icon-theme and\n"
+        "    # Breeze (named breeze-icons here, not breeze-icon-theme). Numix,\n"
+        "    # Numix Circle and Obsidian aren't packaged on Rock or Rolling - they're\n"
+        "    # plain icon folders, so install them from their upstream repos below.\n"
+        "    # (This line used to end in a doubled backslash, which ended the command\n"
+        "    # there - batch_install got no packages and every name below it ran as\n"
+        "    # a command of its own, \"command not found\".)\n"
+        "    batch_install \"Icon Sets\" \\\n"
+        "        papirus-icon-theme \\\n"
+        "        breeze-icons \\\n"
+        "        adwaita-icon-theme\n",
+        "    # Packaged on Mageia: adwaita-icon-theme and Breeze (breeze-icons). Papirus\n"
+        "    # is NOT packaged on Mageia (only OpenMandriva ships it), and neither are\n"
+        "    # Numix/Numix Circle/Obsidian - they're plain icon folders installed from\n"
+        "    # their upstream repos below.\n"
+        "    batch_install \"Icon Sets\" \\\n"
+        "        breeze-icons \\\n"
+        "        adwaita-icon-theme\n"
+        "    # Papirus: unpackaged on Mageia, so pull the prebuilt theme folders from\n"
+        "    # the upstream repo (large; shallow clone) like the sets below.\n"
+        "    install_git_icon_theme \"Papirus icons\" https://github.com/PapirusDevelopmentTeam/papirus-icon-theme.git 'Papirus*'\n",
+        why="papirus unpackaged -> upstream",
+    )
     # Gemini CLI needs npm; on Mageia the npm package does not pull nodejs on its
     # own, so install both (harmless where npm already depends on nodejs).
     out = out.replace("pm_install npm >/dev/null 2>&1",
