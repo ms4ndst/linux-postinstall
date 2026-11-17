@@ -349,6 +349,17 @@ om_repo_enabled() {
         why="zenity-gtk comment+deps",
     )
     out = out.replace("zenity-gtk", "zenity")  # Wine deps line (and any stragglers)
+    # murrine GTK2 engine: OpenMandriva packages it as bare "murrine"; on Mageia
+    # the source is "murrine" but the installable binary is "gtk2-murrine-engine"
+    # (confirmed via repology for cauldron). Fix the name and the comment.
+    sub(
+        '    # OpenMandriva packages the engine simply as "murrine".\n'
+        '    batch_install "Lycia Theme Dependencies" murrine sassc gnome-themes-extra',
+        '    # Mageia packages the engine as "gtk2-murrine-engine" (the source rpm is\n'
+        '    # named "murrine", but the installable binary is gtk2-murrine-engine).\n'
+        '    batch_install "Lycia Theme Dependencies" gtk2-murrine-engine sassc gnome-themes-extra',
+        why="murrine -> gtk2-murrine-engine",
+    )
     # nload is not packaged for Mageia in any release (confirmed via repology),
     # so drop it from the System Utils batch - otherwise it's a guaranteed
     # FAILED entry. nethogs/iftop/vnstat/glances cover the same ground.

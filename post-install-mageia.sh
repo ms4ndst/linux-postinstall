@@ -3039,8 +3039,9 @@ install_lycia_theme() {
     fi
     # GTK murrine engine + gnome-themes-extra assets are runtime deps the
     # theme itself needs to render - not something its installer pulls in.
-    # Mageia packages the engine simply as "murrine".
-    batch_install "Lycia Theme Dependencies" murrine sassc gnome-themes-extra
+    # Mageia packages the engine as "gtk2-murrine-engine" (the source rpm is
+    # named "murrine", but the installable binary is gtk2-murrine-engine).
+    batch_install "Lycia Theme Dependencies" gtk2-murrine-engine sassc gnome-themes-extra
     local t; t=$(mktemp -d); chmod 755 "$t"; chown "$user" "$t" 2>/dev/null
     if ! su - "$user" -c "git clone --depth 1 https://github.com/Aevstiel/Lycia-Theme.git '$t/src'" 2>/dev/null; then
         rm -rf "$t"; FAILED_PACKAGES+=("Lycia theme"); ((TOTAL_FAILED++))
