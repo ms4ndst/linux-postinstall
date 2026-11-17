@@ -1938,10 +1938,12 @@ REPOEOF
     # two aren't packaged for Mageia (Rolling's "rg" package is a
     # different program - a ripgrep-compatible GNU grep, not ripgrep), and
     # Mageia's vnstat package is uninstallable (it requires
-    # user(vnstat)/group(vnstat), which nothing provides).
+    # user(vnstat)/group(vnstat), which nothing provides). nload is not
+    # packaged for Mageia at all (no build in any release), so it's dropped
+    # here; nethogs/iftop/vnstat/glances cover the same ground.
     batch_install "System Utils" \
         htop iotop sysstat \
-        nethogs iftop nload tcpdump wireshark \
+        nethogs iftop tcpdump wireshark \
         lsof strace ltrace valgrind gdb \
         tmux screen zsh fish fzf tree ncdu rsync unzip bat glow
     install_glances

@@ -349,6 +349,24 @@ om_repo_enabled() {
         why="zenity-gtk comment+deps",
     )
     out = out.replace("zenity-gtk", "zenity")  # Wine deps line (and any stragglers)
+    # nload is not packaged for Mageia in any release (confirmed via repology),
+    # so drop it from the System Utils batch - otherwise it's a guaranteed
+    # FAILED entry. nethogs/iftop/vnstat/glances cover the same ground.
+    sub(
+        "    # OpenMandriva's vnstat package is uninstallable (it requires\n"
+        "    # user(vnstat)/group(vnstat), which nothing provides).\n"
+        "    batch_install \"System Utils\" \\\n"
+        "        htop iotop sysstat \\\n"
+        "        nethogs iftop nload tcpdump wireshark \\\n",
+        "    # OpenMandriva's vnstat package is uninstallable (it requires\n"
+        "    # user(vnstat)/group(vnstat), which nothing provides). nload is not\n"
+        "    # packaged for Mageia at all (no build in any release), so it's dropped\n"
+        "    # here; nethogs/iftop/vnstat/glances cover the same ground.\n"
+        "    batch_install \"System Utils\" \\\n"
+        "        htop iotop sysstat \\\n"
+        "        nethogs iftop tcpdump wireshark \\\n",
+        why="drop unpackaged nload",
+    )
     # papirus-icon-theme: packaged on OpenMandriva but NOT on Mageia. adwaita and
     # Breeze (breeze-icons) are packaged; Papirus is a plain icon folder, so drop
     # it from the dnf batch and pull the prebuilt theme from upstream like the
