@@ -2345,7 +2345,11 @@ install_gemini_cli() {
         log WARNING "Gemini CLI needs npm (Node 18+) and npm could not be installed - install it, then: npm install -g @google/gemini-cli"; return 0
     fi
     log INFO "Installing Gemini CLI..."
-    if npm install -g @google/gemini-cli 2>/dev/null && command -v gemini &>/dev/null; then
+    if npm install -g @google/gemini-cli >/dev/null 2>&1 && npm ls -g @google/gemini-cli >/dev/null 2>&1; then
+        # npm's global bin dir isn't always on root's PATH (a distro npmrc can set a
+        # custom prefix), so command -v alone can miss a good install. Link the bin
+        # into /usr/local/bin (on PATH everywhere) when it isn't already found.
+        command -v gemini >/dev/null 2>&1 || { __gbin="$(npm prefix -g 2>/dev/null)/bin/gemini"; [ -x "$__gbin" ] && ln -sf "$__gbin" /usr/local/bin/gemini 2>/dev/null; }
         INSTALLED_PACKAGES+=("gemini"); ((TOTAL_INSTALLED++)); log SUCCESS "Installed: gemini (run 'gemini' to sign in)"; return 0
     fi
     FAILED_PACKAGES+=("gemini"); ((TOTAL_FAILED++))
