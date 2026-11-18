@@ -308,6 +308,7 @@ binds {
     Mod+Shift+A repeat=false { spawn-sh "~/.local/bin/mistral-vibe-toggle.sh"; }
     // Copilot/AI key (Super+Shift+F23 on recent laptops) -> Claude Desktop.
     Mod+Shift+F23 repeat=false { spawn-sh "~/.local/bin/claude-desktop-toggle.sh"; }
+    Mod+T repeat=false hotkey-overlay-title="Linear (tasks/tracker)" { spawn-sh "~/.local/bin/linear-toggle.sh"; }
 
     // --- window management ---
     Mod+Shift+Q repeat=false { close-window; }
