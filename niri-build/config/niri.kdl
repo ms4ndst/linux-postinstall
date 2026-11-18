@@ -171,6 +171,16 @@ window-rule {
     default-column-width { fixed 1200; }
     default-window-height { fixed 850; }
 }
+// Linear web app (Vivaldi PWA). Float it like Claude's window but a bit larger
+// so Linear's sidebar + issue list + detail pane all fit. The Wayland app-id is
+// the PWA's crx class (StartupWMClass=crx_<id>); also match the vivaldi-<id>-Default
+// form in case a future Vivaldi reports that instead.
+window-rule {
+    match app-id=r#"^(crx_bgdbmehlmdmddlgneophbcddadgknlpm|vivaldi-bgdbmehlmdmddlgneophbcddadgknlpm-Default)$"#
+    open-floating true
+    default-column-width { fixed 1400; }
+    default-window-height { fixed 950; }
+}
 // Polkit auth dialog (e.g. unlocking 1Password after the vault locks).
 window-rule {
     match app-id=r#"^lxqt-policykit-agent$"#
