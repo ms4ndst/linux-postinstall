@@ -641,6 +641,12 @@ window-rule {
     match app-id=r#"^(nm-connection-editor|blueman-manager|org.pulseaudio.pavucontrol|pavucontrol|qalculate-gtk|system-config-printer)$"#
     open-floating true
 }
+// Mooring (Android phone hub, github.com/ms4ndst/mooring) -> float like the
+// Bluetooth/settings utilities above, at its own size, centered.
+window-rule {
+    match app-id=r#"^io.github.ms4ndst.Mooring$"#
+    open-floating true
+}
 window-rule {
     match app-id=r#"^(com.github.hluk.copyq|copyq)$"#
     open-floating true
@@ -671,6 +677,16 @@ window-rule {
     open-floating true
     default-column-width { fixed 1200; }
     default-window-height { fixed 850; }
+}
+// Linear web app (Vivaldi PWA). Float it like Claude's window but a bit larger
+// so Linear's sidebar + issue list + detail pane all fit. The Wayland app-id is
+// the PWA's crx class (StartupWMClass=crx_<id>); also match the vivaldi-<id>-Default
+// form in case a future Vivaldi reports that instead.
+window-rule {
+    match app-id=r#"^(crx_bgdbmehlmdmddlgneophbcddadgknlpm|vivaldi-bgdbmehlmdmddlgneophbcddadgknlpm-Default)$"#
+    open-floating true
+    default-column-width { fixed 1400; }
+    default-window-height { fixed 950; }
 }
 // Polkit auth dialog (e.g. unlocking 1Password after the vault locks).
 window-rule {
@@ -799,6 +815,7 @@ binds {
     Mod+Shift+A repeat=false { spawn-sh "~/.local/bin/mistral-vibe-toggle.sh"; }
     // Copilot/AI key (Super+Shift+F23 on recent laptops) -> Claude Desktop.
     Mod+Shift+F23 repeat=false { spawn-sh "~/.local/bin/claude-desktop-toggle.sh"; }
+    Mod+T repeat=false hotkey-overlay-title="Linear (tasks/tracker)" { spawn-sh "~/.local/bin/linear-toggle.sh"; }
 
     // --- window management ---
     Mod+Shift+Q repeat=false { close-window; }
@@ -4991,6 +5008,19 @@ background = "{base}"
 foreground = "{red}"
 frame_color = "{red}"
 timeout = 0
+
+# Cap app-requested "never expire" notifications (expire_timeout=0) such as KDE
+# Connect and GNOME Calendar/EDS reminders: dunst honors 0 as "never", so they
+# pile up until clicked (GNOME Shell auto-dismisses them). override_dbus_timeout
+# forces the per-urgency timeout regardless of what the app asked. Critical is
+# left alone (0 = persist), so low-battery warnings still stay up.
+[timeout_cap_low]
+msg_urgency = low
+override_dbus_timeout = 4
+
+[timeout_cap_normal]
+msg_urgency = normal
+override_dbus_timeout = 6
 """
 
 STARSHIP_TEMPLATE = r'''format = """

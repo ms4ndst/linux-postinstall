@@ -401,6 +401,20 @@ fi''',
     soft("The real wttrbar (github.com/bjesus/wttrbar) is a Go binary not packaged for\nFedora. This implements the subset",
          "The real wttrbar (github.com/bjesus/wttrbar) is a Go binary not packaged for\nFedora or OpenMandriva. This implements the subset")
 
+    # Mooring is a Fedora-only addition (zeno/scrcpy COPR, a .fc44 RPM from its
+    # GitHub release, dnf). Strip its whole "8b" install block on OpenMandriva
+    # (and thus Mageia, which is ported from this output) - the package/repo
+    # model doesn't carry over. The dunst notification-timeout rules above it do.
+    _m_start = ("# ----------------------------------------------------------------------------\n"
+                "# 8b. Mooring")
+    _m_end = ("# ----------------------------------------------------------------------------\n"
+              "# 9. Base GTK theme")
+    if _m_start in out and _m_end in out:
+        i, j = out.index(_m_start), out.index(_m_end)
+        out = out[:i] + out[j:]
+    else:
+        misses.append("Mooring strip: 8b/9 markers not found")
+
     if misses:
         print("WARN: %d stale anchors:" % len(misses))
         for m in misses:

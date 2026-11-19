@@ -1794,6 +1794,19 @@ background = "{base}"
 foreground = "{red}"
 frame_color = "{red}"
 timeout = 0
+
+# Cap app-requested "never expire" notifications (expire_timeout=0) such as KDE
+# Connect and GNOME Calendar/EDS reminders: dunst honors 0 as "never", so they
+# pile up until clicked (GNOME Shell auto-dismisses them). override_dbus_timeout
+# forces the per-urgency timeout regardless of what the app asked. Critical is
+# left alone (0 = persist), so low-battery warnings still stay up.
+[timeout_cap_low]
+msg_urgency = low
+override_dbus_timeout = 4
+
+[timeout_cap_normal]
+msg_urgency = normal
+override_dbus_timeout = 6
 """
 
 STARSHIP_TEMPLATE = r'''format = """
