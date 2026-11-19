@@ -1806,11 +1806,27 @@ install_mooring() {
         return 1
     fi
     tmpd=$(mktemp -d)
+    # Install the RPM together with its runtime deps named explicitly: dnf would
+    # pull these from the RPM's Requires anyway, but listing them guarantees the
+    # whole backend (KDE Connect daemon, sshfs for phone storage, adb + scrcpy
+    # for mirroring) lands in one transaction. python3-pip is for the optional
+    # PyAV step below. The python3-pyqt6/pillow/jeepney GUI deps come via the RPM.
     if curl -fsSL -o "$tmpd/mooring.rpm" "$url" \
-        && dnf install -y "$tmpd/mooring.rpm" >/dev/null 2>&1 \
+        && dnf install -y "$tmpd/mooring.rpm" kde-connect fuse-sshfs android-tools scrcpy python3-pip >/dev/null 2>&1 \
         && rpm -q mooring &>/dev/null; then
         INSTALLED_PACKAGES+=("mooring"); ((TOTAL_INSTALLED++))
-        log SUCCESS "Installed: Mooring (pair your phone in KDE Connect; tray icon shows in Waybar). Optional embedded mirror: pip install --user av"
+        log SUCCESS "Installed: Mooring (pair your phone in KDE Connect; tray icon shows in Waybar)"
+        # Optional PyAV (embedded Mirror page; not packaged for Fedora, so pip it
+        # into the user's site-packages - the RPM launcher's python3 -sP finds it).
+        # Best-effort: without it the Mirror page just offers "Pop out" (scrcpy).
+        local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+        if [ -n "$u" ]; then
+            if su - "$u" -c 'python3 -m pip install --user --break-system-packages --upgrade av' >/dev/null 2>&1; then
+                log SUCCESS "Installed: PyAV (av) for Mooring's embedded Mirror page"
+            else
+                log INFO "Mooring: optional PyAV not installed - run 'pip install --user av' as your user for the embedded Mirror (Pop out works without it)"
+            fi
+        fi
         rm -rf "$tmpd"; return 0
     fi
     rm -rf "$tmpd"

@@ -5806,9 +5806,20 @@ else
     warn "No Mooring RPM found in the latest release - get it from github.com/ms4ndst/mooring/releases."
   else
     MOORING_TMP="$(mktemp -d)"
+    # Name the runtime deps explicitly (dnf pulls them from the RPM's Requires
+    # anyway) so the whole backend - KDE Connect daemon, sshfs for phone storage,
+    # adb + scrcpy for mirroring - lands in one transaction; python3-pip is for
+    # the optional PyAV step. The PyQt6/Pillow/jeepney GUI deps come via the RPM.
     if curl -fsSL -o "$MOORING_TMP/mooring.rpm" "$MOORING_URL" 2>/dev/null \
-       && sudo dnf install -y "$MOORING_TMP/mooring.rpm" >/dev/null 2>&1; then
-      log "Mooring installed - pair your phone in KDE Connect; the tray icon shows in Waybar. (Optional embedded mirror: pip install --user av)"
+       && sudo dnf install -y "$MOORING_TMP/mooring.rpm" kde-connect fuse-sshfs android-tools scrcpy python3-pip >/dev/null 2>&1; then
+      log "Mooring installed - pair your phone in KDE Connect; the tray icon shows in Waybar."
+      # Optional PyAV for the embedded Mirror page (not packaged for Fedora); we
+      # run as the user here, so no sudo. Best-effort - Pop out works without it.
+      if python3 -m pip install --user --break-system-packages --upgrade av >/dev/null 2>&1; then
+        log "PyAV (av) installed - Mooring's embedded Mirror page is enabled."
+      else
+        warn "Optional PyAV not installed - run 'pip install --user av' for Mooring's embedded Mirror (Pop out works without it)."
+      fi
     else
       warn "Mooring install failed - get the RPM from github.com/ms4ndst/mooring/releases and: sudo dnf install ./mooring-*.noarch.rpm"
     fi
