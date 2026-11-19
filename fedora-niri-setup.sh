@@ -5790,32 +5790,30 @@ fi
 # 8b. Mooring - Android phone hub (PyQt6; github.com/ms4ndst/mooring)
 # ----------------------------------------------------------------------------
 # A "Phone Link"-style hub (messages, notifications, photos, files, screen
-# mirror) for an Android phone, developed on Fedora + Niri. Built as an RPM from
-# source; the built RPM's Requires pull in kde-connect, fuse-sshfs,
-# android-tools and scrcpy (scrcpy isn't in Fedora's repos - zeno/scrcpy COPR).
-# The PyQt6/Pillow/jeepney runtime deps double as BuildRequires, so pre-install
-# them or `rpmbuild -ba` stops to ask. The config.kdl above floats its window.
+# mirror) for an Android phone, developed on Fedora + Niri. CI attaches a
+# prebuilt noarch RPM to each GitHub release, so fetch that and let dnf resolve
+# its Requires: kde-connect, fuse-sshfs, android-tools and scrcpy (scrcpy isn't
+# in Fedora's repos - zeno/scrcpy COPR). The config.kdl above floats its window.
 log "Installing Mooring (Android phone hub)..."
 if rpm -q mooring >/dev/null 2>&1; then
   log "Mooring already installed, skipping."
 else
   sudo dnf copr enable -y zeno/scrcpy >/dev/null 2>&1 \
     || warn "Could not enable the zeno/scrcpy COPR - Mooring's scrcpy dependency may fail to install."
-  sudo dnf install -y rpm-build python3-devel pyproject-rpm-macros desktop-file-utils \
-    appstream python3-pyqt6 python3-pillow python3-jeepney python3-setuptools >/dev/null 2>&1 || true
-  MOORING_TMP="$(mktemp -d)"
-  if git clone --depth 1 -q https://github.com/ms4ndst/mooring "$MOORING_TMP/mooring" 2>/dev/null \
-     && ( cd "$MOORING_TMP/mooring" && bash scripts/build-rpm.sh ) >/dev/null 2>&1; then
-    MOORING_RPM="$(find "$MOORING_TMP/mooring/build/rpm/RPMS/noarch" -name 'mooring-*.noarch.rpm' 2>/dev/null | head -1)"
-    if [ -n "$MOORING_RPM" ] && sudo dnf install -y "$MOORING_RPM" >/dev/null 2>&1; then
+  MOORING_URL="$(curl -fsSL https://api.github.com/repos/ms4ndst/mooring/releases/latest 2>/dev/null \
+    | grep -oP '"browser_download_url":\s*"\K[^"]*\.noarch\.rpm' | head -1)"
+  if [ -z "$MOORING_URL" ]; then
+    warn "No Mooring RPM found in the latest release - get it from github.com/ms4ndst/mooring/releases."
+  else
+    MOORING_TMP="$(mktemp -d)"
+    if curl -fsSL -o "$MOORING_TMP/mooring.rpm" "$MOORING_URL" 2>/dev/null \
+       && sudo dnf install -y "$MOORING_TMP/mooring.rpm" >/dev/null 2>&1; then
       log "Mooring installed - pair your phone in KDE Connect; the tray icon shows in Waybar. (Optional embedded mirror: pip install --user av)"
     else
-      warn "Mooring RPM install failed - build it manually from github.com/ms4ndst/mooring (./scripts/build-rpm.sh, then sudo dnf install build/rpm/RPMS/noarch/mooring-*.noarch.rpm)."
+      warn "Mooring install failed - get the RPM from github.com/ms4ndst/mooring/releases and: sudo dnf install ./mooring-*.noarch.rpm"
     fi
-  else
-    warn "Mooring build failed (network issue or missing build deps?) - install it later from github.com/ms4ndst/mooring."
+    rm -rf "$MOORING_TMP"
   fi
-  rm -rf "$MOORING_TMP"
 fi
 
 # ----------------------------------------------------------------------------

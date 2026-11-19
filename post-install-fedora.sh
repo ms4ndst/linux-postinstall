@@ -1788,44 +1788,34 @@ install_android_tools() {
 install_mooring() {
     # Mooring (github.com/ms4ndst/mooring) - a PyQt6 "Phone Link"-style hub for an
     # Android phone: messages, notifications, photos, files, clipboard and screen
-    # mirroring, in one window. Built as an RPM from source (the project's own
-    # scripts/build-rpm.sh); the built RPM's Requires pull in kde-connect,
-    # fuse-sshfs, android-tools and scrcpy. scrcpy needs the zeno/scrcpy COPR that
+    # mirroring, in one window. CI attaches a prebuilt noarch RPM to each GitHub
+    # release, so just fetch that (no local rpmbuild needed - noarch works on any
+    # arch) and let dnf resolve its Requires: kde-connect, fuse-sshfs,
+    # android-tools and scrcpy. scrcpy needs the zeno/scrcpy COPR that
     # install_android_tools enabled just above, so this runs after it.
     if rpm -q mooring &>/dev/null; then
         SKIPPED_PACKAGES+=("mooring"); ((TOTAL_SKIPPED++)); log INFO "Already installed: mooring"; return 0
     fi
-    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
-    if [ -z "$u" ]; then
+    log INFO "Installing Mooring (prebuilt RPM from GitHub releases)..."
+    local url tmpd
+    url=$(curl -fsSL https://api.github.com/repos/ms4ndst/mooring/releases/latest 2>/dev/null \
+        | grep -oP '"browser_download_url":\s*"\K[^"]*\.noarch\.rpm' | head -1)
+    if [ -z "$url" ]; then
         FAILED_PACKAGES+=("mooring"); ((TOTAL_FAILED++))
-        log WARNING "No target user (run via sudo from a user session) - skipping mooring (rpmbuild should not run as root)"
+        log WARNING "No Mooring RPM in the latest release - get it from https://github.com/ms4ndst/mooring/releases"
         return 1
     fi
-    # Build deps for the pyproject-rpm-macros build. The PyQt6/Pillow/jeepney
-    # runtime deps double as BuildRequires (%pyproject_buildrequires), so
-    # pre-install them too or `rpmbuild -ba` stops to ask for them.
-    batch_install "Mooring build deps" rpm-build python3-devel pyproject-rpm-macros \
-        desktop-file-utils appstream git \
-        python3-pyqt6 python3-pillow python3-jeepney python3-setuptools
-    log INFO "Building Mooring RPM (clone + rpmbuild - can take a minute)..."
-    local d; d="$(mktemp -d)"; chmod 755 "$d"; chown "$u" "$d"
-    if su - "$u" -c "
-        set -e
-        cd '$d'
-        git clone -q --depth 1 https://github.com/ms4ndst/mooring mooring
-        cd mooring
-        bash scripts/build-rpm.sh
-    " >/dev/null 2>&1; then
-        local rpmf; rpmf="$(find "$d/mooring/build/rpm/RPMS/noarch" -name 'mooring-*.noarch.rpm' 2>/dev/null | head -1)"
-        if [ -n "$rpmf" ] && dnf install -y "$rpmf" >/dev/null 2>&1 && rpm -q mooring &>/dev/null; then
-            INSTALLED_PACKAGES+=("mooring (built from source)"); ((TOTAL_INSTALLED++))
-            log SUCCESS "Installed: Mooring (pair your phone in KDE Connect; tray icon shows in Waybar). Optional embedded mirror: pip install --user av"
-            rm -rf "$d"; return 0
-        fi
+    tmpd=$(mktemp -d)
+    if curl -fsSL -o "$tmpd/mooring.rpm" "$url" \
+        && dnf install -y "$tmpd/mooring.rpm" >/dev/null 2>&1 \
+        && rpm -q mooring &>/dev/null; then
+        INSTALLED_PACKAGES+=("mooring"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: Mooring (pair your phone in KDE Connect; tray icon shows in Waybar). Optional embedded mirror: pip install --user av"
+        rm -rf "$tmpd"; return 0
     fi
-    rm -rf "$d"
+    rm -rf "$tmpd"
     FAILED_PACKAGES+=("mooring"); ((TOTAL_FAILED++))
-    log WARNING "mooring build failed - try: git clone https://github.com/ms4ndst/mooring && cd mooring && ./scripts/build-rpm.sh && sudo dnf install build/rpm/RPMS/noarch/mooring-*.noarch.rpm"
+    log WARNING "Mooring install failed - get the RPM from https://github.com/ms4ndst/mooring/releases and: sudo dnf install ./mooring-*.noarch.rpm"
     return 1
 }
 
