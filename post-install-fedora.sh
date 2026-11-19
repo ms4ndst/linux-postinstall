@@ -1782,6 +1782,51 @@ install_android_tools() {
     add_copr "zeno/scrcpy" zeno
     batch_install "Android Tools" android-tools scrcpy
     install_fdroidcl
+    install_mooring
+}
+
+install_mooring() {
+    # Mooring (github.com/ms4ndst/mooring) - a PyQt6 "Phone Link"-style hub for an
+    # Android phone: messages, notifications, photos, files, clipboard and screen
+    # mirroring, in one window. Built as an RPM from source (the project's own
+    # scripts/build-rpm.sh); the built RPM's Requires pull in kde-connect,
+    # fuse-sshfs, android-tools and scrcpy. scrcpy needs the zeno/scrcpy COPR that
+    # install_android_tools enabled just above, so this runs after it.
+    if rpm -q mooring &>/dev/null; then
+        SKIPPED_PACKAGES+=("mooring"); ((TOTAL_SKIPPED++)); log INFO "Already installed: mooring"; return 0
+    fi
+    local u="$SUDO_USER"; [ "$u" = "root" ] && u=""
+    if [ -z "$u" ]; then
+        FAILED_PACKAGES+=("mooring"); ((TOTAL_FAILED++))
+        log WARNING "No target user (run via sudo from a user session) - skipping mooring (rpmbuild should not run as root)"
+        return 1
+    fi
+    # Build deps for the pyproject-rpm-macros build. The PyQt6/Pillow/jeepney
+    # runtime deps double as BuildRequires (%pyproject_buildrequires), so
+    # pre-install them too or `rpmbuild -ba` stops to ask for them.
+    batch_install "Mooring build deps" rpm-build python3-devel pyproject-rpm-macros \
+        desktop-file-utils appstream git \
+        python3-pyqt6 python3-pillow python3-jeepney python3-setuptools
+    log INFO "Building Mooring RPM (clone + rpmbuild - can take a minute)..."
+    local d; d="$(mktemp -d)"; chmod 755 "$d"; chown "$u" "$d"
+    if su - "$u" -c "
+        set -e
+        cd '$d'
+        git clone -q --depth 1 https://github.com/ms4ndst/mooring mooring
+        cd mooring
+        bash scripts/build-rpm.sh
+    " >/dev/null 2>&1; then
+        local rpmf; rpmf="$(find "$d/mooring/build/rpm/RPMS/noarch" -name 'mooring-*.noarch.rpm' 2>/dev/null | head -1)"
+        if [ -n "$rpmf" ] && dnf install -y "$rpmf" >/dev/null 2>&1 && rpm -q mooring &>/dev/null; then
+            INSTALLED_PACKAGES+=("mooring (built from source)"); ((TOTAL_INSTALLED++))
+            log SUCCESS "Installed: Mooring (pair your phone in KDE Connect; tray icon shows in Waybar). Optional embedded mirror: pip install --user av"
+            rm -rf "$d"; return 0
+        fi
+    fi
+    rm -rf "$d"
+    FAILED_PACKAGES+=("mooring"); ((TOTAL_FAILED++))
+    log WARNING "mooring build failed - try: git clone https://github.com/ms4ndst/mooring && cd mooring && ./scripts/build-rpm.sh && sudo dnf install build/rpm/RPMS/noarch/mooring-*.noarch.rpm"
+    return 1
 }
 
 install_fdroidcl() {
@@ -3857,7 +3902,7 @@ main() {
                 esac
                 ;;
             28) reset_tracking; install_windows_support; display_summary; prompt_menu_category "Windows Software Support" "wine" "Windows Software Support (Wine)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            29) reset_tracking; install_android_tools; display_summary; prompt_menu_category "Android Tools" "phone" "Android Tools (adb, fastboot, scrcpy)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            29) reset_tracking; install_android_tools; display_summary; prompt_menu_category "Android Tools" "phone" "Android Tools (adb, fastboot, scrcpy, Mooring phone hub)" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             27)
                 show_security_menu
                 read -r sec_choice

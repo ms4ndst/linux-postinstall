@@ -140,6 +140,12 @@ window-rule {
     match app-id=r#"^(nm-connection-editor|blueman-manager|org.pulseaudio.pavucontrol|pavucontrol|qalculate-gtk|system-config-printer)$"#
     open-floating true
 }
+// Mooring (Android phone hub, github.com/ms4ndst/mooring) -> float like the
+// Bluetooth/settings utilities above, at its own size, centered.
+window-rule {
+    match app-id=r#"^io.github.ms4ndst.Mooring$"#
+    open-floating true
+}
 window-rule {
     match app-id=r#"^(com.github.hluk.copyq|copyq)$"#
     open-floating true
