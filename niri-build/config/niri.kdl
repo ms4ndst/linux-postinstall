@@ -145,9 +145,10 @@ window-rule {
 window-rule {
     match app-id=r#"^io.github.ms4ndst.Mooring$"#
     open-floating true
-    // Phone-companion shape: fixed 900 wide, full height like a tiled window.
+    // Phone-companion shape: fixed 900 wide, near-full height (a few px under the
+    // working area so the bottom isn't clipped; ~1163px usable on a 1200px panel).
     default-column-width { fixed 900; }
-    default-window-height { proportion 1.0; }
+    default-window-height { fixed 1140; }
 }
 window-rule {
     match app-id=r#"^(com.github.hluk.copyq|copyq)$"#
