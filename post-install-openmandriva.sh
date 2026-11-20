@@ -10,7 +10,7 @@
 # GitHub sources during development. The bulk of "ordinary" packages (editors,
 # languages, system utilities - vim, ripgrep, htop, gcc, golang, ...) were NOT
 # individually verified against a live OpenMandriva system (this was written
-# without one available) - they rely on the Fedora/Mageia-style naming
+# without one available) - they rely on the Fedora/Mandriva-style naming
 # conventions OpenMandriva mostly follows instead. Either way, every install
 # goes through package_exists() before safe_install() ever runs, so a wrong
 # guess is logged "Not in repos" and skipped rather than failing the whole
@@ -807,7 +807,7 @@ install_greenshot() {
 # swap, no Cisco OpenH264 special repo, and nothing like RPM Fusion needed.
 # This just makes sure the complete stack is present once bootstrap_repos()
 # has enabled restricted. GStreamer plugin names follow the
-# Mageia/Mandriva-style gstreamer1.0-* convention; package_exists() skips
+# Mandriva-style gstreamer1.0-* convention; package_exists() skips
 # any that OpenMandriva doesn't carry under this exact name.
 install_multimedia_codecs() {
     log INFO "Installing multimedia codecs (OpenMandriva main + restricted)..."

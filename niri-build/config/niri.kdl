@@ -201,7 +201,7 @@ window-rule {
 // Scratchpad utilities (summoned/stashed by niri-scratch.sh): open floating and
 // centered so a summon lands as an overlay.
 window-rule {
-    match app-id=r#"^(Cliamp|com.anthropic.Claude|claude|MistralVibe|AIVibe)$"#
+    match app-id=r#"^(Cliamp|com.anthropic.Claude|claude|MistralVibe|AIVibe|Yazi)$"#
     open-floating true
 }
 // Size the terminal-based ones (kitty would otherwise open near-fullscreen).
@@ -214,6 +214,12 @@ window-rule {
     match app-id=r#"^Cliamp$"#
     default-column-width { fixed 760; }
     default-window-height { fixed 520; }
+}
+// Yazi (terminal file manager, Mod+Y) - roomier than cliamp so previews/columns fit.
+window-rule {
+    match app-id=r#"^Yazi$"#
+    default-column-width { fixed 1100; }
+    default-window-height { fixed 740; }
 }
 // cliamp's setup wizard and the rice's own rofi/kitty utility windows.
 window-rule {
@@ -315,6 +321,7 @@ binds {
     // Copilot/AI key (Super+Shift+F23 on recent laptops) -> Claude Desktop.
     Mod+Shift+F23 repeat=false { spawn-sh "~/.local/bin/claude-desktop-toggle.sh"; }
     Mod+T repeat=false hotkey-overlay-title="Linear (tasks/tracker)" { spawn-sh "~/.local/bin/linear-toggle.sh"; }
+    Mod+Y repeat=false hotkey-overlay-title="Yazi (terminal file manager)" { spawn-sh "~/.local/bin/yazi-toggle.sh"; }
 
     // --- window management ---
     Mod+Shift+Q repeat=false { close-window; }

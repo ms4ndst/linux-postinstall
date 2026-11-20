@@ -402,9 +402,9 @@ fi''',
          "The real wttrbar (github.com/bjesus/wttrbar) is a Go binary not packaged for\nFedora or OpenMandriva. This implements the subset")
 
     # Mooring is a Fedora-only addition (zeno/scrcpy COPR, a .fc44 RPM from its
-    # GitHub release, dnf). Strip its whole "8b" install block on OpenMandriva
-    # (and thus Mageia, which is ported from this output) - the package/repo
-    # model doesn't carry over. The dunst notification-timeout rules above it do.
+    # GitHub release, dnf). Strip its whole "8b" install block on OpenMandriva -
+    # the package/repo model doesn't carry over. The dunst notification-timeout
+    # rules above it do.
     _m_start = ("# ----------------------------------------------------------------------------\n"
                 "# 8b. Mooring")
     _m_end = ("# ----------------------------------------------------------------------------\n"
@@ -414,6 +414,27 @@ fi''',
         out = out[:i] + out[j:]
     else:
         misses.append("Mooring strip: 8b/9 markers not found")
+
+    # Yazi is a Fedora-only addition (lihaohong/yazi COPR). Strip its whole
+    # "9f2" install block on OpenMandriva - no COPR, and it's not in the repos.
+    # Also drop the now-dead Mod+Y keybind so it isn't a flashing no-op; the
+    # harmless window-rule + toggle-script heredoc are left (they match/run
+    # nothing without the binding), as with Mooring's leftover window-rule.
+    _y_start = ("# ----------------------------------------------------------------------------\n"
+                "# 9f2. Yazi")
+    _y_end = ("# ----------------------------------------------------------------------------\n"
+              "# 9g. Audio")
+    if _y_start in out and _y_end in out:
+        i, j = out.index(_y_start), out.index(_y_end)
+        out = out[:i] + out[j:]
+    else:
+        misses.append("Yazi strip: 9f2/9g markers not found")
+    _y_bind = ('    Mod+Y repeat=false hotkey-overlay-title="Yazi (terminal file manager)"'
+               ' { spawn-sh "~/.local/bin/yazi-toggle.sh"; }\n')
+    if _y_bind in out:
+        out = out.replace(_y_bind, "")
+    else:
+        misses.append("Yazi strip: Mod+Y keybind line not found")
 
     if misses:
         print("WARN: %d stale anchors:" % len(misses))

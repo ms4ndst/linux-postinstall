@@ -11,7 +11,6 @@ This repo ships **independent, distro-specific scripts** — pick the one that m
 - **[`post-install-arch.sh`](post-install-arch.sh)** — for **Arch Linux and [Omarchy](https://omarchy.org)**, built on `pacman` with a `yay` AUR fallback.
 - **[`post-install-opensuse.sh`](post-install-opensuse.sh)** — for **openSUSE Tumbleweed**, built on `zypper`/OBS/Packman.
 - **[`post-install-openmandriva.sh`](post-install-openmandriva.sh)** — for **OpenMandriva (Rock/Rolling)**, built on `dnf`.
-- **[`post-install-mageia.sh`](post-install-mageia.sh)** — for **Mageia (cauldron)**, built on `dnf`. Ported from the OpenMandriva script (shared Mandriva lineage); repos remapped to cauldron `nonfree`/`tainted`, NVIDIA switched to Mageia's DKMS driver. ⚠️ Best-effort / **untested on a real Mageia box** — package-name deltas may need a one-line fix on first run.
 - **[`post-install-nixos.sh`](post-install-nixos.sh)** — for **NixOS (nixos-26.05)**, *declarative*: see the note below.
 
 The RPM/apt/pacman scripts share the same Catppuccin-themed menu-driven UX, the same installed/skipped/failed tracking, and the same GNOME Shell app-folder feature — but every install path (package names, repos, drivers, codecs) is re-sourced per distro rather than being a single script with `if`-branches. None of them depends on or modifies another; run whichever matches your system.
@@ -3101,15 +3100,6 @@ An **OpenMandriva port** exists alongside the Fedora script: [`openmandriva-niri
 python3 -I niri-build/build_fedora_niri.py       # 1. refresh the Fedora script from sources
 python3 -I niri-build/port_openmandriva_niri.py  # 2. re-port it to OpenMandriva
 bash -n openmandriva-niri-setup.sh               # smoke test
-```
-
-A **Mageia port** chains off the OpenMandriva one: [`mageia-niri-setup.sh`](mageia-niri-setup.sh), generated from `openmandriva-niri-setup.sh` by [`niri-build/port_mageia_niri.py`](niri-build/port_mageia_niri.py). Mageia and OpenMandriva share the Mandriva lineage (dnf, `lib64*` naming), so the OM output already carries the Mandriva-ification; the Mageia port only swaps the repo preamble (cauldron `nonfree`/`tainted`) and — because **Mageia packages neither niri nor has a COPR** — **builds niri itself from source** (`cargo`, pinned `v26.04`, deps declared as `pkgconfig()` capabilities) plus its session files, before the mandatory-niri gate. `xwayland-satellite` is likewise built from source (niri has no built-in XWayland). ⚠️ **Best-effort / untested on a real Mageia box** — it targets cauldron; the pinned niri version, repo ids and any package-name deltas may need a one-line fix after the first run.
-
-```bash
-python3 -I niri-build/build_fedora_niri.py       # 1. refresh the Fedora script
-python3 -I niri-build/port_openmandriva_niri.py  # 2. re-port to OpenMandriva
-python3 -I niri-build/port_mageia_niri.py        # 3. chain-port OM -> Mageia
-bash -n mageia-niri-setup.sh                     # smoke test
 ```
 
 ### ⚠️ Niri Script Known Limitations

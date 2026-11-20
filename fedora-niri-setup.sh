@@ -403,7 +403,7 @@ window-rule {
 // Scratchpad utilities (summoned/stashed by niri-scratch.sh): open floating and
 // centered so a summon lands as an overlay.
 window-rule {
-    match app-id=r#"^(Cliamp|com.anthropic.Claude|claude|MistralVibe|AIVibe)$"#
+    match app-id=r#"^(Cliamp|com.anthropic.Claude|claude|MistralVibe|AIVibe|Yazi)$"#
     open-floating true
 }
 // Size the terminal-based ones (kitty would otherwise open near-fullscreen).
@@ -416,6 +416,12 @@ window-rule {
     match app-id=r#"^Cliamp$"#
     default-column-width { fixed 760; }
     default-window-height { fixed 520; }
+}
+// Yazi (terminal file manager, Mod+Y) - roomier than cliamp so previews/columns fit.
+window-rule {
+    match app-id=r#"^Yazi$"#
+    default-column-width { fixed 1100; }
+    default-window-height { fixed 740; }
 }
 // cliamp's setup wizard and the rice's own rofi/kitty utility windows.
 window-rule {
@@ -517,6 +523,7 @@ binds {
     // Copilot/AI key (Super+Shift+F23 on recent laptops) -> Claude Desktop.
     Mod+Shift+F23 repeat=false { spawn-sh "~/.local/bin/claude-desktop-toggle.sh"; }
     Mod+T repeat=false hotkey-overlay-title="Linear (tasks/tracker)" { spawn-sh "~/.local/bin/linear-toggle.sh"; }
+    Mod+Y repeat=false hotkey-overlay-title="Yazi (terminal file manager)" { spawn-sh "~/.local/bin/yazi-toggle.sh"; }
 
     // --- window management ---
     Mod+Shift+Q repeat=false { close-window; }
@@ -1845,6 +1852,14 @@ cat > "$BIN/cliamp-toggle.sh" <<'RICE_EOF'
 # the scratch workspace, so hiding it doesn't stop playback or lose control.
 # Quitting cliamp itself (q in the TUI) still fully stops it.
 exec ~/.local/bin/niri-scratch.sh '^Cliamp$' kitty --class Cliamp -e cliamp
+RICE_EOF
+cat > "$BIN/yazi-toggle.sh" <<'RICE_EOF'
+#!/usr/bin/env bash
+# Summon/stash a floating Yazi (terminal file manager, Mod+Y) via the niri
+# scratchpad emulation, like cliamp (Mod+M). Parking the window keeps the Yazi
+# session - its cwd, selection and jump history - alive instead of exiting it;
+# press Mod+Y again to tuck it away. Quit Yazi itself (q) to end the session.
+exec ~/.local/bin/niri-scratch.sh '^Yazi$' kitty --class Yazi -e yazi
 RICE_EOF
 cat > "$BIN/cliamp-setup.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
@@ -4705,19 +4720,6 @@ background = "{base}"
 foreground = "{red}"
 frame_color = "{red}"
 timeout = 0
-
-# Cap app-requested "never expire" notifications (expire_timeout=0) such as KDE
-# Connect and GNOME Calendar/EDS reminders: dunst honors 0 as "never", so they
-# pile up until clicked (GNOME Shell auto-dismisses them). override_dbus_timeout
-# forces the per-urgency timeout regardless of what the app asked. Critical is
-# left alone (0 = persist), so low-battery warnings still stay up.
-[timeout_cap_low]
-msg_urgency = low
-override_dbus_timeout = 4
-
-[timeout_cap_normal]
-msg_urgency = normal
-override_dbus_timeout = 6
 """
 
 STARSHIP_TEMPLATE = r'''format = """
@@ -6011,6 +6013,34 @@ if command -v strata >/dev/null 2>&1; then
 Name=org.freedesktop.FileManager1
 Exec=$HOME/.local/bin/strata --gapplication-service
 STRATA_DBUS_EOF
+fi
+
+# ----------------------------------------------------------------------------
+# 9f2. Yazi (terminal file manager, Mod+Y) - floating toggle like cliamp.
+# Not in Fedora's repos; the upstream-recommended source is the lihaohong/yazi
+# COPR (yazi-rs.github.io/docs/installation). Pairs with the GUI Strata (Mod+E).
+# ----------------------------------------------------------------------------
+if command -v yazi >/dev/null 2>&1; then
+  log "Yazi already installed, skipping."
+else
+  log "Installing Yazi (terminal file manager)..."
+  sudo dnf install -y dnf-plugins-core >/dev/null 2>&1 || true
+  if ! sudo dnf copr enable -y lihaohong/yazi 2>/dev/null; then
+    warn "Could not enable the lihaohong/yazi COPR - Yazi may fail to install. Enable manually: sudo dnf copr enable lihaohong/yazi"
+  fi
+  # yazi itself, plus the preview/helper tools it uses when present (video
+  # thumbnails, archives, PDF/JSON/SVG/image previews, search, clipboard). dnf
+  # skips any already installed by the rest of the rice.
+  if sudo dnf install -y \
+        yazi \
+        ffmpegthumbnailer p7zip p7zip-plugins jq poppler-utils \
+        fd-find ripgrep fzf zoxide resvg ImageMagick wl-clipboard \
+        >/dev/null 2>&1 \
+     && command -v yazi >/dev/null 2>&1; then
+    log "Yazi installed - summon with Mod+Y."
+  else
+    warn "Yazi install failed (COPR/network) - install manually: sudo dnf copr enable lihaohong/yazi && sudo dnf install yazi"
+  fi
 fi
 
 # ----------------------------------------------------------------------------

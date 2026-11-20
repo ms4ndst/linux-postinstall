@@ -715,7 +715,7 @@ window-rule {
 // Scratchpad utilities (summoned/stashed by niri-scratch.sh): open floating and
 // centered so a summon lands as an overlay.
 window-rule {
-    match app-id=r#"^(Cliamp|com.anthropic.Claude|claude|MistralVibe|AIVibe)$"#
+    match app-id=r#"^(Cliamp|com.anthropic.Claude|claude|MistralVibe|AIVibe|Yazi)$"#
     open-floating true
 }
 // Size the terminal-based ones (kitty would otherwise open near-fullscreen).
@@ -728,6 +728,12 @@ window-rule {
     match app-id=r#"^Cliamp$"#
     default-column-width { fixed 760; }
     default-window-height { fixed 520; }
+}
+// Yazi (terminal file manager, Mod+Y) - roomier than cliamp so previews/columns fit.
+window-rule {
+    match app-id=r#"^Yazi$"#
+    default-column-width { fixed 1100; }
+    default-window-height { fixed 740; }
 }
 // cliamp's setup wizard and the rice's own rofi/kitty utility windows.
 window-rule {
@@ -2157,6 +2163,14 @@ cat > "$BIN/cliamp-toggle.sh" <<'RICE_EOF'
 # the scratch workspace, so hiding it doesn't stop playback or lose control.
 # Quitting cliamp itself (q in the TUI) still fully stops it.
 exec ~/.local/bin/niri-scratch.sh '^Cliamp$' kitty --class Cliamp -e cliamp
+RICE_EOF
+cat > "$BIN/yazi-toggle.sh" <<'RICE_EOF'
+#!/usr/bin/env bash
+# Summon/stash a floating Yazi (terminal file manager, Mod+Y) via the niri
+# scratchpad emulation, like cliamp (Mod+M). Parking the window keeps the Yazi
+# session - its cwd, selection and jump history - alive instead of exiting it;
+# press Mod+Y again to tuck it away. Quit Yazi itself (q) to end the session.
+exec ~/.local/bin/niri-scratch.sh '^Yazi$' kitty --class Yazi -e yazi
 RICE_EOF
 cat > "$BIN/cliamp-setup.sh" <<'RICE_EOF'
 #!/usr/bin/env bash
@@ -5021,19 +5035,6 @@ background = "{base}"
 foreground = "{red}"
 frame_color = "{red}"
 timeout = 0
-
-# Cap app-requested "never expire" notifications (expire_timeout=0) such as KDE
-# Connect and GNOME Calendar/EDS reminders: dunst honors 0 as "never", so they
-# pile up until clicked (GNOME Shell auto-dismisses them). override_dbus_timeout
-# forces the per-urgency timeout regardless of what the app asked. Critical is
-# left alone (0 = persist), so low-battery warnings still stay up.
-[timeout_cap_low]
-msg_urgency = low
-override_dbus_timeout = 4
-
-[timeout_cap_normal]
-msg_urgency = normal
-override_dbus_timeout = 6
 """
 
 STARSHIP_TEMPLATE = r'''format = """
