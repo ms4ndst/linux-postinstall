@@ -435,6 +435,12 @@ fi''',
         out = out.replace(_y_bind, "")
     else:
         misses.append("Yazi strip: Mod+Y keybind line not found")
+    # ...and its line in the Mod+I cheat sheet (the keybind it names is gone here).
+    _y_help = '  "Mod+y|File manager (Yazi, terminal), summon/stash"\n'
+    if _y_help in out:
+        out = out.replace(_y_help, "")
+    else:
+        misses.append("Yazi strip: cheat-sheet line not found")
 
     if misses:
         print("WARN: %d stale anchors:" % len(misses))

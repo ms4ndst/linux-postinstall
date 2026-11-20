@@ -3018,7 +3018,7 @@ niri isn't in Fedora's repositories, so the script enables the upstream author's
 
 **Rice toolkit:** `cava`, `btop`, `brightnessctl`, `playerctl`, `copyq`, `udiskie`, `gammastep`, `azote` (wallpaper GUI), `fastfetch`, `ImageMagick`, `fortune-mod`, Qogir cursors, Papirus icons, JetBrainsMono Nerd Font, plus the volume/brightness OSD, power menu, Wi-Fi picker, caffeine/DND toggles, notification centre, calendar reminder daemon and battery watcher — the full Sway-rice helper set, ported to niri (`niri msg` instead of `swaymsg`).
 
-**Apps:** **CLIamp** terminal music player (`Mod+M`), **Strata** GTK4 file manager (`Mod+E`), and summon/stash windows for **Claude Desktop** (the Copilot/AI key) and **Mistral Vibe** — both the CLI (`Mod+A`) and the web GUI (`Mod+Shift+A`).
+**Apps:** **CLIamp** terminal music player (`Mod+M`), **Strata** GTK4 file manager (`Mod+E`) alongside **Yazi** as a terminal file manager (`Mod+Y`, floating scratchpad from the `lihaohong/yazi` COPR), and summon/stash windows for **Claude Desktop** (the Copilot/AI key), **Mistral Vibe** — both the CLI (`Mod+A`) and the web GUI (`Mod+Shift+A`), **Linear** (`Mod+T`, the tasks/tracker web app), and **Mooring** (the user's own PyQt6 Android phone-hub, floating — launched from the app grid).
 
 > **⚠️ This rice depends on GNOME — don't remove GNOME wholesale.** Although Niri is a standalone Wayland compositor, the rice still leans on parts of GNOME:
 >
@@ -3053,7 +3053,8 @@ Log in through the **niri** session at your display manager (or run `niri-sessio
 | `Mod+Return` | Terminal (kitty) |
 | `Mod+Space` / `Mod+Shift+Space` | App launcher (drun) / run dialog |
 | `Mod+Alt+Space` | App menu (rice utilities) |
-| `Mod+E` | File manager (Strata) |
+| `Mod+E` | File manager (Strata, GUI) |
+| `Mod+Y` | File manager (Yazi, terminal — floating scratchpad) |
 | `Mod+Shift+W` | Wallpaper picker |
 | `Mod+Shift+Q` | Close window |
 | `Mod+H` / `Mod+L` | Focus column left / right (also `Mod+←/→`) |
@@ -3072,6 +3073,7 @@ Log in through the **niri** session at your display manager (or run `niri-sessio
 | `Mod+Shift+G` | Colorpicker · `Mod+Shift+V` clipboard (copyq) |
 | `Mod+M` / `Mod+Shift+M` | CLIamp music / CLIamp setup |
 | `Mod+A` / `Mod+Shift+A` | Vibe CLI / Mistral Vibe web app |
+| `Mod+T` | Linear (tasks/tracker web app) |
 | `Mod+Shift+S` | NiriMod (settings) |
 | `Mod+Shift+E` | Exit niri |
 
