@@ -145,6 +145,9 @@ window-rule {
 window-rule {
     match app-id=r#"^io.github.ms4ndst.Mooring$"#
     open-floating true
+    // Phone-companion shape: narrower + taller than the app's own 1100x720.
+    default-column-width { fixed 900; }
+    default-window-height { fixed 820; }
 }
 window-rule {
     match app-id=r#"^(com.github.hluk.copyq|copyq)$"#
