@@ -427,20 +427,26 @@ fi
 # Wayland enabled this time (this is the sway rice).
 if ! command -v gammastep >/dev/null 2>&1 && [ ! -x /usr/local/bin/gammastep ]; then
   log "Building gammastep from source (not packaged for this OpenMandriva release)..."
+  # wayland-scanner is REQUIRED, not optional: gammastep's configure.ac does
+  # PKG_CHECK_MODULES([WAYLAND], [wayland-client wayland-scanner]) and, because we
+  # pass --enable-wayland explicitly, a missing scanner is a hard AC_MSG_ERROR
+  # ("missing dependencies for Wayland method"), not a silent backend-disable.
+  # (wayland-protocols is NOT needed - gammastep bundles its own wlr-gamma-control
+  # protocol XML and configure.ac never pkg-checks for it.)
   om_build_deps make gcc glibc-devel pkgconf autoconf automake libtool gettext intltool \
     'pkgconfig(x11)' 'pkgconfig(xcb)' 'pkgconfig(xcb-randr)' 'pkgconfig(xxf86vm)' 'pkgconfig(libdrm)' \
-    'pkgconfig(glib-2.0)' 'pkgconfig(gio-2.0)' 'pkgconfig(wayland-client)'
-  OMT="$(mktemp -d)"
+    'pkgconfig(glib-2.0)' 'pkgconfig(gio-2.0)' 'pkgconfig(wayland-client)' 'pkgconfig(wayland-scanner)'
+  OMT="$(mktemp -d)"; GLOG="${TMPDIR:-/tmp}/rice-gammastep-build.log"
   if d="$(om_fetch_tarball https://gitlab.com/chinstrap/gammastep/-/archive/v2.0.11/gammastep-v2.0.11.tar.gz "$OMT")" \
-      && (cd "$d" && ./bootstrap >/dev/null 2>&1 \
+      && (cd "$d" && ./bootstrap >"$GLOG" 2>&1 \
           && ./configure --prefix=/usr/local --disable-gui --enable-wayland --disable-geoclue2 \
-               --with-systemduserunitdir=no >/dev/null 2>&1 \
-          && make -j"$(nproc)" >/dev/null 2>&1) \
-      && sudo make -C "$d" install >/dev/null 2>&1 \
+               --with-systemduserunitdir=no >>"$GLOG" 2>&1 \
+          && make -j"$(nproc)" >>"$GLOG" 2>&1) \
+      && sudo make -C "$d" install >>"$GLOG" 2>&1 \
       && [ -x /usr/local/bin/gammastep ]; then
     log "gammastep installed to /usr/local/bin."
   else
-    warn "gammastep build failed - no night-light colour shift."
+    warn "gammastep build failed (full log: $GLOG) - no night-light colour shift."
   fi
   rm -rf "$OMT"
 fi
@@ -457,10 +463,13 @@ if [ "$(printf '%s\n1.7\n' "$(om_dunst_ver)" | sort -V | head -1)" != "1.7" ]; t
   # and WAYLAND=1 regenerates the xdg-shell/wlr-layer-shell protocol glue with
   # wayland-scanner from the wayland-protocols data dir - so all three (gdk-pixbuf,
   # wayland-protocols, wayland-scanner) are required or the make hard-fails. The
-  # old list missed them.
+  # old list missed them. libnotify: dunst's default `make` target also builds the
+  # `dunstify` helper (a notify-send clone), whose source #includes
+  # <libnotify/notify.h> - without its dev headers the build dies on
+  # "libnotify/notify.h: No such file or directory".
   om_build_deps make gcc glibc-devel pkgconf wayland-protocols-devel \
     'pkgconfig(dbus-1)' 'pkgconfig(wayland-client)' 'pkgconfig(wayland-cursor)' \
-    'pkgconfig(wayland-scanner)' 'pkgconfig(gdk-pixbuf-2.0)' \
+    'pkgconfig(wayland-scanner)' 'pkgconfig(gdk-pixbuf-2.0)' 'pkgconfig(libnotify)' \
     'pkgconfig(glib-2.0)' 'pkgconfig(gio-2.0)' 'pkgconfig(pangocairo)' 'pkgconfig(cairo)'
   DUNST_TAG=$(curl -fsSL https://api.github.com/repos/dunst-project/dunst/releases/latest 2>/dev/null \
     | grep -oE '"tag_name":[[:space:]]*"v[0-9.]+"' | grep -oE 'v[0-9.]+')
