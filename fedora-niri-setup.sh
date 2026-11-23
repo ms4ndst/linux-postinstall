@@ -4454,6 +4454,20 @@ def adapt_config(cfg, name):
                 and "warning" in blk["states"]:
             blk["states"]["warning"] = 70
 
+    # 3f2b. disk: the upstream themes paint #disk a flat palette accent, so it
+    #       reads as a permanent warning no matter how full the disk is. Give it
+    #       a real usage threshold - waybar evaluates disk states against
+    #       percentage_used - so #disk only takes the warning colour once the
+    #       root filesystem passes 80% used (normal text colour below it; both
+    #       colours are in WORKSPACE_STATES_CSS). Non-destructive: only ensure a
+    #       "warning" state at 80, PRESERVING any low/medium/critical states a
+    #       fill-bar theme (e.g. the V2.1-x/V3.x "DISK ░░██" widgets) relies on -
+    #       replacing the whole states dict would break those fill levels. Only
+    #       touch disk where the theme actually has the module.
+    dblk = cfg.get("disk")
+    if isinstance(dblk, dict):
+        dblk.setdefault("states", {})["warning"] = 80
+
     # 3f3. Vertical bars (position left/right): most widgets are icons or
     #      \n-stacked, but the mpris now-playing text ("<icon> artist - title")
     #      is horizontal and blows out the narrow bar's width / clips. Rotate it
@@ -5057,6 +5071,19 @@ window#waybar #custom-caffeine.activated {
 window#waybar #custom-notification-silencing-indicator.active {
   color: @ACCENT@;
 }
+/* Disk usage: the upstream themes colour #disk a flat palette accent, which
+   reads as a permanent warning. Paired with the 80% `states.warning` added to
+   the disk module (adapt_config), this turns it into a real gauge - the normal
+   text colour until the root filesystem passes 80% used, the warning colour
+   (yellow) at/above it. High specificity (window#waybar #disk) beats the
+   theme's own flat `#disk { color: ... }` rule. */
+window#waybar #disk {
+  color: @TEXT@;
+}
+window#waybar #disk.warning,
+window#waybar #disk.critical {
+  color: @WARNING@;
+}
 """
 
 
@@ -5328,7 +5355,9 @@ def process_theme(src_dir, name):
         css_text = css_text.rstrip("\n") + "\n\n" + palette_inline
     ws_css = (WORKSPACE_STATES_CSS
               .replace("@ACCENT@", palette["accent"])
-              .replace("@BASE@", palette["base"]))
+              .replace("@BASE@", palette["base"])
+              .replace("@TEXT@", palette["text"])
+              .replace("@WARNING@", palette["yellow"]))
     css_out = css_text.rstrip("\n") + "\n" + ws_css
     patch = THEME_CSS_PATCHES.get(name)
     if patch:
