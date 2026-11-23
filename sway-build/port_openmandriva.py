@@ -198,8 +198,12 @@ if [ ! -x /usr/local/bin/rofi ] \
     lib64glib2.0-devel lib64cairo-devel lib64pango1.0-devel lib64pangocairo1.0-devel \
     libxkbcommon-devel lib64gdk_pixbuf2.0-devel lib64wayland-devel wayland-protocols-devel \
     'pkgconfig(wayland-scanner)'
+  # Use the RELEASE tarball, NOT the /archive/ one: rofi vendors libgwater and
+  # libnkutils as git submodules, which GitHub's auto-generated /archive/ tarball
+  # omits (meson then fails with "subproject libgwater is buildable: no"). The
+  # release asset is a `meson dist` tarball that bundles both subprojects.
   OMT="$(mktemp -d)"; RLOG="${TMPDIR:-/tmp}/rice-rofi-build.log"
-  if d="$(om_fetch_tarball https://github.com/lbonn/rofi/archive/refs/tags/1.7.9%2Bwayland1.tar.gz "$OMT")" \
+  if d="$(om_fetch_tarball https://github.com/lbonn/rofi/releases/download/1.7.9%2Bwayland1/rofi-1.7.9%2Bwayland1.tar.gz "$OMT")" \
       && meson setup "$OMT/build" "$d" --buildtype release --prefix /usr/local \
            -Dwayland=enabled -Dxcb=disabled >"$RLOG" 2>&1 \
       && ninja -C "$OMT/build" >>"$RLOG" 2>&1 \
@@ -255,10 +259,15 @@ if [ "$(printf '%s\n1.7\n' "$(om_dunst_ver)" | sort -V | head -1)" != "1.7" ]; t
   DUNST_TAG=$(curl -fsSL https://api.github.com/repos/dunst-project/dunst/releases/latest 2>/dev/null \
     | grep -oE '"tag_name":[[:space:]]*"v[0-9.]+"' | grep -oE 'v[0-9.]+')
   [ -z "$DUNST_TAG" ] && DUNST_TAG=v1.12.1
+  # X11=0: build Wayland-ONLY (this is a niri/sway rice). dunst's default build
+  # also enables X11, which drags in the x11/xinerama/xext/xrandr/xscrnsaver dev
+  # packages - that's the "xscrnsaver not found" failure - and none of them are
+  # needed when dunst renders through the Wayland layer-shell. Mirrors rofi's
+  # -Dxcb=disabled above.
   OMT="$(mktemp -d)"; DLOG="${TMPDIR:-/tmp}/rice-dunst-build.log"
   if d="$(om_fetch_tarball "https://github.com/dunst-project/dunst/archive/refs/tags/$DUNST_TAG.tar.gz" "$OMT")" \
-      && make -C "$d" CC=gcc WAYLAND=1 SYSTEMD=0 PREFIX=/usr/local -j"$(nproc)" >"$DLOG" 2>&1 \
-      && sudo make -C "$d" WAYLAND=1 SYSTEMD=0 PREFIX=/usr/local install >>"$DLOG" 2>&1 \
+      && make -C "$d" CC=gcc WAYLAND=1 X11=0 SYSTEMD=0 PREFIX=/usr/local -j"$(nproc)" >"$DLOG" 2>&1 \
+      && sudo make -C "$d" WAYLAND=1 X11=0 SYSTEMD=0 PREFIX=/usr/local install >>"$DLOG" 2>&1 \
       && [ -x /usr/local/bin/dunst ]; then
     rpm -q dunst >/dev/null 2>&1 && sudo rpm -e --nodeps dunst 2>/dev/null
     log "dunst installed to /usr/local/bin (the packaged 1.6.1 was removed)."
