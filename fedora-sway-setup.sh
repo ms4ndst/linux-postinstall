@@ -109,16 +109,27 @@ else
 fi
 
 # ----------------------------------------------------------------------------
-# 0b. Optional: strip Fedora's bundled GNOME desktop apps (NOT the login stack)
+# 0b. Optional: strip the bundled GNOME desktop apps (NOT the login stack)
 # ----------------------------------------------------------------------------
 # Removes only the safe, non-infrastructure GNOME apps. The login stack - GDM,
 # gnome-shell, gnome-session, mutter - plus gnome-keyring and the shared GNOME
 # libraries are deliberately KEPT, so the (GDM) graphical login and the secrets
-# keyring keep working. gnome-shell is in fact a dnf-protected package here
-# because GDM requires it. gnome-software is included on purpose: its background
+# keyring keep working. gnome-software is included on purpose: its background
 # auto-download stages offline update transactions that fight this rice's own
 # `dnf upgrade` updater (software-update.sh). Only packages actually installed
 # are passed to dnf, so this is a safe no-op on a spin that never had them.
+#
+# Why the login stack is pinned as protected: on Fedora Workstation
+# /etc/dnf/protected.d/fedora-workstation.conf already protects gnome-shell, so
+# dnf aborts any cascade that would remove it. OpenMandriva ships no such file,
+# and some of these apps are hard-Required by its GNOME metapackages - so a
+# plain `dnf remove` there cascades up into gnome-shell/mutter/GDM and tears
+# down the RUNNING login session mid-transaction => black screen. Passing the
+# login stack via --setopt=protected_packages makes dnf refuse (and abort) any
+# such removal on every distro; it ADDS to whatever protected.d already covers
+# (verified on dnf5), so it only ever tightens protection. We try the whole
+# batch first; if dnf aborts because one app would drag a protected package out,
+# we retry app-by-app so the safe apps still go and only the unsafe ones stay.
 if [ "${REMOVE_GNOME_APPS:-0}" = "1" ]; then
   GNOME_APPS=(
     gnome-software gnome-tour gnome-maps gnome-weather gnome-contacts
@@ -128,13 +139,25 @@ if [ "${REMOVE_GNOME_APPS:-0}" = "1" ]; then
     gnome-browser-connector gnome-classic-session gnome-remote-desktop
     gnome-screenshot gnome-epub-thumbnailer gnome-color-manager gnome-user-share
   )
+  # Infrastructure that must survive the cull (names that don't exist on a given
+  # distro are simply ignored by dnf, so an over-broad list is harmless).
+  GNOME_KEEP="gnome-shell,gdm,mutter,gnome-session,gnome-keyring,NetworkManager"
   gnome_rm=()
   for p in "${GNOME_APPS[@]}"; do
     if rpm -q --quiet "$p"; then gnome_rm+=("$p"); fi
   done
   if [ "${#gnome_rm[@]}" -gt 0 ]; then
-    log "Removing ${#gnome_rm[@]} optional GNOME apps (keeping GDM/gnome-shell login)..."
-    sudo dnf remove -y "${gnome_rm[@]}" || warn "Some GNOME apps could not be removed - continuing."
+    log "Removing ${#gnome_rm[@]} optional GNOME apps (login stack pinned as protected)..."
+    if ! sudo dnf remove -y --setopt=protected_packages="$GNOME_KEEP" "${gnome_rm[@]}"; then
+      warn "Batch removal would pull a protected login package - retrying app-by-app, skipping any that aren't safe to remove."
+      for p in "${gnome_rm[@]}"; do
+        if sudo dnf remove -y --setopt=protected_packages="$GNOME_KEEP" "$p"; then
+          log "  removed $p"
+        else
+          warn "  kept $p (its removal would cascade into the GNOME login stack)"
+        fi
+      done
+    fi
   else
     log "No optional GNOME apps installed - nothing to remove."
   fi
