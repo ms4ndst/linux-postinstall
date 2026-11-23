@@ -153,6 +153,31 @@ if [ "${REMOVE_GNOME_APPS:-0}" = "1" ]; then
 fi
 
 # ----------------------------------------------------------------------------
+# 0c. Make sure the graphical login (GDM) is actually enabled
+# ----------------------------------------------------------------------------
+# This rice keeps GDM as the login manager. On Fedora Workstation GDM is enabled
+# out of the box, so this is a no-op there - but a fresh OpenMandriva install can
+# leave GDM installed-but-DISABLED (OM's own default DM is SDDM), and if a prior
+# GNOME-core removal was later reinstalled, `dnf install gdm` on OM does NOT
+# re-enable the service the way Fedora's preset does. Either way the machine then
+# boots to a text console with no way to pick the niri session. Enable it
+# idempotently (and ensure the graphical target), both no-ops where already set.
+if rpm -q gdm >/dev/null 2>&1 || command -v gdm >/dev/null 2>&1; then
+  if ! systemctl is-enabled gdm >/dev/null 2>&1; then
+    sudo systemctl unmask gdm >/dev/null 2>&1 || true
+    if sudo systemctl enable gdm >/dev/null 2>&1; then
+      log "Enabled GDM - the graphical login was off (the machine would have booted to a console)."
+    else
+      warn "Could not enable GDM - run 'sudo systemctl enable gdm' yourself or it boots to a text console."
+    fi
+  fi
+fi
+if [ "$(systemctl get-default 2>/dev/null)" != "graphical.target" ]; then
+  sudo systemctl set-default graphical.target >/dev/null 2>&1 \
+    && log "Set the default systemd target to graphical.target." || true
+fi
+
+# ----------------------------------------------------------------------------
 # 1. Packages
 # ----------------------------------------------------------------------------
 
