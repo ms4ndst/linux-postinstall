@@ -2017,6 +2017,80 @@ install_vnstat_source() {
     FAILED_PACKAGES+=("vnstat"); ((TOTAL_FAILED++)); log WARNING "vnstat source build failed"; return 0
 }
 
+# Shared installer for Proton's official desktop RPMs (Proton Pass, Proton Mail).
+# Proton ships only Fedora/RHEL RPMs (no OpenMandriva build, no yum repo), so we
+# read the newest *Stable* build straight from the app's own version.json (the
+# same manifest Proton's website and the apps' auto-updater use), verify its
+# published SHA512, and force the Fedora RPM in with dnf. These are Electron apps
+# that bundle their own runtime, so --setopt=strict=0 lets dnf install them even
+# though the RPM's Requires use Fedora dependency names that don't map to OM's
+# lib64* packages (same tolerate-foreign-RPM idiom used elsewhere here). The URL
+# and checksum come from Proton every run - nothing is hardcoded.
+# Args: <label> <rpm-package-name> <version.json url>
+install_proton_rpm() {
+    local label="$1" rpmname="$2" json_url="$3"
+    if rpm -q "$rpmname" &>/dev/null; then
+        SKIPPED_PACKAGES+=("$rpmname"); ((TOTAL_SKIPPED++)); log INFO "Already installed: $label"; return 0
+    fi
+    log INFO "Fetching latest $label build info from Proton..."
+    local url sha tmpd pkg
+    # Pull the first Stable release's .rpm URL + SHA512 out of version.json.
+    read -r url sha < <(curl -fsSL --max-time 30 "$json_url" 2>/dev/null | python3 -c '
+import sys, json
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for rel in d.get("Releases", []):
+    if rel.get("CategoryName") != "Stable":
+        continue
+    for f in rel.get("File", []):
+        if ".rpm" in f.get("Identifier", "").lower():
+            print(f.get("Url", ""), f.get("Sha512CheckSum", ""))
+            sys.exit(0)
+' 2>/dev/null)
+    if [ -z "$url" ]; then
+        FAILED_PACKAGES+=("$rpmname"); ((TOTAL_FAILED++))
+        log WARNING "Could not resolve $label download URL from Proton - install manually from https://proton.me"
+        return 1
+    fi
+    tmpd=$(mktemp -d)
+    log INFO "Downloading $label..."
+    if ! curl -fsSL --max-time 600 -o "$tmpd/proton.rpm" "$url"; then
+        FAILED_PACKAGES+=("$rpmname"); ((TOTAL_FAILED++)); rm -rf "$tmpd"
+        log WARNING "$label download failed - get it from https://proton.me"; return 1
+    fi
+    # Refuse to install on a SHA512 mismatch (Proton always publishes one).
+    if [ -n "$sha" ] && ! echo "$sha  $tmpd/proton.rpm" | sha512sum --check --status; then
+        FAILED_PACKAGES+=("$rpmname"); ((TOTAL_FAILED++)); rm -rf "$tmpd"
+        log ERROR "$label checksum mismatch - refusing to install"; return 1
+    fi
+    pkg=$(rpm -qp --queryformat '%{NAME}' "$tmpd/proton.rpm" 2>/dev/null); [ -n "$pkg" ] || pkg="$rpmname"
+    # --setopt=strict=0: install the bundled app even if Fedora-named Requires
+    # don't resolve on OpenMandriva (the Electron runtime is self-contained).
+    if dnf install -y --setopt=strict=0 "$tmpd/proton.rpm" >/dev/null 2>&1 && rpm -q "$pkg" &>/dev/null; then
+        INSTALLED_PACKAGES+=("$pkg"); ((TOTAL_INSTALLED++))
+        log SUCCESS "Installed: $label"
+    else
+        FAILED_PACKAGES+=("$rpmname"); ((TOTAL_FAILED++))
+        log WARNING "$label install failed - a Fedora RPM may miss OM deps; try: sudo dnf install --setopt=strict=0 '$url'"
+    fi
+    rm -rf "$tmpd"
+}
+
+# Proton Pass - official desktop password manager (GUI). Stable channel.
+install_proton_pass() {
+    install_proton_rpm "Proton Pass" proton-pass \
+        "https://proton.me/download/PassDesktop/linux/x64/version.json"
+}
+
+# Proton Mail - official desktop email client (GUI). Proton ships it as a public
+# beta ("proton-mail" RPM); the Stable entry in its manifest is that beta build.
+install_proton_mail() {
+    install_proton_rpm "Proton Mail" proton-mail \
+        "https://proton.me/download/mail/linux/version.json"
+}
+
 # ========== ANDROID TOOLS ==========
 install_android_tools() {
     # adb+fastboot ride the same single "android-tools" package as on
@@ -4228,6 +4302,22 @@ show_communication_menu() {
     printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-5]${NC}${LAVENDER}: ${NC}"
 }
 
+show_system_utils_menu() {
+    clear
+    ui_header "SYSTEM UTILITIES" "CLI toolset (bulk) + selectable GUI apps"
+    echo
+    ui_item 1 "All CLI System Utils (htop, glances, ripgrep, bat, tmux, fzf, ...)"
+    echo
+    ui_section "GUI Apps"
+    ui_item 2 "Proton Pass (password manager)"
+    ui_item 3 "Proton Mail (email client)"
+    echo
+    ui_item 0 "Back to Main Menu"
+    echo
+    ui_rule
+    printf "  ${MAUVE}${BOLD}❯${NC} ${LAVENDER}Choose ${DIM}[0-3]${NC}${LAVENDER}: ${NC}"
+}
+
 show_gui_tweaks_menu() {
     clear
     ui_header "GUI TWEAKS"
@@ -4365,7 +4455,17 @@ main() {
             23) reset_tracking; install_containers; display_summary; prompt_menu_category "Containers" "docker" "Container & Virtualization Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             3) reset_tracking; install_gaming; display_summary; prompt_menu_category "Gaming" "games" "Gaming Applications" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             26) reset_tracking; install_office; display_summary; prompt_menu_category "Office & Productivity" "office" "Office & Productivity Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
-            24) reset_tracking; install_system_utils; display_summary; prompt_menu_category "System Utilities" "utilities" "System Utilities" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+            24)
+                show_system_utils_menu
+                read -r util_choice
+                case "$util_choice" in
+                    0) continue ;;
+                    1) reset_tracking; install_system_utils; display_summary; prompt_menu_category "System Utilities" "utilities" "System Utilities" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    2) reset_tracking; install_proton_pass;  display_summary; prompt_menu_category "System Utilities" "utilities" "System Utilities" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    3) reset_tracking; install_proton_mail;  display_summary; prompt_menu_category "System Utilities" "utilities" "System Utilities" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
+                    *) log ERROR "Invalid choice"; sleep 2 ;;
+                esac
+                ;;
             20) reset_tracking; install_dev_tools; display_summary; prompt_menu_category "General Development Tools" "development" "General Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             21) reset_tracking; install_ai_tools; display_summary; prompt_menu_category "AI Tools" "ai" "AI Development Tools" "${INSTALLED_PACKAGES[@]}" "${SKIPPED_PACKAGES[@]}";;
             25)

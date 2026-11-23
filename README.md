@@ -397,6 +397,8 @@ Both `evince` and `gnome-papers` are listed since which one ships depends on the
 
 #### Fedora: System Utilities
 
+Picking **System Utilities** opens a submenu: option **1** installs the full CLI toolset below in one batch, and the **GUI Apps** section lets you install individual desktop apps on their own.
+
 **Process Monitoring:** `htop`, `iotop`, `sysstat`, `glances`
 
 **Network Monitoring:** `nethogs`, `iftop`, `nload`, `vnstat`, `tcpdump`, `wireshark`
@@ -408,6 +410,15 @@ Both `evince` and `gnome-papers` are listed since which one ships depends on the
 **Markdown:** `glow` ([charmbracelet/glow](https://github.com/charmbracelet/glow), a terminal markdown renderer) — no Fedora COPR/official build exists, so the script adds Charm's own yum repo first (`/etc/yum.repos.d/charm.repo`, the exact stanza from their install docs), idempotently skipped if that repo file is already there.
 
 > Fedora's `bat` package installs straight to `/usr/bin/bat` (no `batcat` name collision), so no alias is needed.
+
+**GUI Apps (selectable):**
+
+| App | Installation Method |
+|-----|---------------------|
+| **Proton Pass** (password manager) | Official Proton RPM. No yum repo exists, so the script reads the latest *Stable* build from Proton's own `version.json` manifest (`…/PassDesktop/linux/x64/version.json`), verifies the published SHA512, and installs the local RPM with `dnf`. The URL/checksum are resolved live each run, so it always tracks the current release. |
+| **Proton Mail** (email client) | Same mechanism against Proton's Mail manifest (`…/mail/linux/version.json`); Proton ships this one as a public beta (`proton-mail` RPM). |
+
+> On OpenMandriva these two install the same Fedora/RHEL RPMs forced in with `dnf install --setopt=strict=0` — they're self-contained Electron apps, so Fedora-named `Requires` that don't map to OM's `lib64*` packages are tolerated rather than blocking the install.
 
 ---
 
