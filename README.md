@@ -99,11 +99,11 @@ There are also standalone i3+Catppuccin rice scripts — the predecessors of the
 
 ### 🚀 Fedora Overview
 
-`post-install-fedora.sh` is a from-scratch Fedora Workstation port of this project — same Catppuccin-themed menu-driven UX, same installed/skipped/failed tracking, same GNOME app-folder feature as the Ubuntu script above, but every install path re-sourced for **`dnf5`** and RPM-based Fedora instead of apt/Nala. It's a separate, independent script (not a fork controlled by a flag) — run whichever file matches your distro.
+`post-install-fedora.sh` is a Fedora Workstation post-install script — a Catppuccin-themed menu-driven UX, installed/skipped/failed tracking, and a real GNOME app-folder feature, with every install path sourced for **`dnf5`** and RPM-based Fedora. It's a separate, independent script from the OpenMandriva one (not a fork controlled by a flag) — run whichever file matches your distro.
 
-On startup the script **detects the running release** by reading `/etc/os-release` directly (`ID=fedora`, `VERSION_ID`) rather than `lsb_release`, which isn't installed by default on Fedora. Running on an unsupported release isn't blocked — the script warns and asks whether to continue, same as the Ubuntu script.
+On startup the script **detects the running release** by reading `/etc/os-release` directly (`ID=fedora`, `VERSION_ID`) rather than `lsb_release`, which isn't installed by default on Fedora. Running on an unsupported release isn't blocked — the script warns and asks whether to continue.
 
-It then **bootstraps RPM Fusion** (free + nonfree) and the Cisco OpenH264 repo right after the first metadata refresh — this is the Fedora equivalent of the Ubuntu script installing Nala, except here it's load-bearing rather than cosmetic: almost every proprietary codec, driver, and third-party app below assumes RPM Fusion is already enabled.
+It then **bootstraps RPM Fusion** (free + nonfree) and the Cisco OpenH264 repo right after the first metadata refresh — this is load-bearing: almost every proprietary codec, driver, and third-party app below assumes RPM Fusion is already enabled.
 
 **Startup sequence** (before the menu appears), in order:
 
@@ -114,16 +114,16 @@ It then **bootstraps RPM Fusion** (free + nonfree) and the Cisco OpenH264 repo r
 5. **Base utilities** — `curl`, `git`, `gnupg2`, `dnf5-plugins`, `dbus-x11`, etc.
 6. **Interactive menu.**
 
-Beyond just installing packages, after each category finishes it can also **create a real GNOME Shell app folder** for the apps it just installed — identical mechanism to the Ubuntu script (`org.gnome.desktop.app-folders`), just resolving `.desktop` files via `rpm -ql` instead of `dpkg -L`. See [Fedora GNOME App Folders](#️-fedora-gnome-app-folders-super-key-groups) below.
+Beyond just installing packages, after each category finishes it can also **create a real GNOME Shell app folder** for the apps it just installed — via `org.gnome.desktop.app-folders`, resolving `.desktop` files with `rpm -ql`. See [Fedora GNOME App Folders](#️-fedora-gnome-app-folders-super-key-groups) below.
 
 **Key Design Decisions (how this differs from a literal 1:1 port):**
 
-- ✅ **No per-domain metapackages, so Ubuntu Studio becomes "Creative Suite"**: Fedora has nothing like `ubuntustudio-video/audio/graphics/...`. Instead, **Creative Suite** uses Fedora's own comps groups — `dnf group install audio` (Fedora Jam) and `dnf group install design-suite` — plus a hand-curated Video Editing list and small Photography/Publishing picks. See [Fedora: Creative Suite](#fedora-creative-suite).
+- ✅ **Creative Suite from comps groups**: with no per-domain media metapackages, **Creative Suite** uses Fedora's own comps groups — `dnf group install audio` (Fedora Jam) and `dnf group install design-suite` — plus a hand-curated Video Editing list and small Photography/Publishing picks. See [Fedora: Creative Suite](#fedora-creative-suite).
 - ✅ **"Ultramarine" → Terra, "Nobara" → nothing**: Ultramarine Linux has no repo installable on stock Fedora (it's a full OS spin); its parent project Fyra Labs' **Terra** repo is the practical substitute, scoped to its `extras` subrepo only. Nobara's own repo is **deliberately not added** — its maintainers document it as unsafe on a non-Nobara install, and its gaming-relevant packages are all natively available via RPM Fusion/Fedora anyway.
 - ✅ **Flatpak minimized**: every category was individually re-researched against vendor RPM repos, RPM Fusion, and COPR before falling back to Flatpak. It's used only for Signal, Floorp, Zen Browser, Spotify, Bruno, and Jan — confirmed via live research to be the only real option for each.
-- ✅ **Zero Snap usage**: both of the Ubuntu script's Snap-only escape hatches (IntelliJ IDEA Community, LXD) have real Fedora-native equivalents here (Flathub, Incus) — nothing in this script touches Snap.
-- ✅ **New: proprietary NVIDIA driver support**: the Ubuntu script has no GPU-driver category at all. Fedora's is an explicit opt-in with build-status polling and a flagged (not faked) Secure Boot step — see [Fedora: Drivers & Extra Repos](#fedora-drivers--extra-repos).
-- ✅ **Robust Error Handling**: same `package_exists`-before-`safe_install` safety net as the Ubuntu script — an unavailable package is skipped and logged, never a hard failure.
+- ✅ **Zero Snap usage**: IntelliJ IDEA Community and LXD use Fedora-native equivalents (Flathub, Incus) — nothing in this script touches Snap.
+- ✅ **Proprietary NVIDIA driver support**: an explicit opt-in with build-status polling and a flagged (not faked) Secure Boot step — see [Fedora: Drivers & Extra Repos](#fedora-drivers--extra-repos).
+- ✅ **Robust Error Handling**: a `package_exists`-before-`safe_install` safety net — an unavailable package is skipped and logged, never a hard failure.
 
 ---
 
@@ -134,16 +134,16 @@ Beyond just installing packages, after each category finishes it can also **crea
 | Feature                       | Description                                                                                    |
 | ------------------------------ | ------------------------------------------------------------------------------------------------ |
 | **Version Detection**         | Detects the running release at startup via `/etc/os-release`, warns/prompts on anything unsupported |
-| **dnf5 Front-End**             | Uses plain `dnf` (dnf5 is Fedora 41+'s default) — no alternate front-end to bootstrap the way the Ubuntu script bootstraps Nala |
-| **Catppuccin-Themed Output**  | Same palette/menus/logging as the Ubuntu script, auto-disabled for non-TTY / `NO_COLOR`         |
+| **dnf5 Front-End**             | Uses plain `dnf` (dnf5 is Fedora 41+'s default) — no alternate front-end to bootstrap |
+| **Catppuccin-Themed Output**  | Palette, menus and logging, auto-disabled for non-TTY / `NO_COLOR`                              |
 | **Interactive Menu**          | Text-based menu with 28 categories, plus Creative Suite, Security, GUI Tweaks, Browsers, Communication, Drivers & Extra Repos, and Printers sub-menus |
-| **GNOME App-Folder Creation** | Identical feature to the Ubuntu script, `rpm -ql`-based resolution                              |
+| **GNOME App-Folder Creation** | `rpm -ql`-based `.desktop` resolution                                                           |
 | **RPM Fusion Bootstrap**       | Enables free + nonfree repos and Cisco OpenH264 automatically on first run                       |
-| **NVIDIA Driver Support**      | Opt-in `akmod-nvidia` + CUDA install with build-status polling and Secure Boot detection (new — no Ubuntu-script equivalent) |
+| **NVIDIA Driver Support**      | Opt-in `akmod-nvidia` + CUDA install with build-status polling and Secure Boot detection |
 | **Error Handling**             | Skips unavailable packages, continues installation                                              |
 | **Pre-Install Checks**        | Verifies if packages are already installed (`rpm -q`)                                            |
 | **Package Verification**      | Checks if packages exist in enabled repos before attempting (`dnf info -q`)                      |
-| **Zero Snap Usage**            | Every Snap-only case in the Ubuntu script has a Flathub or native dnf equivalent here            |
+| **Zero Snap Usage**            | Flathub or native dnf everywhere; nothing touches Snap                                            |
 | **Installation Tracking**     | Tracks installed, skipped, and failed packages per run                                          |
 | **Summary Reporting**          | Shows detailed installation summary with the "S" command                                        |
 | **Log Saving**                 | Saves complete logs to `/var/log/fedora_post_install_TIMESTAMP.log`                             |
@@ -153,7 +153,7 @@ Beyond just installing packages, after each category finishes it can also **crea
 - **Main Menu Categories:** 28 (plus Creative Suite, Security, GUI Tweaks, Browsers, Communication, Drivers & Extra Repos, and Printers sub-menus)
 - **Package Front-End:** dnf5 (Fedora 41+'s default `dnf`)
 - **Third-Party/Vendor Repos:** Brave, Vivaldi, Google Chrome, Microsoft Edge, LibreWolf, TeamViewer, 1Password, Cursor, Slack, VS Code, Sublime Text, Microsoft Azure CLI, Microsoft Teams (teams-for-linux) — all real vendor `dnf`/yum repos
-- **RPM Fusion-Native Apps:** Steam, Discord, Telegram Desktop (better coverage than the Ubuntu script gets from apt for the latter two)
+- **RPM Fusion-Native Apps:** Steam, Discord, Telegram Desktop
 - **COPR-Sourced:** DBeaver CE (`copart/dbeaver`)
 - **Flatpak-Only (confirmed no better source exists):** Signal, Floorp, Zen Browser, Spotify, Bruno, Jan
 - **Snap-Only Tools:** 0 — zero, by design
@@ -247,12 +247,12 @@ Below is a breakdown of what each Fedora category actually installs. **Package-n
 
 #### Fedora: Creative Suite
 
-The Ubuntu-Studio-metapackage replacement. Option `1` opens a 6-item sub-menu:
+Fedora's creative-software bundle. Option `1` opens a 6-item sub-menu:
 
 | # | Item | Installs |
 |---|------|----------|
 | 1 | **Full** | Everything below (Graphics + Video + Audio + Photography + Publishing) |
-| 2 | **Graphics & Design** | `dnf group install design-suite` (GIMP, Inkscape, Krita, Blender, Darktable, Scribus, digiKam, Synfig, Pitivi) + `nomacs`, `flameshot`, `imagemagick`, `GraphicsMagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp-tools`; also binds Print Screen to Flameshot, and builds **greenshot for Linux** from source (see the Ubuntu Graphics section above — needs `dotnet-sdk-10.0`) |
+| 2 | **Graphics & Design** | `dnf group install design-suite` (GIMP, Inkscape, Krita, Blender, Darktable, Scribus, digiKam, Synfig, Pitivi) + `nomacs`, `flameshot`, `imagemagick`, `GraphicsMagick`, `optipng`, `jpegoptim`, `pngquant`, `libwebp-tools`; also binds Print Screen to Flameshot, and builds **greenshot for Linux** from source (needs `dotnet-sdk-10.0`) |
 | 3 | **Video Editing** | `kdenlive`, `shotcut`, `obs-studio`, `mkvtoolnix`, `mkvtoolnix-gui`, `mpv`, `vlc`, `yt-dlp`, plus the full multimedia codec batch below |
 | 4 | **Audio Production** | `dnf group install audio` (Fedora Jam: Ardour9, Audacity, Carla, Hydrogen, Guitarix, LV2/LADSPA plugin stack) + `qjackctl`, `pulseaudio-utils`, `soundconverter`, `easytag`, `pavucontrol`, [`cliamp`](https://www.cliamp.stream/) (terminal Winamp-style music player/streamer — not packaged for Fedora, installed via its own release-binary `curl \| sh` installer into `~/.local/bin`) |
 | 5 | **Photography** | `darktable`, `rawtherapee`, `digikam`, `hugin`, `gthumb` |
@@ -260,7 +260,7 @@ The Ubuntu-Studio-metapackage replacement. Option `1` opens a 6-item sub-menu:
 
 **Multimedia codecs** (installed as part of Video Editing, since real-world playback needs them): `ffmpeg-free` → `ffmpeg` swap, `gstreamer1-plugins-good/bad-free/bad-freeworld/ugly/ugly-free`, `gstreamer1-plugin-libav`, `openh264`, `gstreamer1-plugin-openh264`, `mozilla-openh264` — requires RPM Fusion + the Cisco OpenH264 repo, both enabled automatically on first run.
 
-**Design Suite and Fedora Jam overlap by design**: Design Suite already includes several photography (Darktable, digiKam) and desktop-publishing-adjacent tools, so Photography/Publishing here are intentionally kept smaller/non-redundant picks rather than a from-scratch list — mirroring how Ubuntu Studio's own metapackages sometimes overlapped too.
+**Design Suite and Fedora Jam overlap by design**: Design Suite already includes several photography (Darktable, digiKam) and desktop-publishing-adjacent tools, so Photography/Publishing here are intentionally kept smaller/non-redundant picks rather than a from-scratch list.
 
 ---
 
@@ -275,7 +275,7 @@ The Ubuntu-Studio-metapackage replacement. Option `1` opens a 6-item sub-menu:
 
 **Bruno** — installed via Flathub (`com.usebruno.Bruno`); confirmed no stable rpm or COPR exists from usebruno.com.
 
-**LazyVim + Nordic (optional prompt):** identical feature to the Ubuntu script — replaces `~/.config/nvim` (existing config backed up first), clones [LazyVim/starter](https://github.com/LazyVim/starter) + the [Nordic](https://github.com/AlexvZyl/nordic.nvim) theme.
+**LazyVim + Nordic (optional prompt):** replaces `~/.config/nvim` (existing config backed up first), clones [LazyVim/starter](https://github.com/LazyVim/starter) + the [Nordic](https://github.com/AlexvZyl/nordic.nvim) theme.
 
 ---
 
@@ -292,11 +292,11 @@ Fedora Workstation ships `python3` by default, and there's no `python-is-python3
 **Web Servers:**
 
 - `nginx` — started normally (owns port 80)
-- `httpd` (Apache) — installed for availability but not started; RPM `%post` scriptlets don't auto-start services the way Debian's do, so there's no need for the Ubuntu script's `policy-rc.d` workaround here at all
+- `httpd` (Apache) — installed for availability but not started; RPM `%post` scriptlets don't auto-start services, so no `policy-rc.d`-style workaround is needed
 
 **PHP baseline:** `php-fpm`, `php-cli`, `composer`
 
-**Node.js:** ships natively in Fedora's own repos at a current version — **no NodeSource repo needed at all**, unlike Ubuntu. `nodejs`, `npm`, plus the same global npm package set (`npm-check-updates`, `nodemon`, `pm2`, `webpack`, `webpack-cli`, `eslint`, `prettier`).
+**Node.js:** ships natively in Fedora's own repos at a current version — **no NodeSource repo needed at all**. `nodejs`, `npm`, plus a global npm package set (`npm-check-updates`, `nodemon`, `pm2`, `webpack`, `webpack-cli`, `eslint`, `prettier`).
 
 ---
 
@@ -304,7 +304,7 @@ Fedora Workstation ships `python3` by default, and there's no `python-is-python3
 
 **JDK/Build Tools:** `java-latest-openjdk`, `java-latest-openjdk-devel`, `gradle`, `maven`, `ant`, `junit`
 
-**IDE:** IntelliJ IDEA Community via **Flathub** (`com.jetbrains.IntelliJ-IDEA-Community`) — a genuine dedicated app distinct from JetBrains Toolbox, confirmed as the real replacement for the Ubuntu script's Snap install (no Fedora/RPM Fusion package exists).
+**IDE:** IntelliJ IDEA Community via **Flathub** (`com.jetbrains.IntelliJ-IDEA-Community`) — a genuine dedicated app distinct from JetBrains Toolbox (no Fedora/RPM Fusion package exists).
 
 ---
 
@@ -324,7 +324,7 @@ Fedora Workstation ships `python3` by default, and there's no `python-is-python3
 
 #### Fedora: Rust
 
-**Primary:** installs **rustup** from the official source **as the desktop user** (same as the Ubuntu script) so the toolchain lands in *their* `~/.cargo`, not root's.
+**Primary:** installs **rustup** from the official source **as the desktop user** so the toolchain lands in *their* `~/.cargo`, not root's.
 
 **Fallback:** distro `rust`/`cargo` packages if rustup fails or there's no sudo-invoking user.
 
@@ -364,15 +364,15 @@ Calls the same Node.js installer used by [Fedora: Web Development](#fedora-web-d
 
 **Containers:**
 
-- `moby-engine` (Fedora's own Docker-compatible build), `docker-compose`, `podman` — mirrors the Ubuntu script's own existing preference for the distro package over Docker Inc.'s official repo, for consistency
+- `moby-engine` (Fedora's own Docker-compatible build), `docker-compose`, `podman` — the distro package is preferred over Docker Inc.'s official repo, for consistency
 - If moby-engine installs successfully: the invoking user is added to the `docker` group and the service is enabled/started
-- `incus` — natively packaged in Fedora since Fedora 41, the community-maintained fork that replaces the Ubuntu script's Snap-only `lxd`
+- `incus` — natively packaged in Fedora since Fedora 41, the community-maintained fork of `lxd`
 
 **Virtualization (KVM/QEMU):** `qemu-kvm`, `libvirt`, `virt-install`, `virt-manager`, `virt-viewer`, `gnome-boxes`, `cockpit`, `cockpit-machines`, `cockpit-podman`. If libvirt installs successfully: the invoking user is added to the `libvirt` group, `libvirtd` is enabled/started, and the Virtio-Win Windows-guest drivers are installed.
 
 **Virtio-Win drivers (Windows guests):** Fedora doesn't carry these Windows driver RPMs in its own repos, so the script adds the upstream-maintained [virtio-win repo](https://fedorapeople.org/groups/virt/virtio-win/repo/) (via `dnf config-manager addrepo --from-repofile=...`) and installs the `virtio-win` package, then symlinks its ISO from `/usr/share/virtio-win/virtio-win.iso` into `/var/lib/libvirt/images/virtio-win.iso` for easy pickup when creating a VM. If the repo or package install doesn't go through, it falls back to downloading upstream's "latest stable" ISO directly to the same path. Skipped if that file already exists.
 
-> Fedora handles 32-bit/multilib packages natively via `.i686` builds — there's no Ubuntu-style "add the i386 architecture" step needed anywhere in this script.
+> Fedora handles 32-bit/multilib packages natively via `.i686` builds — no separate "add the i386 architecture" step is needed anywhere in this script.
 
 ---
 
@@ -404,7 +404,7 @@ Both `evince` and `gnome-papers` are listed since which one ships depends on the
 
 **Markdown:** `glow` ([charmbracelet/glow](https://github.com/charmbracelet/glow), a terminal markdown renderer) — no Fedora COPR/official build exists, so the script adds Charm's own yum repo first (`/etc/yum.repos.d/charm.repo`, the exact stanza from their install docs), idempotently skipped if that repo file is already there.
 
-> Unlike Ubuntu's `bat` package (which installs as `/usr/bin/batcat` due to a Debian name collision), Fedora's `bat` package installs straight to `/usr/bin/bat` — no alias needed.
+> Fedora's `bat` package installs straight to `/usr/bin/bat` (no `batcat` name collision), so no alias is needed.
 
 ---
 
@@ -416,7 +416,7 @@ Both `evince` and `gnome-papers` are listed since which one ships depends on the
 
 #### Fedora: AI Tools
 
-Same tool set as the Ubuntu script — almost entirely package-manager-agnostic (vendor curl-installer scripts, npm globals, Flathub), ported near-verbatim:
+Almost entirely package-manager-agnostic tools (vendor curl-installer scripts, npm globals, Flathub):
 
 | Tool | Installation Method |
 |------|---------------------|
@@ -427,53 +427,53 @@ Same tool set as the Ubuntu script — almost entirely package-manager-agnostic 
 | **Antigravity CLI** | Official native installer (`antigravity.google/cli/install.sh`) into `~/.local/bin` |
 | **Mistral Vibe CLI** | Official installer script |
 | **OpenCode** | Official native installer, npm fallback |
-| **Cursor** | Official yum repo (`downloads.cursor.com/yumrepo`) — real vendor repo as of ~2025, simpler than the Ubuntu script's `.deb`/AppImage download-API dance |
+| **Cursor** | Official yum repo (`downloads.cursor.com/yumrepo`) — real vendor repo as of ~2025 |
 
 ---
 
 #### Fedora: GUI Tweaks
 
-Option `19` has its own sub-menu: **All GUI Tweaks**, **Icon Sets**, **Themes**, **Cursor Themes**, **Nerd Fonts**, **Chris Titus mybash**, **GUI Tools**, **GNOME Shell Extensions** — same shape as the Ubuntu script's. **Themes** opens a further sub-menu so you can pick a single theme instead of installing all of them.
+Option `19` has its own sub-menu: **All GUI Tweaks**, **Icon Sets**, **Themes**, **Cursor Themes**, **Nerd Fonts**, **Chris Titus mybash**, **GUI Tools**, **GNOME Shell Extensions**. **Themes** opens a further sub-menu so you can pick a single theme instead of installing all of them.
 
 **Icon Sets:**
 
-- **dnf packages** (all ship directly in Fedora's own repos — no PPA equivalent needed for any of them): `papirus-icon-theme`, `numix-icon-theme`, `numix-icon-theme-circle`, `breeze-icon-theme`, `adwaita-icon-theme`, `obsidian-icon-theme`
-- **Built from source, straight to `/usr/share/icons`**: [Qogir](https://github.com/vinceliuice/Qogir-icon-theme), [WhiteSur](https://github.com/vinceliuice/WhiteSur-icon-theme), [Vimix](https://github.com/vinceliuice/Vimix-icon-theme) — same mechanism as the Ubuntu script (their destination logic is `$UID`-aware, so this runs directly as root, no `su`-as-desktop-user needed)
+- **dnf packages** (all ship directly in Fedora's own repos): `papirus-icon-theme`, `numix-icon-theme`, `numix-icon-theme-circle`, `breeze-icon-theme`, `adwaita-icon-theme`, `obsidian-icon-theme`
+- **Built from source, straight to `/usr/share/icons`**: [Qogir](https://github.com/vinceliuice/Qogir-icon-theme), [WhiteSur](https://github.com/vinceliuice/WhiteSur-icon-theme), [Vimix](https://github.com/vinceliuice/Vimix-icon-theme) — their destination logic is `$UID`-aware, so this runs directly as root, no `su`-as-desktop-user needed
 - **Ready-made, no build step**: [Newaita](https://github.com/cbrnix/Newaita) (light + dark)
 
 **GTK Themes:** [Nordic](https://github.com/EliverLara/Nordic) and [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme) (Colloid cloned + `install.sh`, same mechanism as the Qogir/WhiteSur/Vimix icon themes above but landing in `~/.themes`), [Material GNOME](https://github.com/SakibShahariar/material-gnome-theme) (no installer — cloned straight into `~/.themes/Material-Gnome` with its GTK4/Libadwaita stylesheets symlinked into `~/.config/gtk-4.0`), and [Lycia](https://github.com/Aevstiel/Lycia-Theme) (its interactive `install.sh` is fed "yes" to the GTK4/Libadwaita files and "no" to the GDM login-screen theme — that step overwrites a system `gnome-shell-theme.gresource`, too invasive for an unattended installer; needs `gtk-murrine-engine`, `sassc`, and `gnome-themes-extra` as runtime deps).
 
-**GNOME Shell Extensions:** same curated set as the Ubuntu script (GSConnect, Window State Manager, Bluetooth Battery Meter, Auto Move Windows, User Themes, Clipboard History, Dash to Dock, Compact Quick Settings), installed via `gext`/pipx identically.
+**GNOME Shell Extensions:** a curated set (GSConnect, Window State Manager, Bluetooth Battery Meter, Auto Move Windows, User Themes, Clipboard History, Dash to Dock, Compact Quick Settings), installed via `gext`/pipx.
 
-**Chris Titus mybash:** same clone + `setup.sh` flow; upstream's `setup.sh` itself detects `dnf` and calls `sudo dnf install ...` internally rather than apt.
+**Chris Titus mybash:** clone + `setup.sh` flow; upstream's `setup.sh` detects `dnf` and calls `sudo dnf install ...` internally.
 
 ---
 
 #### Fedora: Windows Software Support
 
-`wine`, `winetricks`, `zenity` — same hand-written `winetricks.desktop` launcher as the Ubuntu script (Fedora's winetricks package also ships no `.desktop` file of its own).
+`wine`, `winetricks`, `zenity` — with a hand-written `winetricks.desktop` launcher (Fedora's winetricks package ships no `.desktop` file of its own).
 
 ---
 
 #### Fedora: Android Tools
 
-`android-tools` (Fedora bundles adb+fastboot into one package, unlike Ubuntu's separate `adb`/`fastboot`), `scrcpy`
+`android-tools` (Fedora bundles adb+fastboot into one package), `scrcpy`
 
 ---
 
 #### Fedora: Security Tools
 
-Option `22` opens the same two-variant sub-menu as the Ubuntu script (Full / Defensive-only). **Caveat flagged more prominently here than other categories**: several classic pentest tools have historically been thin or absent in Fedora's own repos (no PPA-equivalent to pull them from) — expect more "Not in repos" skips here than elsewhere. Real GUI tools (`firewall-config`, `keepassxc`) get folder icons.
+Option `22` opens a two-variant sub-menu (Full / Defensive-only). **Caveat flagged more prominently here than other categories**: several classic pentest tools have historically been thin or absent in Fedora's own repos — expect more "Not in repos" skips here than elsewhere. Real GUI tools (`firewall-config`, `keepassxc`) get folder icons.
 
-**Firewall:** uses `firewalld` + `firewall-config` — Fedora's own default firewall manager, replacing the Ubuntu script's `ufw`/`gufw` pairing (there's no Fedora equivalent of `ufw`; firewalld already fills that role).
+**Firewall:** uses `firewalld` + `firewall-config` — Fedora's own default firewall manager (firewalld fills the role `ufw` plays on other distros).
 
-Package sets otherwise mirror the Ubuntu script's Full/Defensive split closely: network scanning (`nmap`, `masscan`, `nmap-ncat`, `hping3`, `bind-utils`), web testing (`nikto`, `sqlmap`, `gobuster`, `whatweb`, `wfuzz`), cracking/wireless (`john`, `hashcat`, `hydra`, `aircrack-ng`, `macchanger`), forensics/RE (`radare2`, `binwalk`, `sleuthkit`, `steghide`, `yara`, `perl-Image-ExifTool`), hardening (`lynis`, `chkrootkit`, `rkhunter`, `clamav`, `clamav-update`, `fail2ban`, `aide`), and — Defensive-only adds `audit`, `suricata`.
+Package sets follow a Full/Defensive split: network scanning (`nmap`, `masscan`, `nmap-ncat`, `hping3`, `bind-utils`), web testing (`nikto`, `sqlmap`, `gobuster`, `whatweb`, `wfuzz`), cracking/wireless (`john`, `hashcat`, `hydra`, `aircrack-ng`, `macchanger`), forensics/RE (`radare2`, `binwalk`, `sleuthkit`, `steghide`, `yara`, `perl-Image-ExifTool`), hardening (`lynis`, `chkrootkit`, `rkhunter`, `clamav`, `clamav-update`, `fail2ban`, `aide`), and — Defensive-only adds `audit`, `suricata`.
 
 ---
 
 #### Fedora: .NET
 
-`dotnet-sdk-9.0`, `dotnet-sdk-8.0`, `aspnetcore-runtime-9.0` — ships **natively in Fedora's own repos**, no Microsoft repo needed at all (mixing Microsoft's repo with Fedora's own dotnet packages is explicitly discouraged upstream). Simpler than the Ubuntu script's `packages.microsoft.com` dance.
+`dotnet-sdk-9.0`, `dotnet-sdk-8.0`, `aspnetcore-runtime-9.0` — ships **natively in Fedora's own repos**, no Microsoft repo needed at all (mixing Microsoft's repo with Fedora's own dotnet packages is explicitly discouraged upstream).
 
 ---
 
@@ -481,7 +481,7 @@ Package sets otherwise mirror the Ubuntu script's Full/Defensive split closely: 
 
 - **Docker (standalone)** — `moby-engine` + `docker-compose`, same distro-native choice as [Fedora: Containers & VMs](#fedora-containers--vms)
 - **Azure CLI** — Microsoft's official yum repo (`packages.microsoft.com/yumrepos/azure-cli`)
-- **lazygit** — ships natively in Fedora's own repos (simpler than the Ubuntu script's `go install` build, which is kept only as a fallback if the package isn't found)
+- **lazygit** — ships natively in Fedora's own repos (a `go install` build is kept only as a fallback if the package isn't found)
 - **rclone + fuse3** — WM-agnostic cloud storage mounting (Google Drive, etc.), both native Fedora packages. Creates `~/GoogleDrive` and a `~/.config/systemd/user/rclone-gdrive.service` unit gated on `default.target` (not `graphical-session.target`, which i3 never activates) so it starts on login under any WM. `rclone config` is interactive OAuth and isn't run for you — the script prints the follow-up steps. Google's shared rclone client_id retires during 2026, so you'll need your own — see [docs/rclone-google-drive-client-id.md](docs/rclone-google-drive-client-id.md) for up-to-date Google Cloud Console steps.
 
 ---
@@ -490,16 +490,16 @@ Package sets otherwise mirror the Ubuntu script's Full/Defensive split closely: 
 
 - **Spotify** — Flathub (`com.spotify.Client`); confirmed no rpm/repo exists from Spotify (their own page lists only Snap + a Debian apt repo, and states Linux isn't actively supported)
 - **Slack** — official but **undocumented** vendor repo via `packagecloud.io` (not linked from slack.com's own downloads page, which shows only a standalone rpm + Snap)
-- **Remmina** — ships directly in Fedora's own repos at a current version, no PPA equivalent needed the way Ubuntu needs `remmina-ppa-team`
-- **Windows App for Linux** — same standalone Flatpak-bundle-from-GitHub-releases mechanism as the Ubuntu script
+- **Remmina** — ships directly in Fedora's own repos at a current version, no extra repo needed
+- **Windows App for Linux** — a standalone Flatpak bundle from GitHub releases
 - **TeamViewer** — official yum repo (`linux.teamviewer.com/yum/stable`), Fedora explicitly listed as supported
-- **1Password** — official yum repo (`downloads.1password.com/linux/rpm/stable`); simpler than the Ubuntu apt path since rpm needs no `debsig-verify`-style extra policy step, just the repo + gpgkey
+- **1Password** — official yum repo (`downloads.1password.com/linux/rpm/stable`); just the repo + gpgkey, no extra policy step
 
 ---
 
 #### Fedora: Browsers
 
-Option `26` opens the same All/individual sub-menu shape as the Ubuntu script:
+Option `26` opens an All/individual sub-menu:
 
 | Browser | Source |
 |---------|--------|
@@ -515,20 +515,18 @@ Option `26` opens the same All/individual sub-menu shape as the Ubuntu script:
 
 #### Fedora: Communication
 
-Option `27` opens a 5-item sub-menu (**Zoom is not included** — dropped entirely per explicit request during development, unlike the Ubuntu script which doesn't have this category split out this way either):
+Option `27` opens a 5-item sub-menu (**Zoom is not included** — dropped entirely per explicit request during development):
 
 | App | Source |
 |-----|--------|
 | Signal | Flathub (`org.signal.Signal`) — confirmed no rpm/yum repo exists anywhere; the commonly-cited `updates.signal.org/desktop/yum/` URL 404s |
 | Discord | RPM Fusion nonfree, natively — better than a Flatpak fallback |
-| Telegram Desktop | RPM Fusion free, natively — more consistently available than Ubuntu's own `telegram-desktop` apt package |
+| Telegram Desktop | RPM Fusion free, natively |
 | Teams (teams-for-linux) | Its own real dnf repo (`repo.teamsforlinux.de/rpm`) |
 
 ---
 
 #### Fedora: Drivers & Extra Repos
-
-The Ubuntu script has its own, much smaller Drivers & Extra Repos category (DisplayLink only — no GPU-driver or extra-repo concept beyond that).
 
 | # | Item | What it does |
 |---|------|---------------|
@@ -555,13 +553,13 @@ The Ubuntu script has its own, much smaller Drivers & Extra Repos category (Disp
 | **B** | Creative Suite (Full) | "All Creative" |
 | **C** | Everything in A and B, plus Database Tools, Containers & VMs, Gaming, Office & Productivity, System Utilities, GUI Tweaks, Windows Software Support, Android Tools, Security Tools (Full), DevOps & Cloud, Desktop Apps, Browsers, Communication | "EVERYTHING" |
 
-**App folders:** identical behavior to the Ubuntu script — A/B/C **auto-create** a GNOME app folder per category (no prompts); individual numbered categories *ask* first. NVIDIA driver / Terra repo (option `2`) are intentionally **not** part of any bulk option — both are meaningful, semi-interactive opt-ins that shouldn't fire unattended during "EVERYTHING".
+**App folders:** A/B/C **auto-create** a GNOME app folder per category (no prompts); individual numbered categories *ask* first. NVIDIA driver / Terra repo (option `2`) are intentionally **not** part of any bulk option — both are meaningful, semi-interactive opt-ins that shouldn't fire unattended during "EVERYTHING".
 
 ---
 
 ### 🔧 Fedora Error Handling & Installation Checks
 
-Same three-step check flow as the Ubuntu script (already installed? → exists in repos? → attempt install), just backed by `rpm -q` / `dnf info -q` / `dnf install -y` instead of `dpkg -l` / `apt-cache policy` / `pm_install`. No Nala-style front-end split — `dnf` is `dnf` either way.
+A three-step check flow (already installed? → exists in repos? → attempt install), backed by `rpm -q` / `dnf info -q` / `dnf install -y`.
 
 | Function | Purpose |
 |----------|---------|
@@ -569,7 +567,7 @@ Same three-step check flow as the Ubuntu script (already installed? → exists i
 | `package_exists(pkg)` | Verifies a package exists via `dnf info -q` (checks both installed and available) |
 | `bootstrap_repos` | Enables RPM Fusion free+nonfree, AppStream data, and Cisco OpenH264 — runs once, early |
 | `add_copr(project, tag)` | Enables a COPR project, degrading gracefully (like `add_ppa`) if it has no build for this release |
-| `safe_install(pkgs...)` / `batch_install(category, pkgs...)` | Same shape as the Ubuntu script |
+| `safe_install(pkgs...)` / `batch_install(category, pkgs...)` | Install with the three-step per-package safety check |
 | `create_menu_category(...)` | Same GNOME app-folder feature, `rpm -ql`-based resolution |
 | `install_nvidia_driver` | Installs the NVIDIA driver, polls for the akmod build to finish, detects and flags Secure Boot |
 | `install_terra_repo` | Opt-in Terra repo setup, scoped to the `extras` subrepo only |
@@ -578,7 +576,7 @@ Same three-step check flow as the Ubuntu script (already installed? → exists i
 
 ### 📊 Fedora Installation Summary & Logging
 
-Identical Catppuccin-themed summary/logging to the Ubuntu script. The only difference is the log path:
+Catppuccin-themed summary and logging. The log path:
 
 ```
 /var/log/fedora_post_install_TIMESTAMP.log
@@ -588,11 +586,11 @@ Identical Catppuccin-themed summary/logging to the Ubuntu script. The only diffe
 
 ### 🔒 Fedora Security Notes
 
-- **Package integrity:** dnf packages are signed by Fedora's own archive keys and RPM Fusion's. Third-party **yum/dnf repos** (VS Code, Brave, Vivaldi, Chrome, Edge, LibreWolf, TeamViewer, 1Password, Cursor, Azure CLI, Slack, Teams) pin their GPG key via `gpgkey=`/`rpm --import`. **COPR** (DBeaver CE) trusts the COPR project owner, whose packages run maintainer scripts as root — same trust model as an Ubuntu PPA.
-- **Remote install scripts run as root, trusted over HTTPS only:** Ollama's `install.sh`. Same trust model as the Ubuntu script — TLS + the vendor, no independent checksum.
-- **Claude Code, Mistral Vibe CLI, OpenCode, and rustup** are installed **as your user** (via `su - $SUDO_USER`), not root — same reasoning as the Ubuntu script (their installers assume a real `$HOME`).
+- **Package integrity:** dnf packages are signed by Fedora's own archive keys and RPM Fusion's. Third-party **yum/dnf repos** (VS Code, Brave, Vivaldi, Chrome, Edge, LibreWolf, TeamViewer, 1Password, Cursor, Azure CLI, Slack, Teams) pin their GPG key via `gpgkey=`/`rpm --import`. **COPR** (DBeaver CE) trusts the COPR project owner, whose packages run maintainer scripts as root — the same trust model as any third-party repo.
+- **Remote install scripts run as root, trusted over HTTPS only:** Ollama's `install.sh` — TLS + the vendor, no independent checksum.
+- **Claude Code, Mistral Vibe CLI, OpenCode, and rustup** are installed **as your user** (via `su - $SUDO_USER`), not root — their installers assume a real `$HOME`.
 - **NVIDIA proprietary driver:** a real out-of-tree kernel module (`akmod-nvidia`), signed for Secure Boot only if you complete the MOK enrollment yourself (the script prints the steps but cannot automate the reboot-into-firmware-UI part).
-- **Docker/libvirt group = root-equivalent:** installing Docker or libvirt adds your user to the `docker`/`libvirt` group, which grants effective root over that daemon's socket — same caveat as the Ubuntu script.
+- **Docker/libvirt group = root-equivalent:** installing Docker or libvirt adds your user to the `docker`/`libvirt` group, which grants effective root over that daemon's socket.
 - **No secrets handled:** the script never asks for or stores passwords/tokens, and menu input (a single character) can't reach a shell.
 
 ---
@@ -602,7 +600,7 @@ Identical Catppuccin-themed summary/logging to the Ubuntu script. The only diffe
 - **Package-name confidence varies by category** — see the note at the top of [Fedora Package Categories](#-fedora-package-categories). The "hard" categories were individually researched and verified; the bulk of ordinary packages weren't re-checked against a live Fedora system (none was available during development), and rely on the `package_exists` safety net instead of a pre-verified list.
 - **NVIDIA + Secure Boot needs a manual step**: the script detects Secure Boot and prints the exact commands, but enrolling the MOK key genuinely requires an interactive reboot into a firmware-level UI — no script can complete this unattended.
 - **Bulk options don't include Drivers & Extra Repos or Printers**: NVIDIA driver, Terra repo, the DisplayLink driver, and the HP proprietary plugin are deliberately excluded from `A`/`B`/`C` since they're meaningful, semi-interactive opt-ins (the HP plugin in particular downloads from HP and requires accepting a license), not safe to fire unattended.
-- **"Ubuntu Studio" categories are consolidated**: the Ubuntu script has separate top-level Graphics/Video/Audio categories *in addition to* its Ubuntu Studio sub-menu (a deliberate overlap there). Fedora has no per-domain metapackage split to mirror that duplication meaningfully, so this port folds all of it into one **Creative Suite** category — a simplification, not an oversight.
+- **Creative media is one category**: graphics, video, and audio are consolidated into a single **Creative Suite** category rather than separate top-level categories, since Fedora has no per-domain metapackage split.
 
 ---
 
@@ -645,7 +643,7 @@ batch_install "Category Name" \
 | **Dependency errors** | Run `sudo dnf distro-sync` or `sudo dnf install --allowerasing <pkg>` to resolve conflicts |
 | **NVIDIA driver installed but the module won't load** | Check Secure Boot status: `mokutil --sb-state`. If enabled, the MOK key must be enrolled manually — see the exact commands the script prints, or [Fedora: Drivers & Extra Repos](#fedora-drivers--extra-repos) above |
 | **`akmods --status` shows a failed build** | Usually means kernel headers are missing or out of sync after a kernel update — `sudo akmods --force` after a reboot into the new kernel often fixes it |
-| **App folder not created** | Same requirement as the Ubuntu script — needs an active GNOME desktop session as the target user |
+| **App folder not created** | Needs an active GNOME desktop session as the target user |
 | **"Designed for Fedora NN/NN, detected: …"** | You're on a release the script isn't validated against — answer `y` to continue anyway, or add your version to `SUPPORTED_VERSIONS` at the top of the script |
 
 #### Checking Fedora Logs
@@ -1407,7 +1405,7 @@ All scripts in this repo are provided **as-is** without warranty. You are free t
 - **[bugaevc/wl-clipboard](https://github.com/bugaevc/wl-clipboard)**: For the Wayland clipboard the colorpicker and copy helpers use
 - **[catppuccin/catppuccin](https://github.com/catppuccin/catppuccin)**: For the canonical Mocha palette roles every generated GTK/Neovim/VS Code theme is classified against
 - **[PapirusDevelopmentTeam/papirus-icon-theme](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme)**: For the icon theme
-- **Ubuntu Community**, **Fedora Community**, and **Arch Linux Community**: For the excellent package repositories
+- **Fedora** and **OpenMandriva** communities: For the excellent package repositories
 - **[Omarchy](https://omarchy.org) / Basecamp**: For the opinionated Hyprland-based Arch distro the Arch script detects and defers to
 - **Arch Linux AUR maintainers** and the **[yay](https://github.com/Jguer/yay)** project: For making the AUR usable as an automated fallback layer
 - **BlackArch Linux** and **[Chaotic-AUR](https://aur.chaotic.cx/)**: For the opt-in security-tooling and prebuilt-AUR-binary repos the Arch script can bootstrap
@@ -1422,7 +1420,7 @@ All scripts in this repo are provided **as-is** without warranty. You are free t
 - **[JustDeax](https://github.com/JustDeax)**: For the Obsidian Flow shell theme
 - **[metro2222](https://github.com/metro2222)**: For the Oval and Rounded Rectangle Dark Blue shell themes
 - **[cbrnix](https://github.com/cbrnix)**: For the Newaita icon theme
-- **[PixlOne](https://github.com/PixlOne)**: For Logiops, the Logitech HID++ driver the Arch and Ubuntu scripts can build from source
+- **[PixlOne](https://github.com/PixlOne)**: For Logiops, the Logitech HID++ driver the Fedora and OpenMandriva scripts can build from source
 - **[aaddrick](https://github.com/aaddrick)**: For the Claude Desktop Linux repackaging project
 - **[gh0stzk/dotfiles](https://github.com/gh0stzk/dotfiles)**: For 16 of the i3 rice's polybar theme sources
 - **[Murzchnvok/polybar-collection](https://github.com/Murzchnvok/polybar-collection)**: For the `hidrot` and `murz` polybar themes and their Material Icons font
