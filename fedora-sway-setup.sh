@@ -531,7 +531,12 @@ exec /usr/libexec/lxqt-policykit-agent
 exec copyq
 exec udiskie --tray
 exec gammastep
-exec sh -c 'pgrep -x dunst >/dev/null || dunst'
+# dunst is this rice's notification daemon. Some distros (OpenMandriva) pull in
+# mako as a dependency and autostart it; mako and dunst both try to own the
+# org.freedesktop.Notifications bus (only one can), so if mako wins, dunst exits
+# and notifications show unthemed + never auto-close. Mask+kill mako first
+# (reversible: systemctl --user unmask mako), then start dunst.
+exec sh -c 'systemctl --user mask --now mako.service 2>/dev/null; pkill -x mako 2>/dev/null; pgrep -x dunst >/dev/null || dunst'
 exec sh -c 'pgrep -x playerctld >/dev/null || playerctld'
 exec ~/.local/bin/calendar-reminder-daemon-launch.sh
 exec ~/.local/bin/battwatch.sh

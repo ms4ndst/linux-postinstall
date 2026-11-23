@@ -701,7 +701,13 @@ cursor {
 // exec_always), so each guards against a double-launch itself.
 spawn-sh-at-startup "~/.local/bin/waybar-launch.sh"
 spawn-sh-at-startup "~/.local/bin/swaybg-restore.sh"
-spawn-sh-at-startup "pgrep -x dunst >/dev/null || dunst"
+// This rice's notification daemon is dunst. Some distros (OpenMandriva) pull in
+// mako as a dependency and autostart it as a user service; mako and dunst both
+// try to own the org.freedesktop.Notifications D-Bus name and only one can, so
+// if mako started first dunst silently exits and notifications show unthemed and
+// never auto-close. Mask+stop mako (reversible: systemctl --user unmask mako)
+// and kill any stray instance, then start dunst so it reliably owns the bus.
+spawn-sh-at-startup "systemctl --user mask --now mako.service 2>/dev/null; pkill -x mako 2>/dev/null; pgrep -x dunst >/dev/null || dunst"
 spawn-sh-at-startup "pgrep -x playerctld >/dev/null || playerctld daemon"
 spawn-sh-at-startup "pgrep -x copyq >/dev/null || copyq"
 spawn-sh-at-startup "pgrep -x udiskie >/dev/null || udiskie --tray"
@@ -5141,6 +5147,19 @@ background = "{base}"
 foreground = "{red}"
 frame_color = "{red}"
 timeout = 0
+
+# Cap app-requested "never expire" notifications (expire_timeout=0) such as KDE
+# Connect and GNOME Calendar/EDS reminders: dunst honors 0 as "never", so they
+# pile up until clicked (GNOME Shell auto-dismisses them). override_dbus_timeout
+# forces the per-urgency timeout regardless of what the app asked. Critical is
+# left alone (0 = persist), so low-battery warnings still stay up.
+[timeout_cap_low]
+msg_urgency = low
+override_dbus_timeout = 4
+
+[timeout_cap_normal]
+msg_urgency = normal
+override_dbus_timeout = 6
 """
 
 STARSHIP_TEMPLATE = r'''format = """
@@ -6393,6 +6412,88 @@ if command -v strata >/dev/null 2>&1; then
 Name=org.freedesktop.FileManager1
 Exec=$HOME/.local/bin/strata --gapplication-service
 STRATA_DBUS_EOF
+fi
+
+# ----------------------------------------------------------------------------
+# 9f3. Apps the keybinds launch that the post-install script (not this one)
+# normally installs. On a niri-only run they'd be absent and the bindings would
+# silently no-op or fall back, so install them here too - each is idempotent and
+# skipped when already present (e.g. post-install already ran it):
+#   Print          -> Greenshot (screenshot editor; else grim/satty fallback)
+#   Mod+Shift+F23  -> Claude Desktop (scratchpad)
+#   Mod+A          -> Mistral Vibe CLI (AI window in kitty)
+# The Mistral/Linear bindings (Mod+Shift+A / Mod+T) run in a browser and already
+# show an "install a browser" notice when none is present, so they need nothing.
+# ----------------------------------------------------------------------------
+
+# Greenshot (app-id "greenshot") - per-user clone + .NET 10 build. The niri
+# config above already floats + zoom-fits its editor and screenshot.sh prefers
+# it; without it the Print key falls back to grim/satty.
+if [ -x "$HOME/.local/bin/greenshot" ] || command -v greenshot >/dev/null 2>&1; then
+  log "Greenshot already installed, skipping."
+else
+  log "Installing Greenshot (clone + .NET 10 build - this can take a few minutes)..."
+  # --- .NET 10 SDK (OpenMandriva: Microsoft dotnet-install.sh into /usr/share/dotnet) ---
+  if ! dotnet --list-sdks 2>/dev/null | grep -q '^10\.'; then
+    sudo dnf install -y --setopt=strict=0 lib64icuuc lib64icui18n lib64gssapi_krb5_2 lib64ssl3 lib64z1 >/dev/null 2>&1 || true
+    __om_dnet="$(mktemp -d)"
+    if curl -fsSL --retry 3 -o "$__om_dnet/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh 2>/dev/null \
+        && sudo bash "$__om_dnet/dotnet-install.sh" --channel 10.0 --install-dir /usr/share/dotnet >/dev/null 2>&1; then
+      sudo ln -sf /usr/share/dotnet/dotnet /usr/local/bin/dotnet 2>/dev/null || true
+      printf 'export DOTNET_ROOT=/usr/share/dotnet\nexport PATH="$PATH:/usr/share/dotnet"\n' | sudo tee /etc/profile.d/dotnet.sh >/dev/null 2>&1 || true
+      export DOTNET_ROOT=/usr/share/dotnet
+    fi
+    rm -rf "$__om_dnet"
+  fi
+  # --- end .NET 10 SDK ---
+  if ! dotnet --list-sdks 2>/dev/null | grep -q '^10\.'; then
+    warn "No .NET 10 SDK available - skipping Greenshot; the Print key falls back to grim/satty."
+  else
+    sudo dnf install -y grim wl-clipboard >/dev/null 2>&1 || true
+    __gs_d="$(mktemp -d)"
+    if git clone -q --depth 1 https://github.com/ms4ndst/greenshot_for_linux "$__gs_d/greenshot" >/dev/null 2>&1 \
+        && ( cd "$__gs_d/greenshot" && bash packaging/install.sh ) >/dev/null 2>&1 \
+        && [ -x "$HOME/.local/bin/greenshot" ]; then
+      log "Greenshot installed (~/.local/bin/greenshot) - the Print key now opens it."
+    else
+      warn "Greenshot build failed - the Print key falls back to grim/satty. Retry: git clone https://github.com/ms4ndst/greenshot_for_linux && cd greenshot_for_linux && bash packaging/install.sh"
+    fi
+    rm -rf "$__gs_d"
+  fi
+fi
+
+# Claude Desktop (Mod+Shift+F23 scratchpad) - unofficial RPM repo.
+if command -v claude-desktop-unofficial >/dev/null 2>&1 || rpm -q claude-desktop-unofficial >/dev/null 2>&1; then
+  log "Claude Desktop already installed, skipping."
+else
+  log "Installing Claude Desktop (unofficial RPM repo)..."
+  sudo curl -fsSL https://pkg.claude-desktop-debian.dev/rpm/claude-desktop-unofficial.repo \
+    -o /etc/yum.repos.d/claude-desktop-unofficial.repo 2>/dev/null || true
+  # --- claude-desktop install (OpenMandriva) ---
+  # its .repo ships gpgcheck/repo_gpgcheck=1 but the signing key isn't importable here
+  sudo sed -i 's/^gpgcheck=1/gpgcheck=0/; s/^repo_gpgcheck=1/repo_gpgcheck=0/' \
+    /etc/yum.repos.d/claude-desktop-unofficial.repo 2>/dev/null || true
+  sudo dnf makecache >/dev/null 2>&1 || true
+  sudo dnf install -y --setopt=strict=0 claude-desktop-unofficial >/dev/null 2>&1 || true
+  # --- end claude-desktop install ---
+  if command -v claude-desktop-unofficial >/dev/null 2>&1; then
+    log "Claude Desktop installed - summon with Mod+Shift+F23."
+  else
+    warn "Claude Desktop install failed - Mod+Shift+F23 does nothing until it's installed (see the post-install script's AI category)."
+  fi
+fi
+
+# Mistral Vibe CLI (Mod+A AI window) - per-user installer script (distro-neutral).
+if command -v vibe >/dev/null 2>&1 || [ -x "$HOME/.local/bin/vibe" ]; then
+  log "Mistral Vibe CLI already installed, skipping."
+else
+  log "Installing Mistral Vibe CLI..."
+  if curl -LsSf https://mistral.ai/vibe/install.sh | bash >/dev/null 2>&1 \
+      && { command -v vibe >/dev/null 2>&1 || [ -x "$HOME/.local/bin/vibe" ]; }; then
+    log "Mistral Vibe CLI installed - open the AI window with Mod+A."
+  else
+    warn "Mistral Vibe CLI install failed (needs Python 3.12+) - Mod+A opens an empty terminal until it's installed. Retry: curl -LsSf https://mistral.ai/vibe/install.sh | bash"
+  fi
 fi
 
 # ----------------------------------------------------------------------------

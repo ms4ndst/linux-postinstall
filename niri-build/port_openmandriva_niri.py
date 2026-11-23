@@ -442,6 +442,48 @@ fi''',
     else:
         misses.append("Yazi strip: cheat-sheet line not found")
 
+    # ---- 9f3 keybind-app prereqs: Greenshot .NET acquisition --------------
+    # Fedora gets .NET 10 from the dnf package; OpenMandriva has no such package,
+    # so pull Microsoft's dotnet-install.sh into /usr/share/dotnet (same root as
+    # post-install-openmandriva's install_dotnet) and expose it on PATH. The rest
+    # of the Greenshot block (clone + packaging/install.sh) is distro-neutral.
+    sub(r'''  # --- .NET 10 SDK (Fedora: dnf package) ---
+  if ! dotnet --list-sdks 2>/dev/null | grep -q '^10\.'; then
+    sudo dnf install -y dotnet-sdk-10.0 >/dev/null 2>&1 || true
+  fi
+  # --- end .NET 10 SDK ---''',
+        r'''  # --- .NET 10 SDK (OpenMandriva: Microsoft dotnet-install.sh into /usr/share/dotnet) ---
+  if ! dotnet --list-sdks 2>/dev/null | grep -q '^10\.'; then
+    sudo dnf install -y --setopt=strict=0 lib64icuuc lib64icui18n lib64gssapi_krb5_2 lib64ssl3 lib64z1 >/dev/null 2>&1 || true
+    __om_dnet="$(mktemp -d)"
+    if curl -fsSL --retry 3 -o "$__om_dnet/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh 2>/dev/null \
+        && sudo bash "$__om_dnet/dotnet-install.sh" --channel 10.0 --install-dir /usr/share/dotnet >/dev/null 2>&1; then
+      sudo ln -sf /usr/share/dotnet/dotnet /usr/local/bin/dotnet 2>/dev/null || true
+      printf 'export DOTNET_ROOT=/usr/share/dotnet\nexport PATH="$PATH:/usr/share/dotnet"\n' | sudo tee /etc/profile.d/dotnet.sh >/dev/null 2>&1 || true
+      export DOTNET_ROOT=/usr/share/dotnet
+    fi
+    rm -rf "$__om_dnet"
+  fi
+  # --- end .NET 10 SDK ---''',
+        why="greenshot .NET acquisition")
+
+    # ---- 9f3 keybind-app prereqs: Claude Desktop repo install -------------
+    # The unofficial .repo ships gpgcheck/repo_gpgcheck=1; the signing key isn't
+    # importable in this unattended context on OM, so relax it and tolerate
+    # Fedora-named Requires with strict=0 (same idiom as the rest of the OM port).
+    sub(r'''  # --- claude-desktop install (Fedora) ---
+  sudo dnf makecache >/dev/null 2>&1 || true
+  sudo dnf install -y claude-desktop-unofficial >/dev/null 2>&1 || true
+  # --- end claude-desktop install ---''',
+        r'''  # --- claude-desktop install (OpenMandriva) ---
+  # its .repo ships gpgcheck/repo_gpgcheck=1 but the signing key isn't importable here
+  sudo sed -i 's/^gpgcheck=1/gpgcheck=0/; s/^repo_gpgcheck=1/repo_gpgcheck=0/' \
+    /etc/yum.repos.d/claude-desktop-unofficial.repo 2>/dev/null || true
+  sudo dnf makecache >/dev/null 2>&1 || true
+  sudo dnf install -y --setopt=strict=0 claude-desktop-unofficial >/dev/null 2>&1 || true
+  # --- end claude-desktop install ---''',
+        why="claude-desktop repo install")
+
     if misses:
         print("WARN: %d stale anchors:" % len(misses))
         for m in misses:

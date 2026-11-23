@@ -110,7 +110,13 @@ cursor {
 // exec_always), so each guards against a double-launch itself.
 spawn-sh-at-startup "~/.local/bin/waybar-launch.sh"
 spawn-sh-at-startup "~/.local/bin/swaybg-restore.sh"
-spawn-sh-at-startup "pgrep -x dunst >/dev/null || dunst"
+// This rice's notification daemon is dunst. Some distros (OpenMandriva) pull in
+// mako as a dependency and autostart it as a user service; mako and dunst both
+// try to own the org.freedesktop.Notifications D-Bus name and only one can, so
+// if mako started first dunst silently exits and notifications show unthemed and
+// never auto-close. Mask+stop mako (reversible: systemctl --user unmask mako)
+// and kill any stray instance, then start dunst so it reliably owns the bus.
+spawn-sh-at-startup "systemctl --user mask --now mako.service 2>/dev/null; pkill -x mako 2>/dev/null; pgrep -x dunst >/dev/null || dunst"
 spawn-sh-at-startup "pgrep -x playerctld >/dev/null || playerctld daemon"
 spawn-sh-at-startup "pgrep -x copyq >/dev/null || copyq"
 spawn-sh-at-startup "pgrep -x udiskie >/dev/null || udiskie --tray"
