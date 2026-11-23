@@ -1244,7 +1244,7 @@ def adapt_config(cfg, name):
     #       meters use for their 0 level); the "DISK"/"%" label is coloured by the
     #       "v2.1-2" entry in THEME_CSS_PATCHES. Replaces the gauge config above.
     if name == "v2.1-2":
-        _ORANGE, _EMPTY = "#e8963a", "#6e6a86"
+        _ORANGE, _EMPTY = "#f2b35c", "#6e6a86"
 
         def _dbar(filled, colour):
             return ("<span size='10pt' color='%s'>%s%s</span>"
@@ -1927,7 +1927,7 @@ THEME_CSS_PATCHES = {
     "v2.1-2": (
         "/* --- appended by this rice's installer: orange disk meter label --- */\n"
         "window#waybar #disk {\n"
-        "  color: #e8963a;\n"
+        "  color: #f2b35c;\n"
         "}\n"
     ),
 }
