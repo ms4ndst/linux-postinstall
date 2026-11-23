@@ -5848,6 +5848,28 @@ fi
 rm -rf "$HANCORE_TMP"
 
 # ----------------------------------------------------------------------------
+# 6b. rofi launcher config (static, theme-independent). The desktop themes above
+# generate only the .rasi *theme* files (colors/layout); this config.rasi sets
+# the modi and the drun/run/window prompt labels. Without it rofi shows the raw
+# mode name ("drun") instead of " Apps". @theme "current" is just the fallback
+# for any rofi call that passes no -theme of its own (the launchers pass
+# -theme current.rasi explicitly, which resolves to the same file). Mirrors the
+# Sway rice's section 7 rofi config so both desktops behave identically.
+# ----------------------------------------------------------------------------
+mkdir -p "$CONF/rofi"
+cat > "$CONF/rofi/config.rasi" <<'EOF'
+configuration {
+    modi: "drun,run,window";
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    display-drun: " Apps";
+    display-run: " Run";
+    display-window: " Windows";
+}
+@theme "current"
+EOF
+
+# ----------------------------------------------------------------------------
 # 7. Helper shims the adapted themes' modules exec by name (~/.local/bin)
 # ----------------------------------------------------------------------------
 cat > "$BIN/wttrbar" <<'HANCORESHIM_EOF'

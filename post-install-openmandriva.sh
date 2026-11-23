@@ -2066,14 +2066,25 @@ for rel in d.get("Releases", []):
         log ERROR "$label checksum mismatch - refusing to install"; return 1
     fi
     pkg=$(rpm -qp --queryformat '%{NAME}' "$tmpd/proton.rpm" 2>/dev/null); [ -n "$pkg" ] || pkg="$rpmname"
-    # --setopt=strict=0: install the bundled app even if Fedora-named Requires
-    # don't resolve on OpenMandriva (the Electron runtime is self-contained).
-    if dnf install -y --setopt=strict=0 "$tmpd/proton.rpm" >/dev/null 2>&1 && rpm -q "$pkg" &>/dev/null; then
+    # Proton's RPM declares Fedora/Debian *package-name* Requires (nss, gtk3,
+    # libXtst, libnotify, mesa-libgbm, at-spi2-core, ...) that OpenMandriva can't
+    # match by name - it ships those libs as lib64*/pkgconfig provides - so
+    # `dnf install` even with strict=0 just SKIPS the package (that's the "fails
+    # to install"). First seed the real runtime libs by their portable pkg-config
+    # names (strict=0 skips any absent), then force the install past the
+    # unmatchable name-deps AND Proton's own (un-imported) signature with rpm:
+    # the Electron app is self-contained and only needs these system libs present.
+    # The download was already SHA512-verified above, so this isn't blind.
+    dnf install -y --setopt=strict=0 \
+      'pkgconfig(nss)' 'pkgconfig(gtk+-3.0)' 'pkgconfig(xtst)' 'pkgconfig(xcb)' \
+      'pkgconfig(gbm)' 'pkgconfig(libdrm)' 'pkgconfig(atspi-2)' 'pkgconfig(libnotify)' \
+      xdg-utils >/dev/null 2>&1 || true
+    if rpm -U --replacepkgs --nodeps --nosignature "$tmpd/proton.rpm" >/dev/null 2>&1 && rpm -q "$pkg" &>/dev/null; then
         INSTALLED_PACKAGES+=("$pkg"); ((TOTAL_INSTALLED++))
         log SUCCESS "Installed: $label"
     else
         FAILED_PACKAGES+=("$rpmname"); ((TOTAL_FAILED++))
-        log WARNING "$label install failed - a Fedora RPM may miss OM deps; try: sudo dnf install --setopt=strict=0 '$url'"
+        log WARNING "$label install failed - get it manually: sudo rpm -U --nodeps --nosignature '$url'"
     fi
     rm -rf "$tmpd"
 }
