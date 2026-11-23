@@ -2947,6 +2947,42 @@ SRC
     log INFO "Markdown aliases (md/mdb via glow) set up in ~/.config/bash/aliases.sh"
 }
 
+# A broken ~/.bashrc breaks EVERY new shell, and bash only surfaces it as a
+# cryptic `eval: line N` error on each prompt. mybash OWNS ~/.bashrc, so after
+# installing it we sanity-check the result two ways: `bash -n` catches parse
+# errors in the file, and a throwaway interactive shell (run as the user, stdin
+# at EOF so it exits at once) draws one prompt - firing PROMPT_COMMAND, which is
+# where a malformed value actually errors. `bash -n` can't flag a bad
+# PROMPT_COMMAND on its own because the assignment is syntactically valid; it
+# only blows up when eval'd at prompt time. Advisory only: we warn with the
+# exact error and never auto-edit the user's file.
+validate_user_bashrc() {
+    local br="$1" user="$2" err
+    [ -f "$br" ] || return 0
+    if ! err=$(bash -n "$br" 2>&1); then
+        log WARNING "~/.bashrc has a syntax error - new shells will fail to start:"
+        printf '%s\n' "$err" | sed 's/^/    /'
+        log WARNING "Inspect it with: bash -n '$br'"
+        return 1
+    fi
+    # stdout (fastfetch/starship banner) -> /dev/null; only stderr is inspected.
+    # The grep is deliberately specific so bash's harmless no-tty job-control
+    # notices don't trip it.
+    # Error signatures bash emits for a broken rc/PROMPT_COMMAND. The prompt
+    # string and the harmless no-tty job-control notices also reach stderr, so
+    # we match specific error phrasings rather than "any output".
+    local errpat='syntax error|unexpected token|invalid option|command not found|unbound variable|: line [0-9]+:|parse error|bad substitution'
+    err=$(timeout 15 su "$user" -c 'printf "" | bash -i' 2>&1 >/dev/null \
+          | grep -vE 'cannot set terminal process group|no job control in this shell')
+    if printf '%s\n' "$err" | grep -qiE "$errpat"; then
+        log WARNING "~/.bashrc errors when a prompt is drawn (usually a bad PROMPT_COMMAND):"
+        printf '%s\n' "$err" | grep -iE "$errpat" | head -3 | sed 's/^/    /'
+        log WARNING "Fix it in $br; in an already-open broken shell, 'unset PROMPT_COMMAND' stops the errors."
+        return 1
+    fi
+    return 0
+}
+
 install_chris_titus_mybash() {
     local UH=$(eval echo ~$SUDO_USER 2>/dev/null || echo "/home/$(logname)")
     local MD="${UH}/mybash" BR="${UH}/.bashrc"
@@ -2963,6 +2999,7 @@ install_chris_titus_mybash() {
     if HOME="$UH" USER="$SUDO_USER" LOGNAME="$SUDO_USER" bash "$MD/setup.sh"; then
         chown -R "$SUDO_USER:$SUDO_USER" "$MD" "$UH/.local" "$UH/.config" "$BR" 2>/dev/null || true
         log SUCCESS "mybash installed. User: source ~/.bashrc"
+        validate_user_bashrc "$BR" "$SUDO_USER"
         return 0
     fi
     log WARNING "setup.sh failed, falling back to a plain .bashrc copy..."
@@ -2978,6 +3015,7 @@ install_chris_titus_mybash() {
     chown -R "$SUDO_USER:$SUDO_USER" "$MD" "$UH/.local" "$UH/.config" "$BR" 2>/dev/null || true
     if [ -f "$BR" ]; then
         log SUCCESS "mybash .bashrc installed via fallback copy. User: source ~/.bashrc"
+        validate_user_bashrc "$BR" "$SUDO_USER"
         return 0
     else
         log ERROR "mybash fallback copy also failed - nothing was installed"

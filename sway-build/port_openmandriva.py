@@ -190,19 +190,24 @@ if [ ! -x /usr/local/bin/rofi ] \
   # the entire xcb stack: xcb-cursor, cairo-xcb, startup-notification etc.
   # that Rock doesn't all carry). Deps are OM's real package names (verified
   # against the rock repo metadata; on Rolling this block never runs).
-  om_build_deps meson ninja gcc glibc-devel pkgconf \
+  # flex + bison generate rofi's theme lexer/parser and wayland-scanner the
+  # Wayland protocol glue - all three are find_program()-required by rofi's
+  # meson.build, so the build hard-fails without them (pkgconf alone is not
+  # enough). wayland-scanner is pulled via its own .pc provider.
+  om_build_deps meson ninja gcc glibc-devel pkgconf flex bison \
     lib64glib2.0-devel lib64cairo-devel lib64pango1.0-devel lib64pangocairo1.0-devel \
-    libxkbcommon-devel lib64gdk_pixbuf2.0-devel lib64wayland-devel wayland-protocols-devel
-  OMT="$(mktemp -d)"
+    libxkbcommon-devel lib64gdk_pixbuf2.0-devel lib64wayland-devel wayland-protocols-devel \
+    'pkgconfig(wayland-scanner)'
+  OMT="$(mktemp -d)"; RLOG="${TMPDIR:-/tmp}/rice-rofi-build.log"
   if d="$(om_fetch_tarball https://github.com/lbonn/rofi/archive/refs/tags/1.7.9%2Bwayland1.tar.gz "$OMT")" \
       && meson setup "$OMT/build" "$d" --buildtype release --prefix /usr/local \
-           -Dwayland=enabled -Dxcb=disabled >/dev/null 2>&1 \
-      && ninja -C "$OMT/build" >/dev/null 2>&1 \
-      && sudo ninja -C "$OMT/build" install >/dev/null 2>&1 \
+           -Dwayland=enabled -Dxcb=disabled >"$RLOG" 2>&1 \
+      && ninja -C "$OMT/build" >>"$RLOG" 2>&1 \
+      && sudo ninja -C "$OMT/build" install >>"$RLOG" 2>&1 \
       && [ -x /usr/local/bin/rofi ]; then
     log "rofi-wayland 1.7.9 installed to /usr/local/bin - it shadows the X11-only packaged one."
   else
-    warn "rofi-wayland build failed - launchers/menus won't work; check the build deps above."
+    warn "rofi-wayland build failed (full log: $RLOG) - launchers/menus won't work."
   fi
   rm -rf "$OMT"
 fi
@@ -238,21 +243,27 @@ fi
 om_dunst_ver() { dunst --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1; }
 if [ "$(printf '%s\n1.7\n' "$(om_dunst_ver)" | sort -V | head -1)" != "1.7" ]; then
   log "Building dunst from source (OpenMandriva's dunst $(om_dunst_ver) is too old for this rice)..."
-  om_build_deps make gcc glibc-devel pkgconf \
+  # gdk-pixbuf-2.0 is a base pkg-config dep in dunst's config.mk (icon loading),
+  # and WAYLAND=1 regenerates the xdg-shell/wlr-layer-shell protocol glue with
+  # wayland-scanner from the wayland-protocols data dir - so all three (gdk-pixbuf,
+  # wayland-protocols, wayland-scanner) are required or the make hard-fails. The
+  # old list missed them.
+  om_build_deps make gcc glibc-devel pkgconf wayland-protocols-devel \
     'pkgconfig(dbus-1)' 'pkgconfig(wayland-client)' 'pkgconfig(wayland-cursor)' \
+    'pkgconfig(wayland-scanner)' 'pkgconfig(gdk-pixbuf-2.0)' \
     'pkgconfig(glib-2.0)' 'pkgconfig(gio-2.0)' 'pkgconfig(pangocairo)' 'pkgconfig(cairo)'
   DUNST_TAG=$(curl -fsSL https://api.github.com/repos/dunst-project/dunst/releases/latest 2>/dev/null \
     | grep -oE '"tag_name":[[:space:]]*"v[0-9.]+"' | grep -oE 'v[0-9.]+')
   [ -z "$DUNST_TAG" ] && DUNST_TAG=v1.12.1
-  OMT="$(mktemp -d)"
+  OMT="$(mktemp -d)"; DLOG="${TMPDIR:-/tmp}/rice-dunst-build.log"
   if d="$(om_fetch_tarball "https://github.com/dunst-project/dunst/archive/refs/tags/$DUNST_TAG.tar.gz" "$OMT")" \
-      && make -C "$d" CC=gcc WAYLAND=1 SYSTEMD=0 PREFIX=/usr/local -j"$(nproc)" >/dev/null 2>&1 \
-      && sudo make -C "$d" WAYLAND=1 SYSTEMD=0 PREFIX=/usr/local install >/dev/null 2>&1 \
+      && make -C "$d" CC=gcc WAYLAND=1 SYSTEMD=0 PREFIX=/usr/local -j"$(nproc)" >"$DLOG" 2>&1 \
+      && sudo make -C "$d" WAYLAND=1 SYSTEMD=0 PREFIX=/usr/local install >>"$DLOG" 2>&1 \
       && [ -x /usr/local/bin/dunst ]; then
     rpm -q dunst >/dev/null 2>&1 && sudo rpm -e --nodeps dunst 2>/dev/null
     log "dunst installed to /usr/local/bin (the packaged 1.6.1 was removed)."
   else
-    warn "dunst build failed - notifications will use the old packaged version (placement may look off)."
+    warn "dunst build failed (full log: $DLOG) - notifications fall back to the old packaged version."
   fi
   rm -rf "$OMT"
 fi
