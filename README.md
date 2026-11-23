@@ -4,6 +4,8 @@
 
 ![screenshot](screenshot.png)
 
+*The Catppuccin menu-driven post-install UX — shared by the Fedora and OpenMandriva scripts.*
+
 This repo ships **independent, distro-specific scripts** — pick the one that matches your machine:
 
 - **[`post-install-fedora.sh`](post-install-fedora.sh)** — for **Fedora Workstation**, built on `dnf5`/RPM Fusion.
@@ -64,6 +66,7 @@ There are also standalone i3+Catppuccin rice scripts — the predecessors of the
   - [⚠️ Fedora Known Limitations](#-fedora-known-limitations)
   - [⚙️ Fedora Customization](#-fedora-customization)
   - [🐛 Fedora Troubleshooting](#-fedora-troubleshooting)
+- [🟠 OpenMandriva Post-Install Script](#-openmandriva-post-install-script)
 - [🪟 Sway + HANCORE Rice Script (Fedora)](#-sway--hancore-rice-script-fedora)
   - [🚀 Sway Script Overview](#-sway-script-overview)
   - [📦 What Gets Installed (Sway)](#-what-gets-installed-sway)
@@ -658,9 +661,34 @@ ls -lt /var/log/fedora_post_install_*.log | head -1 | awk '{print $NF}' | xargs 
 
 ---
 
+# 🟠 OpenMandriva Post-Install Script
+
+[`post-install-openmandriva.sh`](post-install-openmandriva.sh) is the **OpenMandriva Lx** sibling of the Fedora script — both are `dnf5`/RPM, so it's a close port rather than a rewrite. It keeps the **same Catppuccin menu-driven UX, the same category menu, the same installed/skipped/failed tracking and GNOME app-folder feature**, and the same `package_exists`-before-`safe_install` safety net: a package that isn't in OpenMandriva's repos is logged "Not in repos" and skipped, never a hard failure. On startup it reads `VERSION_ID` from `/etc/os-release` to validate a supported fixed release, and also accepts the **ROME rolling** edition (which has no stable `VERSION_ID`); any other release warns and asks whether to continue.
+
+**What differs from Fedora** (the "hard" parts, verified against the OpenMandriva wiki / `OpenMandrivaSoftware` sources rather than guessed):
+
+- **Repos — no RPM Fusion, no COPR.** OpenMandriva ships its own `restricted` (patent-encumbered codecs) and `non-free` (proprietary drivers/apps) repos as pre-written *disabled* stanzas in `/etc/yum.repos.d`; the script flips them on using the same `<tree>-<arch>[-<subrepo>]` repoid scheme (`cooker`/`rolling`/`rock`/`release`) OpenMandriva's own `enable-repo` tool uses.
+- **NVIDIA — prebuilt, not compiled.** OpenMandriva's build farm ships per-kernel modules, so the driver path is `dnf install nvidia nvidia-kmod-open-desktop --refresh` from `non-free` plus a reboot — no akmod compile-and-poll loop like Fedora's.
+- **Dropped (no OpenMandriva equivalent):** the Terra repo and the DisplayLink driver — both publish Fedora-only builds.
+- **Vendor yum repos (VS Code, Cursor, 1Password, TeamViewer, …) are kept**, but their RPMs are built against Fedora, so dependency resolution isn't guaranteed; `safe_install` handles any miss, and 1Password/TeamViewer fall back to their official standalone RPM (then Flathub for 1Password).
+- **Package names** mostly follow the Fedora/Mandriva-style naming OpenMandriva shares (`lib64*` conventions and its own repos aside); the "hard" categories were verified, the bulk rely on the safety net.
+
+Usage mirrors the Fedora script:
+
+```bash
+chmod +x post-install-openmandriva.sh
+sudo ./post-install-openmandriva.sh
+```
+
+OpenMandriva also has matching rice scripts — see the **OpenMandriva Port** subsections under [Sway](#-openmandriva-port-openmandriva-sway-setupsh), [Niri](#-openmandriva-port-openmandriva-niri-setupsh), and the [i3 rice](#-i3--catppuccin-rice-script-fedora--openmandriva) below.
+
+---
+
 # 🪟 Sway + HANCORE Rice Script (Fedora)
 
 ![sway](sway.png)
+
+*The Sway + HANCORE rice (Fedora, and OpenMandriva via [`openmandriva-sway-setup.sh`](openmandriva-sway-setup.sh)).*
 
 ### 🚀 Sway Script Overview
 
@@ -953,7 +981,9 @@ bash -n openmandriva-niri-setup.sh               # smoke test
 ---
 
 # 🎨 i3 + Catppuccin Rice Script (Fedora & OpenMandriva)
-![screenshot](i3_screenshot.png)
+![i3](i3_screenshot.png)
+
+*The i3 + Catppuccin rice — Fedora and OpenMandriva.*
 ### 🚀 i3 Script Overview
 
 [`fedroa-setup-i3-cattpuccin.sh`](fedroa-setup-i3-cattpuccin.sh) (Fedora) and [`openmandriva-setup-i3-cattpuccin.sh`](openmandriva-setup-i3-cattpuccin.sh) (OpenMandriva) are standalone, single-purpose scripts — separate from `post-install-fedora.sh`/`post-install-openmandriva.sh` above — that build a complete **Catppuccin Mocha–themed i3 tiling window manager** desktop: gapped tiling with always-visible borders (2px, mauve on the focused window), picom blur/shadows/rounded corners, a per-monitor powerline-style polybar status bar (with a native bluetooth widget and a modern-tray-icon proxy so apps like 1Password/Discord/OBS actually show a tray icon), rofi launcher, dunst notifications, kitty terminal, copyq clipboard history, a click-to-grab colorpicker, udiskie USB automount, pcmanfm file manager, gammastep night light, nitrogen wallpaper picker, a Catppuccin GTK2/3/4 theme, and a full keybinding set covering window management, media/volume/brightness (with on-screen level popups), screenshots, locking, power, and multi-monitor control. Each is meant to be run once on a fresh install (or after its matching post-install script) to go from "bare X11" to "usable themed i3 session."
