@@ -1234,6 +1234,34 @@ def adapt_config(cfg, name):
     if isinstance(dblk, dict):
         dblk.setdefault("states", {})["warning"] = 80
 
+    # 3f2c. v2.1-2 (user request): make #disk match this theme's cpu/mem/vol
+    #       widgets - a 10-segment fill bar in orange, label + bar - instead of
+    #       the usage-gauge above. cpu/mem/vol get their bar from a `format-icons`
+    #       array keyed by {icon}, but waybar's DISK module has no format-icons /
+    #       {icon} support (only {percentage_used} + states), so the bar is built
+    #       from per-state format strings. Each bar glyph carries an inline Pango
+    #       colour (orange filled, muted empty - same muted #6e6a86 the other
+    #       meters use for their 0 level); the "DISK"/"%" label is coloured by the
+    #       "v2.1-2" entry in THEME_CSS_PATCHES. Replaces the gauge config above.
+    if name == "v2.1-2":
+        _ORANGE, _EMPTY = "#e8963a", "#6e6a86"
+
+        def _dbar(filled, colour):
+            return ("<span size='10pt' color='%s'>%s%s</span>"
+                    % (colour, "█" * filled, "░" * (10 - filled)))
+
+        _disk = {
+            "interval": 30,
+            "path": "/",
+            "format": "DISK %s {percentage_used}%%" % _dbar(0, _EMPTY),
+            "states": {},
+        }
+        for _i, _thr in enumerate((10, 20, 30, 40, 50, 60, 70, 80, 90, 95)):
+            _st = "u%d" % _thr
+            _disk["states"][_st] = _thr
+            _disk["format-" + _st] = "DISK %s {percentage_used}%%" % _dbar(_i + 1, _ORANGE)
+        cfg["disk"] = _disk
+
     # 3f3. Vertical bars (position left/right): most widgets are icons or
     #      \n-stacked, but the mpris now-playing text ("<icon> artist - title")
     #      is horizontal and blows out the narrow bar's width / clips. Rotate it
@@ -1890,6 +1918,16 @@ THEME_CSS_PATCHES = {
         "  background-color: @base;\n"
         "  border-radius: 8px;\n"
         "  border: 1px solid alpha(@text, 0.15);\n"
+        "}\n"
+    ),
+    # v2.1-2 (user request): disk is rebuilt in adapt_config as a cpu/mem/vol-style
+    # fill-bar meter in orange. The bar glyphs carry their own inline Pango colour;
+    # this colours the "DISK"/"%" label orange too so the whole widget reads orange.
+    # Appended last, so it wins over the universal `window#waybar #disk { @TEXT@ }`.
+    "v2.1-2": (
+        "/* --- appended by this rice's installer: orange disk meter label --- */\n"
+        "window#waybar #disk {\n"
+        "  color: #e8963a;\n"
         "}\n"
     ),
 }
