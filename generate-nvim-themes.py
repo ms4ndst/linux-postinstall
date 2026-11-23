@@ -293,7 +293,7 @@ def render_theme(name, c):
 
 
 # Wires an already-installed LazyVim config (e.g. from install_lazyvim in
-# post-install-fedora.sh/post-install-opensuse.sh) into the rice system:
+# post-install-fedora.sh/post-install-openmandriva.sh) into the rice system:
 # drops the fixed Nordic default in favor of "current", and adds the
 # RPC-server autocmd polybar-theme.sh's live-switch step depends on. A
 # no-op (with an explanatory skip message, not a hard failure) if ~/.config/
