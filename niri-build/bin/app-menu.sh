@@ -11,6 +11,7 @@ LABELS=(
   $'  Cursor Theme'
   $'  Icon Theme'
   $'  Match GDM Login to Theme'
+  $'  Set Boot Splash Text'
   $'  Set Screensaver Text/Image'
   $'  Preview Screensaver'
   $'  Set Screensaver Timeout'
@@ -35,6 +36,7 @@ COMMANDS=(
   "~/.local/bin/cursor-theme.sh"
   "~/.local/bin/icon-theme.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/gdm-theme-sync.sh"
+  "kitty --class AppMenuTask -e ~/.local/bin/set-boot-splash-text.sh"
   "kitty --class AppMenuTask -e ~/.local/bin/set-screensaver-text.sh"
   "kitty --class Screensaver -e ~/.local/bin/screensaver.sh"
   "~/.local/bin/set-screensaver-timeout.sh"

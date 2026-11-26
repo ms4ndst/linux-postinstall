@@ -33,6 +33,7 @@ BIN_SCRIPTS = (
     "lock.sh",
     "screenshot.sh",
     "screenshot-tool.sh",
+    "set-boot-splash-text.sh",
     "set-screensaver-timeout.sh",
     "set-window-opacity.sh",
     "swaybg-restore.sh",

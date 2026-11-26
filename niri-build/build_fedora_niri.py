@@ -45,7 +45,7 @@ BIN_SCRIPTS = (
     "wifi-toggle.sh", "wifi-menu.sh", "software-update.sh", "notification-center.sh",
     "blueman-applet-guard.sh", "fix-mx-scroll.sh", "battwatch.sh", "weather-float.sh",
     # screensaver / power / theme switchers / menus
-    "screensaver.sh", "set-screensaver-text.sh", "set-screensaver-timeout.sh",
+    "screensaver.sh", "set-boot-splash-text.sh", "set-screensaver-text.sh", "set-screensaver-timeout.sh",
     "set-window-opacity.sh", "set-ai-window-folder.sh",
     "icon-theme.sh", "cursor-theme.sh", "powermenu.sh", "app-menu.sh",
     "gdm-theme-sync.sh",
